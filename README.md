@@ -5,7 +5,7 @@ created: 2026-04-26
 # Mappy (Famicom / NES, 1984)
 > Namco arcade port. NROM-128 (16 KiB PRG + 8 KiB CHR). The cleanest possible "what NES NROM can do" baseline before we hit the mapper era.
 
-**Links:** [6502 Annotation Series](../README.md), [PPU Reference](../../../research/nes/ppu-reference.md), [APU Reference](../../../research/nes/apu-reference.md), [Mappers Reference](../../../research/nes/mappers-reference.md), source: [`raw/mappy_bank_FF.asm`](../../../raw/mappy_bank_FF.asm), [`raw/mappy_bank_ram.inc`](../../../raw/mappy_bank_ram.inc), [`raw/mappy_bank_val.inc`](../../../raw/mappy_bank_val.inc)
+**Links:** [Game Annotation Series](../README.md), [PPU Reference](../../../research/nes/ppu-reference.md), [APU Reference](../../../research/nes/apu-reference.md), [Mappers Reference](../../../research/nes/mappers-reference.md), source: [`raw/mappy_bank_FF.asm`](../../../raw/mappy_bank_FF.asm), [`raw/mappy_bank_ram.inc`](../../../raw/mappy_bank_ram.inc), [`raw/mappy_bank_val.inc`](../../../raw/mappy_bank_val.inc)
 
 ## Why Mappy first
 
