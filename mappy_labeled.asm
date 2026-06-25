@@ -1363,11 +1363,11 @@ init_stage_with_intro_animation_then_spawn:
     C867: A9 07       lda #$07
     C869: 85 49       sta indirect_ptr_hi   ; $49
     C86B: A9 03       lda #$03
-    C86D: 85 70       sta stamp_src_ptr_hi   ; $70
+    C86D: 85 70       sta p1_lives   ; $70
     C86F: A2 20       ldx #$20
     C871: A9 00       lda #$00
 @C873:
-    C873: 95 70       sta stamp_src_ptr_hi,x   ; $70
+    C873: 95 70       sta p1_lives,x   ; $70
     C875: E8          inx
     C876: E0 40       cpx #$40
     C878: D0 F9       bne @C873   ; $C873
@@ -1411,12 +1411,12 @@ init_stage_with_intro_animation_then_spawn:
     C8C5: 85 77       sta ppu_block_src_ptr   ; $77
     C8C7: A2 00       ldx #$00
 @C8C9:
-    C8C9: B5 70       lda stamp_src_ptr_hi,x   ; $70
-    C8CB: 95 B0       sta var_record_ptr_hi,x   ; $B0
+    C8C9: B5 70       lda p1_lives,x   ; $70
+    C8CB: 95 B0       sta p2_lives,x   ; $B0
     C8CD: E8          inx
     C8CE: E0 20       cpx #$20
     C8D0: D0 F7       bne @C8C9   ; $C8C9
-    C8D2: C6 70       dec stamp_src_ptr_hi   ; $70
+    C8D2: C6 70       dec p1_lives   ; $70
     C8D4: 20 A7 CA    jsr clear_buffer_192_at_0400   ; $CAA7
     C8D7: 20 41 C2    jsr ppu_disable_render   ; $C241
     C8DA: 20 49 CD    jsr build_stage_screen_layout   ; $CD49
@@ -1433,8 +1433,8 @@ init_stage_with_intro_animation_then_spawn:
     C8F5: D0 F7       bne @C8EE   ; $C8EE
     C8F7: A2 01       ldx #$01
 @C8F9:
-    C8F9: B5 70       lda stamp_src_ptr_hi,x   ; $70
-    C8FB: 95 B0       sta var_record_ptr_hi,x   ; $B0
+    C8F9: B5 70       lda p1_lives,x   ; $70
+    C8FB: 95 B0       sta p2_lives,x   ; $B0
     C8FD: E8          inx
     C8FE: E0 40       cpx #$40
     C900: D0 F7       bne @C8F9   ; $C8F9
@@ -1522,7 +1522,7 @@ stage_setup_and_play_loop:
     C9A5: A2 20       ldx #$20
     C9A7: A9 00       lda #$00
 @C9A9:
-    C9A9: 95 70       sta stamp_src_ptr_hi,x   ; $70
+    C9A9: 95 70       sta p1_lives,x   ; $70
     C9AB: E8          inx
     C9AC: E0 40       cpx #$40
     C9AE: D0 F9       bne @C9A9   ; $C9A9
@@ -1589,15 +1589,15 @@ dispatch_stage_state_and_rebuild_screen:
     CA31: D0 F5       bne dispatch_stage_state_and_rebuild_screen   ; $CA28
     CA33: A5 40       lda stage_state   ; $40
     CA35: D0 0A       bne @CA41   ; $CA41
-    CA37: A5 70       lda stamp_src_ptr_hi   ; $70
+    CA37: A5 70       lda p1_lives   ; $70
     CA39: D0 2C       bne @CA67   ; $CA67
     CA3B: 20 C3 CA    jsr init_state_vars_and_pointer   ; $CAC3
     CA3E: 4C 4F C8    jmp init_stage_with_intro_animation_then_spawn   ; $C84F
 @CA41:
-    CA41: A5 70       lda stamp_src_ptr_hi   ; $70
+    CA41: A5 70       lda p1_lives   ; $70
     CA43: D0 1B       bne @CA60   ; $CA60
     CA45: 20 B4 CA    jsr redraw_var_records_at_7800_if_flag_set   ; $CAB4
-    CA48: A5 B0       lda var_record_ptr_hi   ; $B0
+    CA48: A5 B0       lda p2_lives   ; $B0
     CA4A: D0 18       bne @CA64   ; $CA64
     CA4C: A9 3C       lda #$3c
     CA4E: 85 0F       sta stage_phase_countdown   ; $0F
@@ -1609,12 +1609,12 @@ dispatch_stage_state_and_rebuild_screen:
     CA5B: D0 F3       bne @CA50   ; $CA50
     CA5D: 4C 4F C8    jmp init_stage_with_intro_animation_then_spawn   ; $C84F
 @CA60:
-    CA60: A5 B0       lda var_record_ptr_hi   ; $B0
+    CA60: A5 B0       lda p2_lives   ; $B0
     CA62: F0 03       beq @CA67   ; $CA67
 @CA64:
     CA64: 20 81 CA    jsr swap_double_buffers_toggle_flag   ; $CA81
 @CA67:
-    CA67: C6 70       dec stamp_src_ptr_hi   ; $70
+    CA67: C6 70       dec p1_lives   ; $70
     CA69: 20 A7 CA    jsr clear_buffer_192_at_0400   ; $CAA7
     CA6C: 20 41 C2    jsr ppu_disable_render   ; $C241
     CA6F: 20 49 CD    jsr build_stage_screen_layout   ; $CD49
@@ -1638,10 +1638,10 @@ swap_double_buffers_toggle_flag:
     CA96: E8          inx
     CA97: D0 F0       bne @CA89   ; $CA89
 @CA99:
-    CA99: B5 70       lda stamp_src_ptr_hi,x   ; $70
-    CA9B: B4 B0       ldy var_record_ptr_hi,x   ; $B0
-    CA9D: 95 B0       sta var_record_ptr_hi,x   ; $B0
-    CA9F: 94 70       sty stamp_src_ptr_hi,x   ; $70
+    CA99: B5 70       lda p1_lives,x   ; $70
+    CA9B: B4 B0       ldy p2_lives,x   ; $B0
+    CA9D: 95 B0       sta p2_lives,x   ; $B0
+    CA9F: 94 70       sty p1_lives,x   ; $70
     CAA1: E8          inx
     CAA2: E0 40       cpx #$40
     CAA4: D0 F3       bne @CA99   ; $CA99
@@ -1658,7 +1658,7 @@ clear_buffer_192_at_0400:
     CAB3: 60          rts
 
 redraw_var_records_at_7800_if_flag_set:
-    CAB4: A5 B0       lda var_record_ptr_hi   ; $B0
+    CAB4: A5 B0       lda p2_lives   ; $B0
     CAB6: F0 0B       beq init_state_vars_and_pointer   ; $CAC3
     CAB8: A9 78       lda #$78
     CABA: 85 0F       sta stage_phase_countdown   ; $0F
@@ -4246,7 +4246,7 @@ advance_record_index_and_refresh_entry:
     D6DA: 20 E5 D4    jsr load_record_via_ptr_table   ; $D4E5
     D6DD: 90 04       bcc @D6E3   ; $D6E3
     D6DF: A9 99       lda #$99
-    D6E1: 85 70       sta stamp_src_ptr_hi   ; $70
+    D6E1: 85 70       sta p1_lives   ; $70
 @D6E3:
     D6E3: A0 0A       ldy #$0a
     D6E5: 4C D9 D5    jmp build_buffer_entry_unpack_nibbles   ; $D5D9
@@ -4734,15 +4734,15 @@ store_one_via_ptr:
     D9CE: C6 3C       dec seq_data_ptr_hi   ; $3C
     D9D0: 60          rts
 @D9D1:
-    D9D1: A6 3D       ldx scratch_byte_param   ; $3D
-    D9D3: BD E1 FF    lda $ffe1,x
+    D9D1: A6 3D       ldx demo_script_cursor   ; $3D
+    D9D3: BD E1 FF    lda tbl_demo_input_script,x   ; $FFE1
     D9D6: F0 0F       beq @D9E7   ; $D9E7
     D9D8: 0A          asl a
     D9D9: 0A          asl a
     D9DA: 85 3C       sta seq_data_ptr_hi   ; $3C
-    D9DC: BD E1 FF    lda $ffe1,x
+    D9DC: BD E1 FF    lda tbl_demo_input_script,x   ; $FFE1
     D9DF: E8          inx
-    D9E0: 86 3D       stx scratch_byte_param   ; $3D
+    D9E0: 86 3D       stx demo_script_cursor   ; $3D
     D9E2: 0A          asl a
     D9E3: B0 D5       bcs @D9BA   ; $D9BA
     D9E5: 30 05       bmi @D9EC   ; $D9EC
@@ -11760,3 +11760,96 @@ data_or_unclear:
     FF64: E8          .byte $E8
 
 setup_stage_then_run_intro_frames:
+    FF65: A9 00       lda #$00
+    FF67: 85 7A       sta stage_number   ; $7A
+    FF69: 85 7D       sta stage_index   ; $7D
+    FF6B: A9 01       lda #$01
+    FF6D: 85 77       sta ppu_block_src_ptr   ; $77
+    FF6F: 20 A7 CA    jsr clear_buffer_192_at_0400   ; $CAA7
+    FF72: 20 41 C2    jsr ppu_disable_render   ; $C241
+    FF75: 20 49 CD    jsr build_stage_screen_layout   ; $CD49
+    FF78: 20 5B E3    jsr build_object_record_block_and_dispatch   ; $E35B
+    FF7B: 20 C5 E5    jsr spawn_objects_from_level_descriptor   ; $E5C5
+    FF7E: 20 62 E8    jsr load_object_table_to_ram   ; $E862
+    FF81: 20 01 F0    jsr spawn_object_pair_for_state   ; $F001
+    FF84: 20 39 C2    jsr ppu_enable_render   ; $C239
+    FF87: A2 00       ldx #$00
+@FF89:
+    FF89: BD 00 02    lda obj_timer,x   ; $0200
+    FF8C: 9D 00 03    sta obj_state,x   ; $0300
+    FF8F: E8          inx
+    FF90: D0 F7       bne @FF89   ; $FF89
+    FF92: 20 C1 F3    jsr load_record_by_index   ; $F3C1
+    FF95: 20 F1 D7    jsr init_object_from_rom_template   ; $D7F1
+    FF98: 20 46 D8    jsr init_object_record_row   ; $D846
+    FF9B: A9 00       lda #$00
+    FF9D: 85 4B       sta seq_stream_ptr_hi   ; $4B
+    FF9F: 85 4F       sta draw_src_ptr   ; $4F
+    FFA1: 85 31       sta obj_record_ptr   ; $31
+    FFA3: 85 3C       sta seq_data_ptr_hi   ; $3C
+    FFA5: 85 3D       sta demo_script_cursor   ; $3D
+    FFA7: A9 02       lda #$02
+    FFA9: 8D 0F 04    sta obj_state   ; $040F
+    FFAC: A2 20       ldx #$20
+@FFAE:
+    FFAE: A9 02       lda #$02
+    FFB0: 9D 0F 04    sta obj_state,x   ; $040F
+    FFB3: 8A          txa
+    FFB4: 18          clc
+    FFB5: 69 10       adc #$10
+    FFB7: AA          tax
+    FFB8: E4 68       cpx ptr_hi   ; $68
+    FFBA: D0 F2       bne @FFAE   ; $FFAE
+@FFBC:
+    FFBC: 20 41 C1    jsr extract_x_top2_bits_to_y   ; $C141
+    FFBF: 20 60 CB    jsr run_frame_game_logic_update   ; $CB60
+    FFC2: 20 E6 F2    jsr advance_state_counter_to_60   ; $F2E6
+    FFC5: A5 4F       lda draw_src_ptr   ; $4F
+    FFC7: 05 4B       ora seq_stream_ptr_hi   ; $4B
+    FFC9: D0 10       bne @FFDB   ; $FFDB
+    FFCB: A5 24       lda draw_data_ptr   ; $24
+    FFCD: 29 03       and #$03
+    FFCF: C9 01       cmp #$01
+    FFD1: F0 08       beq @FFDB   ; $FFDB
+    FFD3: A5 25       lda joypad_state   ; $25
+    FFD5: 29 03       and #$03
+    FFD7: C9 01       cmp #$01
+    FFD9: D0 E1       bne @FFBC   ; $FFBC
+@FFDB:
+    FFDB: 20 41 C1    jsr extract_x_top2_bits_to_y   ; $C141
+    FFDE: 4C 4F C8    jmp init_stage_with_intro_animation_then_spawn   ; $C84F
+
+tbl_demo_input_script:
+    FFE1: 85          .byte $85
+    FFE2: 11          .byte $11
+    FFE3: C8          .byte $C8
+    FFE4: 40          .byte $40
+    FFE5: D5          .byte $D5
+    FFE6: 21          .byte $21
+    FFE7: C4          .byte $C4
+    FFE8: 85          .byte $85
+    FFE9: 15          .byte $15
+    FFEA: 84          .byte $84
+    FFEB: 40          .byte $40
+    FFEC: C5          .byte $C5
+    FFED: 09          .byte $09
+    FFEE: E5          .byte $E5
+    FFEF: 0D          .byte $0D
+    FFF0: B2          .byte $B2
+    FFF1: CE          .byte $CE
+    FFF2: E1          .byte $E1
+    FFF3: 11          .byte $11
+    FFF4: C8          .byte $C8
+    FFF5: 40          .byte $40
+    FFF6: D9          .byte $D9
+    FFF7: 99          .byte $99
+    FFF8: FF          .byte $FF
+    FFF9: FF          .byte $FF
+
+cpu_interrupt_vectors:
+    FFFA: EF          .byte $EF
+    FFFB: C2          .byte $C2
+    FFFC: 31          .byte $31
+    FFFD: C0          .byte $C0
+    FFFE: 04          .byte $04
+    FFFF: C3          .byte $C3

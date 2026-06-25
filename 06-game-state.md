@@ -92,19 +92,69 @@ bra_C8AB_start_was_pressed:
 
 **The demo loop calls the same `sub_C141` that gameplay calls.** Same engine, same object updates, same render pipeline. The only difference is **`ram_demo_flag`** — a single byte that other code reads to decide *who controls the player*.
 
-Looking at `sub_D4CA` (line 3792):
+The input replacement happens in **`$D98A`**, the routine that writes the player's movement fields each frame:
 
 ```asm
-       LDA ram_demo_flag
-       BEQ bra_D4C9_RTS            ; if demo, skip joypad → input
-       ; if not demo, read player input and apply to player object
+D98A:  LDA ram_demo_flag           ; $42
+       BEQ @D9C7                    ; demo → movement from the SCRIPT, not the pad
+       LDA $26                      ; decoded joypad direction
+       STA ($1E),y                  ; → player record movement field $0D
+       ...
+@D9C7: LDA $3C                      ; demo_input_hold_timer: frames left on current cmd
+       BNE  (dec & hold)
+       LDX demo_script_cursor       ; $3D
+       LDA tbl_demo_input_script,x  ; $FFE1 ← the recorded input
+       ; duration = byte<<2 frames; advance cursor; decode direction bits
 ```
 
-In demo mode (flag = 0), the joypad → object-input pipeline is skipped. The player object's movement comes from somewhere else — almost certainly a scripted demo sequence or simple AI that just walks toward the nearest item. **Mappy plays itself in attract mode by replacing the player's input source, not by changing the engine.**
+In real play (`$42`=1) the decoded joypad direction (`$26`) is written into the player record. In demo (`$42`=0) it branches to `@D9C7`, which plays back a **scripted input track from ROM** at `tbl_demo_input_script` (`$FFE1`) — an RLE list of `[direction | hold-duration]` commands, cursored by `demo_script_cursor` (`$3D`) and held by `$3C` for `byte<<2` frames each.
+
+So the long-standing **"scripted sequence *or* simple AI?" question is settled: it is a scripted track**, fed through the *same* `$D98A` routine the live pad uses — not runtime AI. The track is only ~25 bytes and has no `$00` terminator; it doesn't need one, because the AI player dies before it runs out (see below).
+
+> **Correction to an earlier draft of this chapter:** this section previously cited `sub_D4CA` as the "joypad → input" gate. `$D4CA` is actually `add_bcd_table_amount_to_buffer` — it gates **score accumulation** on the demo flag (the demo earns no score), *not* input. The real input gate is `$D98A`; the joypad *decode* is `read_and_decode_input` (`$C258` table → `$26`). Symbols added when this was traced: `tbl_demo_input_script` (`$FFE1`) and `demo_script_cursor` (`$3D`). `$3C` (hold-timer) and `$26` (direction) stay under their generic names — both are reused zero-page (pointer high-byte / object-record pointer elsewhere), so a demo-specific rename would mislabel their other uses.
+
+**Mappy plays itself in attract mode by replacing the player's input source, not by changing the engine.**
 
 This is the cleanest possible attract-mode implementation: **don't write a separate "demo" code path**, just replace one input. The player object's state machine, physics, collisions, sprite rendering — everything runs identically. Attract-mode-as-engine-with-different-input is the design pattern.
 
 Adventure had no analog. Adventure's demo, if it had one, would have required separate code because Adventure didn't separate "movement input" from "movement execution" cleanly. The 6507's lack of CPU headroom forced inlining; Mappy's NES headroom *afforded* the abstraction.
+
+## Attract ends and restarts — two loops, not one
+
+The tempting story is that attract is *literally* a game with the lives counter pre-set to zero, so the first death runs the ordinary game-over path back to the title. That would be maximally elegant — but it is **not** what Mappy does. There are **two separate play loops**, and the demo has its own.
+
+**The real game's loop** is `dispatch_stage_state_and_rebuild_screen` (`$CA28`), reached only via `play_intro_cutscene_sequence` (the Start path and round transitions). It is where lives actually gate game-over:
+
+```asm
+CA28: JSR $C141                      ; yield a frame
+      JSR run_frame_game_logic_update
+      LDA obj_state                  ; $040F — player state
+      BNE $CA28                       ; loop WHILE player alive
+      LDA stage_state ; $40 / BNE @CA41   ; rounds remain → round transition
+      LDA p1_lives    ; $70           ; ← reserve lives
+      BNE @CA67                       ;   >0 → @CA67 dec a life, respawn/continue
+      JSR init_state_vars_and_pointer
+      JMP init_stage_...             ; $C84F → TITLE (game over)
+```
+
+So in real play, death drops the player state to 0 (`con_state_2C` death animation → `$00`), then `p1_lives` (`$70`) decides: `>0` → lose one and continue; `0` → back to the title. That is the genuine game-over mechanism.
+
+**The demo's loop is its own** — the tail of `setup_stage_then_run_intro_frames` (`$FF65`), at `@FFBC`:
+
+```asm
+@FFBC: JSR $C141 / JSR run_frame_game_logic_update / JSR advance_state_counter_to_60
+       LDA $4F / ORA $4B  / BNE @FFDB    ; stage-end / sequence flag → exit
+       LDA $24 & 3 == 1   → @FFDB        ; → exit
+       LDA $25 (joypad) & 3 == 1         ; Start pressed?
+       BNE @FFBC                          ; no → keep looping
+@FFDB: JMP init_stage_... ; $C84F → TITLE
+```
+
+The demo **never reads `p1_lives`**. It exits when a stage-end flag (`$4F`/`$4B`) fires or Start is pressed, then jumps to the title. So the engine *is* shared (`run_frame_game_logic_update`) and both roads end at the title (`$C84F`), but the demo is a deliberately separate ~15-instruction loop, not the lives path. The designers spent a few extra bytes on a dedicated demo loop rather than overloading the game-over path — clarity/control over maximal cleverness.
+
+**What trips the demo exit — resolved:** it is **stage-resolution, not death and not lives.** `$4F` is raised at `$E686` when `$7B` — the per-stage object/enemy count, set to (object-table size ÷ 8) at `$E5D8` from the level descriptor — counts down to 0; that same point removes the player and resets the objects (which sets `$4B` too). The state-`$2C` death animation (`DB7B`) merely delays then zeros the player's state field — it never touches `$4F`/`$4B`. So the demo plays a scripted **stage clear** (the three `inc $040E` "special" commands in the input track are the door/trap actions), and clearing the stage — not the mouse dying, not a lives counter — is what loops it back to the title. (`$7B` is yet another from-scratch "pointer" name, `draw_data_ptr`, that is really a scalar counter here — a follow-up rename.)
+
+> **Lives, found:** `p1_lives` = **`$70`**, `p2_lives` = **`$B0`** (each the base byte of its player's `$70-$AF` / `$B0-$EF` state block, swapped in `swap_double_buffers_toggle_flag`). The from-scratch pass had mislabeled both as *pointers* (`stamp_src_ptr_hi` / `var_record_ptr_hi`) — an over-read of `ora ($6f,x)` / `ora ($af,x)` (X-indexed indirects; the `$70` site `$D213` is actually data). The `#$03` init → `dec` to 2 at start → `dec` on death → test-for-0 pattern is unmistakably a lives counter, and it matches the published `ram.inc`.
 
 ## Start-press transition — one byte flip
 

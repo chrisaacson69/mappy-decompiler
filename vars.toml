@@ -353,10 +353,10 @@ why = "Dereferenced as a 16-bit pointer: fetch_seq_byte_and_advance_index does `
 
 [[var]]
 addr = "003D"
-name = "scratch_byte_param"
-role = "scratch"
-conf = "LOW"
-why = "All accesses are plain 8-bit byte ops — never (zp),y deref and never flagged P — so it is a scalar, not a pointer low byte. setup_stage_then_run_intro_frames WRITES it directly ($FFA5: sta $3d) during stage setup, suggesting a parameter/state byte established at init. store_one_via_ptr only saves/re"
+name = "demo_script_cursor"
+role = "demo"
+conf = "MED"
+why = "Byte index into tbl_demo_input_script ($FFE1). The attract-mode input playback (@D9C7) reads it (ldx $3d $D9D1), decodes one RLE command, then advances it (stx $3d $D9E0); setup_stage_then_run_intro_frames resets it to 0 at demo setup ($FFA5 sta $3d). Only code refs are $D9D1/$D9E0 (the other $3D occurrences are .byte data values, not address refs). Pairs with $3C, used in the same path as the byte<<2 frame-hold timer. Was scratch_byte_param/LOW; role pinned by the FFE1 script find."
 
 [[var]]
 addr = "0040"
@@ -542,10 +542,10 @@ why = "The lone dereference is setup_screen_layout $CBF2 `and ($67,x)`, which us
 
 [[var]]
 addr = "0070"
-name = "stamp_src_ptr_hi"
-role = "pointer"
-conf = "MED"
-why = "var_xref flags $0070 as a 16-bit pointer; ppu_draw_mansion_stamps dereferences the pair via `ora ($6f,x)` at $D213 — making $6F the low byte and $70 the high byte of the source pointer read to draw mansion tile stamps to the PPU. Writers set it during stage init (init_stage_with_intro_animation_then"
+name = "p1_lives"
+role = "counter"
+conf = "HIGH"
+why = "Player-1 lives (also the base of the P1 state block $70-$AF). Set to #$03 at stage init ($C86D); decremented 3->2 when a real game starts ($C8D2, the active life); decremented on death ($CA67); tested for game-over in the play loop ($CA37/$CA41: lda $70 / bne -> dec & respawn, else -> jmp init_stage = title). Swapped with p2_lives ($B0) in the two-player swap. CORRECTION of the from-scratch 'stamp_src_ptr_hi/pointer' read: that rested on `ora ($6f,x)` at $D213, but $D213 is DATA in the covered disassembly and $70 is never indirect-deref'd; the #$03 / dec / dec-on-death / test-for-0 pattern is a lives counter. Matches published ram.inc ($0070 ram_p1_lives, xref hits $C86D/$CA37/$CA41/$CA67)."
 
 [[var]]
 addr = "0071"
@@ -717,10 +717,10 @@ why = "Flagged as 16-bit pointer low byte (P) and dereferenced indirect-indexed 
 
 [[var]]
 addr = "00B0"
-name = "var_record_ptr_hi"
-role = "pointer"
-conf = "MED"
-why = "Dereferenced as the high byte of a 16-bit pointer based at $AF: ppu_draw_mansion_stamps does `ora ($af,x)` ($D48D) and copy_var_record_to_0500_buffer does `ora ($af,x)` ($D7DB/$D7E7) — the ($af,x) addressing makes $AF the low byte and $B0 the high byte. The dereferencing routines copy/draw \"var_rec"
+name = "p2_lives"
+role = "counter"
+conf = "HIGH"
+why = "Player-2 lives (base of the P2 state block $B0-$EF) — the mirror of p1_lives ($70), exchanged with it in swap_double_buffers_toggle_flag. Never indirect-deref'd; read as a scalar at $CA48/$CA60/$CAB4. CORRECTION of the from-scratch 'var_record_ptr_hi/pointer' read: that came from `ora ($af,x)`, an X-indexed indirect whose 'high byte of ($af)' reading only holds for X=1; the lives role is confirmed by the P1-mirror swap behavior and published ram.inc ($00B0 ram_p2_lives)."
 
 [[var]]
 addr = "00C1"

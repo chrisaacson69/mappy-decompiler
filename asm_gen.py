@@ -88,7 +88,7 @@ out.append("; labels.toml + vars.toml + jump_tables.txt (from-scratch RE; no ext
 for e in entries:
     nm=FUNC.get(e, {0xC031:"reset_cold_boot_init",0xC2EF:"nmi_sound_tick",0xC304:"irq_rti_stub"}.get(e,f"L_{e:04X}"))
     out.append(f"\n{nm}:")
-    pc=cpu(e); endpc=cpu(end_of[e])
+    pc=cpu(e); endpc=end_of[e] if end_of[e]>0xFFFF else cpu(end_of[e])  # last entry: 0x10000 must not cpu()-wrap to $C000
     while pc<endpc:
         a=pc
         if a in locals_ and a!=e: out.append(f"@{a:04X}:")

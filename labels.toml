@@ -1801,3 +1801,17 @@ name = "draw_two_tile_object"
 kind = "routine"
 conf = "MED"
 why = "$12=tile($AE, or $66 when $1E==$20), $13=3 palette; jsr write_object_to_shadow_oam, advance X +8, $12=$67, jmp write_object_to_shadow_oam = two-tile object draw (leading A9 AE byte mis-flagged as data, like $C141)"
+
+[[label]]
+addr = "FFE1"
+name = "tbl_demo_input_script"
+kind = "data"
+conf = "HIGH"
+why = "Attract-mode (demo) input track. Read ONLY at $D9D3/$D9DC (lda $ffe1,x) by the demo-input playback path (@D9C7), indexed by demo_script_cursor ($3D). RLE entries [direction | duration] where duration = byte<<2 frames; held via $3C until expiry, then the next command is fetched. Drives the player object when ram_demo_flag ($42)=0, fed through the SAME $D98A apply-input routine as the live joypad. Resolves ch.6's open scripted-vs-AI question: it is a scripted track, not runtime AI."
+
+[[label]]
+addr = "FFFA"
+name = "cpu_interrupt_vectors"
+kind = "data"
+conf = "HIGH"
+why = "6502 hardware vectors: $FFFA=NMI -> nmi handler $C2EF, $FFFC=RESET -> reset_cold_boot_init $C031, $FFFE=IRQ -> irq_rti_stub $C304. Labeled so tbl_demo_input_script ($FFE1) does not absorb the vector bytes."
