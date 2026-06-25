@@ -32,6 +32,7 @@ created: 2026-04-26
 7. [Music & sound engine](./07-music-engine.md) — 25-voice mixer feeding 4 hardware channels, voice slot order = priority rank, 4-bytes-per-channel direct register writes. **The engine is small because the APU's autonomous envelope/sweep/length-counter units do the work.**
 7. **Level data** — how rooms/floors/items are encoded; what scrolling looks like in NROM. *(planned)*
 8. [Level data & bonus rounds](./08-level-data-and-bonus-rounds.md) — layered level data (palette, mansion, items, enemies, trampolines, blinking platforms), mansion-as-nametable, items-as-tiles, bonus rounds via dispatch swap, the engine-vs-content separation Namco pioneered in 1983.
+9. [The from-scratch re-derivation](./09-from-scratch-rederivation.md) — an independent reverse-engineering of the whole ROM from the bare binary + a 6502 emulator, **with the published disassembly forbidden as input**: all 258 functions + 152 variables + the object-record layout recovered, then chapters 1-8 revisited against it (what was confirmed, what uncertainties closed, where the byte-polymorphism showed up). Artifacts: `labels.toml`, `vars.toml`, `mappy_labeled.asm`, `Mappy (Japan).mlb`.
 
 ## The throughline question for every chapter
 

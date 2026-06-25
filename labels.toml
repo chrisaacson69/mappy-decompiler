@@ -1,0 +1,1803 @@
+# Mappy PRG ($C000-$FFFF) symbol table — FROM SCRATCH (Phase B, leaves first).
+# Names derived ONLY from each routine's own disassembly + the hardware/RAM it provably
+# touches. The cyneprepou4uk repo labels are NOT consulted here — the final repo-diff stays
+# an honest check. `why` records the grounding so a name can be challenged on evidence.
+#
+# Confidence: HIGH = behavior unambiguous; MED = role clear, exact semantics inferred.
+
+[[label]]
+addr = "C14F"; name = "handler_rts_noop"; kind = "leaf"; conf = "HIGH"; callers = 5
+why = "single RTS; appears as the no-op slot in 4 of the 6 dispatch tables"
+
+[[label]]
+addr = "C239"; name = "ppu_enable_render"; kind = "leaf"; conf = "HIGH"; callers = 7
+why = "LDX #$1E / STX $2001(PPUMASK) / STX $2D ; $1E = show bg+sprites; $2D = render-on shadow"
+
+[[label]]
+addr = "C241"; name = "ppu_disable_render"; kind = "leaf"; conf = "HIGH"; callers = 7
+why = "LDX #$00 / STX $2001(PPUMASK) / STX $2D ; mask=0 blanks screen (mirror of C239)"
+
+[[label]]
+addr = "C249"; name = "read_joypad"; kind = "leaf"; conf = "HIGH"; callers = 1
+why = "LDY #8 / LDA $4016,x / AND #3 / CMP #1 / ROR $10,x / loop ; 8-bit shift of pad into $10,x"
+
+[[label]]
+addr = "C304"; name = "irq_rti_stub"; kind = "leaf"; conf = "HIGH"; callers = 0
+why = "IRQ vector target; single RTI — NROM has no IRQ source, so it's a stub"
+
+[[label]]
+addr = "C78E"; name = "ppu_buffer_enqueue"; kind = "leaf"; conf = "HIGH"; callers = 1
+why = "if $2D(render-on): append [addr_lo,addr_hi,count,data...] to $0500 buffer; else direct $2006/$2007"
+
+[[label]]
+addr = "CBF5"; name = "ppu_clear_nametables"; kind = "leaf"; conf = "HIGH"; callers = 3
+why = "reset buffer idx $2A/$2B; set $2006=$2000; write $00 to $2007 in 8x256 loop = clear $2000-$27FF"
+
+[[label]]
+addr = "CC15"; name = "ppu_run_draw_blocks"; kind = "leaf"; conf = "HIGH"; callers = 3
+why = "278b walker over [count][ppu_addr][data...] blocks -> PPUADDR/PPUDATA; the palette/HUD/template draw"
+
+[[label]]
+addr = "CF69"; name = "ppu_draw_blocks_b"; kind = "leaf"; conf = "MED"; callers = 1
+why = "PPUADDR/PPUDATA block walker using ptr $16/$17 (tbl_CFA6 family: fixed frame + item placement)"
+
+[[label]]
+addr = "D126"; name = "ppu_draw_mansion_stamps"; kind = "leaf"; conf = "HIGH"; callers = 1
+why = "group=[count][data_ptr][N x ppu_addr]; stamps an RLE tile-run (runlen,tiles,signed-delta) at N addrs = mansion"
+
+[[label]]
+addr = "CDB7"; name = "fill_attr_source_0170"; kind = "leaf"; conf = "MED"; callers = 1
+why = "STA $0170,X / INX / DEY loop ; fills the $0170 attribute-bit source block consumed by the attr packer"
+
+[[label]]
+addr = "C3B4"; name = "obj_field5_lookup_C47C"; kind = "leaf"; conf = "MED"; callers = 4
+why = "X = obj[$05] (via ptr $1E); $13 = tbl_$C47C[X]; returns A=X ; field-5 indexes a $C47C parameter table"
+
+[[label]]
+addr = "DB83"; name = "obj_reset_fields_8_F"; kind = "leaf"; conf = "MED"; callers = 6
+why = "writes obj[$08]=$00, obj[$0F]=$06 via ptr $1E ; resets two object record fields (state/anim?)"
+
+# --- boundary artifacts found while labeling (NOT real routines) ---
+# $C141 "entry" (callers=9) is the off-by-one tail of the 1-entry indirect jump at $C13B:
+#   read_table over-read the $C13E 'table' by one word, fabricating handler $BA3F and clipping
+#   the real routine that starts at $C142 (TXA / AND #$C0 / TAY). Cleanup: cap 1-target indirect
+#   jumps so they don't grow a phantom 2nd entry.
+
+# --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
+
+[[label]]
+addr = "C0D0"
+name = "build_sprite_row_oam_shadow"
+kind = "leaf"
+conf = "HIGH"
+why = "Loop writes 4-byte OAM entries (Y=$11, tile from table $c123,y, attr #$02, X=$10 +=8 each) into shadow buffer $0700,x until cpx #$14 (5 sprites); Y/flag chosen from $21&#$10."
+
+[[label]]
+addr = "C146"
+name = "swap_stack_pointer"
+kind = "leaf"
+conf = "HIGH"
+why = "tsx/txa reads current SP into A, ldx $0100,y loads a saved value, sta $0100,y stores the old SP, txs installs the loaded value as new SP — an atomic SP swap with a slot in stack page indexed by Y (coroutine-style context switch)."
+
+[[label]]
+addr = "C2D5"
+name = "copy_4_bytes_absy_to_zpx"
+kind = "leaf"
+conf = "HIGH"
+why = "Sets counter $00=#4, then loops: lda $0000,y / iny / sta $00,x / inx / dec $00 / bne — a fixed 4-iteration byte copy from an absolute,Y source into zero-page,X destination."
+
+[[label]]
+addr = "C2E5"
+name = "clear_zeropage_from_20"
+kind = "leaf"
+conf = "HIGH"
+why = "ldx #$20 / lda #$00 / sta $00,x / inx / bne loop writes #$00 to zero-page $20..$FF until X wraps to 0 — a bounded zero-page clear."
+
+[[label]]
+addr = "C342"
+name = "data_or_unclear_c342"
+kind = "leaf"
+conf = "LOW"
+why = "Only 2 bytes / 1 instruction (`lda ($1e),y`) with no RTS, no HW regs, no loop/branch — a load fragment, not a self-contained routine."
+
+[[label]]
+addr = "C3D1"
+name = "lookup_table_c480_to_zp12"
+kind = "leaf"
+conf = "HIGH"
+why = "tax then `lda $c480,x` then `sta $12` — uses A as index into ROM table $C480, stores fetched byte to zero-page $12 (a table lookup)."
+
+[[label]]
+addr = "C3D7"
+name = "toggle_flag_if_field_positive"
+kind = "leaf"
+conf = "MED"
+why = "Reads field +6 via ($1e),y; if bit7 set (bmi) skips, else eor #$40 / sta $13 toggles bit6 of zero-page flag $13."
+
+[[label]]
+addr = "C3E3"
+name = "extract_top2_bits"
+kind = "leaf"
+conf = "MED"
+why = "lda $13; rol a×3; and #$03; sta $14 — three left-rotates bring bits 6-7 of $13 down to bits 0-1, masked to 2 bits and stored to $14."
+
+[[label]]
+addr = "C465"
+name = "compute_obj_visibility_flag"
+kind = "leaf"
+conf = "MED"
+why = "Reads state flag $7C and coords $15(LSR odd/even)/$16(cmp #$40 threshold), and on the active path loads $13 and ORs in bit5 (#$20) into A as a returned status; no hardware regs, pure RAM predicate."
+
+[[label]]
+addr = "C510"
+name = "test_bit3_of_record_field7"
+kind = "leaf"
+conf = "MED"
+why = "lda ($1e),y with y=7 reads field[7] of a zero-page pointer record, and #$08 masks bit 3, bne branches on it — a flag test."
+
+[[label]]
+addr = "C63D"
+name = "ptr16_sub6_set_const"
+kind = "leaf"
+conf = "MED"
+why = "16-bit borrow chain: $10=$10-6 (sec/sbc #$06), bcs skips dec $11 (high byte) — decrements little-endian pointer $10/$11 by 6; also stores constant #$dd into $12."
+
+[[label]]
+addr = "C65C"
+name = "load_const_3"
+kind = "leaf"
+conf = "LOW"
+why = "Single instruction `lda #$03` (2 bytes) — loads constant 3 into A, no registers/RAM/branches; looks like a fragment or mid-routine slice, semantics indeterminate."
+
+[[label]]
+addr = "C6FB"
+name = "scan_ptr_buf_for_zero_terminator"
+kind = "leaf"
+conf = "MED"
+why = "ldy #$00 then lda ($12),y reads bytes via the zero-page pointer $12/$13; bne tests the byte for nonzero and iny advances the index — the classic NUL-terminated buffer/string scan."
+
+[[label]]
+addr = "C7E2"
+name = "init_zp14_zp15_to_8"
+kind = "leaf"
+conf = "MED"
+why = "lda #$08 / sta $14 then lda #$08 / sta $15 — writes the constant 8 into two consecutive zero-page bytes, no HW regs or loop"
+
+[[label]]
+addr = "C818"
+name = "append_record_to_buffer"
+kind = "leaf"
+conf = "MED"
+why = "Gated by flag $2D; uses $2A as write cursor into $0500, appends 4 bytes ($10,$11,#$01,table[$0180+Y]), inx after each, stores advanced cursor back to $2A."
+
+[[label]]
+addr = "CA81"
+name = "swap_double_buffers_toggle_flag"
+kind = "leaf"
+conf = "MED"
+why = "eor #$01 toggles flag $41, then a 256-byte byte-swap loop exchanges OAM-shadow page $0200 with $0300 (lda/ldy/sta/sta), then a 64-byte swap of zero-page $70 vs $b0 (cpx #$40); pure buffer-flip, no callees."
+
+[[label]]
+addr = "CAA7"
+name = "clear_buffer_192_at_0400"
+kind = "leaf"
+conf = "HIGH"
+why = "lda #$00 then X-loop sta $0400,x; inx; cpx #$c0; bne writes zero to 192 bytes at $0400 (no PPU/APU regs, pure RAM fill)"
+
+[[label]]
+addr = "CAC3"
+name = "init_state_vars_and_pointer"
+kind = "leaf"
+conf = "MED"
+why = "Stores #$01 into $0615/$0616/$0617, clears $42, and loads pointer $01A4 into $0E/$0F (lo=$01,hi=$A4); pure constant-init of RAM flags + a ZP pointer, no HW regs."
+
+[[label]]
+addr = "CB31"
+name = "init_ptr_1e_from_const"
+kind = "leaf"
+conf = "MED"
+why = "Loads fixed ROM word $CB97/$CB98 (lo/hi) and stores into consecutive zero-page $1E/$1F, initializing a 16-bit pointer from a constant."
+
+[[label]]
+addr = "CD2B"
+name = "copy_5_bytes_table_to_ram_0490"
+kind = "leaf"
+conf = "HIGH"
+why = "ldx#0; lda $cd39,x; sta $0490,x; inx; cpx #$05; bne — copies 5 bytes from ROM table $CD39 into RAM $0490..$0494."
+
+[[label]]
+addr = "D4E5"
+name = "load_record_via_ptr_table"
+kind = "leaf"
+conf = "HIGH"
+why = "Reads 16-bit pointer from table $D536/$D537 indexed by Y into ZP ptr $10/$11, then via lda ($10),y loads 4 sequential record bytes into X, $12, $13, and Y."
+
+[[label]]
+addr = "D502"
+name = "bcd_add_packed_buffer"
+kind = "leaf"
+conf = "HIGH"
+why = "Per-nibble decimal-correct add: low nibble and #$0f + adc, cmp #$0a→adc #$05; high nibble and #$f0 + adc, cmp #$a0→adc #$5f + sec carry; loops ($12),y operand into $00,x via dex/dey/bpl = multi-byte packed-BCD addition."
+
+[[label]]
+addr = "D629"
+name = "append_byte_to_0500_if_counter"
+kind = "leaf"
+conf = "MED"
+why = "bne/bmi guard then `sta $0500,y` + `iny`: stores A into the $0500 buffer at index Y and advances, gated by incoming Z flag and a `dec $15` countdown (skips store when zero-set or counter goes negative)."
+
+[[label]]
+addr = "D694"
+name = "clamp_var32_to_min"
+kind = "leaf"
+conf = "HIGH"
+why = "SEC then 4-iter SBC of $44,x-$71,x (x=3..0) is a 32-bit LE compare; BCS skips, else copies $71 block into $44 — so $44 = max($44,$71)."
+
+[[label]]
+addr = "D77A"
+name = "copy_var_record_to_0500_buffer"
+kind = "leaf"
+conf = "MED"
+why = "Loads src ptr from table $D7AD/$D7AE[y] into $10/$11, then sta ($10),y bytes into buffer $0500,x using cursor $2A; 3rd byte saved to $12 as a dec/bne loop count for the trailing variable-length payload, then stx $2a."
+
+[[label]]
+addr = "D825"
+name = "set_two_zp_pointers"
+kind = "leaf"
+conf = "MED"
+why = "Stores immediate LE 16-bit consts into two zp pointer pairs ($28/$29=$1C00, $1E/$1F=$0400) and clears Y as an index; no hardware regs, pure pointer setup."
+
+[[label]]
+addr = "D894"
+name = "init_object_record_via_ptr"
+kind = "leaf"
+conf = "MED"
+why = "Writes multiple fields through indirect ptr ($1e),y at offsets 0,1,3,4,5,8,15 — computed type byte (X*4+$20), X-indexed coords from $0264/$0265,x, and constants $02/$4b/$00 — populating an object/sprite descriptor record."
+
+[[label]]
+addr = "D8C0"
+name = "init_ram_block_from_table"
+kind = "leaf"
+conf = "HIGH"
+why = "ldx#0 / lda $d8d3,x / sta $0410,x / inx / cpx #5 / bne copies a 5-byte ROM table into RAM $0410-$0414, then lda #$0e / sta $041f sets one more field to a constant"
+
+[[label]]
+addr = "D9BC"
+name = "store_one_via_ptr"
+kind = "leaf"
+conf = "MED"
+why = "lda #$01; sta ($1e),y; rts — writes constant 1 through zero-page pointer ($1E/$1F) indexed by Y; no PPU/RAM specifics to fix semantics."
+
+[[label]]
+addr = "D9F0"
+name = "clear_flag_if_value_below_threshold"
+kind = "leaf"
+conf = "MED"
+why = "Reads $0421, sbc #$06 then cmp #$2e (46); when (val-6) < 46 and flag $35 is nonzero (bne path skips the clear when zero), stores #$00 to $35 — a threshold/window check that conditionally clears zero-page flag $35."
+
+[[label]]
+addr = "DAB3"
+name = "set_obj_fields_via_ptr"
+kind = "leaf"
+conf = "MED"
+why = "stores incoming A at ($1e)+11, then constants $09 at +12, and $04 at both +15 and +4 via sta ($1e),y — populating fixed fields of a record through a ZP pointer; no loop, leaf."
+
+[[label]]
+addr = "DAD8"
+name = "init_entity_state_if_flag_clear"
+kind = "leaf"
+conf = "MED"
+why = "Guarded on `lda $1e / bne` early-exit, then stores immediates $1E/$00/$08 into RAM $0404/$0407/$040F and sets flag $4B=$01 — conditional one-time init of a RAM state block, no hardware regs."
+
+[[label]]
+addr = "DB45"
+name = "inc_counter_set_flag_at_threshold"
+kind = "leaf"
+conf = "MED"
+why = "inc $0407; lda $0407; cmp #$20; bcc skip; lda #$2A; sta $040F — increments a RAM counter and once it reaches 0x20 stores constant 0x2A into another RAM byte; no hardware regs touched."
+
+[[label]]
+addr = "DDA8"
+name = "dec_obj_timer_reload_state"
+kind = "leaf"
+conf = "MED"
+why = "dec [($1e)+7]; bne exits early; on zero reloads +7=$40 and writes state fields +4=$0e, +15=$14 via indirect struct pointer $1e — a per-object countdown that resets state on expiry."
+
+[[label]]
+addr = "DE6F"
+name = "zero_struct_fields_4_and_15"
+kind = "leaf"
+conf = "MED"
+why = "lda #$00 then sta ($1e),y with Y=$0f and Y=$04 writes zero to offsets +15 and +4 of the record pointed to by ZP pointer $1E."
+
+[[label]]
+addr = "DEA6"
+name = "align_obj_coord_to_target"
+kind = "leaf"
+conf = "MED"
+why = "Reads object record via ($1e) offsets +6/+3/+1, builds a masked low-2-bit target in $10 (and #$fc / ora), compares record+1 to $0401 then carry-adds masked $0403 into record offset +10; when that equals $10 it nudges the +10 field by +4 or -4 (#$fc) using a direction bit from table $c000,$21 (lsr a -> bcc)."
+
+[[label]]
+addr = "DF09"
+name = "data_or_unclear_df09"
+kind = "leaf"
+conf = "LOW"
+why = "Only 2 bytes / 1 instruction (`ldx #$04`) with no RTS, no memory or hardware register access, and no loop/branch — a lone immediate load into X is a fragment, not a self-contained routine, so behavior is indeterminate."
+
+[[label]]
+addr = "E134"
+name = "trigger_state_change_on_proximity"
+kind = "leaf"
+conf = "MED"
+why = "Loops objects x=$20..$90; gates on state field $040F,x==2 and matching position $0403,x/$0400-$0401 vs object 0 (16-bit sbc proximity within 1), then writes new state #$10 to $040F,x, timer #$0C to $0404,x, #$08 to $0407,x and inc flag $30."
+
+[[label]]
+addr = "EDE2"
+name = "advance_obj_state_if_matched"
+kind = "leaf"
+conf = "MED"
+why = "Indexed obj array: if $040B,x==$1E and $040F,x==#$16, sets $040F,x=#$18 and $0404,x=0, then iny / (cpx #$20 → ora #$40 into Y); pure RAM state transition, no PPU/APU."
+
+[[label]]
+addr = "EEA9"
+name = "init_object_slots_strided"
+kind = "leaf"
+conf = "MED"
+why = "Loops X += #$10 up to #$90 (9 records of 16 bytes), writing per-record fields $040B,x = $1E, $0407,x = 0, $040F,x = #$16 — strided initialization of a 16-byte object table."
+
+[[label]]
+addr = "F3C1"
+name = "load_record_by_index"
+kind = "leaf"
+conf = "HIGH"
+why = "Computes $7D*6 (asl/adc $7d/asl→tax) and copies 6 bytes from table $F3DF,x into $0063,y (cpy #$06 loop); clears $60/$61/$62 first."
+
+[[label]]
+addr = "F49F"
+name = "jump_table_dispatch_via_index"
+kind = "leaf"
+conf = "HIGH"
+why = "asl a/tay makes index*2; pla/pla grab caller return addr into ptr $f6/$f7; lda ($f6),y twice reads a 16-bit target from the inline table; jmp ($00f6) tail-jumps to it."
+
+[[label]]
+addr = "F4B5"
+name = "init_apu_channels_and_frame_counter"
+kind = "leaf"
+conf = "HIGH"
+why = "Writes #$0F to APU $4015 (enable pulse1/pulse2/triangle/noise) then #$C0 to $4017 (frame counter: 5-step mode, disable frame IRQ) — classic APU init."
+
+[[label]]
+addr = "F4BF"
+name = "init_object_tables"
+kind = "leaf"
+conf = "MED"
+why = "Loop1 zeroes a 25-entry flat array ($0600,x) and a stride-8 record field via ptr $F0/$F1 starting $0619 (cpx #$19); Loop2 copies 25 bytes from ROM table $F89E to $06E2 — initializes 25-object RAM tables from defaults."
+
+[[label]]
+addr = "F55A"
+name = "sound_engine_tick"
+kind = "leaf"
+conf = "MED"
+why = "Advances a 16-bit data pointer $f0/$f1 by 8, decrements counter $f4, and on expiry loops x=0..3 writing computed (asl/and#$10/eor#$10) control bytes to APU $4000,x per-channel while gating on per-channel state $fc,x and $0600,x."
+
+# --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
+
+[[label]]
+addr = "DDD4"
+name = "dec_timer_field7_if_nonzero"
+kind = "leaf"
+conf = "HIGH"
+why = "ldy #$07; lda ($1e),y; beq exit; sec/sbc #$01; sta ($1e),y — reads offset-7 field of struct via ZP pointer $1e and decrements it only if non-zero (floored countdown timer)."
+
+[[label]]
+addr = "DE7A"
+name = "dec_obj_timer_reload_on_zero"
+kind = "leaf"
+conf = "MED"
+why = "Decrements struct field ($1e)+7 (sec/sbc #1, sta); bne skips the reload, so on expiry it rewrites +$0f=$28, +4=$24, +7=$40 — a countdown timer that resets state on zero."
+
+[[label]]
+addr = "DF8A"
+name = "advance_pos_if_in_bounds"
+kind = "leaf"
+conf = "MED"
+why = "16-bit add of $10 into accumulator $28/$29 (adc #$00 carries low→high), gated by ($1e)+5 flag, a $0401-$0F<$1C range check, $0406 sign check, and a high-byte<$1C ceiling; only stores $28/$29 when all gates pass — no HW regs."
+
+[[label]]
+addr = "DFCD"
+name = "append_computed_entry_to_buffer"
+kind = "leaf"
+conf = "MED"
+why = "Computes two packed bytes from ($1e),y + tables $e010/$e011,x via asl×3 and lsr/ror×3, then writes 4-byte record {$10,$11,$1e,$1f} into buffer $04c0,x advancing write index $2b before rts; no hardware regs touched."
+
+[[label]]
+addr = "E018"
+name = "add_flag_conditioned_offset"
+kind = "leaf"
+conf = "MED"
+why = "Picks offset $10 = 0 or 4 from flag $60 (ldy#0/beq/ldy#4/sty $10), gates on struct field ($1e),y+5, then returns A = $64 + $10 (lda $64;clc;adc $10;rts)."
+
+[[label]]
+addr = "E08A"
+name = "sub16_from_struct_field_at_offset2"
+kind = "leaf"
+conf = "HIGH"
+why = "sec/sbc $10 on ($1e),y at offset+2 then iny/sbc #$00 on offset+3 with bcs skip = 16-bit subtract of A from the little-endian word at (ptr $1e)+2."
+
+[[label]]
+addr = "E0B7"
+name = "find_adjacent_entity_to_ref_copy_attr"
+kind = "leaf"
+conf = "MED"
+why = "Gates on $1E/$2E flags; loops X from #$10 over slot fields, requires $040F,x==2 (state), same $0403 field as slot0, and 16-bit pos ($0400/$0401,x − $0400/$0401)+1 < 2 (within-1 adjacency), then copies $0406,x→$0406 — adjacency/collision scan propagating an attribute to the reference object."
+
+[[label]]
+addr = "E102"
+name = "check_two_coords_adjacent"
+kind = "leaf"
+conf = "MED"
+why = "Gated by flag $1E, computes 16-bit deltas of two coord pairs ($0410/11 vs $0400/01, $0412/13 vs $0402/03), each +1 then cmp #$02/bcs to test |delta|<=1 on both axes; returns A=0 in-range via lda #$00/rts."
+
+[[label]]
+addr = "E18E"
+name = "init_state_vars"
+kind = "leaf"
+conf = "MED"
+why = "Three immediate constants stored to RAM/zero-page with no hardware regs or loop: $0407=0, $4B=1, $040F=4 — a straight-line state-variable initializer."
+
+[[label]]
+addr = "E19C"
+name = "bare_return_stub"
+kind = "leaf"
+conf = "HIGH"
+why = "Sole instruction is a single rts at $E19C (1 byte, 1 instr) — touches no registers/RAM, an empty/no-op subroutine that returns immediately."
+
+[[label]]
+addr = "E2A1"
+name = "field8_in_range_49_59"
+kind = "leaf"
+conf = "MED"
+why = "lda ($1e),y with y=#$08 loads byte at offset 8 of pointer $1E, then sec/sbc #$49/cmp #$10/bcc is the canonical \"value in [$49,$59)\" contiguous-range test (carry-clear iff in range)."
+
+[[label]]
+addr = "E2E0"
+name = "tick_timer_clear_state_on_expiry"
+kind = "leaf"
+conf = "HIGH"
+why = "dec $0437; bne skip; on zero stores #$00 to $0434 and $043F — a countdown timer that clears two RAM state vars when it expires; no PPU/APU/IO touched."
+
+[[label]]
+addr = "E3BD"
+name = "shl3_pack_zp_ptr16"
+kind = "leaf"
+conf = "MED"
+why = "asl $10/rol $11 ×3 multiplies the 16-bit $10/$11 value by 8, then masks/ORs (and #$1f, and #$20, ora, and #$1f) to repack it into a 13-bit field — pure ZP arithmetic, no hardware regs, leaf rts."
+
+[[label]]
+addr = "E410"
+name = "tick_subcounter_decrement_on_rollover"
+kind = "leaf"
+conf = "MED"
+why = "Skips when $0200,x==0 (beq); else inc $0201,x, cmp #$0a, and on reaching 10 resets $0201,x to 0 and dec $0200,x — a per-index mod-10 sub-tick that decrements a paired countdown on each rollover."
+
+[[label]]
+addr = "E469"
+name = "find_object_at_coords"
+kind = "leaf"
+conf = "MED"
+why = "Loops x by stride 8 over records at $0202/$0204/$0205 until x==$80, testing each: skips if $0202,x is negative (inactive), checks ($1e),y vs $0204,x within delta<4 (Y bounding), then 16-bit compares ($1e) pos vs record+adc tables; beq=match falls through, else rts with SEC (not found)."
+
+[[label]]
+addr = "E4A4"
+name = "set_obj_state_and_load_next_ptr"
+kind = "leaf"
+conf = "MED"
+why = "Writes #$06 to struct field +4 via ($1e),y; uses field +7 (asl=*2) to index word table $E4CD/$E4CE, stores that 16-bit value (hi byte += $0205,x page base) into fields +2/+3, then increments the field +7 sequence index."
+
+[[label]]
+addr = "E71E"
+name = "branch_on_state21_bits"
+kind = "leaf"
+conf = "MED"
+why = "Reads zp $21 twice; tests (and #$03 / eor #$01 / bne) low-2-bits==1 and (and #$04 / beq) bit2, branching to $E71D/$E70A — pure predicate test on state var $21, no writes or HW regs."
+
+[[label]]
+addr = "E72C"
+name = "load_ptr_from_state_index"
+kind = "leaf"
+conf = "MED"
+why = "Reads $0261,x, lsr+and #$fe makes an even index y, loads 16-bit pointer from table $E7B9,y/$E7BA,y into ptr pair $12/$13, and sets selector $14 to 0 or 2 via cmp #$06; no hardware regs touched."
+
+[[label]]
+addr = "E757"
+name = "trigger_state_transition_on_position_match"
+kind = "leaf"
+conf = "MED"
+why = "Gated on state $042F==2 and flag $042A==0, compares indexed coord pair ($0264/$0265,x) against target ($0421/$0423); on full match writes new state $042F=#$1E, $0424=#$13, timer $0427=#$78, clears $0420 — a guarded position-match state transition."
+
+[[label]]
+addr = "E8FF"
+name = "load_y_from_table_x"
+kind = "leaf"
+conf = "LOW"
+why = "Sole instruction is `ldy $02b1,x` — indexed load of Y from RAM table at $02B1; no RTS/branch/other ops, so it reads one byte but the 3-byte fragment isn't a self-contained routine."
+
+[[label]]
+addr = "E94D"
+name = "dispatch_on_masked_state_field"
+kind = "leaf"
+conf = "MED"
+why = "lda $02b1,x; and #$06 isolates 2-bit field then cmp #$04 with beq/bcc branches to 4 cases (0/2/4/6); fall-through returns A = #$22 - $10."
+
+[[label]]
+addr = "E9B8"
+name = "object_overlap_check"
+kind = "leaf"
+conf = "MED"
+why = "Subtracts object coords ($02B4,x/$02B5,x) from a pointer-object's fields (($1E)+1/+3) and gates with cmp #$21 (X-range) and cmp #$02 (tight Y-range), bcs skipping out — a hitbox/proximity box test computing a horizontal delta into $10."
+
+[[label]]
+addr = "EA46"
+name = "jmp_indirect_zp_vector"
+kind = "leaf"
+conf = "HIGH"
+why = "Single instruction `jmp ($001c)` — an indirect jump through the zero-page pointer at $1C/$1D, i.e. a dispatch trampoline to a runtime-set address."
+
+[[label]]
+addr = "ED1C"
+name = "update_matching_object_state"
+kind = "leaf"
+conf = "MED"
+why = "Sets $4C=#$30, zeros ($1e),y offsets 4/5, then loops x=$20..$90 step $10 over a 16-byte-stride object table: where $040B,x==$1E and $040F,x==#$18 it writes $040F,x=#$1A and $0407,x=#$3C (conditional per-record field mutation)."
+
+[[label]]
+addr = "EE04"
+name = "find_first_empty_slot"
+kind = "leaf"
+conf = "MED"
+why = "Scans table $04A5 in 8-byte strides (Y 0..$20), beq exits on first zero lead-byte leaving Y as index; classic find-first-free/inactive slot in a 4-entry, 8-byte-record array."
+
+[[label]]
+addr = "EE4D"
+name = "add_byte_to_obj_word_if_active"
+kind = "leaf"
+conf = "HIGH"
+why = "Stores A to $10, checks ($1e)+6 sign via BMI to skip; else 16-bit adds $10 into ($1e)+0/+1 (clc/adc low, adc #$00 high for carry)."
+
+[[label]]
+addr = "EE77"
+name = "check_object_player_collision"
+kind = "leaf"
+conf = "MED"
+why = "For object slot x=$20: bails if active flag $0404,x==0, then bounds-tests coords $040F/$0403/$0401,x against the $1E-pointed actor (player) via sbc ($1e),y with small ranges (cmp #$06/#$04 → bcc/bcs exit) plus a facing sign-check at ($1e),6 — an axis-aligned proximity/hit test."
+
+[[label]]
+addr = "EEEB"
+name = "add_byte_to_word_if_active"
+kind = "leaf"
+conf = "MED"
+why = "Stores A to $10, then if bit7 of ($1e),y[6] is clear does a 16-bit add: $0400,x += $10 with carry into $0401,x (clc/adc $10/sta, then adc #$00/sta) — 8-bit addend into a little-endian word counter, gated by a sign flag."
+
+[[label]]
+addr = "EF17"
+name = "copy_16b_table_if_var_in_range"
+kind = "leaf"
+conf = "MED"
+why = "Range-checks $7A (sec/sbc #$07/cmp #$03/bcs skip), then if in range copies 16 bytes from ROM table $EF2F into zero-page buffer $A0..$AF via indexed loop (ldx#0; lda $EF2F,x; sta $A0,x; cpx #$10; bne)."
+
+[[label]]
+addr = "F054"
+name = "dispatch_obj_state"
+kind = "leaf"
+conf = "MED"
+why = "Reads per-object state byte lda $0090,y then branches on state values (beq, cmp #$02/bcc/bne) and masks frame-counter $21 (and #$03, and #$04, lsr→tax) to build a table index — a per-object state-machine dispatcher, no HW regs touched."
+
+[[label]]
+addr = "F0CE"
+name = "check_obj_near_point"
+kind = "leaf"
+conf = "MED"
+why = "Subtracts ref X $0401 from obj $0094,y and ref Y $0403 from obj $0095,y, cmp #$02 with bcs/beq window checks, returns #$FF on out-of-range — a 2-unit proximity/overlap test."
+
+[[label]]
+addr = "F0F0"
+name = "check_obj_adjacency_set_hit_flag"
+kind = "leaf"
+conf = "MED"
+why = "For active obj ($90,x==1) it subtracts ($1e)-record coords from $95,x/$94,x, gates on dY==2 & dX in {0,1} plus a $C0/$40 sub-pixel threshold, then sets flag $0607=1 on match — a position-proximity/collision test."
+
+[[label]]
+addr = "F233"
+name = "load_ptr_from_table_by_state_bit"
+kind = "leaf"
+conf = "MED"
+why = "Bit4 of $21 (and #$10, lsr x3) indexes table $F263,y; reads 2-byte LE pointer into $12/$13; preceding lda $1b/lsr x3/eor $21/and #$0f/bne is a 4-bit field compare-guard."
+
+[[label]]
+addr = "F2E6"
+name = "advance_state_counter_to_60"
+kind = "leaf"
+conf = "MED"
+why = "Branches on state $60 (beq exits, cmp #$02 dispatches states 0/1/2 elsewhere); for state>2 increments counter $61 until it hits #$3c (60), then stores $42 into $0605."
+
+[[label]]
+addr = "F3B2"
+name = "sub2_from_u16_counter"
+kind = "leaf"
+conf = "HIGH"
+why = "lda $0490; sec; sbc #$02; sta $0490; bcs +; dec $0491 — subtracts 2 from the low byte and borrows into the high byte of a 16-bit LE value at $0490/$0491."
+
+[[label]]
+addr = "F7F4"
+name = "set_ptr_from_word_table_by_id"
+kind = "leaf"
+conf = "HIGH"
+why = "lda $f4; asl a; tax indexes word table at $f853; lda $f853,x->$f2 / lda $f854,x->$f3 loads a 16-bit pointer into zp $f2/$f3; cmp #$13/#$14 beq skip leaves pointer unchanged for two ids"
+
+[[label]]
+addr = "F80B"
+name = "fetch_seq_byte_and_advance_index"
+kind = "leaf"
+conf = "MED"
+why = "Reads cursor at ($f0)+5, uses it as Y to load table byte via lda ($f2),y, returns that byte, then increments the cursor and stores it back to ($f0)+5 — fetch-next-and-advance; preceded by cmp $f4 #$13/#$14 state dispatch."
+
+[[label]]
+addr = "FA3F"
+name = "data_or_unclear"
+kind = "leaf"
+conf = "LOW"
+why = "Disassembly is dominated by .db undefined-opcode bytes ($64,$52,$67,$22,$1A,$02...) with no coherent control flow, no PPU/APU/joypad register access, and no sensible instruction sequence — it decodes as a data blob, not executable code."
+
+# --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
+
+[[label]]
+addr = "C150"
+name = "flush_vram_fill_buffer"
+kind = "routine"
+conf = "HIGH"
+why = "Calls ppu_disable_render, then walks buffer $0500 by X up to len $2A: reads 2 bytes -> $2006 (PPU addr hi/lo), then count+value -> repeated $2007 writes via dey/bne loop; a queued VRAM block-fill flush."
+
+[[label]]
+addr = "C177"
+name = "flush_vram_readback_queue_and_restore_render"
+kind = "routine"
+conf = "MED"
+why = "Loops over $04C0,x queue (vs end ptr $2b): writes hi/lo to $2006, reads $2007 (dummy+real) and stores result to ($1e),y=8; then jsr ppu_enable_render, zeros $2005 scroll x2, sets $2000=#$88, delay loops, clears queue ptrs $2a/$2b."
+
+[[label]]
+addr = "C1C9"
+name = "read_and_decode_input"
+kind = "routine"
+conf = "MED"
+why = "Strobes JOYPAD $4016 (1 then 0), calls read_joypad twice for both pads, then ror/rol-shifts the input bits into edge-detection accumulators ($10/$11/$22/$24/$25), decodes a direction via lookup $C258,x and stores result/change flags at $26/$27/$23 and sets $0600 — a per-frame input read+decode."
+
+[[label]]
+addr = "C297"
+name = "copy_4_bytes_zp_to_ram"
+kind = "routine"
+conf = "HIGH"
+why = "lda #$04/sta $00 sets a 4-count, loop lda $00,x / inx / sta $0000,y / iny / dec $00 / bne copies 4 bytes from a ZP source (X) to a RAM dest (Y); rts at $C2A6 ends this routine"
+
+[[label]]
+addr = "C2B3"
+name = "pack_state_vars_into_zp_buffer"
+kind = "routine"
+conf = "MED"
+why = "Stores $40,$41,$4A,$77 into consecutive zp $01.. via X then calls copy_4_bytes_absy_to_zpx twice (Y=$71,$B1) to append more 4-byte blocks — assembles a contiguous state buffer in zero-page."
+
+[[label]]
+addr = "C305"
+name = "transform_object_coords_to_pixel_space"
+kind = "routine"
+conf = "MED"
+why = "Reads 16-bit X/Y from object record via ($1e),y, subtracts camera origin $28/$29, multiplies each by 8 (three asl $10/rol a), stores to $10/$11 and $16, preserving $2c; a world-relative coordinate ×8 scaling transform."
+
+[[label]]
+addr = "C3C0"
+name = "compose_obj_field5_field7_index"
+kind = "routine"
+conf = "MED"
+why = "jsr obj_field5_lookup_C47C then asl a/asl a (×4) into $12, extracts 2-bit field from obj record byte ($1e),y=7 via lsr/lsr/and #$03, ora $12 — composes a packed index from a field-5 lookup plus a 2-bit object sub-field"
+
+[[label]]
+addr = "C415"
+name = "write_object_to_shadow_oam"
+kind = "routine"
+conf = "HIGH"
+why = "Rejects off-screen objects ($11!=0, $10>=#$F9), then emits a 4-byte sprite record at $0700,x (Y=$16-1, tile=$12^$14, attr=compute_obj_visibility_flag, X=$10) and advances OAM cursor $2C by 4 — a shadow-OAM sprite-entry writer."
+
+[[label]]
+addr = "C4A8"
+name = "obj_field5_or10_lookup_c480_to_zp12"
+kind = "routine"
+conf = "MED"
+why = "jsr obj_field5_lookup_C47C gets A, ora #$10 forces bit4, then jmp lookup_table_c480_to_zp12 tail-calls the table-index-into-zp12 routine — a bit4-set variant of the lookup"
+
+[[label]]
+addr = "C4B0"
+name = "compose_obj_anim_index_and_lookup"
+kind = "routine"
+conf = "MED"
+why = "Builds composite index in $12 from obj_field5_lookup_C47C result (×4 via asl/asl + #$14 base) ora'd with 2-bit subfield from ($1e),y byte 7 (and #$0c, lsr,lsr), then tail-jmps lookup_table_c480_to_zp12."
+
+[[label]]
+addr = "C4C6"
+name = "build_sprite_attr_and_step_coords"
+kind = "routine"
+conf = "MED"
+why = "Derives a sprite attribute byte in $13 from $21's 2 bits, ORs in flip/palette bit $40 when obj+6 flag set, sets tile $12=#$50, steps Y($10/$11)-8 and X($16)+8, then jmp's extract_top2_bits to emit — per-tile metasprite OAM attr/coord setup."
+
+[[label]]
+addr = "C4F5"
+name = "select_object_tile_param_by_type_flag"
+kind = "routine"
+conf = "MED"
+why = "Loads const #$3c into param $12, reads object field ($1e)+5; if it==1 and state flag $21 bit4 set picks #$41 else #$01 into param $13, then jmp extract_top2_bits — a parameterized dispatch selecting a tile/attr value by object type and a state flag."
+
+[[label]]
+addr = "C518"
+name = "lookup_field5_set_bits24_to_zp12"
+kind = "routine"
+conf = "MED"
+why = "jsr obj_field5_lookup_C47C gets a field-5 value, ora #$24 sets bits $24 on it, then jmp (tail-call) lookup_table_c480_to_zp12 uses it for the table write to zp12 — a thin index-adapter wrapper."
+
+[[label]]
+addr = "C5F6"
+name = "build_object_sprite_attributes"
+kind = "routine"
+conf = "MED"
+why = "Reads ($1e)+7 object flag byte, asl/lsr-tests bits, masks palette bits (#$0c/#$04) and ORs OAM attribute high bits (#$80/#$90/#$c0) into $12/$13, then tail-jmps toggle_flag_if_field_positive."
+
+[[label]]
+addr = "C6AC"
+name = "select_threshold_ptr_then_toggle_flag"
+kind = "routine"
+conf = "MED"
+why = "reads struct field ($1e)+7, cmp #$08 picks $98 vs $9c into ptr $12/$13 (hi=$00), then tail-jmps toggle_flag_if_field_positive — branch on threshold selects which target then delegates the flag toggle"
+
+[[label]]
+addr = "C702"
+name = "decode_position_stream_to_collision_bitmaps"
+kind = "routine"
+conf = "MED"
+why = "Walks a ($12),y byte stream advancing a 16-bit cursor $10/$11 by signed deltas (terminator beq->rts), then derives a packed tile coord (asl/rol chain), masks a 2-bit value into the $0180,x array and a 1-bit flag into the $0170,x array (read-modify-write), enqueues PPU updates via ppu_buffer_enqueue, and loops over count $16 via jmp $c702."
+
+[[label]]
+addr = "C7C9"
+name = "clear_both_attribute_tables"
+kind = "routine"
+conf = "MED"
+why = "Loads pointer $10/$11 with $23C0 then $27C0 (the two PPU attribute-table addresses), zeroes counter $12/$13, and calls init_zp14_zp15_to_8 between them — clearing/initializing both nametables' attribute tables."
+
+[[label]]
+addr = "C7EA"
+name = "emit_records_for_set_bits_in_bitmap"
+kind = "leaf"
+conf = "MED"
+why = "Nested loop scans bitmask bytes at $0170,y ($12=row idx, $14=row count), lsr-shifts each byte and on carry-set (a set bit) calls append_record_to_buffer while tracking position counters $10/$13/$15; mask=0 skips remainder and advances row."
+
+[[label]]
+addr = "CECD"
+name = "load_ptr_descriptor_and_scan"
+kind = "routine"
+conf = "MED"
+why = "Copies a Y-indexed 4-byte descriptor from table $CF08 into scan buffer $10-$13, sets limit $14=#$80, then tail-calls (jmp) scan_ptr_buf_for_zero_terminator ($C6FB); a separate tail clears state blocks $04-$07 (with $51-gated $06=#$50) and $00-$03."
+
+[[label]]
+addr = "D4CA"
+name = "add_bcd_table_amount_to_buffer"
+kind = "routine"
+conf = "MED"
+why = "guards on $42!=0, builds 16-bit src ptr $12/$13 from table base $d561/$d562 indexed by Y, sets X=#$74 (dest buf) Y=#$03 (3-digit len), tail-calls bcd_add_packed_buffer ($D502)"
+
+[[label]]
+addr = "D5D9"
+name = "build_buffer_entry_unpack_nibbles"
+kind = "routine"
+conf = "MED"
+why = "Loads pointer from $D640,y into $10/$11, reads a header (->$12,$13,X,$14=count,$15), appends header + count*2 to $0500 buffer at persistent cursor $2A, then loops $14 times splitting each $00,x byte into hi/lo nibbles via append_byte_to_0500_if_counter, saving cursor with sty $2a."
+
+[[label]]
+addr = "D6E8"
+name = "load_record_and_advance_anim_counters"
+kind = "routine"
+conf = "MED"
+why = "Calls load_record_via_ptr_table(Y=4), then advances $7A as a 4-bit counter (inc, and #$0f) and $7D as a counter cycling $1C-$1F (inc, cmp #$20, wrap to #$1c) — fetch-then-step-cursors."
+
+[[label]]
+addr = "D71C"
+name = "copy_active_var_record_when_phase_aligned"
+kind = "routine"
+conf = "MED"
+why = "Gates on $42!=0 and low-nibble($21)==0, builds word index Y from ($21 bit3)|$41 then asl, and tail-jmps copy_var_record_to_0500_buffer; rts early otherwise."
+
+[[label]]
+addr = "D735"
+name = "copy_var_record_index_flag2_to_0500"
+kind = "routine"
+conf = "MED"
+why = "Computes Y = (($41 | $02) << 1) as a word record index (lda #$02/ora $41/asl/tay) then tail-jmps to copy_var_record_to_0500_buffer ($D77A), i.e. force flag bit1 then copy that record"
+
+[[label]]
+addr = "D73E"
+name = "animate_two_sprite_walkcycles_into_buffer"
+kind = "leaf"
+conf = "MED"
+why = "Each block masks a tick counter ($24/$22 &3 ==1) to toggle a 2-frame walk bit ($4A/$2E eor #$01) every 4th tick, computes bit*2+offset as Y index, and calls copy_var_record_to_0500_buffer twice to copy the matching sprite records for two objects."
+
+[[label]]
+addr = "D7F1"
+name = "init_object_from_rom_template"
+kind = "routine"
+conf = "MED"
+why = "After set_two_zp_pointers sets the ($1e) dest pointer, it copies 7 bytes from ROM table $D838 into ($1e),y for y=0..6, then stores constant $4B at offset 8 and $00 at offset 15 — populating a RAM struct from a ROM template plus fixed fields."
+
+[[label]]
+addr = "D80B"
+name = "init_struct_from_rom_template"
+kind = "routine"
+conf = "HIGH"
+why = "Calls set_two_zp_pointers, then copies 7 bytes from ROM table $D83F into ($1E)-pointed struct (loop cpy #$07), then writes 0 at offset 8 and constant 2 at offset 15 — a record initializer from a template."
+
+[[label]]
+addr = "D846"
+name = "init_object_record_row"
+kind = "leaf"
+conf = "MED"
+why = "Loops jsr init_object_record_via_ptr advancing pointer $1E/$1F by $10 (16-byte record stride) until it hits limit $68, writing const #$01 at record offset +6 each pass, then seeds further state ($35-$37, ptr $20/$04, sentinel #$FF→$0426); a batch object-record setup loop."
+
+[[label]]
+addr = "D939"
+name = "update_object_state_vs_reference"
+kind = "routine"
+conf = "MED"
+why = "Walks an entity record via ($1E),y reading type/state at off 0,1,3,a,d,f, compares its X/Y to reference $0400/$0401 and state flags $040F/$042F, then writes #$00/#$FF/$26-$22 back through the record (jmp store_one_via_ptr) — per-object state/interaction resolution."
+
+[[label]]
+addr = "DAA2"
+name = "set_obj_state_0b_after_align"
+kind = "routine"
+conf = "MED"
+why = "Reads obj ptr $1E, if state!=$20 calls align_obj_coord_to_target, then sta #$0B to obj[+7] (state/type field) and loads #$D0 (Y-coord) for the next field write"
+
+[[label]]
+addr = "DB55"
+name = "init_objects_if_inactive"
+kind = "routine"
+conf = "MED"
+why = "Guards on (lda $04a5 ora $04ad bne rts) so it runs only when both flags are zero, then jsr init_object_tables and seeds state: writes #$01 to $060B/$060C/$060D and constants #$16/#$00/#$2C to $0404/$0407/$040F — a one-time object/level setup."
+
+[[label]]
+addr = "DB7B"
+name = "delay_then_zero_struct_fields"
+kind = "routine"
+conf = "MED"
+why = "inc $0407 + bpl backward-loop spins the counter up until bit7 set (busy-wait/delay), then jmp tail-calls zero_struct_fields_4_and_15 to reset state"
+
+[[label]]
+addr = "DC02"
+name = "obj_state7_update_anim_and_snap_position"
+kind = "routine"
+conf = "MED"
+why = "Operates on obj via ($1e); calls set_obj_state_and_load_next_ptr, branches to obj_reset_fields_8_F when $0202,x is negative, gates remaining work on $0201,x==7, decrements timer $0202,x, writes anim constants (0→+8,$0c→+$0f,6→+4), then masks/aligns field +$0a against +3 to snap a position/direction; dispatches clear_flag_if_value_below_threshold when ptr==$20."
+
+[[label]]
+addr = "DD4F"
+name = "reverse_obj_velocity_and_set_state"
+kind = "routine"
+conf = "MED"
+why = "Negates obj field +6 via lda #0;sec;sbc ($1e),y / sta ($1e),y (two's-complement flip of a signed velocity/direction), writes #$06 to field +7, then tail-jmps set_obj_fields_via_ptr with A=0."
+
+[[label]]
+addr = "DE98"
+name = "obj_tick_timer7_then_reset_fields_8_F"
+kind = "routine"
+conf = "HIGH"
+why = "ldy #$07 / lda ($1e),y / sbc #$01 / sta ($1e),y decrements per-object timer field[7] via the $1e object pointer; bne keeps counting, on zero-expiry jmp obj_reset_fields_8_F resets the object's state fields."
+
+[[label]]
+addr = "DEE9"
+name = "advance_object_state_counter"
+kind = "routine"
+conf = "MED"
+why = "Indirect-indexed on entity pointer $1E: conditionally seeds field +$06 from +$0D, increments per-object counter at +$07 (adc #$01), and when gate field +$09 is clear calls add_flag_conditioned_offset ($E018) — a per-entity state/timer update tick."
+
+[[label]]
+addr = "DF0B"
+name = "move_object_clamp_and_flip_direction"
+kind = "routine"
+conf = "MED"
+why = "Adds saved delta $10 to/from the 16-bit position at ($1e)+0/+1 based on sign flag +6, clamps hi-byte to $38/$02 bounds, sets tile code +8 ($4d/$4c) and flips dir flag +6 ($ff/$01) at edges, else jmp append_computed_entry_to_buffer."
+
+[[label]]
+addr = "E084"
+name = "flag_offset_plus_0x20"
+kind = "routine"
+conf = "MED"
+why = "jsr add_flag_conditioned_offset then clc/adc #$20 — a thin wrapper returning the callee's flag-conditioned value biased by a +$20 constant (likely a second-row/variant offset)."
+
+[[label]]
+addr = "E0A0"
+name = "append_entry_then_advance_state_and_tick"
+kind = "routine"
+conf = "MED"
+why = "calls append_computed_entry_to_buffer ($DFCD), then via struct ptr ($1e): if [+$0d]!=0 copies it into [+$06] (conditional state propagate), and increments counter byte [+$07] (clc/adc #1) — per-entry update advancing a state field and a tick/frame counter"
+
+[[label]]
+addr = "E200"
+name = "update_obj_phase7_transition"
+kind = "routine"
+conf = "MED"
+why = "Indexes object struct via ($1e),y reads field[$0b]->X, calls set_obj_state_and_load_next_ptr, gates on $0201,x==7 and a timer, decrements $0202,x then rewrites struct fields[$08]=0,[$0f]=8,[$04]=6 — a per-object state/animation transition handler."
+
+[[label]]
+addr = "E2EE"
+name = "check_position_reached_and_reset_round"
+kind = "routine"
+conf = "MED"
+why = "Compares actor pos $0413/$0411 against target $0403/$0401 (within dist 2); on match calls init_object_tables + init_state_vars, sets flags $51/$5A/$0606, clears $0414/$041F/$042B, and copies a 7-byte seed table from $E332 to $0420 — a \"target reached -> reinit\" sequence."
+
+[[label]]
+addr = "E5C5"
+name = "spawn_objects_from_level_descriptor"
+kind = "routine"
+conf = "MED"
+why = "Reads level-data ptr from $E798/9 into ($1c), takes packed count (byte>>3) as loop limit $81, then per entry writes 8-byte records (state=$02 @$0260,x; type-index @$0261,x; ptr from $E7A5/6 table via shl3_pack_zp_ptr16 @$0264/5,x; stride 8) — populating an entity/object table."
+
+[[label]]
+addr = "E614"
+name = "process_objects_in_state_two"
+kind = "routine"
+conf = "MED"
+why = "Loops over 8-byte-stride object slots (x+=8 until cpx $81), and for each slot whose state byte $0260,x==2 clears sub-field $0263,x and calls load_ptr_from_state_index ($E72C) to reload its data pointer."
+
+[[label]]
+addr = "E747"
+name = "load_string_ptr_by_state_and_scan"
+kind = "routine"
+conf = "HIGH"
+why = "Uses per-object state byte $0261,x as index into 16-bit pointer table $E7A5/$E7A6, stores the pointer into $10/$11, then tail-jmps scan_ptr_buf_for_zero_terminator — sets up a zero-terminated buffer pointer selected by state."
+
+[[label]]
+addr = "E8B2"
+name = "clear_low2_bits_per_object_record"
+kind = "routine"
+conf = "MED"
+why = "Loops x=0 step 8 (8-byte records) until x==$83, masking $02B1,x with #$fc to clear low 2 bits and calling load_y_from_table_x each record; resets a 2-bit field/flags across an object array."
+
+[[label]]
+addr = "E902"
+name = "setup_ptrs_and_scan_zero_term"
+kind = "routine"
+conf = "MED"
+why = "Loads X-indexed pointer $02B2/$02B3 into $10/$11 and Y-indexed ROM-table pointer $EC4F/$EC50 into $12/$13, sets $14=#$80, then jmp (tail-call) scan_ptr_buf_for_zero_terminator — a parameter-setup trampoline."
+
+[[label]]
+addr = "E972"
+name = "select_overlapping_target_object"
+kind = "routine"
+conf = "MED"
+why = "Gated on $83 and a type filter (($1e)+14 &3 ==1), it scans object slots in stride-8 steps calling object_overlap_check, fills a per-slot result buffer at $0012, then a backward cmp/bcs loop picks the max value, selecting the best overlapping object."
+
+[[label]]
+addr = "EA05"
+name = "check_subject_vs_object_list_collision"
+kind = "routine"
+conf = "MED"
+why = "Loops object table (y=0,$10..$80) testing active flag $0404,y, type filter $040F,y!=$16, Y-axis proximity |$0403,y-$02B5,x|<2, computes X delta $02B4,x-$0401,y, then dispatches via state-selected vector $1C/$1D (from $EA49[($02B1,x&6)]) through jmp_indirect_zp_vector — per-object proximity/collision check with state-driven response."
+
+[[label]]
+addr = "F04D"
+name = "dispatch_obj0_state_then_fall_to_obj8"
+kind = "routine"
+conf = "MED"
+why = "ldy #$00 then jsr dispatch_obj_state runs object-state dispatch for object index 0, then ldy #$08 sets up the next object index and falls through to the following routine."
+
+[[label]]
+addr = "F13A"
+name = "load_object_table_from_def"
+kind = "routine"
+conf = "HIGH"
+why = "Indexes pointer-table $F27F/$F280 by $7C into ptr $1C/$1D; reads count byte (÷8 = entry count), clears $50/$51 + 12-byte block $54, then loops X+=8 bounded by $53 writing each def's 2 bytes ($10/$11) through shl3_pack_zp_ptr16 into a parallel object array at $0260(state=2)/$0264-$0267 — builds an 8-byte-stride object table from a selected data definition."
+
+# --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
+
+[[label]]
+addr = "E3FE"
+name = "tick_all_subcounters_stride8"
+kind = "routine"
+conf = "MED"
+why = "Loops $1b from 0 by +8 each pass (adc #$08) until it hits bound $80, calling tick_subcounter_decrement_on_rollover per entry — a batch tick over an array of 8-byte records."
+
+[[label]]
+addr = "E449"
+name = "load_ptr_from_table_then_scan"
+kind = "routine"
+conf = "HIGH"
+why = "Loads 16-bit pointer from table $E569,Y into ZP pointer $12/$13 (lda $e569,y/sta $12; lda $e56a,y/sta $13) then tail-jmps scan_ptr_buf_for_zero_terminator, so it selects a buffer by Y index and scans it."
+
+[[label]]
+addr = "E862"
+name = "load_object_table_to_ram"
+kind = "routine"
+conf = "MED"
+why = "Indexes ptr table $EAFC by $7A*2 into src ptr $1C/$1D, reads count $83, then loops X+=8 over count unpacking 3 src bytes into 8-byte structs at $02B0..$02B6 (zeroing +0/+6, raw coords to +1/+2/+3, and shl3_pack_zp_ptr16 results to +4/+5) — expands a ROM object/spawn definition into a RAM object array."
+
+[[label]]
+addr = "EEC9"
+name = "accumulate_for_matching_objects"
+kind = "routine"
+conf = "MED"
+why = "Loops X=$20..$80 stride $10 over 16-byte object records; for each whose $040B,x field == zp $1E and $040F,x field == #$16, calls add_byte_to_word_if_active with $63+8 — a filtered scan that accumulates a value into a word for every object matching an ID and a constant state."
+
+[[label]]
+addr = "F06D"
+name = "obj_proximity_trigger_with_timer"
+kind = "routine"
+conf = "MED"
+why = "Loads obj struct ptr ($0092/$0093,y) + a point-pair from table $F128,x, tail-calls scan_ptr_buf_for_zero_terminator then check_obj_near_point; on hit sets flag $0090,y=1 and timer $0096,y=#$78(120), and the countdown path decrements $0096,y clearing $0090,y=0 at expiry, re-entering with different X phase."
+
+[[label]]
+addr = "F0E7"
+name = "check_two_obj_slots_for_hit"
+kind = "routine"
+conf = "MED"
+why = "Calls check_obj_adjacency_set_hit_flag with ldx #$00 then ldx #$08 (two object slots), beq short-circuits when first slot hits — a two-slot dispatch over the per-slot adjacency/hit check."
+
+[[label]]
+addr = "F250"
+name = "load_indexed_ptr_then_scan_for_terminator"
+kind = "routine"
+conf = "MED"
+why = "ldx $1b indexes a 16-bit pointer table at $0266/$0267 into ptr $10/$11, clears $14, then jmp (tail-call) to scan_ptr_buf_for_zero_terminator — sets up a selected buffer pointer and scans it for its zero terminator."
+
+[[label]]
+addr = "F4F1"
+name = "sound_command_dispatch"
+kind = "routine"
+conf = "MED"
+why = "Inits APU regs ($4004/$4008), walks a sound-request table at ptr $F0/$F1=$0619, allocates 4 channel-busy slots $FC-$FF, and writes 4 data bytes into $4000,x (x=channel*4 = the four APU register banks) before tailing into sound_engine_tick."
+
+# --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
+
+[[label]]
+addr = "C06D"
+name = "vblank_synced_frame_update_loop"
+kind = "routine"
+conf = "HIGH"
+why = "Spins on vblank flag $20, then per-frame: OAMDMA ($4014<-#$07), flush_vram_fill_buffer, read_and_decode_input, build_sprite_row_oam_shadow, sets PPU $2005 scroll x2 + $2000 ctrl, sound_command_dispatch, inc frame ctr $21, clear flag $20, jmp back."
+
+[[label]]
+addr = "C25C"
+name = "validate_magic_and_restore_state_vars"
+kind = "routine"
+conf = "MED"
+why = "Gates on magic sentinel ($3E==$5A && $3F==$A5, else bails to $C2A7), conditionally swap_double_buffers_toggle_flag, then pack_state_vars_into_zp_buffer + clear_zeropage_from_20, loads $01..$04 into state vars $40/$41/$4A/$77, and copy_4_bytes_zp_to_ram at Y=$71/$B1/$44 to distribute packed data into RAM tables."
+
+[[label]]
+addr = "C2EF"
+name = "nmi_sound_tick"
+kind = "routine"
+conf = "MED"
+why = "Full register save/restore (php/pha x3 ... pla x3/plp) = interrupt handler; if flag $20!=0 calls sound_command_dispatch then inc $20 (per-frame counter) — a VBlank/NMI sound-driver tick"
+
+[[label]]
+addr = "C40F"
+name = "write_object_to_oam_and_bump_count"
+kind = "routine"
+conf = "MED"
+why = "jsr write_object_to_shadow_oam then inc $12 — writes one object to shadow OAM and advances the per-object index/sprite counter at $12."
+
+[[label]]
+addr = "C563"
+name = "draw_indexed_object_if_present"
+kind = "routine"
+conf = "MED"
+why = "Loads object id from table $C573,x; beq skips zero entries; sets param $12 and saves X in $17 then calls write_object_to_shadow_oam, restores X, inx/rts — emits one indexed object's sprite to shadow OAM."
+
+[[label]]
+addr = "C65E"
+name = "draw_object_tile_row"
+kind = "routine"
+conf = "MED"
+why = "A-count→$17 loop calls write_object_to_shadow_oam per iter, advancing X-coord $10/$11 by +8 and tile $12 each pass; then rewinds $10 by $18 (3×8 row reset) and bumps Y $16 by +8 → blits a horizontal row of object tiles to shadow OAM and steps to next row."
+
+[[label]]
+addr = "C687"
+name = "draw_8_sprite_row_to_oam"
+kind = "routine"
+conf = "MED"
+why = "Sets sprite params ($13=2,$14=0,$12=0xF4,$17=8 counter), loops 8x calling write_object_to_shadow_oam, advancing 16-bit pointer $10/$11 by 8 and incrementing tile/pos $12 each pass — emits a row of 8 sprites to shadow OAM."
+
+[[label]]
+addr = "CB14"
+name = "draw_glyph_and_advance_cursor"
+kind = "routine"
+conf = "MED"
+why = "Stores A->$12, sets tile=#$02/attr=#$00 in $13-$15, calls write_object_to_shadow_oam (skipped via entry beq when A=0 blank), then advances 16-bit cursor $10/$11 by #$08 px — emits one glyph sprite and steps the pen."
+
+[[label]]
+addr = "CBB1"
+name = "setup_screen_layout"
+kind = "routine"
+conf = "MED"
+why = "Calls ppu_clear_nametables + ppu_run_draw_blocks + 3x build_buffer_entry_unpack_nibbles, then loops over a 4-entry PPU-address table ($CBED) writing 0x14 incrementing tiles via $2006/$2007 — composes the full screen/nametable layout."
+
+[[label]]
+addr = "CD3E"
+name = "transform_fixed_coord_90_04"
+kind = "routine"
+conf = "MED"
+why = "Loads constants #$90->$1E and #$04->$1F then jmp (tail-calls) transform_object_coords_to_pixel_space; a thin wrapper seeding a fixed coordinate pair into that routine's $1E/$1F inputs."
+
+[[label]]
+addr = "D4BE"
+name = "add_bcd_table_amount_n_times"
+kind = "routine"
+conf = "HIGH"
+why = "Stores A into index $19, then loops calling add_bcd_table_amount_to_buffer with Y=$19 while decrementing counter $18 (dec $18/bne) — repeated BCD addition of the same table entry $18 times."
+
+[[label]]
+addr = "D6AA"
+name = "advance_record_index_and_refresh_entry"
+kind = "routine"
+conf = "MED"
+why = "inc/clamp $75 against limit $48 (beq early-out, $72<$76 bcc-out), then load_record_via_ptr_table at y=0 and y=2, set RAM flags $0602/3/4=1, write $99 sentinel to $70, tail-jmp build_buffer_entry_unpack_nibbles"
+
+[[label]]
+addr = "D703"
+name = "draw_blocks_then_rebuild_buffer_entries"
+kind = "routine"
+conf = "MED"
+why = "ldy#0 then jsr ppu_run_draw_blocks flushes pending PPU block draws, then four calls to build_buffer_entry_unpack_nibbles with Y=$08,$0a,$0c,$00 rebuild a fixed set of buffer entries (HUD/status fields)."
+
+[[label]]
+addr = "DAEF"
+name = "reset_objects_except_persistent_types"
+kind = "routine"
+conf = "MED"
+why = "Calls init_object_tables, then loops X=$10..$80 step $10 over object slots, reading state byte $040F,x and zeroing both $040F,x and $0404,x unless the byte is $16 or $20 (preserved types)."
+
+[[label]]
+addr = "DBBA"
+name = "collect_object_award_score_and_spawn_popup"
+kind = "routine"
+conf = "MED"
+why = "Reads object field ($1e)+5; if 0, awards BCD points (#$3c via add_bcd_table_amount_to_buffer, $060A) and inits popup slot $0200/$0201/$0202,x to (1,9,$80); else advances popup phase ($0201 vs #8) and resets object fields +B/+7/+F."
+
+[[label]]
+addr = "DC5C"
+name = "resolve_entity_collision_movement"
+kind = "routine"
+conf = "MED"
+why = "Calls check_two_coords_adjacent then branches: if not adjacent jmp init_entity_state_if_flag_clear; else inspects ($1e),y entity fields ($03 dir/type, $08 tile vs #$59/#$30 range) to either toggle/align the direction field $0a + obj_reset_fields_8_F, compute a $37-relative delta into $36/$35, or fully reinit the entity record (sets fields $06,$03=mode2,$02=0,$07,$0b,$0c,$0f,$04) on collision."
+
+[[label]]
+addr = "E03D"
+name = "advance_object_subpixel_position_then_clamp"
+kind = "routine"
+conf = "MED"
+why = "Via ($1e) object record: accumulates field +$0c into +$0b, uses asl to extract overflow/sign (borrow-decrements high byte +$03), then 16-bit adds the result into the +$02/+$03 position pair with adc carry-propagation, and tail-jumps to move_object_clamp_and_flip_direction with A=#$30,X=#$02."
+
+[[label]]
+addr = "E06A"
+name = "advance_pointer_by_flagged_offset_then_append_entry"
+kind = "routine"
+conf = "MED"
+why = "jsr add_flag_conditioned_offset yields A, then 16-bit add of #$20+A into the pointer at ($1e),y=2/3 with bcc/adc#$00 carry propagation, then ldx #$04 + jmp append_entry_then_advance_state_and_tick (tail call with type tag X=4)"
+
+[[label]]
+addr = "E230"
+name = "object_state_transition_update"
+kind = "routine"
+conf = "MED"
+why = "Operates entirely through ($1e),y object-struct pointer: reads state field +3 / +13 / position +8 (sbc #$30, cmp #$20), then either jmps to flag_offset_plus_0x20 for normal advance, resets fields (+8=0,+15=2,+4=6), or writes a transition (+3 masked to mode 2, +7=$21,+11=$E0,+15=$0A,+4=$04) — a per-object state-machine tick."
+
+[[label]]
+addr = "E427"
+name = "setup_obj_ptr_and_dispatch_scan"
+kind = "routine"
+conf = "MED"
+why = "Indexes object fields $0203,x/$0202,x/$0201,x: loads a 16-bit pointer from table $E537/$E538 into $10/$11, sets param $14 (0 if $0202,x negative, else its value) and Y=2*$0201,x, then jmp's to load_ptr_from_table_then_scan."
+
+[[label]]
+addr = "E456"
+name = "scan_table_at_e537"
+kind = "routine"
+conf = "MED"
+why = "Loads fixed ptr $E537/$E538 into $10/$11, clears $14, ldy #$14, jmp load_ptr_from_table_then_scan — a wrapper that sets up one specific table+params then tail-calls the scanner."
+
+[[label]]
+addr = "E70A"
+name = "load_string_entry10_with_flag80"
+kind = "routine"
+conf = "MED"
+why = "Loads fixed table entry Y=$0A from pointer table $E7B9/$E7BA into ptr $12/$13, sets param $14=#$80, then jmp tail-calls load_string_ptr_by_state_and_scan — a thin preset wrapper around the shared string loader."
+
+[[label]]
+addr = "E84D"
+name = "draw_object_and_advance_x8"
+kind = "routine"
+conf = "MED"
+why = "Zeros $14/$15, calls write_object_to_shadow_oam, then advances 16-bit pointer $10/$11 by +8 (carry-propagated inc $11) — emits one object then steps the position pointer one 8px cell."
+
+[[label]]
+addr = "E91D"
+name = "advance_object_anim_timer_and_dispatch_phase"
+kind = "routine"
+conf = "MED"
+why = "Per-X object: gates on active flag $02b0,x; increments counter $02b6,x to threshold #$05 then resets state+counter and cycles 2-bit phase field $02b1,x (and #$06/eor #$02); else doubles counter into $10 and jsr dispatch_on_masked_state_field then jmp setup_ptrs — a frame-timed animation phase advance/dispatch."
+
+[[label]]
+addr = "E9A4"
+name = "activate_object_check_collision_maybe_spawn"
+kind = "routine"
+conf = "MED"
+why = "Sets state flag $02B0,x=1, calls check_subject_vs_object_list_collision, tests $02B1,x flags (and #$0a/eor #$08 = bit3 set & bit1 clear) then tail-jmps find_first_empty_slot to spawn, else branches to $e971."
+
+[[label]]
+addr = "EF9B"
+name = "check_object_collision_and_award_score"
+kind = "routine"
+conf = "MED"
+why = "Loops X=$20..$80 step $10 over 16-byte object records; for each active one ($040F,x<$16) does a ±1 16-bit X then Y overlap test of pointer ($1e) position vs record X/Y at $0400-$0403,x, and on a hit sets caught-state $040F,x=$26, $0404,x=$22, stores $65, clamps Y, and calls add_bcd_table_amount_to_buffer to award points."
+
+[[label]]
+addr = "F013"
+name = "spawn_object_from_table_entry"
+kind = "routine"
+conf = "MED"
+why = "Sets struct[Y+0]=#$02 (active state), consumes 2 bytes from param table $F041 via X into struct +2/+3 and zp $10/$11, calls shl3_pack_zp_ptr16 to build a packed ptr stored at +4/+5, then obj_proximity_trigger_with_timer — an object spawn/init from a table entry."
+
+[[label]]
+addr = "F0B8"
+name = "obj_state2_advance_on_proximity"
+kind = "routine"
+conf = "HIGH"
+why = "Reads object state $0090,y; if state==2 and check_obj_near_point() matches, sets state=3 and tail-calls obj_proximity_trigger_with_timer with X=2 — a per-object state-machine transition gated on proximity."
+
+[[label]]
+addr = "F1F1"
+name = "init_object_record_load_data_and_scan"
+kind = "routine"
+conf = "MED"
+why = "Sets flag $0608=1, clears per-object slot $0260,x, decrements counter $52, loads two records via load_record_via_ptr_table (Y=6,8), seeds pointer $12/$13 from a ROM table ($F277/$F278), then tail-jumps to load_indexed_ptr_then_scan_for_terminator — an object/entity setup that loads records and kicks off a data scan."
+
+[[label]]
+addr = "F383"
+name = "draw_vertical_sprite_column"
+kind = "routine"
+conf = "HIGH"
+why = "Loads 8-byte descriptor from $0490 into param block $10-$17, sets $13=$21&3 (palette/frame), then loops $17 times calling write_object_to_shadow_oam, adding #$08 to Y ($10) and inc'ing tile/attr ($11/$12) each pass — stacks N sprites vertically."
+
+# --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
+
+[[label]]
+addr = "C401"
+name = "write_object_oam_and_advance_pointer_8"
+kind = "routine"
+conf = "HIGH"
+why = "Calls write_object_to_oam_and_bump_count, then advances 16-bit source pointer $10/$11 by 8 (lda $10/adc #$08/sta $10/bcc/inc $11) — emit one object's OAM then step to next 8-byte record."
+
+[[label]]
+addr = "C543"
+name = "draw_object_pair_advance_slot"
+kind = "routine"
+conf = "MED"
+why = "Calls draw_indexed_object_if_present twice — second after $16+=8 (X coord, then restored) drawing a horizontally-adjacent pair — then advances 16-bit pointer $10/$11 by 8 with bcc/inc $11 carry to the next slot."
+
+[[label]]
+addr = "C64C"
+name = "draw_object_tile_rows"
+kind = "routine"
+conf = "MED"
+why = "Sets loop counter $18=3, calls draw_object_tile_row 3x in a dec/bne loop, then lda #$02 + tail-jmp into draw_object_tile_row once more — draws a multi-row block of object tiles."
+
+[[label]]
+addr = "CB3B"
+name = "draw_glyph_string_from_param_block"
+kind = "routine"
+conf = "MED"
+why = "Reads a param block via ptr ($1E): dest ($10/$11), glyph ($16), count ($18); then loops jsr draw_glyph_and_advance_cursor, dec $18, bne until count exhausted — draws a run/string of glyphs."
+
+[[label]]
+addr = "D5AB"
+name = "pump_pending_amount_then_step_entry_state"
+kind = "routine"
+conf = "MED"
+why = "If $30 set, copies it to param $18 and calls add_bcd_table_amount_n_times (#$40), clears $30 and arms $43; then $43 acts as a 0/1/2 phase machine — phase 2 clears $43, calls clamp_var32_to_min + advance_record_index_and_refresh_entry and tail-jumps build_buffer_entry_unpack_nibbles (ldy #$08), phase 1 just inc's $43."
+
+[[label]]
+addr = "DAC7"
+name = "tick_object_timer_then_move_or_reset"
+kind = "routine"
+conf = "HIGH"
+why = "Decrements object field +7 via ($1e),y (y=7); on zero jmps obj_reset_fields_8_F, else jmps advance_object_subpixel_position_then_clamp — a per-object countdown timer driving reset-on-expiry vs continue-moving."
+
+[[label]]
+addr = "DB94"
+name = "trigger_entity_state_reset_on_proximity_or_type_else_scan_next"
+kind = "routine"
+conf = "MED"
+why = "Calls check_two_coords_adjacent then tests ($1e)+8 in range $49-$4F and ($1e)+3 < $1c; any match falls to jmp init_entity_state_if_flag_clear, else advance_pointer..append + find_object_at_coords with bcs backward-loop to scan next."
+
+[[label]]
+addr = "DCFE"
+name = "update_object_move_timer_then_advance"
+kind = "routine"
+conf = "MED"
+why = "Reads ($1e)+8 coord, range-checks vs window [$49,$59) (bcc $dd40); else decrements timer at ($1e)+7, stores it, returns if zero, else tail-jumps advance_object_subpixel_position_then_clamp."
+
+[[label]]
+addr = "DDE0"
+name = "handle_entity_object_pickup_or_special_setup"
+kind = "routine"
+conf = "MED"
+why = "Bails on freeze flags ($4B|$4F); range-tests entity record[8]-$49<7 and record[3] vs $1C to dispatch: jsr find_object_at_coords then jmp collect_object_award_score_and_spawn_popup (pickup), else jmp init_entity_state_if_flag_clear; for slot $1E==$20 writes fixed sprite/pos/state consts ($042F=$24,$0424=$12,$0427=$78,$36=$09,$37=$04)."
+
+[[label]]
+addr = "E19D"
+name = "collect_item_award_score_and_spawn_reward_object"
+kind = "routine"
+conf = "MED"
+why = "Gates on entity type (+8 in $49..$4F) and state (+3<$1c), uses find_object_at_coords to detect overlap, then sets trigger flag $060a=1, awards BCD score via add_bcd_table_amount_to_buffer Y=#$3c, and spawns/transitions an object slot ($0200/$0201/$0202,x = state/subtype/active-$80) while writing the slot index back into the entity record (+$0b,+$07,+$0f)."
+
+[[label]]
+addr = "E2AC"
+name = "object_bounce_timer_reverse_or_advance"
+kind = "routine"
+conf = "MED"
+why = "Decrements timer field ($1e)+7; while nonzero tail-jumps to advance_object_subpixel_position_then_clamp; on zero, negates velocity field +6 (lda#0 sec sbc) and reloads phase fields +7/+0x0b/+0x0c/+0x0f/+4 — a direction-reversal/state-reset."
+
+[[label]]
+addr = "E339"
+name = "scan_table_if_code_in_range_then_advance_or_reset_counter"
+kind = "routine"
+conf = "MED"
+why = "Normalizes $0428 (sbc #$30) and if in range 0-24 calls scan_table_at_e537; then branches on $0423: if >=6 tail-calls sub16_from_struct_field_at_offset2 with A=#$40, else clears state vars $0424/$042F to 0."
+
+[[label]]
+addr = "E35B"
+name = "build_object_record_block_and_dispatch"
+kind = "routine"
+conf = "MED"
+why = "Indexes descriptor table $e4e1/$e4f1 by $7a to a pointer, reads count into $80, then loops stride-8 writing OAM entries $0200-$0205 (Y/tile/attr=#$03/X + packed ptr via shl3_pack_zp_ptr16 from table $e537), then loops calling setup_obj_ptr_and_dispatch_scan over each 8-byte entry."
+
+[[label]]
+addr = "E3DE"
+name = "force_active_objects_to_state3"
+kind = "routine"
+conf = "MED"
+why = "Loops object slots in $0202,x (stride +8, capped by $80); skips negative/already-3 state bytes, else writes #$03 and calls setup_obj_ptr_and_dispatch_scan per slot — a batch state-transition over the object table."
+
+[[label]]
+addr = "E660"
+name = "resolve_object_position_capture_and_score"
+kind = "routine"
+conf = "MED"
+why = "Per-object (X stride-8 $0260 array) handler: position-match within 2px ($0264/$0265 vs $0401/$0403) gates scoring — awards BCD via add_bcd_table_amount_n_times on type ($0261&$fc), shows bonus string (load_string_entry10), decrements timer $7b to fire reset_objects_except_persistent_types + set $4f, then sweeps the array clearing state-2 flagged objects and toggles the paired object via eor #$08."
+
+[[label]]
+addr = "E7F5"
+name = "draw_composite_object_sprite"
+kind = "routine"
+conf = "MED"
+why = "Computes screen X (object $0264/$0265 minus scroll $28/$29, ×8 via asl/rol) and Y ($16), tile/palette params ($12 tile, $13=3 palette), then calls draw_object_and_advance_x8 for tiles $ac+,$67, and conditionally $68 (gated on $0263,x) — drawing a multi-tile object."
+
+[[label]]
+addr = "E8CC"
+name = "update_all_objects_anim_and_phase"
+kind = "routine"
+conf = "MED"
+why = "Loops X 0..$83 stride 8 (object-table count), stores slot index in $1B and calls advance_object_anim_timer_and_dispatch_phase per object, then frame-counter ($21)-gated check of object state at $02B0,x/$02B1,x — a per-frame all-objects animation/phase tick."
+
+[[label]]
+addr = "EA90"
+name = "scan_objects_for_adjacent_contact_and_trigger"
+kind = "routine"
+conf = "MED"
+why = "Backward loop over object table (X+=8 until cpx $83) skips inactive ($02b0/$02b1 flags), tests Y(off3 vs $02b5) and X(off1/off6 vs $02b4) for difference<2/==2 adjacency, records pointer $1e into $02b7,x and calls activate_object_check_collision_maybe_spawn ($e9a4), setting contact flag (($1e)+9=1)."
+
+[[label]]
+addr = "ED65"
+name = "tick_object_state_collision_score"
+kind = "routine"
+conf = "MED"
+why = "Reads obj state field ( y=5) at ($1e), dispatches on 0/1/>=2; in state 1 runs check_object_player_collision + accumulate_for_matching_objects, writes obj fields (states/velocity at y=4,5,6,7,1), moves via add_byte_to_obj_word_if_active/transform_object_coords_to_pixel_space, scans states with advance_obj_state_if_matched loop, and awards score via add_bcd_table_amount_n_times — a per-object state-machine tick with collision and scoring."
+
+[[label]]
+addr = "EF4E"
+name = "update_active_object_state_machine"
+kind = "routine"
+conf = "MED"
+why = "Reads object state byte ($1e),y at +5 and branches: state>=2 calls check_object_collision_and_award_score then advances pos (+2/+3 by $80) wrapping at $1c and re-renders via transform_object_coords_to_pixel_space; state<2 tests proximity to reference ($0403/$0401 within 2) and promotes state to 2 — a per-object motion/collision state-machine tick."
+
+[[label]]
+addr = "F001"
+name = "spawn_object_pair_for_state"
+kind = "routine"
+conf = "MED"
+why = "Reads state var $7A, derives a bounded index (asl/sbc #$15/cmp #$06/bcs exit), then asl→tax and calls spawn_object_from_table_entry with Y=$00 and Y=$08 — spawning two table entries per state."
+
+[[label]]
+addr = "F0B1"
+name = "advance_obj_pair_on_proximity"
+kind = "routine"
+conf = "MED"
+why = "ldy #$00 / jsr obj_state2_advance_on_proximity / ldy #$08 then falls through into $F0B8 — runs the shared proximity-advance handler twice with object indices 0 and 8."
+
+[[label]]
+addr = "F215"
+name = "on_object_reaching_target_reset_and_rescan"
+kind = "routine"
+conf = "MED"
+why = "Compares object[x] coords ($0265,x==$0423 and $0264,x within 2 of $0421); on proximity match clears flags $042F/$0424 (#$00) and tail-jumps to init_object_record_load_data_and_scan ($F1F1)."
+
+[[label]]
+addr = "F323"
+name = "init_object_sequence_state"
+kind = "routine"
+conf = "MED"
+why = "$F323 calls init_object_tables then seeds two sequence-state counters ($06F5,$06F6) to #$03; it heads a self-restarting state machine (jmp $f323 at $F380) that times a frame counter ($61 to #$3C=60) and a stage counter ($62 vs limit $67) while writing object-table fields ($0405/0407/040F/0415/0417/041F) with tile #$1A, type #$01, state #$03 via draw_vertical_sprite_column/sub2_from_u16_counter."
+
+# --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
+
+[[label]]
+addr = "C3EC"
+name = "emit_object_oam_step_pointers_8"
+kind = "routine"
+conf = "MED"
+why = "jsr write_object_oam_and_advance_pointer_8 then 16-bit ptr $10/$11 -=8 (sbc#8/bcs/dec$11) and coord $16 +=8 (adc#8); one metasprite-tile blit advancing both cursors by 8"
+
+[[label]]
+addr = "C540"
+name = "draw_object_pair_once"
+kind = "routine"
+conf = "MED"
+why = "Single instruction `jsr $C543 -> draw_object_pair_advance_slot`; a 3-byte trampoline that invokes the draw-pair routine exactly one time before returning."
+
+[[label]]
+addr = "C61E"
+name = "draw_flagged_object_to_oam"
+kind = "routine"
+conf = "MED"
+why = "Sets draw params ($13=2 rows,$14=0,$12=$E8 Y), tests bit5 of flag $21 (beq skips), calls draw_object_tile_rows, decrements X coord $16 by 8, tail-jmps write_object_to_shadow_oam — composes both object-draw callees to render a flag-gated multi-tile object into shadow OAM."
+
+[[label]]
+addr = "CB02"
+name = "draw_fixed_glyph_string"
+kind = "routine"
+conf = "MED"
+why = "Loads constant ROM pointer $CB8A/$CB8B into zp $1E/$1F then jsr draw_glyph_string_from_param_block — a thin wrapper that draws one predefined glyph string; trailing lda $41 / adc #$D6 adjusts a follow-on position param."
+
+[[label]]
+addr = "DA17"
+name = "add_field37_to_field36"
+kind = "routine"
+conf = "MED"
+why = "$DA17 does $36 += $37; rts (8-bit accumulate helper); the adjacent dispatcher at $DA1F loads a 16-bit handler pointer from table $E17A,x into $1C/$1D and jmp ($1C), routing to the listed object_state_transition / collect_item / tick_timer handlers."
+
+[[label]]
+addr = "DA70"
+name = "update_object_proximity_collision_tick"
+kind = "routine"
+conf = "MED"
+why = "Per-object ($1E ptr) tick: decrements timer $042A in mode $20, calls find_adjacent_entity (early-out beq), scan_objects_for_adjacent_contact_and_trigger + advance_obj_pair_on_proximity + check_two_obj_slots_for_hit; no-hit -> obj_reset_fields_8_F, hit + field+8 in range -> advance_object_state_counter then select_overlapping_target_object."
+
+[[label]]
+addr = "E6FA"
+name = "draw_object_and_tick_state_timer"
+kind = "routine"
+conf = "HIGH"
+why = "jsr draw_composite_object_sprite, then ldx $1b indexes a per-object timer array: dec $0262,x; on expiry (bne falls through) clears state byte sta #$00,$0260,x"
+
+[[label]]
+addr = "ED4E"
+name = "tick_object_group_04a0"
+kind = "routine"
+conf = "MED"
+why = "Sets pointer $1E/$1F=$04A0, calls tick_object_state_collision_score per entry, advances $1E by stride 8 until $C0 (4 iterations) — loops the per-object tick over an object array."
+
+[[label]]
+addr = "EF3F"
+name = "update_object_pair_state_at_a0_a8"
+kind = "routine"
+conf = "MED"
+why = "Sets 16-bit pointer $1E/$1F=$00A0, calls update_active_object_state_machine, then reloads $1E=$A8 to update the next object — drives the state machine over two fixed object pointers."
+
+[[label]]
+addr = "F1B9"
+name = "check_object_reached_target_then_advance_phase"
+kind = "routine"
+conf = "MED"
+why = "Indexes obj slot $1B into $0260/$0264/$0265 (state/X/Y), gates on state==2 and X/Y within dist<2 of target $0401/$0403, then on mode $040F==8 writes $0408=0,$040F=2,$0404=6 (phase transition); callees load_ptr_from_table_by_state_bit + on_object_reaching_target_reset_and_rescan."
+
+# --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
+
+[[label]]
+addr = "C521"
+name = "draw_object_animated_sprite"
+kind = "routine"
+conf = "MED"
+why = "Derives anim frame from global timer $21 (lsr/and #3 -> $13, $14=0), reads object byte ($1e),y=7 as tile-pair index (asl/tax) and calls draw_object_pair_once twice (X=index, X=#$28), with php/plp+bpl drawing an extra pair (X=#$2c) when bit7 set."
+
+[[label]]
+addr = "C5A3"
+name = "emit_object_oam_at_70_variant2"
+kind = "routine"
+conf = "MED"
+why = "Loads fixed params $13=#$02,$12=#$70,$14=#$00 into the zero-page arg block then tail-jmps to emit_object_oam_step_pointers_8 ($C3EC); a parameterized wrapper invoking OAM emit with preset coord/index."
+
+[[label]]
+addr = "C5B2"
+name = "draw_2x2_metasprite_tile_69"
+kind = "routine"
+conf = "MED"
+why = "Loads tile base $12=#$69, counter $13=#$02, attr $14=#$00, then walks position $10/$11 (X, 16-bit) and $16 (Y) by ±8px between four OAM emits via write_object_oam_and_advance_pointer_8 / write_object_to_oam_and_bump_count / emit_object_oam_step_pointers_8 — a 2x2 (16x16) metasprite."
+
+[[label]]
+addr = "CDFF"
+name = "setup_oam_params_and_emit_object_7c"
+kind = "routine"
+conf = "MED"
+why = "Loads fixed pointer/param block into ZP $10-$16 ($10/$11=$007C src, $12/$13=$02CB, $14/$15=$0000 counter, $16=$AA tag) then jmp $C3EC emit_object_oam_step_pointers_8 — a thin wrapper that configures one object's OAM-emit params and tail-calls the shared emitter."
+
+[[label]]
+addr = "DA02"
+name = "set_field36_step_at_bounds_then_accumulate_dispatch"
+kind = "routine"
+conf = "MED"
+why = "Reads $36; at boundary 9 sets step $37=+4, at boundary $19(25) sets $37=-4($FC), else leaves $37; then jmp/fallthrough into accumulate_field37_into_field36_then_jumptable_dispatch — a bounce/reverse-direction guard on the $36 index before the accumulate+dispatch."
+
+[[label]]
+addr = "E64A"
+name = "dispatch_object_state_handler_e65a"
+kind = "routine"
+conf = "HIGH"
+why = "Loads per-object state index from $0260,x, fetches a 2-byte pointer from inline table $E65A (entries = handler_rts_noop $C14F, resolve_object_position... $E660, draw_object_and_tick... $E6FA) into $1C/$1D and jmp ($1C) — a state-indexed jump-table dispatcher."
+
+[[label]]
+addr = "F1A5"
+name = "dispatch_object_phase_handler"
+kind = "routine"
+conf = "HIGH"
+why = "Indexes table $F1B5 by per-object phase $0260,x, loads 16-bit pointer into $1C/$1D, jmp ($1C); table entries are $C14F handler_rts_noop and $F1B9 check_object_reached_target_then_advance_phase — a phase-indexed jump-table dispatcher."
+
+# --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
+
+[[label]]
+addr = "C6C1"
+name = "draw_object_by_animation_state"
+kind = "routine"
+conf = "MED"
+why = "Reads state var $1E, three-way branches (<$20/==$20/>$20), loads $12/$13 pointer-param pairs and dispatches to draw_2x2_metasprite_tile_69 / toggle_flag_if_field_positive / draw_object_and_advance_x8 per state, adjusting Y at $16."
+
+[[label]]
+addr = "DD17"
+name = "reset_obj_to_state2_and_arm_field"
+kind = "routine"
+conf = "MED"
+why = "Writes via ($1e),y object pointer: clears +2, sets +3=(field&$fc)|$02, +8=$4b, +0f=2, +4=2 (state-2 across fields); if counter +5==0 calls force_active_objects_to_state3 — initializes one object to a fixed state."
+
+[[label]]
+addr = "E634"
+name = "update_all_active_objects"
+kind = "routine"
+conf = "HIGH"
+why = "Loops index $1b from 0 by stride #$08 up to count $81, calling dispatch_object_state_handler each pass — a per-object update loop over an 8-byte-stride object table; beq $e649 skips when count is zero."
+
+[[label]]
+addr = "F18F"
+name = "dispatch_all_objects_phase_handler"
+kind = "routine"
+conf = "HIGH"
+why = "Loops X from 0 by stride +8 (8-byte object slots) up to limit $53, storing index in $1B and calling dispatch_object_phase_handler each pass; early-out when $53==0 — iterates the object table running the per-object handler."
+
+[[label]]
+addr = "C141"
+name = "extract_x_top2_bits_to_y"
+kind = "leaf"
+conf = "LOW"
+why = "real bytes txa/and #$c0/tay = top 2 bits of X -> Y; entry off-by-one into the $C13E 1-target indirect-jump tail (read_table overread artifact)"
+
+# --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
+
+[[label]]
+addr = "CADA"
+name = "redraw_var_records_loop_until_count_or_phase"
+kind = "routine"
+conf = "MED"
+why = "backward loop ($CADA-$CAFF) decrementing 16-bit counter $0E/$0F per pass while calling draw_fixed_glyph_string (gated on $40), init_ptr_1e_from_const, copy_active_var_record_when_phase_aligned; exits early when ($25 & 3)==1 or counter hits 0"
+
+[[label]]
+addr = "CD49"
+name = "build_stage_screen_layout"
+kind = "routine"
+conf = "MED"
+why = "Indexes per-stage param tables ($cdbf/$cdc0/$cdc1/$cdc2,x via $7a*4), clears nametables + rebuilds buffers, optionally runs a 0xD2-count OAM emit sequence (ppu_draw_mansion_stamps/enable/setup_oam_params/disable), then draws layered blocks (ppu_run_draw_blocks/ppu_draw_blocks_b/mansion_stamps) and fills attributes — a full stage screen builder keyed on stage var $7a."
+
+[[label]]
+addr = "CE94"
+name = "run_entry_state_sequence_120_frames"
+kind = "routine"
+conf = "MED"
+why = "Sets $0F=120 as a backward-loop counter (dec $0F/bne $CE98), and each iteration reloads draw/param bytes ($10=$38,$16=$70,$13=2,$11/$14=0) then calls ptr16_sub6_set_const + copy_active_var_record_when_phase_aligned + pump_pending_amount_then_step_entry_state, repeatedly pumping the entry-state machine for a fixed 120-step sequence."
+
+[[label]]
+addr = "CEBB"
+name = "run_entry_state_pump_120_iterations"
+kind = "routine"
+conf = "MED"
+why = "Loads $0F=#$78(120) as loop counter, then loops calling extract_x_top2_bits_to_y + copy_active_var_record_when_phase_aligned + pump_pending_amount_then_step_entry_state, dec $0f / bne until 120 reps done."
+
+[[label]]
+addr = "DB37"
+name = "tick_obj_timer_field7_else_reset_to_state2"
+kind = "routine"
+conf = "HIGH"
+why = "Decrements obj byte at ($1e),y=7 (sec/sbc #$01/sta); bne skips, on zero jmp reset_obj_to_state2_and_arm_field — a per-object countdown that triggers a state reset on expiry"
+
+[[label]]
+addr = "DD62"
+name = "tick_obj_proximity_hit_and_countdown"
+kind = "routine"
+conf = "MED"
+why = "Per-object ($1E) state tick: runs advance_obj_pair_on_proximity + check_two_obj_slots_for_hit (beq->obj_reset_fields_8_F), range-checks field+8 ($49..$51 else set_obj_state_0b_after_align), calls trigger_state_change_on_proximity, then decrements timer field+7; on expiry either reset_obj_to_state2_and_arm_field or reloads timer from $65 and sets state field+$0F=#$12."
+
+[[label]]
+addr = "DDC6"
+name = "tick_obj_timer_field7_else_reset_obj"
+kind = "routine"
+conf = "HIGH"
+why = "ldy #$07 / lda ($1e),y / sbc #1 / sta ($1e),y decrements object field+7 timer via the $1e pointer; bne keeps it active, on zero falls to jmp reset_obj_to_state2_and_arm_field — a countdown that resets the object when it expires."
+
+[[label]]
+addr = "DE25"
+name = "countdown_timer_then_reset_obj_and_arm_field"
+kind = "routine"
+conf = "MED"
+why = "dec $0427 + bne backward loop counts down a RAM timer, then jmp (tail-call) $DD17=reset_obj_to_state2_and_arm_field on expiry"
+
+[[label]]
+addr = "DE2D"
+name = "tick_bonus_item_collect_or_timeout"
+kind = "routine"
+conf = "MED"
+why = "dec $0427 lifetime timer → on expiry sets state $042a=#$10 and jmp reset_obj_to_state2_and_arm_field (despawn); else proximity test (row $0423==$0403, |$0421-$0401|<2) → on player contact sets flag $042f=#$20, substate $0424=#$15, reloads timer #$78, and jmp add_bcd_table_amount_to_buffer with table idx #$44 (award score)."
+
+[[label]]
+addr = "DE61"
+name = "tick_timer_0427_reset_obj_when_idle"
+kind = "routine"
+conf = "MED"
+why = "dec $0427 + bne returns until counter expires; on zero, ora-tests flags $4B/$4F and only when both clear jmps reset_obj_to_state2_and_arm_field — a countdown gating the obj reset"
+
+# --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
+
+[[label]]
+addr = "CAB4"
+name = "redraw_var_records_at_7800_if_flag_set"
+kind = "routine"
+conf = "MED"
+why = "if $B0 flag set, loads pointer $0E/$0F = $7800 then jmp redraw_var_records_loop_until_count_or_phase; else beq exits at $CAC3"
+
+[[label]]
+addr = "CE1A"
+name = "run_scripted_screen_cutscene_sequence"
+kind = "routine"
+conf = "MED"
+why = "Disables render ($C241), clears nametables ($CBF5), draws blocks ($D703), re-enables render ($C239), then loads pointer descriptors / unpacks buffer entries (load_ptr_descriptor_and_scan, build_buffer_entry_unpack_nibbles) interleaved with repeated 120-frame timed sequences (run_entry_state_sequence_120_frames) and a state-conditional branch on $5A/$52 — a scripted timed screen-presentation/cutscene driver."
+
+[[label]]
+addr = "DA2C"
+name = "dispatch_object_state_handler_da42"
+kind = "routine"
+conf = "HIGH"
+why = "Reads object field +$0F via ($1e),y into X, indexes 16-bit pointer table at $DA42 (entries = the per-state object handler callees), stores to $1C/$1D and jmp ($001c) — a state-indexed jump-table dispatcher."
+
+# --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
+
+[[label]]
+addr = "C031"
+name = "reset_cold_boot_init"
+kind = "routine"
+conf = "HIGH"
+why = "sei/cld/ldx#$5f/txs stack init, zeros PPUCTRL/MASK, polls PPUSTATUS warmup, clears 2KB RAM via ($00),y loop ($01=7 pages), calls validate_magic_and_restore_state_vars + init_apu_channels, then sets PPUCTRL=$88 (NMI on); 0 callers = reset vector."
+
+[[label]]
+addr = "C128"
+name = "switch_stack_and_jump_to_indexed_handler"
+kind = "routine"
+conf = "MED"
+why = "Loads handler ptr from table $C13E[y] into ZP vector $1E/$1F, saves current SP (tsx/txa) into per-index slot $00C1,x via $C140[y], then jmp ($001E) — a per-task stack-save + indirect dispatch (coroutine context switch)."
+
+[[label]]
+addr = "C344"
+name = "dispatch_object_draw_routine_by_index"
+kind = "routine"
+conf = "HIGH"
+why = "Stores index to $15, `and #$fe`+tax makes an even table offset, loads 16-bit pointer from table at $C356 into $1C/$1D, `jmp ($001c)`; table entries point to object draw/compose routines (compose_obj_anim_index, draw_object_animated_sprite, build_object_sprite_attributes, draw_object_by_animation_state)."
+
+[[label]]
+addr = "C3A7"
+name = "dispatch_on_obj_flag_bit3"
+kind = "routine"
+conf = "MED"
+why = "Reads byte at offset 7 of struct via ptr ($1e), masks bit3 (and #$08); if set, loads param #$06 and tail-jmps to $C344, else falls to alternate path at $c3bf — selects a value by an object status bit then dispatches."
+
+[[label]]
+addr = "C84F"
+name = "init_stage_with_intro_animation_then_spawn"
+kind = "routine"
+conf = "MED"
+why = "Calls init_object_tables, clears the $70-$3F state block, sets up/enables PPU render via setup_screen_layout, runs a dec-$0F intro loop calling animate_two_sprite_walkcycles_into_buffer, then on completion sets flag $42, builds the stage (build_stage_screen_layout, build_sprite_object_oam_block, spawn_objects_from_level_descriptor, load_object_table_to_ram, spawn_object_pair_for_state) and backs up OAM $0200->$0300 + state $70->$B0."
+
+[[label]]
+addr = "C902"
+name = "play_intro_cutscene_sequence"
+kind = "routine"
+conf = "MED"
+why = "Loads a record + inits objects from ROM templates, then runs timed frame loops ($3c=60 then $b4=180 in $0F) that call draw_fixed_glyph_string/draw_glyph_string_from_param_block + advance_state_counter_to_60, sets object-table flags ($040f, $0611-$0614), waits on object-clear ($04a5|$04ad), and re-inits object tables — a scripted intro/cutscene."
+
+[[label]]
+addr = "C99F"
+name = "stage_setup_and_play_loop"
+kind = "routine"
+conf = "MED"
+why = "Clears $70-$3F + buffer, ppu_disable_render, build_stage_screen_layout + build_sprite_object_oam_block, branches on $7C to spawn_objects_from_level_descriptor/load_object_table vs load_record_by_index, ppu_enable_render, runs animation/timing loops + run_scripted_screen_cutscene_sequence, then jmp $C99F back to itself = per-stage init+play loop"
+
+[[label]]
+addr = "CA28"
+name = "dispatch_stage_state_and_rebuild_screen"
+kind = "routine"
+conf = "MED"
+why = "Drains queue $040F, branches on state flags $40/$70/$b0, then on the active path disables render ($C241), rebuilds stage layout+OAM+objects ($CD49/$E35B/$E614/$E8B2), re-enables render ($C239); other paths init state vars ($CAC3) or copy var records in a 0x3C loop ($D71C)."
+
+[[label]]
+addr = "CB60"
+name = "run_frame_game_logic_update"
+kind = "routine"
+conf = "HIGH"
+why = "Pure ordered call chain (8 jsr + tail jmp, no own register/RAM use) sequencing tick_all_subcounters_stride8, tick_object_group_04a0, update_object_pair_state, update_all_active_objects, update_all_objects_anim_and_phase, dispatch_obj0_state, copy_active_var_record, then pump_pending/step_entry_state — the per-frame logic tick orchestrator."
+
+[[label]]
+addr = "CB7B"
+name = "run_frame_game_logic_tick"
+kind = "routine"
+conf = "MED"
+why = "Pure linear pipeline: jsr tick_all_subcounters_stride8 -> jsr $d8d8 -> jsr dispatch_all_objects_phase_handler -> jsr copy_active_var_record_when_phase_aligned -> jmp pump_pending_amount_then_step_entry_state; sequencing timers, object dispatch, and state stepping = one game-logic frame tick."
+
+[[label]]
+addr = "D8D8"
+name = "update_and_respawn_objects"
+kind = "routine"
+conf = "MED"
+why = "Loops all 8 objects (ptr $1E/$1F=$0400, +$10 stride to $90) calling update_object_state_vs_reference + dispatch_object_state_handler + transform_object_coords_to_pixel_space each frame; then on a $4d/$4e timer it advances cursor $4c and respawns one slot whose state field $040F==$1A is dead by resetting pos/state fields ($040F=$1C)."
+
+[[label]]
+addr = "F5B8"
+name = "advance_to_next_8byte_record_and_loop"
+kind = "routine"
+conf = "MED"
+why = "Entry adds #$08 to 16-bit ptr $f0/$f1 (carry→inc $f1), inc index $f4, cmp limit $f5, bcc back to loop body $f590 else rts — steps to the next 8-byte table entry and continues/ends the iteration."
+
+[[label]]
+addr = "F606"
+name = "run_object_animation_script"
+kind = "routine"
+conf = "HIGH"
+why = "Loops at $F636 calling fetch_seq_byte_and_advance_index to read opcodes: <$60 = frame index (decodes via $f83b word table into object fields), $60-$e7 stored to field 6, >=$e8 dispatched through jump_table_dispatch_via_index into a handler pointer table ($F6B3+) whose handlers set per-object fields via ($f0),y (attr masks $3f/$c0/$f0), countdown timers $0161/$0164/$0167, and position $f8-$fb keyed on obj id $f4 — a bytecode animation/object-script interpreter."
+
+[[label]]
+addr = "FF65"
+name = "setup_stage_then_run_intro_frames"
+kind = "routine"
+conf = "HIGH"
+why = "Disables render (ppu_disable_render), clears $0400 buffer, builds screen layout (build_stage_screen_layout), builds OAM/sprites, spawns objects (spawn_objects_from_level_descriptor, load_object_table_to_ram, spawn_object_pair_for_state), re-enables render, copies shadow-OAM $0200→$0300, inits object records (init_object_from_rom_template/init_object_record_row), zeros state ($4b/$4f/$31/$3c/$3d) and seeds $040F object slots with #$02 — full stage/object setup."
+
+[[label]]
+addr = "C37C"
+name = "draw_two_tile_object"
+kind = "routine"
+conf = "MED"
+why = "$12=tile($AE, or $66 when $1E==$20), $13=3 palette; jsr write_object_to_shadow_oam, advance X +8, $12=$67, jmp write_object_to_shadow_oam = two-tile object draw (leading A9 AE byte mis-flagged as data, like $C141)"

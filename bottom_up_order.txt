@@ -1,0 +1,242 @@
+# leaf-first (bottom-up) labeling order: label these first, propagate up
+$C241  callees=0 callers=6  LEAF
+$CA81  callees=0 callers=3  LEAF
+$C141  callees=0 callers=8  LEAF
+$E3BD  callees=0 callers=5  LEAF
+$E862  callees=1 callers=2
+$FF65  callees=0 callers=1  LEAF
+$E5C5  callees=1 callers=2
+$CAA7  callees=0 callers=3  LEAF
+$C6FB  callees=0 callers=6  LEAF
+$F0CE  callees=0 callers=2  LEAF
+$F06D  callees=2 callers=2
+$F013  callees=2 callers=1
+$F001  callees=1 callers=2
+$D629  callees=0 callers=1  LEAF
+$D5D9  callees=1 callers=5
+$CC15  callees=0 callers=3  LEAF
+$D703  callees=2 callers=2
+$D126  callees=0 callers=1  LEAF
+$CF69  callees=0 callers=1  LEAF
+$CBF5  callees=0 callers=3  LEAF
+$CDB7  callees=0 callers=1  LEAF
+$C239  callees=0 callers=6  LEAF
+$C465  callees=0 callers=1  LEAF
+$C415  callees=1 callers=9
+$C40F  callees=1 callers=2
+$C401  callees=1 callers=2
+$C3EC  callees=1 callers=3
+$CDFF  callees=1 callers=1
+$CD49  callees=10 callers=3
+$CD2B  callees=0 callers=1  LEAF
+$D77A  callees=0 callers=3  LEAF
+$D73E  callees=1 callers=1
+$CBB1  callees=3 callers=1
+$E449  callees=1 callers=1
+$E427  callees=1 callers=2
+$E35B  callees=2 callers=3
+$C342  callees=0 callers=1  LEAF
+$C305  callees=1 callers=5
+$CD3E  callees=1 callers=1
+$F4BF  callees=0 callers=7  LEAF
+$C84F  callees=16 callers=2
+$C128  callees=1 callers=1
+$C2D5  callees=0 callers=1  LEAF
+$C2B3  callees=1 callers=1
+$C2E5  callees=0 callers=2  LEAF
+$C297  callees=1 callers=1
+$C25C  callees=4 callers=1
+$F4B5  callees=0 callers=1  LEAF
+$C031  callees=3 callers=0  RESET
+$C146  callees=0 callers=1  LEAF
+$C249  callees=0 callers=1  LEAF
+$C1C9  callees=1 callers=1
+$C7E2  callees=0 callers=1  LEAF
+$C7C9  callees=1 callers=1
+$C150  callees=1 callers=1
+$F55A  callees=0 callers=1  LEAF
+$F4F1  callees=1 callers=2
+$C0D0  callees=0 callers=1  LEAF
+$D735  callees=1 callers=1
+$C06D  callees=7 callers=0
+$C14F  callees=0 callers=2  LEAF
+$C177  callees=1 callers=0
+$C2EF  callees=1 callers=0  NMI
+$C304  callees=0 callers=0  LEAF  IRQ
+$C3B4  callees=0 callers=4  LEAF
+$C3C0  callees=1 callers=1
+$C5B2  callees=3 callers=2
+$E84D  callees=1 callers=2
+$C3D7  callees=0 callers=3  LEAF
+$C6C1  callees=3 callers=1
+$C5A3  callees=1 callers=1
+$C687  callees=1 callers=1
+$C3D1  callees=0 callers=3  LEAF
+$C4A8  callees=2 callers=1
+$C4B0  callees=2 callers=1
+$C344  callees=8 callers=1
+$C37C  callees=1 callers=0
+$C3A7  callees=1 callers=0
+$C3E3  callees=0 callers=2  LEAF
+$C4C6  callees=1 callers=0
+$C4F5  callees=1 callers=0
+$C510  callees=0 callers=0  LEAF
+$C518  callees=2 callers=0
+$C563  callees=1 callers=1
+$C543  callees=1 callers=1
+$C540  callees=1 callers=1
+$C521  callees=1 callers=0
+$C5F6  callees=1 callers=0
+$C65C  callees=0 callers=1  LEAF
+$C65E  callees=1 callers=1
+$C64C  callees=2 callers=1
+$C61E  callees=2 callers=0
+$C63D  callees=0 callers=1  LEAF
+$C6AC  callees=1 callers=0
+$C78E  callees=0 callers=1  LEAF
+$C702  callees=1 callers=0
+$C818  callees=0 callers=1  LEAF
+$C7EA  callees=1 callers=0
+$D4E5  callees=0 callers=4  LEAF
+$D6AA  callees=2 callers=1
+$D694  callees=0 callers=1  LEAF
+$D502  callees=0 callers=1  LEAF
+$D4CA  callees=1 callers=6
+$D4BE  callees=1 callers=3
+$D5AB  callees=4 callers=4
+$E902  callees=1 callers=1
+$E94D  callees=0 callers=1  LEAF
+$E91D  callees=2 callers=1
+$E8CC  callees=1 callers=1
+$F054  callees=0 callers=1  LEAF
+$F04D  callees=1 callers=1
+$EDE2  callees=0 callers=1  LEAF
+$EEEB  callees=0 callers=1  LEAF
+$EEC9  callees=1 callers=1
+$EE4D  callees=0 callers=2  LEAF
+$EE77  callees=0 callers=1  LEAF
+$ED1C  callees=0 callers=1  LEAF
+$ED65  callees=7 callers=1
+$ED4E  callees=1 callers=1
+$E747  callees=1 callers=1
+$E70A  callees=1 callers=1
+$E72C  callees=0 callers=2  LEAF
+$DAEF  callees=2 callers=1
+$E71E  callees=0 callers=1  LEAF
+$E757  callees=0 callers=1  LEAF
+$E660  callees=6 callers=1
+$E7F5  callees=1 callers=1
+$E6FA  callees=1 callers=1
+$E64A  callees=2 callers=1
+$E634  callees=1 callers=1
+$D9BC  callees=0 callers=1  LEAF
+$D939  callees=1 callers=1
+$DA17  callees=0 callers=1  LEAF
+$DA02  callees=1 callers=1
+$DEA6  callees=0 callers=2  LEAF
+$E3DE  callees=1 callers=1
+$DAB3  callees=0 callers=1  LEAF
+$DD4F  callees=1 callers=1
+$DD17  callees=4 callers=6
+$DE61  callees=1 callers=1
+$D9F0  callees=0 callers=2  LEAF
+$DB83  callees=0 callers=6  LEAF
+$E4A4  callees=0 callers=2  LEAF
+$DC02  callees=3 callers=1
+$DF8A  callees=0 callers=1  LEAF
+$DFCD  callees=0 callers=2  LEAF
+$DF0B  callees=3 callers=1
+$E03D  callees=1 callers=3
+$DAC7  callees=2 callers=1
+$DE2D  callees=2 callers=1
+$F0F0  callees=0 callers=1  LEAF
+$F0E7  callees=1 callers=2
+$E018  callees=0 callers=3  LEAF
+$DEE9  callees=1 callers=1
+$EE04  callees=0 callers=1  LEAF
+$EA46  callees=0 callers=1  LEAF
+$EA05  callees=1 callers=1
+$E9A4  callees=2 callers=1
+$EA90  callees=3 callers=1
+$F0B8  callees=2 callers=1
+$F0B1  callees=1 callers=2
+$E9B8  callees=0 callers=1  LEAF
+$E972  callees=1 callers=1
+$E0B7  callees=0 callers=1  LEAF
+$DA70  callees=7 callers=1
+$DAD8  callees=0 callers=3  LEAF
+$E469  callees=0 callers=3  LEAF
+$E102  callees=0 callers=2  LEAF
+$E0A0  callees=1 callers=1
+$E06A  callees=2 callers=3
+$DB94  callees=4 callers=1
+$DB37  callees=1 callers=1
+$E084  callees=1 callers=2
+$DC5C  callees=4 callers=1
+$DCFE  callees=1 callers=1
+$DA2C  callees=10 callers=1
+$D8D8  callees=3 callers=2
+$D71C  callees=1 callers=7
+$E410  callees=0 callers=1  LEAF
+$E3FE  callees=1 callers=2
+$EF9B  callees=1 callers=1
+$EF4E  callees=2 callers=1
+$EF3F  callees=1 callers=1
+$CB60  callees=9 callers=2
+$F3C1  callees=0 callers=2  LEAF
+$CB14  callees=1 callers=1
+$CB3B  callees=1 callers=2
+$CB02  callees=1 callers=2
+$D894  callees=0 callers=1  LEAF
+$D846  callees=1 callers=1
+$F2E6  callees=0 callers=1  LEAF
+$CAC3  callees=0 callers=1  LEAF
+$CB31  callees=0 callers=2  LEAF
+$E8FF  callees=0 callers=1  LEAF
+$E8B2  callees=1 callers=1
+$CADA  callees=4 callers=1
+$CAB4  callees=1 callers=1
+$E614  callees=1 callers=1
+$D825  callees=0 callers=2  LEAF
+$D7F1  callees=1 callers=1
+$CA28  callees=16 callers=1
+$C902  callees=10 callers=2
+$D80B  callees=1 callers=1
+$EF17  callees=0 callers=1  LEAF
+$CECD  callees=1 callers=1
+$CE94  callees=4 callers=1
+$CEBB  callees=3 callers=1
+$CE1A  callees=9 callers=1
+$F13A  callees=1 callers=1
+$D8C0  callees=0 callers=1  LEAF
+$D6E8  callees=1 callers=1
+$F1A5  callees=2 callers=1
+$F18F  callees=1 callers=1
+$CB7B  callees=5 callers=1
+$C99F  callees=20 callers=0
+$DAA2  callees=1 callers=1
+$DB45  callees=0 callers=0  LEAF
+$DB55  callees=1 callers=0
+$DE6F  callees=0 callers=1  LEAF
+$DB7B  callees=1 callers=0
+$DBBA  callees=1 callers=1
+$DF09  callees=0 callers=1  LEAF
+$E134  callees=7 callers=1
+$DD62  callees=7 callers=0
+$DDA8  callees=0 callers=0  LEAF
+$DDC6  callees=1 callers=0
+$DDD4  callees=0 callers=0  LEAF
+$DDE0  callees=4 callers=0
+$DE25  callees=1 callers=0
+$DE7A  callees=0 callers=0  LEAF
+$DE98  callees=1 callers=0
+$EEA9  callees=0 callers=0  LEAF
+$F3B2  callees=0 callers=1  LEAF
+$F383  callees=1 callers=1
+$F323  callees=3 callers=0
+$F49F  callees=0 callers=1  LEAF
+$F7F4  callees=0 callers=2  LEAF
+$F80B  callees=0 callers=1  LEAF
+$F606  callees=4 callers=1
+$F5B8  callees=2 callers=1
+$FA3F  callees=0 callers=0  LEAF

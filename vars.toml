@@ -1,0 +1,1166 @@
+# Mappy RAM/zero-page variable symbol table — from-scratch, inferred from the named
+# routines that use each address (var_xref.py). No external labels consulted.
+
+[[var]]
+addr = "0000"
+name = "indirect_ptr"
+role = "pointer"
+conf = "HIGH"
+why = "."
+
+[[var]]
+addr = "0001"
+name = "ptr_hi"
+role = "pointer"
+conf = "HIGH"
+why = "Flagged P (16-bit pointer). It is the HIGH byte of the general-purpose indirect pointer pair $0000/$0001: writers set it via `sty $01` (ppu_draw_blocks_b $CFCA/$CFD6) and `sta $01` (reset_cold_boot_init $C045), and many routines dereference the pair with ($00),y / ($00,x) / ($01,x) — load_ptr_descri"
+
+[[var]]
+addr = "0002"
+name = "src_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "Repeatedly dereferenced as a 16-bit pointer paired with $01: routines use ($01,x), ($02),y, and ($02,x). load_ptr_descriptor_and_scan (ora ($01,x)), load_indexed_ptr_then_scan_for_terminator, and fetch_seq_byte_and_advance_index (ora ($01,x)) walk a source descriptor/sequence stream; check_obj_adjac"
+
+[[var]]
+addr = "0003"
+name = "scan_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "$0003 is the high byte of the $0002/$0003 16-bit pointer pair. Multiple routines dereference it as a pointer: check_obj_adjacency_set_hit_flag does `sbc ($02),y`, ppu_run_draw_blocks/ppu_draw_mansion_stamps do `and ($02,x)`, fetch_seq_byte_and_advance_index does `ora ($03,x)`/`adc ($02,x)`, data_or_"
+
+[[var]]
+addr = "0004"
+name = "obj_descriptor_ptr"
+role = "pointer"
+conf = "MED"
+why = "Marked [P] = 16-bit pointer low byte; dereferenced via indirect-indexed/indirect-X addressing in several named routines: compute_obj_visibility_flag `ora ($04,x)`, fetch_seq_byte_and_advance_index `ora ($04,x)`, data_or_unclear `ora ($04,x)`. The writer load_ptr_descriptor_and_scan does `sta $04,x` "
+
+[[var]]
+addr = "0005"
+name = "data_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "Flagged [P] and part of the $04/$05 zero-page pointer pair. Deref'd as a 16-bit indirect pointer via ($04,x) in fetch_seq_byte_and_advance_index ($F8B0 ora ($04,x)) and compute_obj_visibility_flag ($C47F ora ($04,x)), and via ($05,x) in data_or_unclear ($FD1A). ppu_draw_blocks_b does ror $0005,x. $0"
+
+[[var]]
+addr = "0006"
+name = "ppu_attr_bits"
+role = "scratch"
+conf = "MED"
+why = "Writers are not address stores but bit-manipulation: fill_attr_source_0170 does `asl $06` twice ($CDEC/$CDF1); ppu_draw_blocks_b does `ror $06,x` ($D065); ppu_draw_mansion_stamps does `and $06`/`rol $06` ($D1E1/$D1E5). This shift/rotate accumulation inside attribute- and block-drawing PPU routines i"
+
+[[var]]
+addr = "0008"
+name = "obj_state_flags"
+role = "flag"
+conf = "LOW"
+why = "Operations ON $08 itself are bit/shift, not 16-bit pointer-walks: writers/modifiers are `sty $08` (ppu_draw_blocks_b), `asl $08` (set_obj_state_and_load_next_ptr at $E4EE, trigger_state_transition_on_position_match at $E79E), and it is bit-tested via `bit $08` (ppu_draw_blocks_b $CFF5, ppu_draw_mans"
+
+[[var]]
+addr = "000A"
+name = "indirect_ptr"
+role = "pointer"
+conf = "LOW"
+why = "pointer confirmed by indirect deref but target unknown"
+
+[[var]]
+addr = "000B"
+name = "seq_data_ptr"
+role = "pointer"
+conf = "MED"
+why = "Dereferenced as a 16-bit pointer (flag P) by multiple routines: load_ptr_descriptor_and_scan does `ora ($0b),y` (indirect-indexed read), and fetch_seq_byte_and_advance_index does `adc ($0b,x)` twice (indexed-indirect read). The consuming routines load a descriptor and scan it, and fetch sequence byt"
+
+[[var]]
+addr = "000C"
+name = "seq_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "$000C is the HIGH byte of the 16-bit pointer based at $000B: dereferencing routines use ($0b),y and ($0b,x) — load_ptr_descriptor_and_scan ($CF51: ora ($0b),y) and fetch_seq_byte_and_advance_index ($F91A/$F9ED: adc ($0b,x)). $0C itself is shifted as the high half (set_obj_state_and_load_next_ptr: as"
+
+[[var]]
+addr = "000E"
+name = "redraw_record_counter"
+role = "counter"
+conf = "MED"
+why = "Set with `sta $0e` in stage_setup_and_play_loop ($C9EA), redraw_var_records_at_7800_if_flag_set ($CABE), and init_state_vars_and_pointer ($CAD8), then counted down with `dec $0e` in stage_setup_and_play_loop ($CA0B) and redraw_var_records_loop_until_count_or_phase ($CAFB), which also tests it via `o"
+
+[[var]]
+addr = "000F"
+name = "stage_phase_countdown"
+role = "counter"
+conf = "MED"
+why = "The dominant idiom is set-then-decrement across many stage/intro/animation routines: init_stage_with_intro_animation_then_spawn (sta $0f / dec $0f), play_intro_cutscene_sequence, dispatch_stage_state_and_rebuild_screen, build_stage_screen_layout, run_entry_state_sequence_120_frames, run_entry_state_"
+
+[[var]]
+addr = "0010"
+name = "src_ptr"
+role = "pointer"
+conf = "MED"
+why = "Flagged P and dereferenced as 16-bit pointer in many routines via `lda ($10),y`: ppu_run_draw_blocks ($CC21), ppu_draw_blocks_b ($CF75), ppu_draw_mansion_stamps ($D132), load_record_via_ptr_table ($D4F1), build_buffer_entry_unpack_nibbles ($D5E5), copy_var_record_to_0500_buffer ($D788). $10 is the l"
+
+[[var]]
+addr = "0011"
+name = "zp_ptr_hi"
+role = "pointer"
+conf = "HIGH"
+why = "$0011 is the high byte of the general-purpose 16-bit indirect pointer at $10/$11. Many routines write it then immediately dereference ($10),y: ppu_run_draw_blocks ($CC1D sta $11 → $CC21 lda ($10),y), ppu_draw_blocks_b ($CF71/$CF75), ppu_draw_mansion_stamps ($D12E/$D132), load_record_via_ptr_table ($"
+
+[[var]]
+addr = "0012"
+name = "gfx_src_ptr"
+role = "pointer"
+conf = "MED"
+why = "$12 is flagged P and is dereferenced as a 16-bit pointer via (zp),y: ppu_draw_mansion_stamps does `lda ($12),y` at $D15B after `sta $12`, and ppu_run_draw_blocks marks it m,p,w. It is set then read by a swarm of object/sprite/PPU drawing routines (draw_two_tile_object, build_object_sprite_attributes"
+
+[[var]]
+addr = "0013"
+name = "data_ptr_hi"
+role = "pointer"
+conf = "HIGH"
+why = "var_xref flags $0013 as a 16-bit pointer (P). ppu_draw_mansion_stamps writes `sta $13` ($D141) then dereferences `lda ($12),y` ($D15B), proving $12/$13 are a pointer pair with $13 as the HIGH byte (low byte $12). It is the source/descriptor pointer pair loaded all over the codebase: load_ptr_descrip"
+
+[[var]]
+addr = "0014"
+name = "scan_src_ptr"
+role = "pointer"
+conf = "HIGH"
+why = "Header flags it as a 16-bit POINTER low byte (P), touched by 31 routines. Many writers are explicitly pointer-loaders that set $14 then walk through it: load_ptr_descriptor_and_scan ($CEE3), load_ptr_from_state_index ($E73B), load_indexed_ptr_then_scan_for_terminator ($F25E), setup_ptrs_and_scan_zer"
+
+[[var]]
+addr = "0015"
+name = "scratch_counter"
+role = "scratch"
+conf = "MED"
+why = "14 routines touch $15 but none share its value across calls — every user writes it fresh at entry (sta $15 in dispatch_object_draw_routine_by_index $C344, decode_position_stream_to_collision_bitmaps $C718, draw_glyph_and_advance_cursor $CB20, setup_oam_params_and_emit_object_7c $CE09, build_buffer_e"
+
+[[var]]
+addr = "0016"
+name = "oam_write_ptr"
+role = "pointer"
+conf = "MED"
+why = "Flagged P (16-bit pointer low byte) and dereferenced as (zp),y inside ppu_draw_mansion_stamps [m,p,r,w]. Set/advanced almost exclusively by the OAM/sprite-emit family: emit_object_oam_step_pointers_8, build_sprite_attr_and_step_coords, draw_object_pair_advance_slot, draw_2x2_metasprite_tile_69, draw"
+
+[[var]]
+addr = "0017"
+name = "draw_row_counter"
+role = "scratch"
+conf = "MED"
+why = "$17 is set fresh (sta/sty/stx) and then counted down (dec $17) inside many independent drawing routines: draw_object_tile_row ($C65E sta / $C670 dec), draw_8_sprite_row_to_oam ($C695 sta / $C6A7 dec), ppu_draw_blocks_b ($CF7A sta / $CF9D dec), ppu_draw_mansion_stamps ($D137 sta / $D17E dec), draw_ve"
+
+[[var]]
+addr = "0018"
+name = "scratch_loop_counter"
+role = "scratch"
+conf = "MED"
+why = "Touched by 12 unrelated routines, each independently setting it with sta/stx then decrementing/incrementing it (draw_object_tile_rows: sta $18; dec $18 — $C64E/$C653; draw_glyph_string_from_param_block: sta $18; dec $18 — $CB4F/$CB5B; add_bcd_table_amount_n_times: dec $18 — $D4C5; tick_object_state_"
+
+[[var]]
+addr = "0019"
+name = "draw_data_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "Tool flags $0019 as a 16-bit POINTER. ppu_draw_mansion_stamps dereferences the $18/$19 pair via `and ($18,x)` (indexed-indirect), making $18=low and $19=high byte of the pointer. The dereferencing/consuming routines are all PPU draw code (ppu_draw_mansion_stamps, ppu_run_draw_blocks, ppu_draw_blocks"
+
+[[var]]
+addr = "001A"
+name = "data_src_ptr"
+role = "pointer"
+conf = "MED"
+why = "$001A is dereferenced as a 16-bit pointer via indexed-indirect ($1a,x): fetch_seq_byte_and_advance_index does `adc ($1a,x)` twice ($F966/$F972) to pull sequential data bytes, and ppu_draw_mansion_stamps does `and ($1a,x)` ($D42F) to read graphics/stamp source data. resolve_object_position_capture_an"
+
+[[var]]
+addr = "001B"
+name = "cur_obj_index"
+role = "obj_field"
+conf = "HIGH"
+why = "17 of 21 routines are object loops that save the current object's index/offset here via stx/sty $1b and reload it with ldx/ldy $1b across the loop body: build_object_record_block_and_dispatch (sty $1b/ldy $1b), force_active_objects_to_state3 (stx/lda), spawn_objects_from_level_descriptor (sty/ldy), "
+
+[[var]]
+addr = "001C"
+name = "object_record_ptr"
+role = "pointer"
+conf = "HIGH"
+why = "Flagged P and dereferenced as 16-bit pointer via `lda ($1c),y` in build_object_record_block_and_dispatch ($E36C), spawn_objects_from_level_descriptor ($E5D1), load_object_table_to_ram ($E872), and load_object_table_from_def ($F148). Every writer sets it (sta $1c) immediately before these reads. The "
+
+[[var]]
+addr = "001D"
+name = "obj_record_ptr"
+role = "pointer"
+conf = "HIGH"
+why = "$001D is the HIGH byte of a 16-bit pointer whose low byte is $001C: every dereference is `lda ($1c),y` ($E36C, $E5D1, $E872, $F148) and `ora ($1d),y` ($CF23), reading 16-bit through the $1C/$1D pair. The writers are all object-machinery routines that set up the pointer before walking it: build_objec"
+
+[[var]]
+addr = "001E"
+name = "obj_record_ptr"
+role = "pointer"
+conf = "HIGH"
+why = "$001E is flagged P and is dereferenced as a 16-bit pointer via ($1e),y by a large family of object routines. It is set up by init_object_record_row (sta $1e then sta ($1e),y to write the row) and set_two_zp_pointers, then consumed by routines that read object record fields through ($1e),y: obj_field"
+
+[[var]]
+addr = "001F"
+name = "obj_record_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "obj record pointer high byte"
+
+[[var]]
+addr = "0020"
+name = "scan_ptr"
+role = "pointer"
+conf = "MED"
+why = "Flagged P and dereferenced as 16-bit via ($20),y in load_indexed_ptr_then_scan_for_terminator ($F2A0: sbc ($20),y), so $20 is the low byte of a pointer ($21 = high). That routine loads an indexed pointer then walks the pointed-to record looking for a terminator, i.e. $20 is the working cursor pointe"
+
+[[var]]
+addr = "0021"
+name = "cur_obj_state"
+role = "state"
+conf = "MED"
+why = "Overwhelmingly read as a state byte by object routines: dispatch_obj_state ($F05F/$F067 lda $21), set_obj_state_and_load_next_ptr ($E4FC), branch_on_state21_bits ($E71E/$E726 lda then branch), load_ptr_from_table_by_state_bit ($F238 eor / $F23E lda), and the whole object draw/anim chain (build_sprit"
+
+[[var]]
+addr = "0022"
+name = "scan_ptr"
+role = "pointer"
+conf = "MED"
+why = "Dereferenced as a 16-bit (zp) pointer in multiple routines: load_indexed_ptr_then_scan_for_terminator does `cmp ($22),y` ($F2DE) and fetch_seq_byte_and_advance_index does `adc ($22,x)` ($F908/$F94C) — both indirect ($22 is the low byte, $23 the high byte). Setters establish it as a descriptor/sequen"
+
+[[var]]
+addr = "0023"
+name = "data_read_ptr"
+role = "pointer"
+conf = "MED"
+why = "Flagged P and dereferenced as a 16-bit pointer (low byte; +1=$24) by several named routines: ppu_run_draw_blocks does `cmp ($23),y`, scan_objects_for_adjacent_contact_and_trigger does `and ($23),y`, and data_or_unclear does `adc ($23,x)`. set_obj_state_and_load_next_ptr writes it (`stx $23,y`), conf"
+
+[[var]]
+addr = "0024"
+name = "draw_data_ptr"
+role = "pointer"
+conf = "MED"
+why = "Tool flags it as a 16-bit pointer low byte, and the dereference instructions confirm a pointer pair. ppu_draw_mansion_stamps does `lda ($24,x)` — dereferencing $24 directly as a pointer. The partner byte $23 is dereferenced via `cmp ($23),y` (ppu_run_draw_blocks), `and ($23),y` (scan_objects_for_adj"
+
+[[var]]
+addr = "0025"
+name = "joypad_state"
+role = "flag"
+conf = "MED"
+why = "read_and_decode_input builds the value with `rol $25` (C1FA) then reads `lda $25` (C220) — the canonical NES controller read shifts one button bit per ROL into a zero-page accumulator, so $25 is the assembled button/input state byte. Multiple gameplay routines then read it: init_stage_with_intro_ani"
+
+[[var]]
+addr = "0026"
+name = "obj_record_ptr"
+role = "pointer"
+conf = "HIGH"
+why = "$26 is dereferenced as a 16-bit pointer via indirect addressing in multiple routines: spawn_object_from_table_entry ($F047: ora ($26),y), load_ptr_descriptor_and_scan ($CF0D: ($26,x)), trigger_state_transition_on_position_match ($E7A9: eor ($26,x)), and load_indexed_ptr_then_scan_for_terminator. The"
+
+[[var]]
+addr = "0027"
+name = "obj_record_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "$0027 is consumed almost exclusively via 16-bit pointer dereferences: load_ptr_descriptor_and_scan ($CF0D and ($26,x)), trigger_state_transition_on_position_match ($E7A9 eor ($26,x)), and spawn_object_from_table_entry ($F047 ora ($26),y) all dereference the $26/$27 pair with $26 as low byte and $27 "
+
+[[var]]
+addr = "0028"
+name = "screen_layout_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "Tool header flags $28 as a 16-bit POINTER byte, and setup_screen_layout dereferences the pair via `and ($27,x)` at $CBEE — making $27 the low byte and $28 the high byte of a zero-page pointer. The setters that establish it are screen/stage builders: build_stage_screen_layout ($CD5F sta $28), run_scr"
+
+[[var]]
+addr = "0029"
+name = "camera_scroll_x"
+role = "coord"
+conf = "MED"
+why = "Three rendering/collision routines subtract $29 from object world-coordinates: transform_object_coords_to_pixel_space ($C317 sbc $29), draw_composite_object_sprite ($E801 sbc $29), and object_overlap_check ($E9C5 sbc $29). world_coord - origin = screen-relative pixel is the canonical camera/scroll s"
+
+[[var]]
+addr = "002A"
+name = "ppu_buffer_cursor"
+role = "buffer_cursor"
+conf = "MED"
+why = "Dominant writer pattern across the PPU/VRAM update-buffer routines is load-into-index → append → store-back: ppu_buffer_enqueue ($C792 ldx $2a / $C7B1 stx $2a), append_record_to_buffer ($C81C ldx $2a / $C839 stx $2a), copy_var_record_to_0500_buffer ($D786 ldx $2a / $D7AA stx $2a), build_buffer_entry"
+
+[[var]]
+addr = "002B"
+name = "vram_queue_cursor"
+role = "buffer_cursor"
+conf = "MED"
+why = "Writers treat $2B as a byte index loaded into X, used, and stored back: append_computed_entry_to_buffer does ldx $2b ($DFF3) ... stx $2b ($E00D) — classic load-cursor/append/store-back. flush_vram_readback_queue_and_restore_render does ldx $2b ($C1B2) and cpx $2b ($C177), comparing/indexing against "
+
+[[var]]
+addr = "002C"
+name = "seq_data_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "fetch_seq_byte_and_advance_index dereferences the pair via `adc ($2b,x)` at $F9E9 — an indexed-indirect read through the zero-page pointer at $2B, making $2B the low byte and $2C ($002C) the HIGH byte of that 16-bit pointer. The routine name (fetch sequential byte and advance) indicates it walks a b"
+
+[[var]]
+addr = "002D"
+name = "ppu_mask_shadow"
+role = "state"
+conf = "MED"
+why = "Written only by ppu_enable_render ($C23E stx $2d) and ppu_disable_render ($C246 stx $2d) — the two routines that toggle rendering on/off, i.e. they cache the value pushed to PPUMASK/$2001. Read (not modified, never deref'd as a pointer, never indexed) by ppu_buffer_enqueue ($C78E lda $2d) and append"
+
+[[var]]
+addr = "0030"
+name = "obj_state"
+role = "state"
+conf = "MED"
+why = "No pointer/index flags — only r/w/m on an 8-bit zp value. Three of the four routines are explicitly state-machine named and treat $30 as a sequencer: pump_pending_amount_then_step_entry_state does lda $30 / sta $30 (read-modify the state to step it), trigger_state_change_on_proximity does inc $30 (a"
+
+[[var]]
+addr = "0031"
+name = "obj_record_ptr"
+role = "pointer"
+conf = "MED"
+why = "Flagged P and dereferenced as a 16-bit pointer via `eor ($31,x)` at $FF36, so $0031 is the low byte of a pointer ($0032 = high). The reading/modifying routines are all object-centric: resolve_object_position_capture_and_score reads then `inc $31` ($E6AF/$E6F7) to walk a record, draw_composite_object"
+
+[[var]]
+addr = "0032"
+name = "seq_data_ptr"
+role = "pointer"
+conf = "MED"
+why = "$0032 is dereferenced as a 16-bit pointer in multiple indirect modes: `and ($32),y` in set_obj_state_and_load_next_ptr and `adc ($32,x)` in fetch_seq_byte_and_advance_index — flagged [p] in all 3 referencing routines. fetch_seq_byte_and_advance_index walks a sequential data stream through this point"
+
+[[var]]
+addr = "0035"
+name = "obj_collision_state"
+role = "obj_field"
+conf = "MED"
+why = "No P (pointer-deref) or i (indexed) flag and no (zp),y usage — an 8-bit scalar, not a pointer. All writers are object/entity routines: init_object_record_row ($D879 sta $35) sets it when an object record row is initialized, and resolve_entity_collision_movement ($DCC8 sta $35) writes it during colli"
+
+[[var]]
+addr = "0036"
+name = "obj_record_ptr"
+role = "pointer"
+conf = "HIGH"
+why = "Dereferenced as a 16-bit pointer with (zp),y in two routines: ppu_run_draw_blocks ($CD0B: ora ($36),y) and check_obj_adjacency_set_hit_flag ($F12B: sbc ($36),y) — the 'p' flag confirms $36 is a pointer low byte (and $37 its high byte). Writers are all object/entity-record routines that set it before"
+
+[[var]]
+addr = "0037"
+name = "obj_record_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "$0036/$0037 form a 16-bit pointer dereferenced via (zp),y: ppu_run_draw_blocks does `ora ($36),y` ($CD0B) and check_obj_adjacency_set_hit_flag does `sbc ($36),y` ($F12B), so $37 is the HIGH byte of the $36 pointer. Writers set it as a plain byte (init_object_record_row `sta $37`, load_record_by_inde"
+
+[[var]]
+addr = "003C"
+name = "seq_data_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "Dereferenced as a 16-bit pointer: fetch_seq_byte_and_advance_index does `adc ($3b,x)` ($F9CD/$F9D3) and data_or_unclear does `adc ($3b,x)` ($FAC0) — the indirect base is $3B, so $003C is the HIGH byte of the ($3b) pointer pair (low=$003B). The dereferencing routine name (fetch_seq_byte_and_advance_i"
+
+[[var]]
+addr = "003D"
+name = "scratch_byte_param"
+role = "scratch"
+conf = "LOW"
+why = "All accesses are plain 8-bit byte ops — never (zp),y deref and never flagged P — so it is a scalar, not a pointer low byte. setup_stage_then_run_intro_frames WRITES it directly ($FFA5: sta $3d) during stage setup, suggesting a parameter/state byte established at init. store_one_via_ptr only saves/re"
+
+[[var]]
+addr = "0040"
+name = "stage_state"
+role = "state"
+conf = "MED"
+why = "No pointer-deref (P) or (zp),y use, so not a 16-bit pointer. Writers are state-management routines: validate_magic_and_restore_state_vars (sta $40) and init_stage_with_intro_animation_then_spawn (sta $40) — i.e. it's set when restoring saved state and when initializing a new stage. It is packed/seri"
+
+[[var]]
+addr = "0041"
+name = "game_state_flags"
+role = "state"
+conf = "MED"
+why = "Read/written across core state routines: validate_magic_and_restore_state_vars (lda/sta $41) and pack_state_vars_into_zp_buffer (lda $41) treat it as a saved/packed game-state var; init_stage_with_intro_animation_then_spawn writes it at stage start; swap_double_buffers_toggle_flag toggles it (sta $4"
+
+[[var]]
+addr = "0042"
+name = "game_phase"
+role = "state"
+conf = "MED"
+why = "Written only by setup routines (init_stage_with_intro_animation_then_spawn sta $42 at $C851/$C8AD, init_state_vars_and_pointer sta $42 at $CAD0) — set at stage/state init, never INC'd, modified, dereferenced, or indexed. Read broadly (lda $42) across many state/scoring routines: read_and_decode_inpu"
+
+[[var]]
+addr = "0043"
+name = "scratch_amount"
+role = "scratch"
+conf = "LOW"
+why = "placeholder"
+
+[[var]]
+addr = "0048"
+name = "indirect_ptr"
+role = "pointer"
+conf = "MED"
+why = "Xref flags it \"used as 16-bit POINTER low byte\" and three separate routines dereference it via indexed-indirect addressing: setup_screen_layout ($CBF0 and ($47,x)), trigger_state_transition_on_position_match ($E7B2 and ($48,x)), and init_object_slots_strided ($EEA9 ora ($48,x)). init_stage_with_in"
+
+[[var]]
+addr = "0049"
+name = "indirect_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "$49 is the high byte of the zero-page pointer pair whose low byte is $48: it is dereferenced via ($48,x) in trigger_state_transition_on_position_match ($E7B2 and ($48,x)) and init_object_slots_strided ($EEA9 ora ($48,x)), and load_indexed_ptr_then_scan_for_terminator does rol $49 ($F2B0) to load/shi"
+
+[[var]]
+addr = "004A"
+name = "seq_data_ptr"
+role = "pointer"
+conf = "MED"
+why = "Marked [P] as a 16-bit pointer low byte. fetch_seq_byte_and_advance_index dereferences it with indexed-indirect `adc ($4a,x)` at $F930/$F940 to read sequence bytes — the classic (zp,x) pointer-table fetch. It is set up by validate_magic_and_restore_state_vars (`sta $4a`) and saved/restored by pack_s"
+
+[[var]]
+addr = "004B"
+name = "seq_stream_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "$004B is dereferenced as a 16-bit pointer: fetch_seq_byte_and_advance_index does `adc ($4a,x)` at $F930/$F940, treating $4A/$4B as a pointer pair (so $4B is the HIGH byte of the $004A pointer, fetching sequence bytes). ppu_draw_mansion_stamps also derefs it via `ora ($4b,x)`. Writers are sequence/cu"
+
+[[var]]
+addr = "004C"
+name = "ppu_block_src_ptr"
+role = "pointer"
+conf = "MED"
+why = "$004C is dereferenced as a 16-bit pointer via indexed-indirect addressing in the tile/PPU drawing routines: ppu_draw_blocks_b does `ora ($4c,x)` at $D083/$D087, reading source data through the pointer. It is SET by object/record routines — init_object_record_row `sta $4c` ($D848), update_and_respawn"
+
+[[var]]
+addr = "004D"
+name = "object_record_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "$004D is the high byte of the 16-bit pointer based at $4C: ppu_draw_blocks_b dereferences it with `ora ($4c,x)` (indirect through $4C/$4D). init_object_record_row sets it (`sta $4d`) and update_and_respawn_objects advances it (`inc $4d` to step the pointer to the next record page/row) then reads it."
+
+[[var]]
+addr = "004E"
+name = "block_data_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "Dereferenced via (zp,x) in ppu_draw_blocks_b: `ora ($4d,x)` at $D095/$D099 reads through the $4D/$4E pair, so $004E is the HIGH byte of a 16-bit pointer (low byte = $4D). The dereferencing routine draws blocks (tile/block data) to the PPU, so the pointer targets the block source data. It's set by in"
+
+[[var]]
+addr = "004F"
+name = "draw_src_ptr"
+role = "pointer"
+conf = "MED"
+why = "var_xref flags $004F as a 16-bit pointer low byte, and ppu_draw_blocks_b dereferences it as an indirect pointer: $D0AB `ora ($4f,x)` (alongside the adjacent `ora ($4e,x)` at $D0A9), reading source data during PPU block drawing. It's a general-purpose scratch pointer that many routines repoint before"
+
+[[var]]
+addr = "0050"
+name = "obj_table_ptr"
+role = "pointer"
+conf = "MED"
+why = "data_or_unclear dereferences it as a 16-bit pointer via `eor ($50),y` (so $50=low byte, $51=high byte). The writer that sets it is load_object_table_from_def (`sta $50`), which loads an object-table definition, and load_record_by_index reads $50 as a table/record base (`ldy $50,x`). Together: a 16-b"
+
+[[var]]
+addr = "0051"
+name = "obj_def_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "Dereferenced as a 16-bit pointer in multiple routines: check_obj_adjacency_set_hit_flag ($F12F: eor ($51),y), fetch_seq_byte_and_advance_index ($F95A: adc ($51,x)), data_or_unclear ($FC56: eor ($51),y). Paired with $50: append_byte_to_0500_if_counter does ($50,x) and data_or_unclear also touches ($5"
+
+[[var]]
+addr = "0052"
+name = "object_def_ptr"
+role = "pointer"
+conf = "MED"
+why = "$52 is repeatedly dereferenced as a 16-bit pointer: ora ($52,x) in scan_objects_for_adjacent_contact_and_trigger, adc ($52,x) in fetch_seq_byte_and_advance_index, eor ($52),y in data_or_unclear; its +1 high byte $51 is also deref'd (eor ($51),y in check_obj_adjacency_set_hit_flag) — confirming $52 i"
+
+[[var]]
+addr = "0053"
+name = "object_def_ptr"
+role = "pointer"
+conf = "MED"
+why = "$0053 is dereferenced as a 16-bit pointer (flagged P): trigger_state_transition_on_position_match does `and ($53,x)` ($E7B6) and scan_objects_for_adjacent_contact_and_trigger does `ora ($53,x)` ($EC83/$EC89) — indirect loads through the $53/$54 pair. The writer load_object_table_from_def sets it (`s"
+
+[[var]]
+addr = "0054"
+name = "object_table_ptr"
+role = "pointer"
+conf = "MED"
+why = "Tool flags $0054 as a 16-bit pointer byte. It is set up by load_object_table_from_def ($F15A: sta $54,x) from an object definition, then dereferenced as a pointer by two object-scanning routines: trigger_state_transition_on_position_match ($E7B6: and ($53,x)) and scan_objects_for_adjacent_contact_an"
+
+[[var]]
+addr = "005A"
+name = "ppu_block_src_ptr"
+role = "pointer"
+conf = "MED"
+why = "Flagged P and dereferenced as a 16-bit indexed-indirect pointer in ppu_draw_blocks_b ($CFBB/$CFC1: `ora ($5a,x)`), so $005A is a pointer low byte (its +1 is the high byte). The consumer is a PPU block-drawing routine, so it points at block/tile source data. It is set by check_position_reached_and_re"
+
+[[var]]
+addr = "0060"
+name = "sequence_state"
+role = "state"
+conf = "MED"
+why = "8-bit value (no P/deref, no index flag), written directly by several state-management routines and read by sequencing logic. init_object_sequence_state writes it twice (sta $60 at $F341/$F371) to set up a sequence; advance_state_counter_to_60 reads-then-writes it (lda/sta $60) i.e. advances the coun"
+
+[[var]]
+addr = "0061"
+name = "seq_data_ptr"
+role = "pointer"
+conf = "MED"
+why = "Dereferenced as a 16-bit pointer in fetch_seq_byte_and_advance_index ($F955: eor ($61),y), so $0061 is the low byte of a pointer (with $0062 as its high byte). Writers set it up: init_object_sequence_state (sta $61) and load_record_by_index (sta $61) initialize it, and it is advanced by INC in advan"
+
+[[var]]
+addr = "0062"
+name = "seq_data_ptr"
+role = "pointer"
+conf = "MED"
+why = "$0062 is dereferenced as a 16-bit pointer (zp),y / (zp,x): ppu_draw_mansion_stamps does `cmp ($62),y` and `adc ($62,x)`, and its high byte $0061 is dereferenced in fetch_seq_byte_and_advance_index via `eor ($61),y` — confirming $61/$62 form a pointer pair. It's set as a pointer by load_record_by_ind"
+
+[[var]]
+addr = "0063"
+name = "record_ptr"
+role = "pointer"
+conf = "MED"
+why = "Dereferenced as a 16-bit pointer in multiple routines: bcd_add_packed_buffer `ora ($63,x)`, data_or_unclear `eor ($63,x)` / `and ($63),y` — the (zp,x)/(zp),y indirect modes prove $0063 is a pointer low byte. The sole writer is load_record_by_index `sta $0063,y` (indexed store), which sets up the poi"
+
+[[var]]
+addr = "0064"
+name = "data_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "$0064 is the HIGH byte of a 16-bit zero-page pointer whose low byte is $0063: bcd_add_packed_buffer dereferences it as ($63,x) at $D560, and data_or_unclear dereferences it both ways — ($63,x) at $FF48 (eor) and ($63),y at $FF51 (and). The (zp,x)/(zp),y indirect addressing modes mark $63/$64 as a po"
+
+[[var]]
+addr = "0065"
+name = "active_object_count"
+role = "state"
+conf = "MED"
+why = "All three xrefs are READS (no writer shown), all in object-management routines: reset_objects_except_persistent_types ($DB28 lda $65), tick_obj_proximity_hit_and_countdown ($DD95 lda $65), and check_object_collision_and_award_score ($EFCD lda $65). A value read (not modified) by object reset, per-fr"
+
+[[var]]
+addr = "0067"
+name = "screen_layout_ptr"
+role = "pointer"
+conf = "MED"
+why = "var_xref flags $0067 with [p] = dereferenced as a 16-bit pointer low byte. setup_screen_layout uses `and ($67,x)` — an indirect read through the zero-page pointer at $67. The other consumers are screen/PPU drawing routines: ppu_draw_mansion_stamps reads it (`ora $67`) and init_object_sequence_state "
+
+[[var]]
+addr = "0068"
+name = "ptr_hi"
+role = "pointer"
+conf = "LOW"
+why = "The lone dereference is setup_screen_layout $CBF2 `and ($67,x)`, which uses the zp pointer at $67/$68 — so $68 is the HIGH byte of a 16-bit pointer whose low byte is $67. The dereferencing routine sets up screen layout, so the pointer targets layout/PPU data. Remaining refs (play_intro_cutscene_sequ"
+
+[[var]]
+addr = "0070"
+name = "stamp_src_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "var_xref flags $0070 as a 16-bit pointer; ppu_draw_mansion_stamps dereferences the pair via `ora ($6f,x)` at $D213 — making $6F the low byte and $70 the high byte of the source pointer read to draw mansion tile stamps to the PPU. Writers set it during stage init (init_stage_with_intro_animation_then"
+
+[[var]]
+addr = "0071"
+name = "stage_timer_base"
+role = "counter"
+conf = "MED"
+why = "Written directly during stage setup (init_stage_with_intro_animation_then_spawn: $C8B7 sta $71), then accessed X-indexed as the base of a zero-page slot array: append_byte_to_0500_if_counter does dec $71,x (per-index countdown decrement, mi) and clamp_var32_to_min reads/subtracts it (sbc $71,x / lda"
+
+[[var]]
+addr = "0072"
+name = "draw_src_ptr"
+role = "pointer"
+conf = "HIGH"
+why = "Dereferenced as a 16-bit zp pointer via `adc ($72),y` inside ppu_draw_mansion_stamps ($D35E), so $0072 is the low byte of a 16-bit pointer (and $0073 the high byte). It is set up by init_stage_with_intro_animation_then_spawn (`sta $72` @ $C8B9) before drawing, and read by advance_record_index_and_re"
+
+[[var]]
+addr = "0074"
+name = "decode_src_ptr"
+role = "pointer"
+conf = "MED"
+why = "x"
+
+[[var]]
+addr = "0075"
+name = "current_record_index"
+role = "state"
+conf = "MED"
+why = "Set at stage init (init_stage_with_intro_animation_then_spawn: sta $75), then read-modify-written by advance_record_index_and_refresh_entry (lda $75 twice, advances+refreshes the entry), and read as an index/offset by ppu_draw_mansion_stamps (adc $75,x). This is a selected-entry/record index that dr"
+
+[[var]]
+addr = "0076"
+name = "record_index"
+role = "counter"
+conf = "MED"
+why = "init_stage_with_intro_animation_then_spawn sets it at stage start ($C861 sta $76). advance_record_index_and_refresh_entry reads-then-writes it as an index (cmp $76 / sta $76 at $D6B2/$D6BA) — a bounds-checked advance that refreshes the displayed entry. It is also touched indexed in bcd_add_packed_bu"
+
+[[var]]
+addr = "0077"
+name = "ppu_block_src_ptr"
+role = "pointer"
+conf = "MED"
+why = "Dereferenced as a 16-bit pointer in ppu_draw_blocks_b via `ora ($77,x)` (x-indexed indirect at $CFEA and $D01D), confirming $0077 is the low byte of a pointer (its +1 is the high byte). The dereferencing routine draws blocks/tiles to the PPU, so the pointer targets the source block/tile data being r"
+
+[[var]]
+addr = "007A"
+name = "stage_number"
+role = "counter"
+conf = "MED"
+why = "Set during stage setup (init_stage_with_intro_animation_then_spawn `sta $7a`; setup_stage_then_run_intro_frames `sta $7a`), then INC'd alongside animation counters (load_record_and_advance_anim_counters `inc $7a`/`lda $7a`). Read as a scalar selector by stage/object construction routines: build_stag"
+
+[[var]]
+addr = "007B"
+name = "draw_data_ptr"
+role = "pointer"
+conf = "MED"
+why = "Tool flags it \"used as 16-bit POINTER low byte\" and it is dereferenced indirect-indexed: ppu_draw_blocks_b does `ora ($7b,x)` ($CFE4/$D017) and append_byte_to_0500_if_counter does `ora ($7a,x)` ($D675), so $7A/$7B is the 16-bit pointer pair ($7B = low byte). It is SET by spawn_objects_from_level_d"
+
+[[var]]
+addr = "007C"
+name = "block_def_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "$7C is dereferenced as a 16-bit pointer in ppu_draw_blocks_b via `ora ($7b,x)` (twice) — so the pointer base is $7B (low) / $7C (high), making $7C the high byte. It is written by build_stage_screen_layout (`sta $7c`) and ppu_draw_mansion_stamps (`sty $7c`), and read by load_object_table_from_def (`l"
+
+[[var]]
+addr = "007D"
+name = "stage_index"
+role = "state"
+conf = "MED"
+why = "Not a pointer (no (zp),y deref, no P flag). Written by stage/level setup routines: init_stage_with_intro_animation_then_spawn ($C8C1 sta $7d) and setup_stage_then_run_intro_frames ($FF69 sta $7d), establishing it as the current-stage value set at stage entry. load_record_by_index reads it as an arit"
+
+[[var]]
+addr = "0080"
+name = "object_count"
+role = "counter"
+conf = "MED"
+why = "Three named object routines read it as a loop/upper bound via cpx: find_object_at_coords ($E49C cpx $80), force_active_objects_to_state3 ($E3F9 cpx $80), and build_object_record_block_and_dispatch ($E3A7 cpx $80, which also writes it sta $80) — the classic \"set a count, then iterate X up to it over"
+
+[[var]]
+addr = "0081"
+name = "active_object_count"
+role = "counter"
+conf = "MED"
+why = "spawn_objects_from_level_descriptor SETS it (sta $81) after populating objects, then every object-processing routine compares its X loop index against it as the loop terminator: update_all_active_objects (lda $81 / cpx $81), process_objects_in_state_two (cpx $81), resolve_object_position_capture_and"
+
+[[var]]
+addr = "0083"
+name = "object_count"
+role = "counter"
+conf = "MED"
+why = "Five object routines read it as a loop terminator over object records: clear_low2_bits_per_object_record ($E8C7: cpx $83), update_all_objects_anim_and_phase ($E8CC lda $83, $E8DD cpx $83), select_overlapping_target_object ($E972 lda $83, $E98C cpx $83), and scan_objects_for_adjacent_contact_and_trig"
+
+[[var]]
+addr = "0084"
+name = "ppu_draw_src_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "$0084 is the high byte of a 16-bit pointer pair whose low byte is $83: ppu_draw_blocks_b dereferences it via `ora ($83,x)` (indexed-indirect through $83/$84). It is set by ppu_draw_mansion_stamps (`sty $84`) and read/indexed by ppu_draw_blocks_b (`asl $0084,x`) and setup_stage_then_run_intro_frames "
+
+[[var]]
+addr = "008F"
+name = "deref_ptr"
+role = "pointer"
+conf = "MED"
+why = "var_xref flags $008F as P (16-bit pointer low byte) and shows it dereferenced via indirect-X addressing at $FDBA `ora ($8f,x)` in data_or_unclear. It is written by trigger_state_transition_on_position_match `stx $008f` and indexed/modified by append_byte_to_0500_if_counter `dec $8f,x`. The pointer r"
+
+[[var]]
+addr = "0090"
+name = "obj_state"
+role = "obj_field"
+conf = "MED"
+why = "Almost every access is `sta/lda $0090,y` — a Y-indexed object-table field, not a scalar. It's set by spawn_object_from_table_entry (initialized at spawn), written by obj_proximity_trigger_with_timer and obj_state2_advance_on_proximity (state transitions on proximity), and crucially READ by dispatch_"
+
+[[var]]
+addr = "0091"
+name = "obj_data_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "Dereferenced as a 16-bit pointer via the $90/$91 zero-page pair: ppu_draw_blocks_b does `ora ($91,x)` and append_byte_to_0500_if_counter does `ora ($90,x)`, marking $0090=low / $0091=high byte of a (zp,x) pointer. set_obj_state_and_load_next_ptr reads it (`sbc $91`) while loading the next pointer fo"
+
+[[var]]
+addr = "0092"
+name = "obj_trigger_coord"
+role = "obj_field"
+conf = "MED"
+why = "Written and read via Y-indexing, not as a global pointer: spawn_object_from_table_entry does `sta $0092,y` (sets it per-object at spawn) and obj_proximity_trigger_with_timer does `lda $0092,y` (reads it back per-object for a proximity/trigger check). That write-on-spawn / read-in-proximity-check pat"
+
+[[var]]
+addr = "0093"
+name = "ppu_block_data_ptr"
+role = "pointer"
+conf = "MED"
+why = "$0093 is dereferenced as a 16-bit pointer (flagged P): ppu_draw_blocks_b does `ora ($93,x)` and ppu_draw_mansion_stamps does `ora ($93,x)` (with `and ($92,x)` showing $92/$93 is the low/high pointer pair). Both deref'ing routines are PPU block/stamp drawers, so the pointer targets the tile/block sou"
+
+[[var]]
+addr = "0094"
+name = "obj_pos_field"
+role = "obj_field"
+conf = "MED"
+why = "Accessed as an indexed object-table field ($0094,y / $94,x) by object routines: spawn_object_from_table_entry WRITES it (sta $0094,y) when populating a new object's record, and check_obj_near_point (lda $0094,y) and check_obj_adjacency_set_hit_flag (lda $94,x) READ it during proximity/adjacency test"
+
+[[var]]
+addr = "0095"
+name = "obj_x"
+role = "obj_field"
+conf = "MED"
+why = "Always accessed indexed into an object table ($95,x and $0095,y), never as a scalar — so it's a per-object record field, not scratch/flag/pointer. Set by spawn_object_from_table_entry ($F036 sta $0095,y) when an object is created and by trigger_state_transition_on_position_match ($E7D6 sty $95,x). R"
+
+[[var]]
+addr = "0096"
+name = "scratch_bitshift"
+role = "scratch"
+conf = "LOW"
+why = "No 16-bit deref ((zp),y) anywhere, so not a pointer. Two routines use it as a bit-shift working byte: ppu_draw_mansion_stamps does `and $96` then `rol $96` ($D256/$D25A), and load_record_by_index does `rol $96` ($F3FE) — classic rotate-through-carry scratch (bitmask/serialized-bit accumulator). obj_"
+
+[[var]]
+addr = "009D"
+name = "data_ptr_hi"
+role = "pointer"
+conf = "HIGH"
+why = "$009D is the HIGH byte of a 16-bit pointer pair whose low byte is $009C. ppu_draw_mansion_stamps dereferences the pair via indexed-indirect `and ($9c,x)` at $D24A/$D24C (the (zp,x) form reads $9C/$9D as the pointer). load_indexed_ptr_then_scan_for_terminator does `rol $9d` ($F2B6) — building the hig"
+
+[[var]]
+addr = "00A0"
+name = "block_data_ptr"
+role = "pointer"
+conf = "MED"
+why = "Flagged as 16-bit pointer low byte (P) and dereferenced indirect-indexed by ppu_draw_blocks_b ($CFC6: ora ($a0,x)) and append_computed_entry_to_buffer ($E017: ora ($a0,x)) — both consume it as the source address of block/table data. It is set indexed by copy_16b_table_if_var_in_range ($EF27: sta $a0"
+
+[[var]]
+addr = "00B0"
+name = "var_record_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "Dereferenced as the high byte of a 16-bit pointer based at $AF: ppu_draw_mansion_stamps does `ora ($af,x)` ($D48D) and copy_var_record_to_0500_buffer does `ora ($af,x)` ($D7DB/$D7E7) — the ($af,x) addressing makes $AF the low byte and $B0 the high byte. The dereferencing routines copy/draw \"var_rec"
+
+[[var]]
+addr = "00C1"
+name = "block_data_ptr_hi"
+role = "pointer"
+conf = "MED"
+why = "All three dereferences operate on the $00C0 pair via indirect addressing — ppu_draw_blocks_b uses `ora ($c0,x)`/`ora ($c0,x)`, and setup_stage_then_run_intro_frames uses `and ($c0),y`. That makes $00C0/$00C1 a 16-bit pointer; $00C1 is the high byte (its low byte is $00C0). The dereferencing consumer"
+
+[[var]]
+addr = "00F0"
+name = "work_ptr"
+role = "pointer"
+conf = "MED"
+why = "Flagged P (16-bit pointer low byte, +1 = high byte). Every user loads it then dereferences via (zp),y: init_object_tables sta $f0 / sta ($f0),y; sound_command_dispatch sta $f0 / lda ($f0),y; run_object_animation_script sta ($f0),y; fetch_seq_byte_and_advance_index lda/sta ($f0),y; advance_to_next_8b"
+
+[[var]]
+addr = "00F1"
+name = "data_ptr_hi"
+role = "pointer"
+conf = "HIGH"
+why = "$00F1 is the high byte of a 16-bit pointer based at $00F0; nearly every reference dereferences it as ($f0),y. Writers set it directly (sound_command_dispatch $F51D: sta $f1; sound_engine_tick $F58E: sta $f1; init_object_tables $F4C5: sta $f1) or increment it to advance through memory (sound_engine_t"
+
+[[var]]
+addr = "00F2"
+name = "seq_data_ptr"
+role = "pointer"
+conf = "MED"
+why = "Flagged P (16-bit pointer low byte; +1 = high byte). set_ptr_from_word_table_by_id WRITES it ($F803: sta $f2) — i.e. it loads a pointer selected from a word/address table by an ID. fetch_seq_byte_and_advance_index then DEREFERENCES it with lda ($f2),y, reading bytes sequentially and advancing the in"
+
+[[var]]
+addr = "00F3"
+name = "seq_data_ptr_hi"
+role = "pointer"
+conf = "HIGH"
+why = "$F3 is the HIGH byte of the 16-bit pointer pair $F2/$F3. set_ptr_from_word_table_by_id writes it ($F808: sta $f3) from a word table indexed by an id (the low byte $F2 is written alongside). fetch_seq_byte_and_advance_index dereferences the pair as a pointer ($F81A: lda ($f2),y) to read a byte and ad"
+
+[[var]]
+addr = "00F4"
+name = "sound_seq_index"
+role = "counter"
+conf = "MED"
+why = "Set by sound_command_dispatch (sta $f4) and driven by sound_engine_tick (dec $f4 / sty $f4). advance_to_next_8byte_record_and_loop does inc $f4 then lda $f4 (record stepping), and run_object_animation_script + fetch_seq_byte_and_advance_index load it into X (ldx $f4) as an array index into 8-byte so"
+
+[[var]]
+addr = "00F5"
+name = "draw_source_ptr"
+role = "pointer"
+conf = "MED"
+why = "Dereferenced as a 16-bit pointer: ppu_draw_mansion_stamps does `cmp ($f5),y` ($D186) and data_or_unclear does `and ($f4,x)` ($FF21) — both indirect-indexed/indexed-indirect modes prove $F4/$F5 is a 16-bit pointer with $F5 as the low byte. It's written as a pair by sound_command_dispatch (`sta $f5` a"
+
+[[var]]
+addr = "00F6"
+name = "indirect_ptr"
+role = "pointer"
+conf = "MED"
+why = "Flagged P and dereferenced as a 16-bit pointer: jump_table_dispatch_via_index does `sta $f6` then `lda ($f6),y` — loading the low byte then indirect-indexed reading through it (jump-table base). ppu_draw_mansion_stamps derefs the adjacent pair `cmp ($f5),y`, so $F5/$F6 is the 16-bit pointer pair ($F"
+
+[[var]]
+addr = "00F8"
+name = "anim_script_ptr"
+role = "pointer"
+conf = "HIGH"
+why = "Dereferenced as a 16-bit pointer (low byte) in fetch_seq_byte_and_advance_index: `$F827: lda ($f8),y` then `$F829: inc $f8` — reading a byte through the pointer and advancing it. It is set up by advance_to_next_8byte_record_and_loop (`sta $f8`) and saved/restored by run_object_animation_script (`lda"
+
+[[var]]
+addr = "00F9"
+name = "anim_script_ptr_hi"
+role = "pointer"
+conf = "HIGH"
+why = "$00F9 is the HIGH byte of a 16-bit pointer based at $F8: fetch_seq_byte_and_advance_index dereferences it with `lda ($f8),y` and bumps it via `inc $f9` (page carry). advance_to_next_8byte_record_and_loop sets it (`sta $f9`) when stepping to the next record, and run_object_animation_script writes/mod"
+
+[[var]]
+addr = "00FA"
+name = "anim_script_ptr"
+role = "pointer"
+conf = "HIGH"
+why = "$00FA is dereferenced as a 16-bit pointer: fetch_seq_byte_and_advance_index does `lda ($fa),y` then `inc $fa` (flagged m,p) — classic read-a-byte-then-advance over a byte stream. run_object_animation_script reads and rewrites it (`lda $fa`/`sta $fa`), and advance_to_next_8byte_record_and_loop sets i"
+
+[[var]]
+addr = "00FB"
+name = "seq_data_ptr_hi"
+role = "pointer"
+conf = "HIGH"
+why = "$FB is the HIGH byte of a 16-bit pointer whose low byte is $FA: fetch_seq_byte_and_advance_index dereferences it with `lda ($fa),y` (flagged p) and advances it with `inc $fb`. The pointer walks sequence/record data: advance_to_next_8byte_record_and_loop sets it (`sta $fb`), and run_object_animation_"
+
+[[var]]
+addr = "0170"
+name = "collision_bitmap_buf"
+role = "array"
+conf = "MED"
+why = "Every writer touches it indexed (,x/,y), so $0170 is the base of an array/buffer, not a scalar. decode_position_stream_to_collision_bitmaps does `ora $0170,x` / `sta $0170,x` (accumulating bits into a bitmap), fill_attr_source_0170 does `sta $0170,x` (filling it), and emit_records_for_set_bits_in_bi"
+
+[[var]]
+addr = "0200"
+name = "obj_timer"
+role = "obj_field"
+conf = "MED"
+why = "$0200 is the base of an ,x-indexed object-record table touched only by object/spawn routines. build_object_record_block_and_dispatch ($E375 sta $0200,x), collect_object_award_score_and_spawn_popup and collect_item_award_score_and_spawn_reward_object all WRITE it when building/spawning an object reco"
+
+[[var]]
+addr = "0201"
+name = "obj_anim_timer"
+role = "obj_field"
+conf = "MED"
+why = "Always accessed as $0201,x by object routines — a per-object field at offset +1 in the object table (base $0200). It is INC'd as a subcounter in tick_subcounter_decrement_on_rollover ($E415 inc $0201,x; $E418 lda) and read by animation/phase routines obj_state7_update_anim_and_snap_position ($DC12 l"
+
+[[var]]
+addr = "0202"
+name = "obj_timer"
+role = "obj_field"
+conf = "HIGH"
+why = "Always accessed as $0202,x by object routines (build_object_record_block_and_dispatch writes it on construction; force_active_objects_to_state3 sets it on state change). Two state-update routines decrement it each frame (obj_state7_update_anim_and_snap_position $DC1F: dec $0202,x; update_obj_phase7_"
+
+[[var]]
+addr = "0205"
+name = "obj_field_05"
+role = "obj_field"
+conf = "MED"
+why = "All 3 accesses are X-indexed into the $0200 object-record block ($0205,x): written by build_object_record_block_and_dispatch ($E39D: sta $0205,x) when populating a record, and read by find_object_at_coords ($E47F: lda $0205,x) and set_obj_state_and_load_next_ptr ($E4BE: adc $0205,x). The indexed pat"
+
+[[var]]
+addr = "0260"
+name = "obj_state"
+role = "obj_field"
+conf = "HIGH"
+why = "All 9 routines touch it indexed as $0260,x — a per-object array field. Written by object setup routines (spawn_objects_from_level_descriptor $E5E1, load_object_table_from_def $F165, init_object_record_load_data_and_scan $F1F8, draw_object_and_tick_state_timer $E706). Read as a dispatch selector: dis"
+
+[[var]]
+addr = "0261"
+name = "obj_type"
+role = "obj_field"
+conf = "MED"
+why = "Every access is indexed (sta/lda $0261,x), so $0261 is a per-object field in an object table. spawn_objects_from_level_descriptor WRITES it ($E5EE sta $0261,x) at spawn time from the level descriptor. It is then read by load_ptr_from_state_index ($E72C) and load_string_ptr_by_state_and_scan ($E747) "
+
+[[var]]
+addr = "0263"
+name = "obj_type"
+role = "obj_field"
+conf = "MED"
+why = "Always accessed indexed as $0263,x (the object-slot index) and only by object routines. Written at spawn (spawn_objects_from_level_descriptor $E5E6 sta $0263,x) and during per-state processing (process_objects_in_state_two $E623 sta $0263,x), then read by resolve_object_position_capture_and_score ($"
+
+[[var]]
+addr = "0264"
+name = "obj_state"
+role = "obj_field"
+conf = "MED"
+why = "All 9 accesses are indexed into $0264 (sta/lda $0264,x and sbc $0264,y), marking it a per-object table field in the $02xx object array. Writers are object-table populators: spawn_objects_from_level_descriptor ($E601 sta $0264,x) and load_object_table_from_def ($F17D sta $0264,x). Readers are object "
+
+[[var]]
+addr = "0265"
+name = "obj_type"
+role = "obj_field"
+conf = "MED"
+why = "Every access is X-indexed (sta/lda $0265,x), so $0265 is a per-object field in an object table. It's WRITTEN only at object creation: spawn_objects_from_level_descriptor ($E606 sta $0265,x) and load_object_table_from_def ($F182 sta $0265,x) — set from the level/object descriptor, not per-frame. It i"
+
+[[var]]
+addr = "02B0"
+name = "obj_anim_timer"
+role = "obj_field"
+conf = "MED"
+why = "All five accessors index it as $02b0,x — an object-table FIELD. The defining read-modify-write is in advance_object_anim_timer_and_dispatch_phase (lda $02b0,x @E91D then sta $02b0,x @E92E), the classic per-frame timer tick that drives phase dispatch; update_all_objects_anim_and_phase also reads it ("
+
+[[var]]
+addr = "02B1"
+name = "obj_state"
+role = "obj_field"
+conf = "MED"
+why = "Always accessed indexed by object slot (sta/lda/ldy $02b1,x across 10 routines) → it is a per-object-record field in a $04xx-style object table (loaded by load_object_table_to_ram, scanned by find_first_empty_slot). Its specific role is the object's state/animation-phase byte: clear_low2_bits_per_ob"
+
+[[var]]
+addr = "02B4"
+name = "obj_pos"
+role = "obj_field"
+conf = "MED"
+why = "Every access is base+,x indexed ([wi]/[ri]) => an entry in a parallel object-table array. Populated by load_object_table_to_ram ($E8A0: sta $02b4,x). Read by collision/overlap routines: object_overlap_check does lda then sbc $02b4,x ($E9C1/$E9DC) i.e. subtracts one object's value from another's (an "
+
+[[var]]
+addr = "02B5"
+name = "obj_x"
+role = "obj_field"
+conf = "MED"
+why = "Every access is indexed ($02b5,x), so this is a field in an object table (base $02B5, stride = entry size). load_object_table_to_ram writes it (sta $02b5,x) when populating the table. Three collision/proximity routines READ it via subtraction — object_overlap_check ($E9D0 sbc), check_subject_vs_obje"
+
+[[var]]
+addr = "02B7"
+name = "obj_contact_state"
+role = "obj_field"
+conf = "MED"
+why = "All three references are indexed by X ($02b7,x), marking this as a per-object array field, not a scalar. The two writers are object_overlap_check (sta $02b7,x at $E9BC) and scan_objects_for_adjacent_contact_and_trigger (sta $02b7,x at $EAC4) — both collision/adjacency routines that store a result pe"
+
+[[var]]
+addr = "0300"
+name = "obj_state"
+role = "obj_field"
+conf = "MED"
+why = "All three accessors touch it as an indexed array base ($0300,x) — never as a scalar — so it is field 0 of an object/sprite table at $0300. It is written by spawn/stage-setup routines (init_stage_with_intro_animation_then_spawn $C8F1 sta $0300,x; setup_stage_then_run_intro_frames $FF8C sta $0300,x), "
+
+[[var]]
+addr = "0400"
+name = "obj_x"
+role = "obj_field"
+conf = "MED"
+why = "$0400 is base of an X-indexed object table (sta $0400,x in update_and_respawn_objects; clear_buffer_192_at_0400 zeroes 192 bytes). It is consumed almost entirely by spatial routines: check_two_coords_adjacent (sbc $0400), find_adjacent_entity_to_ref_copy_attr (lda $0400,x / sbc $0400), trigger_state"
+
+[[var]]
+addr = "0401"
+name = "obj_y"
+role = "obj_field"
+conf = "MED"
+why = "Indexed $04xx address ($0401,x and $0401,y) written/read by object routines — an object-table coordinate field. It is overwhelmingly compared against another coordinate in collision/proximity/adjacency math: sbc $0401 in check_two_coords_adjacent ($E124), check_obj_near_point ($F0D2), check_object_c"
+
+[[var]]
+addr = "0402"
+name = "obj_x"
+role = "obj_field"
+conf = "MED"
+why = "Accessed as an indexed $04xx object-table field: update_and_respawn_objects writes it with `sta $0402,x` (per-object slot, set during respawn), and check_object_collision_and_award_score reads it indexed `sbc $0402,x`. It's used in coordinate math — check_two_coords_adjacent does `sbc $0402` and the"
+
+[[var]]
+addr = "0403"
+name = "obj_x"
+role = "obj_field"
+conf = "MED"
+why = "Indexed array field ($0403,x / ,y) in the object table. Written per-object by update_and_respawn_objects (sta $0403,x). Read by a cluster of collision/proximity routines that treat it as a coordinate: check_object_collision_and_award_score (sbc $0403,x = distance diff), check_two_coords_adjacent / c"
+
+[[var]]
+addr = "0404"
+name = "obj_state"
+role = "obj_field"
+conf = "HIGH"
+why = "$0404 is consistently indexed (sta $0404,x / ,y; lda $0404,x / ,y) by the object-table routines, marking it a per-object array field. Its writers initialize and advance a discrete value: init_entity_state_if_flag_clear and init_objects_if_inactive set it on spawn; trigger_state_change_on_proximity, "
+
+[[var]]
+addr = "0406"
+name = "obj_attr"
+role = "obj_field"
+conf = "MED"
+why = "Indexed $04xx address accessed per-object via X/Y (lda $0406,x / sta $0406,x in find_adjacent_entity_to_ref_copy_attr; sta $0406,x in trigger_state_change_on_proximity; sta $0406,y in jmp_indirect_zp_vector), i.e. an object-table FIELD. The named accessors handle entity attributes/proximity-driven s"
+
+[[var]]
+addr = "0407"
+name = "obj_state"
+role = "obj_field"
+conf = "MED"
+why = "Accessed as a strided array ($0407,x / $0407,y) by many object routines: init_object_slots_strided, init_object_sequence_state, update_matching_object_state, check_object_collision_and_award_score, update_and_respawn_objects. Writers are dominated by state-setting routines — init_entity_state_if_fla"
+
+[[var]]
+addr = "040B"
+name = "obj_state"
+role = "obj_field"
+conf = "HIGH"
+why = "Every access is X-indexed at $040B,x inside object routines: init_object_slots_strided writes it across slots (sta $040b,x), and update_matching_object_state / advance_obj_state_if_matched / accumulate_for_matching_objects read it (lda $040b,x). The reader names (\"matching object state\", \"advance"
+
+[[var]]
+addr = "040F"
+name = "obj_state"
+role = "obj_field"
+conf = "MED"
+why = "obj_state field of the $0400 object table"
+
+[[var]]
+addr = "041F"
+name = "obj_state"
+role = "obj_field"
+conf = "MED"
+why = "$041F sits in the $04xx object-table page and is only ever written (no reads/derefs/indexing shown), by three object/state-init routines: init_object_sequence_state ($F375: sta $041f) and init_ram_block_from_table ($D8CF) both seed it at object setup, and check_position_reached_and_reset_round ($E31"
+
+[[var]]
+addr = "0420"
+name = "stamp_position_table"
+role = "array"
+conf = "MED"
+why = "Always indexed ($0420,x / $0420,y), never deref'd as a pointer, so it's an array base. check_position_reached_and_reset_round writes per-index (sta $0420,x [wi]) and trigger_state_transition_on_position_match writes the base (sta $0420). ppu_draw_mansion_stamps reads it indexed to drive drawing (ldy"
+
+[[var]]
+addr = "0421"
+name = "target_compare_value"
+role = "coord"
+conf = "MED"
+why = "Only reads visible (no writer in xref). It is compared against, not stored: trigger_state_transition_on_position_match does `cmp $0421` ($E76E), on_object_reaching_target_reset_and_rescan does `sbc $0421` ($F221), and update_object_state_vs_reference / clear_flag_if_value_below_threshold / tick_bonu"
+
+[[var]]
+addr = "0423"
+name = "obj_state"
+role = "obj_field"
+conf = "MED"
+why = "Indexed as $0423,x inside scan_objects_for_adjacent_contact_and_trigger (and $0423,x at $EB36/$EBB9), marking it as a per-object table field ($04xx) walked by object index. Read (cmp/lda) by object-oriented routines: update_object_state_vs_reference ($D9A5 cmp $0423), on_object_reaching_target_reset"
+
+[[var]]
+addr = "0424"
+name = "obj_state"
+role = "obj_field"
+conf = "MED"
+why = "All 5 references are writes (no reads/derefs/indexing visible), each a plain `sta $0424` from object/entity lifecycle routines: handle_entity_object_pickup_or_special_setup ($DE14), tick_bonus_item_collect_or_timeout ($DE4C), trigger_state_transition_on_position_match ($E77A), on_object_reaching_tar"
+
+[[var]]
+addr = "0427"
+name = "bonus_item_timer"
+role = "counter"
+conf = "HIGH"
+why = "Set by sta in setup routines (handle_entity_object_pickup_or_special_setup $DE19, trigger_state_transition_on_position_match $E784), then counted DOWN by multiple per-tick routines: tick_bonus_item_collect_or_timeout (dec $0427 at $DE2D), countdown_timer_then_reset_obj_and_arm_field (dec at $DE25), "
+
+[[var]]
+addr = "042A"
+name = "bonus_item_timer"
+role = "counter"
+conf = "MED"
+why = "Set by tick_bonus_item_collect_or_timeout ($DE5B sta $042a), then ticked down each frame by update_object_proximity_collision_tick which does lda $042a / dec $042a ($DA76/$DA7B). It is only read (not re-indexed) by find_adjacent_entity_to_ref_copy_attr and trigger_state_transition_on_position_match."
+
+[[var]]
+addr = "042F"
+name = "stage_phase_state"
+role = "state"
+conf = "MED"
+why = "No pointer-deref (P) or index (i) flags — plain byte written then read, so not a pointer/array. Multiple writers all sit in stage/round progression logic: check_position_reached_and_reset_round, trigger_state_transition_on_position_match (r,w at $E757/$E77F), on_object_reaching_target_reset_and_resc"
+
+[[var]]
+addr = "0490"
+name = "obj_state_counter"
+role = "obj_field"
+conf = "MED"
+why = "$0490 is the base of an indexed array (sta/lda $0490,x in copy_5_bytes_table_to_ram_0490, advance_state_counter_to_60, draw_vertical_sprite_column) — a 5-byte-per-slot record copied as a block. The base byte is treated as a counter: advance_state_counter_to_60 stores into it (sta $0490,x), and sub2_"
+
+[[var]]
+addr = "04A5"
+name = "obj_state"
+role = "obj_field"
+conf = "MED"
+why = "Accessed indexed by Y (`lda $04a5,y` / `sta $04a5,y` at $EE06/$EE17) inside `find_first_empty_slot`, so it is a per-slot entry in an object table (base $04A5). The routine names that touch it — `find_first_empty_slot` (scans slots for an empty/inactive one and writes) and `init_objects_if_inactive` "
+
+[[var]]
+addr = "0500"
+name = "vram_buffer"
+role = "buffer_cursor"
+conf = "MED"
+why = "All 6 routines touch $0500 indexed (,x/,y), never as a 16-bit pointer or flag — it is the base of an array, not a scalar. Writers are all enqueue/append/copy producers: ppu_buffer_enqueue ($C796/$C79C sta $0500,x), append_record_to_buffer ($C820/$C826), build_buffer_entry_unpack_nibbles ($D600/$D606"
+
+[[var]]
+addr = "0600"
+name = "obj_state_table"
+role = "array"
+conf = "MED"
+why = "Touched almost exclusively as an indexed base ($0600,x), not a scalar: init_object_tables writes it (sta $0600,x), run_object_animation_script writes it (sta $0600,x), and sound_engine_tick both reads and writes it indexed (lda $0600,x at $F597/$F5A4). That makes $0600 the base of a parallel per-obj"
+
+
+# === object record layout (16 bytes, base $0400 stride $10; via obj_record_ptr $1E) ===
+# recovered from cross-routine field usage (obj_record.py); no external labels.
+
+[[obj_field]]
+offset = "00"
+name = "obj_x_lo"
+conf = "HIGH"
+why = "cited above"
+
+[[obj_field]]
+offset = "01"
+name = "obj_x_hi"
+conf = "HIGH"
+why = "Across ~28 routines this field is overwhelmingly used as a coordinate in distance/adjacency math: it is the subtrahend in 'sbc $0401' / 'cmp $0401' in check_two_coords_adjacent, check_obj_near_point, find_adjacent_entity"
+
+[[obj_field]]
+offset = "02"
+name = "obj_y_lo"
+conf = "MED"
+why = "Field +02 is advanced additively each frame: advance_object_subpixel_position_then_clamp does adc ($1e),y / sta ($1e),y (accumulate a per-frame delta into the coordinate, then clamp), and advance_pointer_by_flagged_offse"
+
+[[obj_field]]
+offset = "03"
+name = "obj_y_hi"
+conf = "MED"
+why = "Field +03 is differenced, never compared to small constants — across ~25 routines it is read/subtracted as a coordinate (find_adjacent_entity, trigger_state_change_on_proximity, check_object_player_collision, check_objec"
+
+[[obj_field]]
+offset = "04"
+name = "obj_state"
+conf = "HIGH"
+why = "35 routines touch +04 and the naming/usage is saturated with state-machine semantics, not numeric/position math. Writers that set a new state: set_obj_state_and_load_next_ptr ($E4A8), reset_obj_to_state2_and_arm_field ($"
+
+[[obj_field]]
+offset = "05"
+name = "obj_type"
+conf = "HIGH"
+why = "Touched by 16 routines that are overwhelmingly state-machine drivers: update_active_object_state_machine ($EF50 r + $EF73/$EF96 w — reads field, branches, writes new discrete values), update_matching_object_state (w $ED2"
+
+[[obj_field]]
+offset = "06"
+name = "obj_velocity"
+conf = "MED"
+why = "Field is read-modify-written via the `sbc ($1e),y`/`sta ($1e),y` (subtract-with-borrow) idiom in reverse_obj_velocity_and_set_state ($DD54/$DD56), object_bounce_timer_reverse_or_advance ($E2BF/$E2C1), scan_objects_for_ad"
+
+[[obj_field]]
+offset = "07"
+name = "obj_timer"
+conf = "HIGH"
+why = "HIGH"
+
+[[obj_field]]
+offset = "08"
+name = "obj_state"
+conf = "HIGH"
+why = "Read+written by the engine's state machine: object_state_transition_update reads then writes it ($E249 lda / $E261 sta); reset_obj_to_state2_and_arm_field sets it to a discrete state (2); obj_state7_update_anim_and_snap_"
+
+[[obj_field]]
+offset = "09"
+name = "obj_state"
+conf = "MED"
+why = "Only 2 routines touch +09. It is WRITTEN by scan_objects_for_adjacent_contact_and_trigger (sta ($1e),y at $EA94 and $EADB — two distinct stores, i.e. set-on-contact vs reset branch) and READ by advance_object_state_count"
+
+[[obj_field]]
+offset = "0A"
+name = "obj_timer"
+conf = "MED"
+why = "update_object_proximity_collision_tick does `dec $042a` (decrement once per tick), and tick_bonus_item_collect_or_timeout writes it via `sta $042a` (sets/reloads the countdown) — a routine literally named for collect-or-"
+
+[[obj_field]]
+offset = "0B"
+name = "obj_state"
+conf = "HIGH"
+why = "13 routines treat +0B as a discrete state/phase selector, not a counter. It's written by a cluster of state-transition routines (object_state_transition_update $E28D, update_obj_phase7_transition $E202, advance_obj_state"
+
+[[obj_field]]
+offset = "0C"
+name = "obj_x_sub"
+conf = "LOW"
+why = "Only one routine touches +0C: advance_object_subpixel_position_then_clamp, which reads it via `lda ($1e),y` (Y=#$0C). A routine whose whole job is advancing subpixel position and clamping, reading this field as an input "
+
+[[obj_field]]
+offset = "0D"
+name = "obj_state"
+conf = "HIGH"
+why = "Field is pure-write (no inc/dec/RMW): update_object_state_vs_reference stores to it twice ($D941/$D990 sta ($1e),y) after comparing against a reference, and every other accessor only reads it — resolve_entity_collision_m"
+
+[[obj_field]]
+offset = "0E"
+name = "obj_flags"
+conf = "MED"
+why = "Only 3 routines touch +0E and the access pattern is bit-manipulation, not arithmetic or position math. store_one_via_ptr does `asl $040e` then `inc $040e` — shifting a bit in / setting the low bit (packing flags), with n"
+
+[[obj_field]]
+offset = "0F"
+name = "obj_state"
+conf = "HIGH"
+why = "x"
