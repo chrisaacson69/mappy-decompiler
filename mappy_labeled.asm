@@ -1878,7 +1878,7 @@ ppu_clear_nametables:
     CC14: 60          rts
 
 ppu_run_draw_blocks:
-    CC15: B9 41 CC    lda $cc41,y
+    CC15: B9 41 CC    lda tbl_palhud_ptr,y   ; $CC41
     CC18: 85 10       sta src_ptr   ; $10
     CC1A: B9 42 CC    lda $cc42,y
     CC1D: 85 11       sta zp_ptr_hi   ; $11
@@ -1902,16 +1902,15 @@ ppu_run_draw_blocks:
     CC3B: C6 12       dec gfx_src_ptr   ; $12
     CC3D: D0 F6       bne @CC35   ; $CC35
     CC3F: F0 E0       beq @CC21   ; $CC21
-    CC41: 4B          .byte $4B
-    CC42: CC          .byte $CC
-    CC43: 60          .byte $60
-    CC44: CC          .byte $CC
-    CC45: EF          .byte $EF
-    CC46: CC          .byte $CC
-    CC47: 03          .byte $03
-    CC48: CD          .byte $CD
-    CC49: 17          .byte $17
-    CC4A: CD          .byte $CD
+
+tbl_palhud_ptr:
+    CC41:            .word palhud_block_00
+    CC43:            .word palhud_block_02
+    CC45:            .word palhud_block_04
+    CC47:            .word palhud_block_06
+    CC49:            .word palhud_block_08
+
+palhud_block_00:
     CC4B: 11          .byte $11
     CC4C: 4B          .byte $4B
     CC4D: 20          .byte $20
@@ -1933,6 +1932,8 @@ ppu_run_draw_blocks:
     CC5D: 00          .byte $00
     CC5E: AE          .byte $AE
     CC5F: 00          .byte $00
+
+palhud_block_02:
     CC60: 20          .byte $20
     CC61: 00          .byte $00
     CC62: 3F          .byte $3F
@@ -2076,6 +2077,8 @@ ppu_run_draw_blocks:
     CCEC: 0F          .byte $0F
     CCED: 0E          .byte $0E
     CCEE: 00          .byte $00
+
+palhud_block_04:
     CCEF: 10          .byte $10
     CCF0: 00          .byte $00
     CCF1: 3F          .byte $3F
@@ -2096,6 +2099,8 @@ ppu_run_draw_blocks:
     CD00: 19          .byte $19
     CD01: 13          .byte $13
     CD02: 00          .byte $00
+
+palhud_block_06:
     CD03: 10          .byte $10
     CD04: 00          .byte $00
     CD05: 3F          .byte $3F
@@ -2116,6 +2121,8 @@ ppu_run_draw_blocks:
     CD14: 19          .byte $19
     CD15: 13          .byte $13
     CD16: 00          .byte $00
+
+palhud_block_08:
     CD17: 10          .byte $10
     CD18: 00          .byte $00
     CD19: 3F          .byte $3F
@@ -2167,7 +2174,7 @@ build_stage_screen_layout:
     CD52: 0A          asl a
     CD53: 85 1F       sta obj_record_ptr_hi   ; $1F
     CD55: AA          tax
-    CD56: BD BF CD    lda $cdbf,x
+    CD56: BD BF CD    lda tbl_round_attributes,x   ; $CDBF
     CD59: 85 7C       sta block_def_ptr_hi   ; $7C
     CD5B: F0 30       beq @CD8D   ; $CD8D
     CD5D: A9 00       lda #$00
@@ -2215,6 +2222,8 @@ fill_attr_source_0170:
     CDBB: 88          dey
     CDBC: D0 F9       bne fill_attr_source_0170   ; $CDB7
     CDBE: 60          rts
+
+tbl_round_attributes:
     CDBF: 00          .byte $00
     CDC0: 04          .byte $04
     CDC1: 00          .byte $00
@@ -2523,7 +2532,7 @@ load_ptr_descriptor_and_scan:
     CF68: 00          .byte $00
 
 ppu_draw_blocks_b:
-    CF69: B9 A6 CF    lda $cfa6,y
+    CF69: B9 A6 CF    lda tbl_frameitem_ptr,y   ; $CFA6
     CF6C: 85 10       sta src_ptr   ; $10
     CF6E: B9 A7 CF    lda $cfa7,y
     CF71: 85 11       sta zp_ptr_hi   ; $11
@@ -2561,18 +2570,16 @@ ppu_draw_blocks_b:
     CFA3: D0 E6       bne @CF8B   ; $CF8B
 @CFA5:
     CFA5: 60          rts
-    CFA6: B2          .byte $B2
-    CFA7: CF          .byte $CF
-    CFA8: DB          .byte $DB
-    CFA9: CF          .byte $CF
-    CFAA: 0E          .byte $0E
-    CFAB: D0          .byte $D0
-    CFAC: 47          .byte $47
-    CFAD: D0          .byte $D0
-    CFAE: 7A          .byte $7A
-    CFAF: D0          .byte $D0
-    CFB0: C5          .byte $C5
-    CFB1: D0          .byte $D0
+
+tbl_frameitem_ptr:
+    CFA6:            .word frameitem_block_00
+    CFA8:            .word frameitem_block_02
+    CFAA:            .word frameitem_block_04
+    CFAC:            .word frameitem_block_06
+    CFAE:            .word frameitem_frame_fixed
+    CFB0:            .word frameitem_block_0A
+
+frameitem_block_00:
     CFB2: 01          .byte $01
     CFB3: A3          .byte $A3
     CFB4: 20          .byte $20
@@ -2614,6 +2621,8 @@ ppu_draw_blocks_b:
     CFD8: 5B          .byte $5B
     CFD9: 00          .byte $00
     CFDA: 00          .byte $00
+
+frameitem_block_02:
     CFDB: 01          .byte $01
     CFDC: 93          .byte $93
     CFDD: 20          .byte $20
@@ -2665,6 +2674,8 @@ ppu_draw_blocks_b:
     D00B: 7E          .byte $7E
     D00C: 00          .byte $00
     D00D: 00          .byte $00
+
+frameitem_block_04:
     D00E: 01          .byte $01
     D00F: 91          .byte $91
     D010: 20          .byte $20
@@ -2722,6 +2733,8 @@ ppu_draw_blocks_b:
     D044: 81          .byte $81
     D045: 00          .byte $00
     D046: 00          .byte $00
+
+frameitem_block_06:
     D047: 01          .byte $01
     D048: 82          .byte $82
     D049: 20          .byte $20
@@ -2773,6 +2786,8 @@ ppu_draw_blocks_b:
     D077: 7E          .byte $7E
     D078: 00          .byte $00
     D079: 00          .byte $00
+
+frameitem_frame_fixed:
     D07A: 05          .byte $05
     D07B: 01          .byte $01
     D07C: 21          .byte $21
@@ -2848,6 +2863,8 @@ ppu_draw_blocks_b:
     D0C2: 55          .byte $55
     D0C3: 00          .byte $00
     D0C4: 00          .byte $00
+
+frameitem_block_0A:
     D0C5: 05          .byte $05
     D0C6: A2          .byte $A2
     D0C7: 20          .byte $20
@@ -2947,7 +2964,7 @@ ppu_draw_blocks_b:
     D125: 00          .byte $00
 
 ppu_draw_mansion_stamps:
-    D126: B9 85 D1    lda $d185,y
+    D126: B9 85 D1    lda tbl_mansion_ptr,y   ; $D185
     D129: 85 10       sta src_ptr   ; $10
     D12B: B9 86 D1    lda $d186,y
     D12E: 85 11       sta zp_ptr_hi   ; $11
@@ -3005,20 +3022,17 @@ ppu_draw_mansion_stamps:
     D182: F0 AE       beq @D132   ; $D132
 @D184:
     D184: 60          rts
-    D185: 93          .byte $93
-    D186: D1          .byte $D1
-    D187: F5          .byte $F5
-    D188: D1          .byte $D1
-    D189: 62          .byte $62
-    D18A: D2          .byte $D2
-    D18B: D9          .byte $D9
-    D18C: D2          .byte $D2
-    D18D: 50          .byte $50
-    D18E: D3          .byte $D3
-    D18F: 1C          .byte $1C
-    D190: D4          .byte $D4
-    D191: 83          .byte $83
-    D192: D4          .byte $D4
+
+tbl_mansion_ptr:
+    D185:            .word mansion_block_00
+    D187:            .word mansion_block_02
+    D189:            .word mansion_block_04
+    D18B:            .word mansion_block_06
+    D18D:            .word mansion_block_08
+    D18F:            .word mansion_block_0A
+    D191:            .word mansion_frame_bonus
+
+mansion_block_00:
     D193: 04          .byte $04
     D194: 51          .byte $51
     D195: D3          .byte $D3
@@ -3117,6 +3131,8 @@ ppu_draw_mansion_stamps:
     D1F2: B6          .byte $B6
     D1F3: 27          .byte $27
     D1F4: 00          .byte $00
+
+mansion_block_02:
     D1F5: 08          .byte $08
     D1F6: 5D          .byte $5D
     D1F7: D3          .byte $D3
@@ -3226,6 +3242,8 @@ ppu_draw_mansion_stamps:
     D25F: B6          .byte $B6
     D260: 27          .byte $27
     D261: 00          .byte $00
+
+mansion_block_04:
     D262: 02          .byte $02
     D263: 81          .byte $81
     D264: D3          .byte $D3
@@ -3345,6 +3363,8 @@ ppu_draw_mansion_stamps:
     D2D6: B6          .byte $B6
     D2D7: 27          .byte $27
     D2D8: 00          .byte $00
+
+mansion_block_06:
     D2D9: 08          .byte $08
     D2DA: 51          .byte $51
     D2DB: D3          .byte $D3
@@ -3464,6 +3484,8 @@ ppu_draw_mansion_stamps:
     D34D: 27          .byte $27
     D34E: B6          .byte $B6
     D34F: 27          .byte $27
+
+mansion_block_08:
     D350: 00          .byte $00
     D351: 02          .byte $02
     D352: 5C          .byte $5C
@@ -3668,6 +3690,8 @@ ppu_draw_mansion_stamps:
     D419: 49          .byte $49
     D41A: 49          .byte $49
     D41B: 00          .byte $00
+
+mansion_block_0A:
     D41C: 05          .byte $05
     D41D: 67          .byte $67
     D41E: D4          .byte $D4
@@ -3771,6 +3795,8 @@ ppu_draw_mansion_stamps:
     D480: 82          .byte $82
     D481: 83          .byte $83
     D482: 00          .byte $00
+
+mansion_frame_bonus:
     D483: 01          .byte $01
     D484: 93          .byte $93
     D485: D4          .byte $D4

@@ -1815,3 +1815,159 @@ name = "cpu_interrupt_vectors"
 kind = "data"
 conf = "HIGH"
 why = "6502 hardware vectors: $FFFA=NMI -> nmi handler $C2EF, $FFFC=RESET -> reset_cold_boot_init $C031, $FFFE=IRQ -> irq_rti_stub $C304. Labeled so tbl_demo_input_script ($FFE1) does not absorb the vector bytes."
+
+# --- level-creation data (round table + 3 indexed pointer tables + their draw-block blobs) ---
+
+[[label]]
+addr = "CDBF"
+name = "tbl_round_attributes"
+kind = "data"
+conf = "HIGH"
+why = "Level-design-as-data: 16 rounds x 4 bytes [bonus, palhud_idx, item_idx, mansion_idx], read at round*4 by build_stage_screen_layout ($CD56 lda $cdbf,x). byte0!=0 marks the bonus rounds 2/6/10/14 (values $02/$04/$06/$08). bytes 1-3 are Y-offset selectors into tbl_palhud_ptr/tbl_frameitem_ptr/tbl_mansion_ptr. Chapter 8's '64 bytes = the whole game's level design'."
+
+[[label]]
+addr = "CC41"
+name = "tbl_palhud_ptr"
+kind = "data"
+conf = "HIGH"
+why = "5x 2-byte LE pointers to palhud_block_* draw-command blobs ($CC4B/$CC60/$CCEF/$CD03/$CD17). Indexed by palhud_idx (round-attr byte1) via ppu_run_draw_blocks ($CC15: lda $cc41,y). Palette/HUD/title template layer."
+
+[[label]]
+addr = "CFA6"
+name = "tbl_frameitem_ptr"
+kind = "data"
+conf = "HIGH"
+why = "6x 2-byte LE pointers to frameitem_block_* blobs ($CFB2..$D0C5). Indexed by item_idx (round-attr byte2) and by a constant Y=8 (the fixed playfield frame) via ppu_draw_blocks_b ($CF69: lda $cfa6,y). Frame + item-tile placement layer (items are nametable tiles)."
+
+[[label]]
+addr = "D185"
+name = "tbl_mansion_ptr"
+kind = "data"
+conf = "HIGH"
+why = "7x 2-byte LE pointers to mansion_block_* RLE stamp blobs ($D193..$D483). Indexed by mansion_idx (round-attr byte3), plus Y=$0C (bonus mansion frame) via ppu_draw_mansion_stamps ($D126: lda $d185,y). Mansion floor/wall/door structure layer."
+
+[[label]]
+addr = "CC4B"
+name = "palhud_block_00"
+kind = "data"
+conf = "HIGH"
+why = "tbl_palhud_ptr[Y=0]; palhud_idx 0 (not selected by any round; title/HUD-header context per ch8). [count][ppu_addr_hi][ppu_addr_lo][tiles..][0-term] blocks."
+
+[[label]]
+addr = "CC60"
+name = "palhud_block_02"
+kind = "data"
+conf = "HIGH"
+why = "tbl_palhud_ptr[Y=2]; palhud_idx 2 (unused by rounds; palette-init context per ch8)."
+
+[[label]]
+addr = "CCEF"
+name = "palhud_block_04"
+kind = "data"
+conf = "HIGH"
+why = "tbl_palhud_ptr[Y=4]; palhud_idx 4 -> rounds 0,2,4,6,8,10,12,14 (includes all bonus)."
+
+[[label]]
+addr = "CD03"
+name = "palhud_block_06"
+kind = "data"
+conf = "HIGH"
+why = "tbl_palhud_ptr[Y=6]; palhud_idx 6 -> rounds 3,7,11,15."
+
+[[label]]
+addr = "CD17"
+name = "palhud_block_08"
+kind = "data"
+conf = "HIGH"
+why = "tbl_palhud_ptr[Y=8]; palhud_idx 8 -> rounds 1,5,9,13."
+
+[[label]]
+addr = "CFB2"
+name = "frameitem_block_00"
+kind = "data"
+conf = "HIGH"
+why = "tbl_frameitem_ptr[Y=0]; item_idx 0 -> rounds 0,1,15. Item tiles written into the nametable."
+
+[[label]]
+addr = "CFDB"
+name = "frameitem_block_02"
+kind = "data"
+conf = "HIGH"
+why = "tbl_frameitem_ptr[Y=2]; item_idx 2 -> rounds 3,4,5."
+
+[[label]]
+addr = "D00E"
+name = "frameitem_block_04"
+kind = "data"
+conf = "HIGH"
+why = "tbl_frameitem_ptr[Y=4]; item_idx 4 -> rounds 7,8,9."
+
+[[label]]
+addr = "D047"
+name = "frameitem_block_06"
+kind = "data"
+conf = "HIGH"
+why = "tbl_frameitem_ptr[Y=6]; item_idx 6 -> rounds 11,12,13."
+
+[[label]]
+addr = "D07A"
+name = "frameitem_frame_fixed"
+kind = "data"
+conf = "HIGH"
+why = "tbl_frameitem_ptr[Y=8]; the FIXED playfield frame, drawn EVERY round (CD8F ldy #$08). Not an item set."
+
+[[label]]
+addr = "D0C5"
+name = "frameitem_block_0A"
+kind = "data"
+conf = "HIGH"
+why = "tbl_frameitem_ptr[Y=$0A]; item_idx $0A -> bonus rounds 2,6,10,14 (balloons)."
+
+[[label]]
+addr = "D193"
+name = "mansion_block_00"
+kind = "data"
+conf = "HIGH"
+why = "tbl_mansion_ptr[Y=0]; mansion_idx 0 -> rounds 0,1,15. [count][data_ptr][N x ppu_addr] RLE tile-stamp groups."
+
+[[label]]
+addr = "D1F5"
+name = "mansion_block_02"
+kind = "data"
+conf = "HIGH"
+why = "tbl_mansion_ptr[Y=2]; mansion_idx 2 -> rounds 3,4,5."
+
+[[label]]
+addr = "D262"
+name = "mansion_block_04"
+kind = "data"
+conf = "HIGH"
+why = "tbl_mansion_ptr[Y=4]; mansion_idx 4 -> rounds 7,8,9."
+
+[[label]]
+addr = "D2D9"
+name = "mansion_block_06"
+kind = "data"
+conf = "HIGH"
+why = "tbl_mansion_ptr[Y=6]; mansion_idx 6 -> rounds 11,12,13."
+
+[[label]]
+addr = "D350"
+name = "mansion_block_08"
+kind = "data"
+conf = "HIGH"
+why = "tbl_mansion_ptr[Y=8]; mansion_idx 8 (not referenced by tbl_round_attributes; spare/title layout)."
+
+[[label]]
+addr = "D41C"
+name = "mansion_block_0A"
+kind = "data"
+conf = "HIGH"
+why = "tbl_mansion_ptr[Y=$0A]; mansion_idx $0A -> bonus rounds 2,6,10,14 mansion."
+
+[[label]]
+addr = "D483"
+name = "mansion_frame_bonus"
+kind = "data"
+conf = "HIGH"
+why = "tbl_mansion_ptr[Y=$0C]; the bonus-round mansion frame (CD63 ldy #$0C)."

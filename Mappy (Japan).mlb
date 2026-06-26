@@ -258,6 +258,28 @@ NesPrgRom:3F65:setup_stage_then_run_intro_frames:[HIGH] Disables render (ppu_dis
 NesPrgRom:37C:draw_two_tile_object:[MED] $12=tile($AE, or $66 when $1E==$20), $13=3 palette; jsr write_object_to_shadow_oam, advance X +8, $12=$67, jmp write_object_to_shadow_oam = 
 NesPrgRom:3FE1:tbl_demo_input_script:[HIGH] Attract-mode (demo) input track. Read ONLY at $D9D3/$D9DC (lda $ffe1,x) by the demo-input playback path (@D9C7), indexed by demo_script_curs
 NesPrgRom:3FFA:cpu_interrupt_vectors:[HIGH] 6502 hardware vectors: $FFFA=NMI -> nmi handler $C2EF, $FFFC=RESET -> reset_cold_boot_init $C031, $FFFE=IRQ -> irq_rti_stub $C304. Labeled s
+NesPrgRom:DBF:tbl_round_attributes:[HIGH] Level-design-as-data: 16 rounds x 4 bytes [bonus, palhud_idx, item_idx, mansion_idx], read at round*4 by build_stage_screen_layout ($CD56 ld
+NesPrgRom:C41:tbl_palhud_ptr:[HIGH] 5x 2-byte LE pointers to palhud_block_* draw-command blobs ($CC4B/$CC60/$CCEF/$CD03/$CD17). Indexed by palhud_idx (round-attr byte1) via ppu
+NesPrgRom:FA6:tbl_frameitem_ptr:[HIGH] 6x 2-byte LE pointers to frameitem_block_* blobs ($CFB2..$D0C5). Indexed by item_idx (round-attr byte2) and by a constant Y=8 (the fixed pla
+NesPrgRom:1185:tbl_mansion_ptr:[HIGH] 7x 2-byte LE pointers to mansion_block_* RLE stamp blobs ($D193..$D483). Indexed by mansion_idx (round-attr byte3), plus Y=$0C (bonus mansio
+NesPrgRom:C4B:palhud_block_00:[HIGH] tbl_palhud_ptr[Y=0]; palhud_idx 0 (not selected by any round; title/HUD-header context per ch8). [count][ppu_addr_hi][ppu_addr_lo][tiles..][
+NesPrgRom:C60:palhud_block_02:[HIGH] tbl_palhud_ptr[Y=2]; palhud_idx 2 (unused by rounds; palette-init context per ch8).
+NesPrgRom:CEF:palhud_block_04:[HIGH] tbl_palhud_ptr[Y=4]; palhud_idx 4 -> rounds 0,2,4,6,8,10,12,14 (includes all bonus).
+NesPrgRom:D03:palhud_block_06:[HIGH] tbl_palhud_ptr[Y=6]; palhud_idx 6 -> rounds 3,7,11,15.
+NesPrgRom:D17:palhud_block_08:[HIGH] tbl_palhud_ptr[Y=8]; palhud_idx 8 -> rounds 1,5,9,13.
+NesPrgRom:FB2:frameitem_block_00:[HIGH] tbl_frameitem_ptr[Y=0]; item_idx 0 -> rounds 0,1,15. Item tiles written into the nametable.
+NesPrgRom:FDB:frameitem_block_02:[HIGH] tbl_frameitem_ptr[Y=2]; item_idx 2 -> rounds 3,4,5.
+NesPrgRom:100E:frameitem_block_04:[HIGH] tbl_frameitem_ptr[Y=4]; item_idx 4 -> rounds 7,8,9.
+NesPrgRom:1047:frameitem_block_06:[HIGH] tbl_frameitem_ptr[Y=6]; item_idx 6 -> rounds 11,12,13.
+NesPrgRom:107A:frameitem_frame_fixed:[HIGH] tbl_frameitem_ptr[Y=8]; the FIXED playfield frame, drawn EVERY round (CD8F ldy #$08). Not an item set.
+NesPrgRom:10C5:frameitem_block_0A:[HIGH] tbl_frameitem_ptr[Y=$0A]; item_idx $0A -> bonus rounds 2,6,10,14 (balloons).
+NesPrgRom:1193:mansion_block_00:[HIGH] tbl_mansion_ptr[Y=0]; mansion_idx 0 -> rounds 0,1,15. [count][data_ptr][N x ppu_addr] RLE tile-stamp groups.
+NesPrgRom:11F5:mansion_block_02:[HIGH] tbl_mansion_ptr[Y=2]; mansion_idx 2 -> rounds 3,4,5.
+NesPrgRom:1262:mansion_block_04:[HIGH] tbl_mansion_ptr[Y=4]; mansion_idx 4 -> rounds 7,8,9.
+NesPrgRom:12D9:mansion_block_06:[HIGH] tbl_mansion_ptr[Y=6]; mansion_idx 6 -> rounds 11,12,13.
+NesPrgRom:1350:mansion_block_08:[HIGH] tbl_mansion_ptr[Y=8]; mansion_idx 8 (not referenced by tbl_round_attributes; spare/title layout).
+NesPrgRom:141C:mansion_block_0A:[HIGH] tbl_mansion_ptr[Y=$0A]; mansion_idx $0A -> bonus rounds 2,6,10,14 mansion.
+NesPrgRom:1483:mansion_frame_bonus:[HIGH] tbl_mansion_ptr[Y=$0C]; the bonus-round mansion frame (CD63 ldy #$0C).
 NesInternalRam:0:indirect_ptr:[pointer] .
 NesInternalRam:1:ptr_hi:[pointer] Flagged P (16-bit pointer). It is the HIGH byte of the general-purpose indirect pointer pair $0000/$0001: writers set it via `sty $01` (ppu_
 NesInternalRam:2:src_ptr_hi:[pointer] Repeatedly dereferenced as a 16-bit pointer paired with $01: routines use ($01,x), ($02),y, and ($02,x). load_ptr_descriptor_and_scan (ora (
