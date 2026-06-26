@@ -256,6 +256,8 @@ NesPrgRom:35B8:advance_to_next_8byte_record_and_loop:[MED] Entry adds #$08 to 16
 NesPrgRom:3606:run_object_animation_script:[HIGH] Loops at $F636 calling fetch_seq_byte_and_advance_index to read opcodes: <$60 = frame index (decodes via $f83b word table into object fields
 NesPrgRom:3F65:setup_stage_then_run_intro_frames:[HIGH] Disables render (ppu_disable_render), clears $0400 buffer, builds screen layout (build_stage_screen_layout), builds OAM/sprites, spawns obje
 NesPrgRom:37C:draw_two_tile_object:[MED] $12=tile($AE, or $66 when $1E==$20), $13=3 palette; jsr write_object_to_shadow_oam, advance X +8, $12=$67, jmp write_object_to_shadow_oam = 
+NesPrgRom:3FE1:tbl_demo_input_script:[HIGH] Attract-mode (demo) input track. Read ONLY at $D9D3/$D9DC (lda $ffe1,x) by the demo-input playback path (@D9C7), indexed by demo_script_curs
+NesPrgRom:3FFA:cpu_interrupt_vectors:[HIGH] 6502 hardware vectors: $FFFA=NMI -> nmi handler $C2EF, $FFFC=RESET -> reset_cold_boot_init $C031, $FFFE=IRQ -> irq_rti_stub $C304. Labeled s
 NesInternalRam:0:indirect_ptr:[pointer] .
 NesInternalRam:1:ptr_hi:[pointer] Flagged P (16-bit pointer). It is the HIGH byte of the general-purpose indirect pointer pair $0000/$0001: writers set it via `sty $01` (ppu_
 NesInternalRam:2:src_ptr_hi:[pointer] Repeatedly dereferenced as a 16-bit pointer paired with $01: routines use ($01,x), ($02),y, and ($02,x). load_ptr_descriptor_and_scan (ora (
@@ -306,7 +308,7 @@ NesInternalRam:35:obj_collision_state:[obj_field] No P (pointer-deref) or i (ind
 NesInternalRam:36:obj_record_ptr:[pointer] Dereferenced as a 16-bit pointer with (zp),y in two routines: ppu_run_draw_blocks ($CD0B: ora ($36),y) and check_obj_adjacency_set_hit_flag 
 NesInternalRam:37:obj_record_ptr_hi:[pointer] $0036/$0037 form a 16-bit pointer dereferenced via (zp),y: ppu_run_draw_blocks does `ora ($36),y` ($CD0B) and check_obj_adjacency_set_hit_fl
 NesInternalRam:3C:seq_data_ptr_hi:[pointer] Dereferenced as a 16-bit pointer: fetch_seq_byte_and_advance_index does `adc ($3b,x)` ($F9CD/$F9D3) and data_or_unclear does `adc ($3b,x)` (
-NesInternalRam:3D:scratch_byte_param:[scratch] All accesses are plain 8-bit byte ops — never (zp),y deref and never flagged P — so it is a scalar, not a pointer low byte. setup_stage_then
+NesInternalRam:3D:demo_script_cursor:[demo] Byte index into tbl_demo_input_script ($FFE1). The attract-mode input playback (@D9C7) reads it (ldx $3d $D9D1), decodes one RLE command, th
 NesInternalRam:40:stage_state:[state] No pointer-deref (P) or (zp),y use, so not a 16-bit pointer. Writers are state-management routines: validate_magic_and_restore_state_vars (s
 NesInternalRam:41:game_state_flags:[state] Read/written across core state routines: validate_magic_and_restore_state_vars (lda/sta $41) and pack_state_vars_into_zp_buffer (lda $41) tr
 NesInternalRam:42:game_phase:[state] Written only by setup routines (init_stage_with_intro_animation_then_spawn sta $42 at $C851/$C8AD, init_state_vars_and_pointer sta $42 at $C
@@ -333,7 +335,7 @@ NesInternalRam:64:data_ptr_hi:[pointer] $0064 is the HIGH byte of a 16-bit zero-
 NesInternalRam:65:active_object_count:[state] All three xrefs are READS (no writer shown), all in object-management routines: reset_objects_except_persistent_types ($DB28 lda $65), tick_
 NesInternalRam:67:screen_layout_ptr:[pointer] var_xref flags $0067 with [p] = dereferenced as a 16-bit pointer low byte. setup_screen_layout uses `and ($67,x)` — an indirect read through
 NesInternalRam:68:ptr_hi:[pointer] The lone dereference is setup_screen_layout $CBF2 `and ($67,x)`, which uses the zp pointer at $67/$68 — so $68 is the HIGH byte of a 16-bit 
-NesInternalRam:70:stamp_src_ptr_hi:[pointer] var_xref flags $0070 as a 16-bit pointer; ppu_draw_mansion_stamps dereferences the pair via `ora ($6f,x)` at $D213 — making $6F the low byte
+NesInternalRam:70:p1_lives:[counter] Player-1 lives (also the base of the P1 state block $70-$AF). Set to #$03 at stage init ($C86D); decremented 3->2 when a real game starts ($
 NesInternalRam:71:stage_timer_base:[counter] Written directly during stage setup (init_stage_with_intro_animation_then_spawn: $C8B7 sta $71), then accessed X-indexed as the base of a ze
 NesInternalRam:72:draw_src_ptr:[pointer] Dereferenced as a 16-bit zp pointer via `adc ($72),y` inside ppu_draw_mansion_stamps ($D35E), so $0072 is the low byte of a 16-bit pointer (
 NesInternalRam:74:decode_src_ptr:[pointer] x
@@ -358,7 +360,7 @@ NesInternalRam:95:obj_x:[obj_field] Always accessed indexed into an object table
 NesInternalRam:96:scratch_bitshift:[scratch] No 16-bit deref ((zp),y) anywhere, so not a pointer. Two routines use it as a bit-shift working byte: ppu_draw_mansion_stamps does `and $96`
 NesInternalRam:9D:data_ptr_hi:[pointer] $009D is the HIGH byte of a 16-bit pointer pair whose low byte is $009C. ppu_draw_mansion_stamps dereferences the pair via indexed-indirect 
 NesInternalRam:A0:block_data_ptr:[pointer] Flagged as 16-bit pointer low byte (P) and dereferenced indirect-indexed by ppu_draw_blocks_b ($CFC6: ora ($a0,x)) and append_computed_entry
-NesInternalRam:B0:var_record_ptr_hi:[pointer] Dereferenced as the high byte of a 16-bit pointer based at $AF: ppu_draw_mansion_stamps does `ora ($af,x)` ($D48D) and copy_var_record_to_05
+NesInternalRam:B0:p2_lives:[counter] Player-2 lives (base of the P2 state block $B0-$EF) — the mirror of p1_lives ($70), exchanged with it in swap_double_buffers_toggle_flag. Ne
 NesInternalRam:C1:block_data_ptr_hi:[pointer] All three dereferences operate on the $00C0 pair via indirect addressing — ppu_draw_blocks_b uses `ora ($c0,x)`/`ora ($c0,x)`, and setup_sta
 NesInternalRam:F0:work_ptr:[pointer] Flagged P (16-bit pointer low byte, +1 = high byte). Every user loads it then dereferences via (zp),y: init_object_tables sta $f0 / sta ($f0
 NesInternalRam:F1:data_ptr_hi:[pointer] $00F1 is the high byte of a 16-bit pointer based at $00F0; nearly every reference dereferences it as ($f0),y. Writers set it directly (sound
