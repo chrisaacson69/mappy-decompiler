@@ -41,6 +41,15 @@ created: 2026-06-26
   script replays frame-exact through the pad (`demo_in_real_game.py`). Still open: what
   reads `$040E` (player field $0E) and whether it drives the doors.
 
+- **Hidden state carried into a round = the frame-counter phase (measured 2026-10-02,
+  `seed_test.py`).** Pressing Start at 7 different frames then playing identical in-round
+  inputs: the player, the first cat records (`$0410`/`$0420`), items, score and lives match on
+  every frame, but cat records `$0430`-`$045F` diverge from about 1,700 frames in. At "live"
+  the only lasting difference is `$21` (named `cur_obj_state`). It tracks the Start delay one
+  for one (`$78`, `$79`, `$7A` for starts 60/61/62; `$9D` for 97), so it is a free-running
+  frame counter. No separate RNG found yet. Open: which cat routine reads `$21`, and is the
+  seed space really one byte (256 phases)?
+
 ## Symbol-table cleanups (from-scratch mislabels, pattern: pointer→counter)
 
 - **`$7B` rename.** Currently `draw_data_ptr` (pointer) but it's the per-stage enemy
