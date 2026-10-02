@@ -17,6 +17,7 @@ Pad (read_and_decode_input $C1C9): only Left/Right (movement) and A/B (door acti
 
   TAS for one phase:   py -3.14 mappy/mappy_search.py --starts 60 --restarts 3
   phase-robust run:    py -3.14 mappy/mappy_search.py --starts 60 61 97 300 --restarts 2
+  beam search:         add --beam 8 [--per-node 8]
 """
 from __future__ import annotations
 
@@ -51,6 +52,8 @@ class Obs:
     x: int
     y: int
     near: int       # distance to the nearest present item (0 if none)
+    left: int = 0   # bitmask of items still present (bit i = record i)
+    floor: int = 0  # player floor ($0403)
 
 
 def bcd(b: bytes) -> int:
@@ -58,10 +61,12 @@ def bcd(b: bytes) -> int:
 
 
 class MappyAdapter:
-    def __init__(self, seg_frames: int, target_round: int, shape: bool = True):
+    def __init__(self, seg_frames: int, target_round: int, shape: bool = True,
+                 route: list[int] | None = None):
         self.seg = seg_frames
         self.target = target_round
         self.shape = shape
+        self.route = route      # item order to follow (record indices); None = nearest first
 
     def sample(self, rng) -> list[int]:
         """Demo-script-shaped commands: hold a direction (or none) for 4..48 frames,
@@ -78,10 +83,21 @@ class MappyAdapter:
     def observe(self, c) -> Obs:
         r = c.ram(0, 0x800)
         px, pf = r[P_Y], r[P_FLOOR]
-        d = [abs(r[i + 4] - px) + FLOOR_COST * abs(r[i + 5] - pf) // 4
-             for i in range(ITEM_TABLE, ITEM_TABLE + r[ITEM_BYTES], 8) if r[i] == 2]
+        present = [k for k in range(r[ITEM_BYTES] // 8) if r[ITEM_TABLE + 8 * k] == 2]
+        if self.route and r[ROUND] == 0:
+            # aim at the first item of the route still present (round 1 only, for now)
+            nxt = next((k for k in self.route if k in present), None)
+            present = [nxt] if nxt is not None else present
+        d = [abs(r[ITEM_TABLE + 8 * k + 4] - px) + FLOOR_COST * abs(r[ITEM_TABLE + 8 * k + 5] - pf) // 4
+             for k in present]
+        left = sum(1 << (k // 8) for k in range(0, r[ITEM_BYTES], 8) if r[ITEM_TABLE + k] == 2)
         return Obs(r[P_STATE], r[LIVES], r[ROUND], r[ITEMS], bcd(r[SCORE]), r[P_X], r[P_Y],
-                   min(d, default=0))
+                   min(d, default=0), left, r[P_FLOOR])
+
+    def key(self, o: Obs):
+        """Beam diversity: one line per (which items remain, floor), so different item
+        orders survive side by side instead of all following the greedy nearest-item route."""
+        return (o.round, o.left, o.floor)
 
     def judge(self, o: Obs, base: Obs) -> Verdict:
         dead = o.state in DEATH_STATES or o.lives < base.lives
@@ -98,6 +114,66 @@ class MappyAdapter:
     def describe(self, o: Obs) -> str:
         return (f"round {o.round + 1} items left {o.items:>2} score {o.score:>7} "
                 f"lives {o.lives} state ${o.state:02X} near {o.near:>3}")
+
+
+def tour(items: list[tuple[int, int]], start: tuple[int, int], floor_cost: float,
+         noise: list[list[float]] | None = None) -> list[int]:
+    """Shortest open tour from `start` through every item (Held-Karp; 10 items is trivial)
+    under cost |dpos| + floor_cost * floors (+ optional per-edge noise)."""
+    n = len(items)
+    pts = [start] + items
+
+    def c(a, b):
+        (x1, f1), (x2, f2) = pts[a], pts[b]
+        v = abs(x1 - x2) + floor_cost * abs(f1 - f2) / 4
+        return v + (noise[a][b] if noise else 0)
+
+    best = {(1 << i, i): (c(0, i + 1), None) for i in range(n)}
+    for mask in range(1, 1 << n):
+        for i in range(n):
+            if (mask, i) not in best:
+                continue
+            base = best[(mask, i)][0]
+            for j in range(n):
+                if mask >> j & 1:
+                    continue
+                key = (mask | 1 << j, j)
+                v = base + c(i + 1, j + 1)
+                if key not in best or v < best[key][0]:
+                    best[key] = (v, i)
+    full = (1 << n) - 1
+    i = min(range(n), key=lambda i: best[(full, i)][0])
+    order, mask = [], full
+    while i is not None:
+        order.append(i)
+        prev = best[(mask, i)][1]
+        mask &= ~(1 << i)
+        i = prev
+    return order[::-1]
+
+
+def routes_for(ram: bytes, count: int, seed: int) -> list[list[int]]:
+    """Distinct candidate item orders: exact tours over a sweep of floor costs, then
+    noisy variants, until `count` distinct routes."""
+    import random
+    n = ram[ITEM_BYTES] // 8
+    items = [(ram[ITEM_TABLE + 8 * k + 4], ram[ITEM_TABLE + 8 * k + 5]) for k in range(n)]
+    start = (ram[P_Y], ram[P_FLOOR])
+    out: list[list[int]] = []
+    for fc in (10, 20, 40, 80, 120):
+        r = tour(items, start, fc)
+        if r not in out:
+            out.append(r)
+    rng = random.Random(seed)
+    tries = 0
+    while len(out) < count and tries < 200:
+        tries += 1
+        fc = rng.choice((10, 20, 40, 80, 120))
+        noise = [[rng.uniform(0, 30) for _ in range(n + 1)] for _ in range(n + 1)]
+        r = tour(items, start, fc, noise)
+        if r not in out:
+            out.append(r)
+    return out[:count]
 
 
 def boot(rom: Path, start_at: int) -> tuple[str, list[int], int]:
@@ -144,6 +220,10 @@ def main() -> int:
     ap.add_argument("--minutes", type=float, default=30, help="per restart")
     ap.add_argument("--no-shape", dest="shape", action="store_false",
                     help="drop the nearest-item distance from the score")
+    ap.add_argument("--beam", type=int, default=0, help="beam width (0 = greedy segment search)")
+    ap.add_argument("--per-node", type=int, default=8, help="beam: candidates per node")
+    ap.add_argument("--routes", type=int, default=0,
+                    help="plan N distinct item orders and search each (round 1); 0 = nearest first")
     ap.add_argument("--tag", default="")
     a = ap.parse_args()
     out = HERE / "_scratch"
@@ -154,19 +234,37 @@ def main() -> int:
         print(f"seed: Start from frame {s}: live after {len(prefix)} frames, $21 = ${phase:02X}")
     adapter = MappyAdapter(a.seg, a.rounds, a.shape)
     best = None
+    best_route = None
+    if a.routes:
+        with NES(ROM) as m:
+            m.load(boots[0][0])
+            ram0 = m.ram(0, 0x800)
+        plans = routes_for(ram0, a.routes, a.seed)
+    else:
+        plans = [None]
     with Searcher(lambda: NES(ROM, clean_battery=False), adapter, workers=a.workers) as srch:
-        for k in range(a.restarts):
-            sd = a.seed + k
-            print(f"\n== search seed {sd}" + (f", to beat {best.goal_frame} frames" if best else ""))
-            res = srch.search([b[0] for b in boots], candidates=a.candidates, seed=sd,
-                              max_seconds=a.minutes * 60,
-                              bound=best.goal_frame if best else None)
-            verdict = (f"GOAL in {res.goal_frame} frames ({res.goal_frame / 60.0988:.2f} s)"
-                       if res.goal else ("pruned" if res.pruned else "stopped"))
-            print(f"-- {verdict}; {res.candidates_run} runs, {res.backtracks} backtracks, "
-                  f"{res.seconds:.0f}s wall")
-            if res.goal and (best is None or res.goal_frame < best.goal_frame):
-                best = res
+        for route in plans:
+            adapter.route = route
+            if route:
+                print(f"\n#### route {'-'.join(map(str, route))}")
+            for k in range(a.restarts):
+                sd = a.seed + k
+                print(f"\n== search seed {sd}" + (f", to beat {best.goal_frame} frames" if best else ""))
+                bound = best.goal_frame if best else None
+                if a.beam:
+                    res = srch.beam_search([b[0] for b in boots], width=a.beam, per_node=a.per_node,
+                                           seed=sd, max_seconds=a.minutes * 60, bound=bound)
+                else:
+                    res = srch.search([b[0] for b in boots], candidates=a.candidates, seed=sd,
+                                      max_seconds=a.minutes * 60, bound=bound)
+                verdict = (f"GOAL in {res.goal_frame} frames ({res.goal_frame / 60.0988:.2f} s)"
+                           if res.goal else ("pruned" if res.pruned else "stopped"))
+                print(f"-- {verdict}; {res.candidates_run} runs, {res.backtracks} backtracks, "
+                      f"{res.seconds:.0f}s wall")
+                if res.goal and (best is None or res.goal_frame < best.goal_frame):
+                    best, best_route = res, route
+    if best_route:
+        print(f"\nbest route: {'-'.join(map(str, best_route))}")
     if best is None:
         print("no run reached the goal")
         return 1
