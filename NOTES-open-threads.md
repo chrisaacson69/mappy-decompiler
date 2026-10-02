@@ -32,16 +32,14 @@ created: 2026-06-26
 
 ## Attract / demo (chapter 6 region)
 
-- **What trips the demo exit — capture direction.** Confirmed the demo exits on
-  stage-resolution: `$4F`/`$4B` raised at `$E686` when `$7B` (stage object/enemy count,
-  set `$E5D8` = table size ÷ 8) hits 0. Still open: does `$7B→0` mean *mouse cleared the
-  cats* vs *cats reached their goal*? Needs the `$0260`-table semantics in
-  `resolve_object_position_capture_and_score` ($E660) — what `$0264/$0265` vs `$0401/$0403`
-  actually compare.
-- **`inc $040E` = the door/trap action?** The demo input track's `01` action code
-  (`@D9EC inc $040E`) is *probably* the door/trap button (3 occurrences in
-  `tbl_demo_input_script`). Verify what reads `$040E` (player field $0E, `con_obj_AB`) and
-  whether it drives door deployment.
+- **What trips the demo exit: RESOLVED 2026-10-02, the mouse is caught** (state `$08`,
+  `$4B`=1, `$7B`=5 of 10; ch6). The earlier "stage-resolution" reading was wrong. Still
+  open: what `$7B` counts as it falls 10→5 (it reaching 0 raises `$4F` at `$E686`), via
+  `resolve_object_position_capture_and_score` ($E660).
+- **`inc $040E` = the door/trap action?** Input side RESOLVED: real play copies `$22`
+  ("A or B pressed" history) into `$040E`, so the pulse is a one-frame A/B press, and the
+  script replays frame-exact through the pad (`demo_in_real_game.py`). Still open: what
+  reads `$040E` (player field $0E) and whether it drives the doors.
 
 ## Symbol-table cleanups (from-scratch mislabels, pattern: pointer→counter)
 
