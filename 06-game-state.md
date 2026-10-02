@@ -111,6 +111,17 @@ In real play (`$42`=1) the decoded joypad direction (`$26`) is written into the 
 
 So the long-standing **"scripted sequence *or* simple AI?" question is settled: it is a scripted track**, fed through the *same* `$D98A` routine the live pad uses — not runtime AI. The track is only ~25 bytes and has no `$00` terminator; it doesn't need one, because the AI player dies before it runs out (see below).
 
+**Verified encoding (2026-10-02, from `$D9C7`–`$D9EC`, then checked by running attract mode headless in Mesen and logging every cursor advance):** each byte is one command. Bits 7–6 select it; the low 6 bits give its length.
+
+| bits 7–6 | command | what it writes |
+|---|---|---|
+| `11` | move left | `$FF` → movement (`$040D`) |
+| `10` | move right | `$01` → movement |
+| `01` | action (door) | `inc $040E` (a one-frame pulse: `$040E` is shifted left every demo frame); movement unchanged |
+| `00` | stop | `$00` → movement (a whole `$00` byte stops without advancing the cursor) |
+
+A command lasts `(b & $3F) × 4 + 1` frames: the read frame plus `$3C` countdown frames. The measured gaps between cursor advances matched for all 22 commands (21, 69, 33, 1, 85, 133, …). **Only 22 of the 25 bytes ever run:** the demo stage ends before command 22 (`$D9`, 101 frames) finishes, about 1,240 frames after the script starts, so `$99 $FF $FF` are never read.
+
 > **Correction to an earlier draft of this chapter:** this section previously cited `sub_D4CA` as the "joypad → input" gate. `$D4CA` is actually `add_bcd_table_amount_to_buffer` — it gates **score accumulation** on the demo flag (the demo earns no score), *not* input. The real input gate is `$D98A`; the joypad *decode* is `read_and_decode_input` (`$C258` table → `$26`). Symbols added when this was traced: `tbl_demo_input_script` (`$FFE1`) and `demo_script_cursor` (`$3D`). `$3C` (hold-timer) and `$26` (direction) stay under their generic names — both are reused zero-page (pointer high-byte / object-record pointer elsewhere), so a demo-specific rename would mislabel their other uses.
 
 **Mappy plays itself in attract mode by replacing the player's input source, not by changing the engine.**
