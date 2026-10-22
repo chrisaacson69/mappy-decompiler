@@ -29,9 +29,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROM = HERE / "Mappy (Japan).nes"
-sys.path.insert(0, str(HERE.parents[1] / "emu-harness"))
-from emu_harness.machines.nes import KEYS, NES, write_input_log  # noqa: E402
-from emu_harness.search import Searcher, Verdict  # noqa: E402
+from emu_harness.machines.nes import KEYS, NES, write_input_log  # pip install -e ../emu-harness
+from emu_harness.search import Searcher, Verdict
 
 LEFT, RIGHT, A = (1 << KEYS.index(k) for k in ("left", "right", "a"))
 P_X, P_Y, P_STATE, DEMO_FLAG = 0x400, 0x401, 0x40F, 0x42
