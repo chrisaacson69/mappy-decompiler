@@ -10,19 +10,15 @@ the main loop advances. Log:
   * JSR/JMP edges    -> the call graph
   * indirect JMP targets (resolved at runtime -> the jump tables static sweep can't follow)
 
-Reuses the NA1 6502 core (na1dream.cpu6502.CPU6502) verbatim; a thin subclass completes the
-18 documented opcodes the VM-only build never needed. The disasm6502 OPS table is the ISA spec.
+The 6502 is emu-harness's shared core (emu_harness.cpu.m6502.cpu, MIGRATION.md row C), which now
+carries the 18 documented opcodes this script used to add in a subclass, and BRK / NMI with the
+real status byte. The disassembler's OPS table is the ISA spec.
 """
 import sys
 from pathlib import Path
 
-NA1_TOOLS = r"C:\Users\Chris.Isaacson\na1-decompiler\nobunaga\tools"
-KOEI_TOOLS = r"C:\Users\Chris.Isaacson\koei-nes\tools"
-sys.path.insert(0, NA1_TOOLS)
-sys.path.insert(0, KOEI_TOOLS)
-from na1dream.cpu6502 import CPU6502
-import disasm6502
-OPS, MODE_LEN = disasm6502.OPS, disasm6502.MODE_LEN
+from emu_harness.cpu.m6502.cpu import CPU6502
+from emu_harness.cpu.m6502.disasm import MODE_LEN, OPS
 
 ROM = Path(__file__).parent / "Mappy (Japan).nes"
 NMI_VEC, RESET_VEC, IRQ_VEC = 0xFFFA, 0xFFFC, 0xFFFE
@@ -60,43 +56,7 @@ class Mem:
     def write_word(self, a, v): self.write(a, v & 0xFF); self.write(a + 1, (v >> 8) & 0xFF)
 
 
-class TracingCPU(CPU6502):
-    """CPU6502 + the 18 missing documented opcodes + execution trace hooks."""
-    def addr_zp_y(self):
-        a = (self.mem.read(self.pc) + self.y) & 0xFF; self.pc += 1; return a
-
-    def _dispatch(self, op):
-        # --- the 18 opcodes the VM-only build omitted ---
-        if   op == 0x01: self.a |= self.mem.read(self.addr_ind_x()); self.set_nz(self.a)   # ORA (zp,X)
-        elif op == 0x21: self.a &= self.mem.read(self.addr_ind_x()); self.set_nz(self.a)   # AND (zp,X)
-        elif op == 0x41: self.a ^= self.mem.read(self.addr_ind_x()); self.set_nz(self.a)   # EOR (zp,X)
-        elif op == 0x61: self._adc(self.mem.read(self.addr_ind_x()))                       # ADC (zp,X)
-        elif op == 0xC1: self._cmp(self.a, self.mem.read(self.addr_ind_x()))               # CMP (zp,X)
-        elif op == 0x94: self.mem.write(self.addr_zp_x(), self.y)                          # STY zp,X
-        elif op == 0x96: self.mem.write(self.addr_zp_y(), self.x)                          # STX zp,Y
-        elif op == 0xB4: self.y = self.mem.read(self.addr_zp_x()); self.set_nz(self.y)     # LDY zp,X
-        elif op == 0xB6: self.x = self.mem.read(self.addr_zp_y()); self.set_nz(self.x)     # LDX zp,Y
-        elif op == 0xBC: self.y = self.mem.read(self.addr_abs_x()); self.set_nz(self.y)    # LDY abs,X
-        elif op == 0xBE: self.x = self.mem.read(self.addr_abs_y()); self.set_nz(self.x)    # LDX abs,Y
-        elif op == 0xCC: self._cmp(self.y, self.mem.read(self.addr_abs()))                 # CPY abs
-        elif op == 0xEC: self._cmp(self.x, self.mem.read(self.addr_abs()))                 # CPX abs
-        elif op == 0xD6:  # DEC zp,X
-            ad = self.addr_zp_x(); v = (self.mem.read(ad) - 1) & 0xFF; self.mem.write(ad, v); self.set_nz(v)
-        elif op == 0xF6:  # INC zp,X
-            ad = self.addr_zp_x(); v = (self.mem.read(ad) + 1) & 0xFF; self.mem.write(ad, v); self.set_nz(v)
-        elif op == 0xDE:  # DEC abs,X
-            ad = self.addr_abs_x(); v = (self.mem.read(ad) - 1) & 0xFF; self.mem.write(ad, v); self.set_nz(v)
-        elif op == 0xFE:  # INC abs,X
-            ad = self.addr_abs_x(); v = (self.mem.read(ad) + 1) & 0xFF; self.mem.write(ad, v); self.set_nz(v)
-        elif op == 0x00:  # BRK -> vector through IRQ ($FFFE)
-            self.push_word((self.pc + 1) & 0xFFFF); self.push(0x30)
-            self.i = True; self.pc = self.mem.read_word(IRQ_VEC)
-        else:
-            super()._dispatch(op)
-
-    def nmi(self):
-        self.push_word(self.pc); self.push(0x20)
-        self.i = True; self.pc = self.mem.read_word(NMI_VEC)
+TracingCPU = CPU6502      # the name the rest of this script (and its readers) use
 
 
 def trace(frames=4000, frame_budget=12000, max_steps=80_000_000):
