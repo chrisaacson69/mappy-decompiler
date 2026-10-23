@@ -11,22 +11,18 @@ Method: recursive-descent from every seed -- follow BOTH sides of each branch, f
         ALL its entries as seeds -- including the handlers the demo never triggered. Iterate to
         a fixpoint. Mark table bytes as DATA so descent never decodes them as instructions.
 
-The disasm6502 OPS table is the ISA spec (lengths + which opcodes are control flow).
+The descent is emu_harness's shared walker via code_map.py (emu-harness MIGRATION.md row B);
+the jump-table finder below is still Mappy's (row R).
 """
-import sys, re
-from pathlib import Path
-sys.path.insert(0, r"C:\Users\Chris.Isaacson\koei-nes\tools")
-import disasm6502
-OPS, MODE_LEN, REL = disasm6502.OPS, disasm6502.MODE_LEN, disasm6502.REL
+import re
 
-HERE = Path(__file__).parent
-PRG = (HERE / "Mappy (Japan).nes").read_bytes()[16:16 + 0x4000]
+from emu_harness.cpu.m6502.disasm import OPS
+from code_map import HERE, PRG, reach
+
 def norm(a): return a & 0x3FFF                    # $8000/$C000 -> 0..0x3FFF
 def cpu(a): return 0xC000 + norm(a)              # canonical CPU addr
 def in_code_region(a): return 0xC000 <= a <= 0xFFFF or 0x8000 <= a <= 0xBFFF
 def legal(a): return PRG[norm(a)] in OPS         # byte at a is a documented opcode
-
-BRANCHES = {0x10, 0x30, 0x50, 0x70, 0x90, 0xB0, 0xD0, 0xF0}
 
 # ---- load dynamic results ----
 seeds, indirect_sites = set(), {}
@@ -79,42 +75,6 @@ def find_table(site, known_targets):
     return best
 
 
-def descend(entry):
-    """Recursive-descent from one entry; mark code; return newly found JSR/JMP targets."""
-    found = set()
-    stack = [entry]
-    seen = set()
-    while stack:
-        pc = stack.pop()
-        while True:
-            n = norm(pc)
-            if n in seen: break
-            if is_data[n]: break
-            op = PRG[n]
-            if op not in OPS:                 # ILLEGAL -> data guard: stop this path
-                break
-            ilen = 1 + MODE_LEN.get(OPS[op][1], 0)
-            for k in range(ilen): code[norm(pc + k)] = 1
-            seen.add(n)
-            if op in BRANCHES:                # REL: take both sides
-                off = PRG[norm(pc + 1)]; off -= 0x100 if off >= 0x80 else 0
-                tgt = (pc + 2 + off) & 0xFFFF
-                if in_code_region(tgt): stack.append(tgt)
-                pc = (pc + 2) & 0xFFFF; continue
-            if op == 0x20:                    # JSR: record callee, fall through
-                tgt = PRG[norm(pc+1)] | (PRG[norm(pc+2)] << 8)
-                if in_code_region(tgt): found.add(tgt)
-                pc = (pc + 3) & 0xFFFF; continue
-            if op == 0x4C:                    # JMP abs: follow, no fall-through
-                tgt = PRG[norm(pc+1)] | (PRG[norm(pc+2)] << 8)
-                if in_code_region(tgt): found.add(tgt)
-                break
-            if op in (0x60, 0x40, 0x00, 0x6C):  # RTS/RTI/BRK/JMP(ind): terminate
-                break
-            pc = (pc + ilen) & 0xFFFF
-    return found
-
-
 # ---- mark jump tables as DATA + add their full entry lists as seeds ----
 tables = {}
 for site, tg in indirect_sites.items():
@@ -128,14 +88,7 @@ for site, tg in indirect_sites.items():
             is_data[norm(lo + 2*k)] = is_data[norm(lo + 2*k + 1)] = 1
 
 # ---- fixpoint recursive-descent ----
-work = set(seeds); all_routines = set(seeds)
-while work:
-    nxt = set()
-    for e in work:
-        for t in descend(e):
-            if t not in all_routines: nxt.add(t)
-    all_routines |= nxt
-    work = nxt
+all_routines, _ = reach(seeds, is_data, code)
 
 covered = sum(code)
 print(f"jump tables located: {len(tables)}")
@@ -148,5 +101,5 @@ print(f"  (dynamic was {prev:,} = {100*prev/0x4000:.1f}%; static added {covered-
 (HERE / "coverage_static.bin").write_bytes(bytes(code))
 with open(HERE / "routines.txt", "w") as f:
     for r in sorted(all_routines):
-        if in_code_region(r): f.write(f"${0xC000 + norm(r):04X}\n")
+        f.write(f"${r:04X}\n")
 print("wrote coverage_static.bin, routines.txt")

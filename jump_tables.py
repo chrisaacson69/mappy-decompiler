@@ -15,19 +15,15 @@ back-scan to the indexed LDA that loads its pointer -> that operand is the table
 read the word array to its end. Seed all handlers, mark the table bytes DATA, recurse.
 This finds tables the demo never executed (bonus $E17A via the un-taken $DA29 site).
 """
-import re, sys
-from pathlib import Path
-sys.path.insert(0, r"C:\Users\Chris.Isaacson\koei-nes\tools")
-import disasm6502
-OPS, MODE_LEN = disasm6502.OPS, disasm6502.MODE_LEN
+import re
 
-HERE = Path(__file__).parent
-PRG = (HERE / "Mappy (Japan).nes").read_bytes()[16:16 + 0x4000]
+from emu_harness.cpu.m6502.disasm import OPS
+from code_map import HERE, PRG, reach
+
 def norm(a): return a & 0x3FFF
 def cpu(a):  return 0xC000 + norm(a)
 def in_code(a): return 0xC000 <= a <= 0xFFFF or 0x8000 <= a <= 0xBFFF
 def legal(a): return PRG[norm(a)] in OPS
-BRANCHES = {0x10,0x30,0x50,0x70,0x90,0xB0,0xD0,0xF0}
 
 # seeds = dynamic targets + vectors
 seeds = {0xC2EF,0xC031,0xC304}
@@ -43,46 +39,12 @@ is_data = bytearray(0x4000)
 starts = {}           # instruction-start addr (norm) -> opcode
 ptr_of = {}           # JMP-(ind) site norm -> zp pointer operand
 
-def descend(entry):
-    found=set(); stack=[entry]; seen=set()
-    while stack:
-        pc=stack.pop()
-        while True:
-            n=norm(pc)
-            if n in seen or is_data[n]: break
-            op=PRG[n]
-            if op not in OPS: break
-            ilen=1+MODE_LEN.get(OPS[op][1],0)
-            for k in range(ilen): code[norm(pc+k)]=1
-            seen.add(n); starts[n]=op
-            if op in BRANCHES:
-                off=PRG[norm(pc+1)]; off-=0x100 if off>=0x80 else 0
-                t=(pc+2+off)&0xFFFF
-                if in_code(t): stack.append(t)
-                pc=(pc+2)&0xFFFF; continue
-            if op==0x20:                       # JSR
-                t=PRG[norm(pc+1)]|(PRG[norm(pc+2)]<<8)
-                if in_code(t): found.add(t)
-                pc=(pc+3)&0xFFFF; continue
-            if op==0x4C:                       # JMP abs
-                t=PRG[norm(pc+1)]|(PRG[norm(pc+2)]<<8)
-                if in_code(t): found.add(t)
-                break
-            if op==0x6C:                       # JMP (ind) -- dispatch site
-                ptr_of[n]=PRG[norm(pc+1)]|(PRG[norm(pc+2)]<<8)
-                break
-            if op in (0x60,0x40,0x00): break   # RTS/RTI/BRK
-            pc=(pc+ilen)&0xFFFF
-    return found
-
 def fixpoint_descend(seedset):
-    work=set(seedset); routines=set(seedset)
-    while work:
-        nxt=set()
-        for e in work:
-            for t in descend(e):
-                if t not in routines: nxt.add(t)
-        routines|=nxt; work=nxt
+    routines, st = reach(seedset, is_data, code)
+    for a in st:
+        n=norm(a); starts[n]=PRG[n]
+        if PRG[n]==0x6C:                       # JMP (ind) -- dispatch site
+            ptr_of[n]=PRG[norm(a+1)]|(PRG[norm(a+2)]<<8)
     return routines
 
 def resolve_table(site_n):
@@ -119,7 +81,7 @@ tables={}; known_sites=set()
 while True:
     routines = fixpoint_descend(seeds)
     new=False
-    for n,op in list(starts.items()):
+    for n,op in sorted(starts.items()):
         if op==0x6C and n not in known_sites:
             known_sites.add(n)
             base=resolve_table(n)

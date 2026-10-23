@@ -12,19 +12,15 @@ it. We scan covered code for adjacent LDA#/STA pairs whose two immediates form a
 seed those handlers, and add `installer -> handler` edges. Then re-measure coverage + the call
 graph's reachability. Builds on coverage_full / routines_full / jump_tables from the sweep.
 """
-import re, sys, bisect
-from pathlib import Path
-sys.path.insert(0, r"C:\Users\Chris.Isaacson\koei-nes\tools")
-import disasm6502
-OPS, MODE_LEN = disasm6502.OPS, disasm6502.MODE_LEN
+import bisect
 
-HERE = Path(__file__).parent
-PRG = (HERE / "Mappy (Japan).nes").read_bytes()[16:16 + 0x4000]
+from emu_harness.cpu.m6502.disasm import MODE_LEN, OPS
+from code_map import HERE, PRG, reach
+
 def norm(a): return a & 0x3FFF
 def cpu(a):  return 0xC000 + norm(a)
 def inc(a):  return 0xC000 <= a <= 0xFFFF or 0x8000 <= a <= 0xBFFF
 def legal(a):return PRG[norm(a)] in OPS
-BR = {0x10,0x30,0x50,0x70,0x90,0xB0,0xD0,0xF0}
 
 seeds = {0xC031,0xC2EF,0xC304}
 seeds.update(int(l.strip()[1:],16) for l in open(HERE/"routines_full.txt"))
@@ -38,43 +34,10 @@ for line in open(HERE/"jump_tables.txt"):
     for k in range(len(ents)): is_data[norm(base+2*k)]=is_data[norm(base+2*k+1)]=1
 
 starts = {}
-def descend(entry):
-    found=set(); stack=[entry]; seen=set()
-    while stack:
-        pc=stack.pop()
-        while True:
-            n=norm(pc)
-            if n in seen or is_data[n]: break
-            op=PRG[n]
-            if op not in OPS: break
-            ilen=1+MODE_LEN.get(OPS[op][1],0)
-            for k in range(ilen): code[norm(pc+k)]=1
-            seen.add(n); starts[n]=(op,ilen)
-            if op in BR:
-                off=PRG[norm(pc+1)]; off-=0x100 if off>=0x80 else 0
-                t=(pc+2+off)&0xFFFF
-                if inc(t): stack.append(t)
-                pc=(pc+2)&0xFFFF; continue
-            if op==0x20:
-                t=PRG[norm(pc+1)]|(PRG[norm(pc+2)]<<8)
-                if inc(t): found.add(t)
-                pc=(pc+3)&0xFFFF; continue
-            if op==0x4C:
-                t=PRG[norm(pc+1)]|(PRG[norm(pc+2)]<<8)
-                if inc(t): found.add(t)
-                break
-            if op in (0x60,0x40,0x00,0x6C): break
-            pc=(pc+ilen)&0xFFFF
-    return found
-
 def fixpoint(seedset):
-    work=set(seedset); routines=set(seedset)
-    while work:
-        nxt=set()
-        for e in work:
-            for t in descend(e):
-                if t not in routines: nxt.add(t)
-        routines|=nxt; work=nxt
+    routines, st = reach(seedset, is_data, code)
+    for a in st:
+        op=PRG[norm(a)]; starts[norm(a)]=(op,1+MODE_LEN[OPS[op][1]])
     return routines
 
 routines = fixpoint(seeds)

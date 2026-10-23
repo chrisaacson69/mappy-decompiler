@@ -11,18 +11,16 @@ in $C000-$FFFF, sitting in bytes we did NOT decode as code (i.e. data). Find the
 entry, connect each table to the routine whose code references its base (owner -> entries), and
 re-measure. This is the structural complement to the idiom-based jump-table sweep.
 """
-import re, sys, bisect
+import re, bisect
 from pathlib import Path
-sys.path.insert(0, r"C:\Users\Chris.Isaacson\koei-nes\tools")
-import disasm6502
-OPS, MODE_LEN = disasm6502.OPS, disasm6502.MODE_LEN
-PRG = (Path("Mappy (Japan).nes").read_bytes())[16:16+0x4000]
-HERE = Path(__file__).parent
+
+from emu_harness.cpu.m6502.disasm import MODE_LEN, OPS
+from code_map import HERE, PRG, reach
+
 def norm(a): return a & 0x3FFF
 def cpu(a):  return 0xC000 + norm(a)
 def inc(a):  return 0xC000 <= a <= 0xFFFF or 0x8000 <= a <= 0xBFFF
 def legal(a):return PRG[norm(a)] in OPS
-BR = {0x10,0x30,0x50,0x70,0x90,0xB0,0xD0,0xF0}
 
 seeds = {0xC031,0xC2EF,0xC304} | {int(l.strip()[1:],16) for l in open(HERE/"routines_full.txt")}
 code = bytearray((HERE/"coverage_full2.bin").read_bytes() if (HERE/"coverage_full2.bin").exists()
@@ -33,45 +31,8 @@ for line in open(HERE/"jump_tables.txt"):
     p=line.split(); known_tables[int(p[0][1:],16)]=(int(p[1],16),[int(x,16) for x in p[2:]])
     for k in range(len(p)-2): is_data[norm(int(p[1],16)+2*k)]=is_data[norm(int(p[1],16)+2*k+1)]=1
 
-starts={}
-def descend(entry):
-    found=set(); stack=[entry]; seen=set()
-    while stack:
-        pc=stack.pop()
-        while True:
-            n=norm(pc)
-            if n in seen or is_data[n]: break
-            op=PRG[n]
-            if op not in OPS: break
-            il=1+MODE_LEN.get(OPS[op][1],0)
-            for k in range(il): code[norm(pc+k)]=1
-            seen.add(n); starts[n]=op
-            if op in BR:
-                off=PRG[norm(pc+1)]; off-=0x100 if off>=0x80 else 0
-                t=(pc+2+off)&0xFFFF
-                if inc(t): stack.append(t)
-                pc=(pc+2)&0xFFFF; continue
-            if op==0x20:
-                t=PRG[norm(pc+1)]|(PRG[norm(pc+2)]<<8)
-                if inc(t): found.add(t)
-                pc=(pc+3)&0xFFFF; continue
-            if op==0x4C:
-                t=PRG[norm(pc+1)]|(PRG[norm(pc+2)]<<8)
-                if inc(t): found.add(t)
-                break
-            if op in (0x60,0x40,0x00,0x6C): break
-            pc=(pc+il)&0xFFFF
-    return found
-
 def fixpoint(seedset):
-    work=set(seedset); R=set(seedset)
-    while work:
-        nxt=set()
-        for e in work:
-            for t in descend(e):
-                if t not in R: nxt.add(t)
-        R|=nxt; work=nxt
-    return R
+    return reach(seedset, is_data, code)[0]
 
 routines = fixpoint(seeds)
 
