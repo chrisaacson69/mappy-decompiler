@@ -11,8 +11,7 @@ Walk   = roots (no callers), leaves (no callees), depth from the 3 vectors, SCCs
 """
 import re, sys
 from pathlib import Path
-sys.path.insert(0, r"C:\Users\Chris.Isaacson\koei-nes\tools")
-import disasm6502
+from emu_harness.cpu.m6502 import disasm as disasm6502   # the shared 6502 tables (emu-harness rows B / H2)
 OPS, MODE_LEN = disasm6502.OPS, disasm6502.MODE_LEN
 
 HERE = Path(__file__).parent
@@ -72,22 +71,9 @@ roots  = [e for e in entries if not callers[e]]
 leaves = [e for e in entries if not callees[e]]
 n_edges = sum(len(v) for v in edges.values())
 
-# SCCs (Tarjan) to find recursion/cycles
-import sys as _s; _s.setrecursionlimit(10000)
-index = {}; low = {}; onst = {}; stack = []; sccs = []; ctr = [0]
-def strongconnect(v):
-    index[v]=low[v]=ctr[0]; ctr[0]+=1; stack.append(v); onst[v]=True
-    for w in callees[v]:
-        if w not in index: strongconnect(w); low[v]=min(low[v],low[w])
-        elif onst.get(w): low[v]=min(low[v],index[w])
-    if low[v]==index[v]:
-        comp=[]
-        while True:
-            w=stack.pop(); onst[w]=False; comp.append(w)
-            if w==v: break
-        sccs.append(comp)
-for v in entries:
-    if v not in index: strongconnect(v)
+# SCCs (Tarjan) to find recursion/cycles -- emu-harness passes/callgraph (row H2; this file's algorithm)
+from emu_harness.passes.callgraph import sccs as _sccs
+sccs = _sccs(entries, lambda v: callees[v])
 cycles = [c for c in sccs if len(c) > 1]
 
 # leaf-first topological order (condense SCCs, reverse-topo) == bottom-up labeling order
