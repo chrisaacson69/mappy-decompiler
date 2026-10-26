@@ -2,112 +2,112 @@
 
 # RESET vector
 reset_cold_boot_init  $C031
-    vblank_synced_frame_update_loop  [flows-into]  $C06D
+    render_loop  [flows-into]  $C06D
         build_sprite_row_oam_shadow  $C0D0
         swap_stack_pointer  $C146
             handler_rts_noop  [flows-into]  $C14F
-        flush_vram_fill_buffer  $C150
+        flush_vram_write_queue  $C150
             flush_vram_readback_queue_and_restore_render  [flows-into]  $C177
                 ppu_enable_render  $C239
             ppu_disable_render  $C241
         read_and_decode_input  $C1C9
             read_joypad  $C249
-        clear_both_attribute_tables  $C7C9
+        flush_dirty_attribute_bytes  $C7C9
             init_zp14_zp15_to_8  [flows-into]  $C7E2
                 emit_records_for_set_bits_in_bitmap  [flows-into]  $C7EA
-                    append_record_to_buffer  $C818
-        copy_var_record_index_flag2_to_0500  $D735
-            copy_var_record_to_0500_buffer  [jmp, flows-into]  $D77A
-        sound_command_dispatch  $F4F1
-            sound_engine_tick  [jmp, flows-into]  $F55A
-                advance_to_next_8byte_record_and_loop  [flows-into]  $F5B8
-                    run_object_animation_script  [jmp, flows-into]  $F606
-                        sub_F636  [flows-into]  $F636
+                    write_attribute_byte  $C818
+        queue_state_vram_packet  $D735
+            queue_vram_packet  [jmp, flows-into]  $D77A
+        update_sound_frame  $F4F1
+            sound_registers_next_voice  [jmp, flows-into]  $F55A
+                sound_streams_next_voice  [flows-into]  $F5B8
+                    start_voice_stream  [jmp, flows-into]  $F606
+                        run_voice_stream  [flows-into]  $F636
                             jump_table_dispatch_via_index  $F49F
-                            advance_to_next_8byte_record_and_loop  [jmp, flows-into]  (above)
-                            sub_F6D0  [inline]  $F6D0
-                                advance_to_next_8byte_record_and_loop  [jmp, flows-into]  (above)
-                            sub_F6DE  [inline]  $F6DE
-                                sub_F636  [jmp, flows-into]  (above)
-                                fetch_seq_byte_and_advance_index  $F80B
-                            sub_F6F0  [inline]  $F6F0
-                                sub_F636  [jmp, flows-into]  (above)
-                                fetch_seq_byte_and_advance_index  (above)
-                            sub_F702  [inline]  $F702
-                                sub_F636  [jmp, flows-into]  (above)
-                                fetch_seq_byte_and_advance_index  (above)
-                            sub_F714  [inline]  $F714
-                                sub_F636  [jmp, flows-into]  (above)
-                                fetch_seq_byte_and_advance_index  (above)
-                            sub_F71E  [inline]  $F71E
-                                sub_F636  [jmp, flows-into]  (above)
-                                fetch_seq_byte_and_advance_index  (above)
-                            sub_F728  [inline]  $F728
-                                sub_F636  [jmp, flows-into]  (above)
-                                fetch_seq_byte_and_advance_index  (above)
-                            sub_F732  [inline]  $F732
-                                sub_F636  [jmp, flows-into]  (above)
-                            sub_F73F  [inline]  $F73F
-                                sub_F636  [jmp, flows-into]  (above)
-                                sub_F7C2  [flows-into]  $F7C2
-                                    sub_F636  [jmp, flows-into]  (above)
-                                    fetch_seq_byte_and_advance_index  (above)
-                                fetch_seq_byte_and_advance_index  (above)
-                            sub_F743  [inline]  $F743
-                                sub_F636  [jmp, flows-into]  (above)
-                                sub_F7C2  [flows-into]  (above)
-                                fetch_seq_byte_and_advance_index  (above)
-                            sub_F746  [inline]  $F746
-                                sub_F636  [jmp, flows-into]  (above)
-                                sub_F7C2  [flows-into]  (above)
-                                fetch_seq_byte_and_advance_index  (above)
-                            sub_F75A  [inline]  $F75A
-                                sub_F636  [jmp, flows-into]  (above)
-                                sub_F7C2  [flows-into]  (above)
-                                fetch_seq_byte_and_advance_index  (above)
-                            sub_F75E  [inline]  $F75E
-                                sub_F636  [jmp, flows-into]  (above)
-                                sub_F7C2  [flows-into]  (above)
-                                fetch_seq_byte_and_advance_index  (above)
-                            sub_F761  [inline]  $F761
-                                sub_F636  [jmp, flows-into]  (above)
-                                sub_F7C2  [flows-into]  (above)
-                                fetch_seq_byte_and_advance_index  (above)
-                            sub_F775  [inline]  $F775
-                                sub_F636  [jmp, flows-into]  (above)
-                                sub_F7C2  [flows-into]  (above)
-                                fetch_seq_byte_and_advance_index  (above)
-                            sub_F779  [inline]  $F779
-                                sub_F636  [jmp, flows-into]  (above)
-                                sub_F7C2  [flows-into]  (above)
-                                fetch_seq_byte_and_advance_index  (above)
-                            sub_F77C  [inline]  $F77C
-                                sub_F636  [jmp, flows-into]  (above)
-                                sub_F7C2  [flows-into]  (above)
-                                fetch_seq_byte_and_advance_index  (above)
-                            sub_F7C2  [inline]  (above)
-                            fetch_seq_byte_and_advance_index  (above)
-                        set_ptr_from_word_table_by_id  $F7F4
-                        fetch_seq_byte_and_advance_index  (above)
-                    sub_F636  [flows-into]  (above)
-                    set_ptr_from_word_table_by_id  (above)
-                run_object_animation_script  [jmp, flows-into]  (above)
-                sub_F636  [flows-into]  (above)
-                set_ptr_from_word_table_by_id  (above)
-    switch_stack_and_jump_to_indexed_handler  $C128
+                            sound_streams_next_voice  [jmp, flows-into]  (above)
+                            voice_op_end  [inline]  $F6D0
+                                sound_streams_next_voice  [jmp, flows-into]  (above)
+                            voice_op_set_duty  [inline]  $F6DE
+                                run_voice_stream  [jmp, flows-into]  (above)
+                                fetch_voice_stream_byte  $F80B
+                            voice_op_set_envelope  [inline]  $F6F0
+                                run_voice_stream  [jmp, flows-into]  (above)
+                                fetch_voice_stream_byte  (above)
+                            voice_op_set_volume  [inline]  $F702
+                                run_voice_stream  [jmp, flows-into]  (above)
+                                fetch_voice_stream_byte  (above)
+                            voice_op_set_sweep  [inline]  $F714
+                                run_voice_stream  [jmp, flows-into]  (above)
+                                fetch_voice_stream_byte  (above)
+                            voice_op_set_length_period_hi  [inline]  $F71E
+                                run_voice_stream  [jmp, flows-into]  (above)
+                                fetch_voice_stream_byte  (above)
+                            voice_op_set_control  [inline]  $F728
+                                run_voice_stream  [jmp, flows-into]  (above)
+                                fetch_voice_stream_byte  (above)
+                            voice_op_clear_loop_counters  [inline]  $F732
+                                run_voice_stream  [jmp, flows-into]  (above)
+                            voice_op_repeat_0  [inline]  $F73F
+                                run_voice_stream  [jmp, flows-into]  (above)
+                                voice_op_jump  [flows-into]  $F7C2
+                                    run_voice_stream  [jmp, flows-into]  (above)
+                                    fetch_voice_stream_byte  (above)
+                                fetch_voice_stream_byte  (above)
+                            voice_op_repeat_1  [inline]  $F743
+                                run_voice_stream  [jmp, flows-into]  (above)
+                                voice_op_jump  [flows-into]  (above)
+                                fetch_voice_stream_byte  (above)
+                            voice_op_repeat_2  [inline]  $F746
+                                run_voice_stream  [jmp, flows-into]  (above)
+                                voice_op_jump  [flows-into]  (above)
+                                fetch_voice_stream_byte  (above)
+                            voice_op_jump_on_count_0  [inline]  $F75A
+                                run_voice_stream  [jmp, flows-into]  (above)
+                                voice_op_jump  [flows-into]  (above)
+                                fetch_voice_stream_byte  (above)
+                            voice_op_jump_on_count_1  [inline]  $F75E
+                                run_voice_stream  [jmp, flows-into]  (above)
+                                voice_op_jump  [flows-into]  (above)
+                                fetch_voice_stream_byte  (above)
+                            voice_op_jump_on_count_2  [inline]  $F761
+                                run_voice_stream  [jmp, flows-into]  (above)
+                                voice_op_jump  [flows-into]  (above)
+                                fetch_voice_stream_byte  (above)
+                            voice_op_jump_on_count_3  [inline]  $F775
+                                run_voice_stream  [jmp, flows-into]  (above)
+                                voice_op_jump  [flows-into]  (above)
+                                fetch_voice_stream_byte  (above)
+                            voice_op_jump_on_count_4  [inline]  $F779
+                                run_voice_stream  [jmp, flows-into]  (above)
+                                voice_op_jump  [flows-into]  (above)
+                                fetch_voice_stream_byte  (above)
+                            voice_op_jump_on_count_5  [inline]  $F77C
+                                run_voice_stream  [jmp, flows-into]  (above)
+                                voice_op_jump  [flows-into]  (above)
+                                fetch_voice_stream_byte  (above)
+                            voice_op_jump  [inline]  (above)
+                            fetch_voice_stream_byte  (above)
+                        load_voice_stream_ptr  $F7F4
+                        fetch_voice_stream_byte  (above)
+                    run_voice_stream  [flows-into]  (above)
+                    load_voice_stream_ptr  (above)
+                start_voice_stream  [jmp, flows-into]  (above)
+                run_voice_stream  [flows-into]  (above)
+                load_voice_stream_ptr  (above)
+    start_game_thread  $C128
         init_stage_with_intro_animation_then_spawn  [task]  $C84F
-            extract_x_top2_bits_to_y  $C141
+            yield_to_render_loop  $C141
                 swap_stack_pointer  [flows-into]  (above)
             ppu_enable_render  (above)
             ppu_disable_render  (above)
             play_intro_cutscene_sequence  [flows-into]  $C902
-                extract_x_top2_bits_to_y  (above)
+                yield_to_render_loop  (above)
                 stage_setup_and_play_loop  [flows-into]  $C99F
-                    extract_x_top2_bits_to_y  (above)
+                    yield_to_render_loop  (above)
                     ppu_enable_render  (above)
                     ppu_disable_render  (above)
                     play_intro_cutscene_sequence  [jmp, flows-into]  (above)
-                    clear_buffer_192_at_0400  $CAA7
+                    clear_object_tables  $CAA7
                     run_frame_game_logic_tick  $CB7B
                         pump_pending_amount_then_step_entry_state  [jmp, flows-into]  $D5AB
                             add_bcd_table_amount_n_times  $D4BE
@@ -121,11 +121,11 @@ reset_cold_boot_init  $C031
                                     bcd_add_packed_buffer  [flows-into]  (above)
                                 build_buffer_entry_unpack_nibbles  [jmp, flows-into]  (above)
                         copy_active_var_record_when_phase_aligned  $D71C
-                            copy_var_record_index_flag2_to_0500  [flows-into]  (above)
-                            copy_var_record_to_0500_buffer  [jmp, flows-into]  (above)
+                            queue_state_vram_packet  [flows-into]  (above)
+                            queue_vram_packet  [jmp, flows-into]  (above)
                         update_and_respawn_objects  $D8D8
                             transform_object_coords_to_pixel_space  $C305
-                                data_or_unclear_c342  $C342
+                                dispatch_object_draw_from_record  $C342
                                     dispatch_object_draw_routine_by_index  [flows-into]  $C344
                                         handler_rts_noop  [dispatch]  (above)
                                         draw_two_tile_object  [dispatch]  $C37C
@@ -134,7 +134,7 @@ reset_cold_boot_init  $C031
                                         dispatch_on_obj_flag_bit3  [dispatch]  $C3A7
                                             dispatch_object_draw_routine_by_index  [jmp, flows-into]  (above)
                                         compose_obj_field5_field7_index  [dispatch]  $C3C0
-                                            obj_field5_lookup_C47C  $C3B4
+                                            lookup_obj_type_ptr_hi  $C3B4
                                             lookup_table_c480_to_zp12  [flows-into]  $C3D1
                                                 toggle_flag_if_field_positive  [flows-into]  $C3D7
                                                     extract_top2_bits  [flows-into]  $C3E3
@@ -143,10 +143,10 @@ reset_cold_boot_init  $C031
                                                                 write_object_to_oam_and_bump_count  [flows-into]  $C40F
                                                                     write_object_to_shadow_oam  (above)
                                         obj_field5_or10_lookup_c480_to_zp12  [dispatch]  $C4A8
-                                            obj_field5_lookup_C47C  (above)
+                                            lookup_obj_type_ptr_hi  (above)
                                             lookup_table_c480_to_zp12  [jmp, flows-into]  (above)
                                         compose_obj_anim_index_and_lookup  [dispatch]  $C4B0
-                                            obj_field5_lookup_C47C  (above)
+                                            lookup_obj_type_ptr_hi  (above)
                                             lookup_table_c480_to_zp12  [jmp, flows-into]  (above)
                                         build_sprite_attr_and_step_coords  [dispatch]  $C4C6
                                             extract_top2_bits  [jmp, flows-into]  (above)
@@ -154,7 +154,7 @@ reset_cold_boot_init  $C031
                                             extract_top2_bits  [jmp, flows-into]  (above)
                                         test_bit3_of_record_field7  [dispatch]  $C510
                                             lookup_field5_set_bits24_to_zp12  [flows-into]  $C518
-                                                obj_field5_lookup_C47C  (above)
+                                                lookup_obj_type_ptr_hi  (above)
                                                 lookup_table_c480_to_zp12  [jmp, flows-into]  (above)
                                         lookup_field5_set_bits24_to_zp12  [dispatch]  (above)
                                         draw_object_animated_sprite  [dispatch]  $C521
@@ -190,7 +190,7 @@ reset_cold_boot_init  $C031
                                                 write_object_to_shadow_oam  (above)
                             update_object_state_vs_reference  $D939
                                 store_one_via_ptr  [jmp, flows-into]  $D9BC
-                            dispatch_object_state_handler_da42  $DA2C
+                            dispatch_object_state  $DA2C
                                 handler_rts_noop  [dispatch]  (above)
                                 update_object_proximity_collision_tick  [dispatch]  $DA70
                                     set_obj_state_0b_after_align  [flows-into]  $DAA2
@@ -199,7 +199,7 @@ reset_cold_boot_init  $C031
                                     init_entity_state_if_flag_clear  [flows-into]  $DAD8
                                         add_bcd_table_amount_to_buffer  [jmp, flows-into]  (above)
                                         reset_objects_except_persistent_types  [flows-into]  $DAEF
-                                            init_object_tables  $F4BF
+                                            init_sound_voices  $F4BF
                                     obj_reset_fields_8_F  [jmp, flows-into]  $DB83
                                     advance_object_state_counter  $DEE9
                                         data_or_unclear_df09  [flows-into]  $DF09
@@ -222,7 +222,7 @@ reset_cold_boot_init  $C031
                                     advance_obj_pair_on_proximity  $F0B1
                                         obj_state2_advance_on_proximity  [flows-into]  $F0B8
                                             obj_proximity_trigger_with_timer  [jmp, flows-into]  $F06D
-                                                scan_ptr_buf_for_zero_terminator  [jmp, flows-into]  $C6FB
+                                                draw_rle_text  [jmp, flows-into]  $C6FB
                                                     decode_position_stream_to_collision_bitmaps  [jmp, flows-into]  $C702
                                                         ppu_buffer_enqueue  $C78E
                                                     ppu_buffer_enqueue  (above)
@@ -237,11 +237,11 @@ reset_cold_boot_init  $C031
                                     reset_obj_to_state2_and_arm_field  [jmp, flows-into]  $DD17
                                         force_active_objects_to_state3  $E3DE
                                             setup_obj_ptr_and_dispatch_scan  $E427
-                                                load_ptr_from_table_then_scan  [jmp, flows-into]  $E449
-                                                    scan_ptr_buf_for_zero_terminator  [jmp, flows-into]  (above)
+                                                draw_text_from_table  [jmp, flows-into]  $E449
+                                                    draw_rle_text  [jmp, flows-into]  (above)
                                 inc_counter_set_flag_at_threshold  [dispatch]  $DB45
                                 init_objects_if_inactive  [dispatch]  $DB55
-                                    init_object_tables  (above)
+                                    init_sound_voices  (above)
                                 delay_then_zero_struct_fields  [dispatch]  $DB7B
                                     zero_struct_fields_4_and_15  [jmp, flows-into]  $DE6F
                                 trigger_entity_state_reset_on_proximity_or_type_else_scan_next  [dispatch]  $DB94
@@ -322,11 +322,11 @@ reset_cold_boot_init  $C031
                                 tick_timer_clear_state_on_expiry  [dispatch]  $E2E0
                                 check_position_reached_and_reset_round  [dispatch]  $E2EE
                                     init_state_vars  (above)
-                                    init_object_tables  (above)
+                                    init_sound_voices  (above)
                                 scan_table_if_code_in_range_then_advance_or_reset_counter  [dispatch]  $E339
                                     sub16_from_struct_field_at_offset2  [jmp, flows-into]  (above)
                                     scan_table_at_e537  $E456
-                                        load_ptr_from_table_then_scan  [jmp, flows-into]  (above)
+                                        draw_text_from_table  [jmp, flows-into]  (above)
                         tick_all_subcounters_stride8  $E3FE
                             tick_subcounter_decrement_on_rollover  $E410
                                 setup_obj_ptr_and_dispatch_scan  [flows-into]  (above)
@@ -337,18 +337,18 @@ reset_cold_boot_init  $C031
                                     init_object_record_load_data_and_scan  [flows-into]  $F1F1
                                         load_record_via_ptr_table  (above)
                                         load_indexed_ptr_then_scan_for_terminator  [jmp, flows-into]  $F250
-                                            scan_ptr_buf_for_zero_terminator  [jmp, flows-into]  (above)
+                                            draw_rle_text  [jmp, flows-into]  (above)
                                     on_object_reaching_target_reset_and_rescan  $F215
                                         init_object_record_load_data_and_scan  [jmp, flows-into]  (above)
                                     load_ptr_from_table_by_state_bit  $F233
                                         load_indexed_ptr_then_scan_for_terminator  [flows-into]  (above)
                     build_stage_screen_layout  $CD49
-                        extract_x_top2_bits_to_y  (above)
+                        yield_to_render_loop  (above)
                         ppu_enable_render  (above)
                         ppu_disable_render  (above)
                         ppu_clear_nametables  $CBF5
                         ppu_run_draw_blocks  $CC15
-                        fill_attr_source_0170  [flows-into]  $CDB7
+                        fill_attr_map_run  [flows-into]  $CDB7
                         setup_oam_params_and_emit_object_7c  $CDFF
                             emit_object_oam_step_pointers_8  [jmp, flows-into]  (above)
                         ppu_draw_blocks_b  $CF69
@@ -361,16 +361,16 @@ reset_cold_boot_init  $C031
                         ppu_disable_render  (above)
                         ppu_clear_nametables  (above)
                         run_entry_state_sequence_120_frames  $CE94
-                            extract_x_top2_bits_to_y  (above)
+                            yield_to_render_loop  (above)
                             ptr16_sub6_set_const  (above)
                             pump_pending_amount_then_step_entry_state  (above)
                             copy_active_var_record_when_phase_aligned  (above)
                         run_entry_state_pump_120_iterations  $CEBB
-                            extract_x_top2_bits_to_y  (above)
+                            yield_to_render_loop  (above)
                             pump_pending_amount_then_step_entry_state  (above)
                             copy_active_var_record_when_phase_aligned  (above)
-                        load_ptr_descriptor_and_scan  $CECD
-                            scan_ptr_buf_for_zero_terminator  [jmp, flows-into]  (above)
+                        draw_indexed_text_line  $CECD
+                            draw_rle_text  [jmp, flows-into]  (above)
                         load_record_via_ptr_table  [jmp, flows-into]  (above)
                         build_buffer_entry_unpack_nibbles  (above)
                         draw_blocks_then_rebuild_buffer_entries  (above)
@@ -388,13 +388,13 @@ reset_cold_boot_init  $C031
                         process_objects_in_state_two  [flows-into]  $E614
                             load_ptr_from_state_index  $E72C
                                 load_string_ptr_by_state_and_scan  [flows-into]  $E747
-                                    scan_ptr_buf_for_zero_terminator  [jmp, flows-into]  (above)
+                                    draw_rle_text  [jmp, flows-into]  (above)
                     load_object_table_to_ram  $E862
                         shl3_pack_zp_ptr16  (above)
                         clear_low2_bits_per_object_record  [flows-into]  $E8B2
                             load_y_from_table_x  $E8FF
                                 setup_ptrs_and_scan_zero_term  [flows-into]  $E902
-                                    scan_ptr_buf_for_zero_terminator  [jmp, flows-into]  (above)
+                                    draw_rle_text  [jmp, flows-into]  (above)
                     copy_16b_table_if_var_in_range  $EF17
                     spawn_object_pair_for_state  $F001
                         spawn_object_from_table_entry  [flows-into]  $F013
@@ -403,19 +403,19 @@ reset_cold_boot_init  $C031
                     load_object_table_from_def  $F13A
                         shl3_pack_zp_ptr16  (above)
                     load_record_by_index  $F3C1
-                    init_object_tables  (above)
+                    init_sound_voices  (above)
                 dispatch_stage_state_and_rebuild_screen  [jmp, flows-into]  $CA28
-                    extract_x_top2_bits_to_y  (above)
+                    yield_to_render_loop  (above)
                     ppu_enable_render  (above)
                     ppu_disable_render  (above)
                     init_stage_with_intro_animation_then_spawn  [jmp, flows-into]  (above)
                     play_intro_cutscene_sequence  [jmp, flows-into]  (above)
-                    swap_double_buffers_toggle_flag  $CA81
-                    clear_buffer_192_at_0400  (above)
+                    swap_player_state  $CA81
+                    clear_object_tables  (above)
                     redraw_var_records_at_7800_if_flag_set  $CAB4
                         init_state_vars_and_pointer  [flows-into]  $CAC3
                             redraw_var_records_loop_until_count_or_phase  [flows-into]  $CADA
-                                extract_x_top2_bits_to_y  (above)
+                                yield_to_render_loop  (above)
                                 draw_fixed_glyph_string  $CB02
                                     draw_glyph_and_advance_cursor  [flows-into]  $CB14
                                         write_object_to_shadow_oam  (above)
@@ -433,7 +433,7 @@ reset_cold_boot_init  $C031
                         update_and_respawn_objects  (above)
                         tick_all_subcounters_stride8  (above)
                         update_all_active_objects  $E634
-                            dispatch_object_state_handler_e65a  $E64A
+                            dispatch_item_state  $E64A
                                 handler_rts_noop  [dispatch]  (above)
                                 resolve_object_position_capture_and_score  [dispatch]  $E660
                                     add_bcd_table_amount_n_times  (above)
@@ -488,14 +488,14 @@ reset_cold_boot_init  $C031
                     init_object_record_via_ptr  [flows-into]  $D894
                 advance_state_counter_to_60  $F2E6
                     init_object_sequence_state  [jmp, flows-into]  $F323
-                        init_object_tables  (above)
+                        init_sound_voices  (above)
                     draw_vertical_sprite_column  $F383
                         write_object_to_shadow_oam  (above)
                     sub2_from_u16_counter  $F3B2
                 load_record_by_index  (above)
-                init_object_tables  (above)
-            swap_double_buffers_toggle_flag  (above)
-            clear_buffer_192_at_0400  (above)
+                init_sound_voices  (above)
+            swap_player_state  (above)
+            clear_object_tables  (above)
             setup_screen_layout  $CBB1
                 ppu_clear_nametables  (above)
                 ppu_run_draw_blocks  (above)
@@ -505,18 +505,18 @@ reset_cold_boot_init  $C031
                 transform_object_coords_to_pixel_space  [jmp, flows-into]  (above)
             build_stage_screen_layout  (above)
             animate_two_sprite_walkcycles_into_buffer  $D73E
-                copy_var_record_to_0500_buffer  [jmp, flows-into]  (above)
+                queue_vram_packet  [jmp, flows-into]  (above)
             build_object_record_block_and_dispatch  (above)
             spawn_objects_from_level_descriptor  (above)
             load_object_table_to_ram  (above)
             spawn_object_pair_for_state  (above)
-            init_object_tables  (above)
+            init_sound_voices  (above)
             setup_stage_then_run_intro_frames  [jmp, flows-into]  $FF65
-                extract_x_top2_bits_to_y  (above)
+                yield_to_render_loop  (above)
                 ppu_enable_render  (above)
                 ppu_disable_render  (above)
                 init_stage_with_intro_animation_then_spawn  [jmp, flows-into]  (above)
-                clear_buffer_192_at_0400  (above)
+                clear_object_tables  (above)
                 run_frame_game_logic_update  (above)
                 build_stage_screen_layout  (above)
                 init_object_from_rom_template  (above)
@@ -532,14 +532,14 @@ reset_cold_boot_init  $C031
         pack_state_vars_into_zp_buffer  $C2B3
             copy_4_bytes_absy_to_zpx  [flows-into]  $C2D5
         clear_zeropage_from_20  $C2E5
-        swap_double_buffers_toggle_flag  (above)
+        swap_player_state  (above)
     init_apu_channels_and_frame_counter  $F4B5
-        init_object_tables  [flows-into]  (above)
+        init_sound_voices  [flows-into]  (above)
 
 # NMI vector
-nmi_sound_tick  $C2EF
+nmi_count_vblank  $C2EF
     irq_rti_stub  [flows-into]  $C304
-    sound_command_dispatch  (above)
+    update_sound_frame  (above)
 
 # IRQ vector
 irq_rti_stub  (above)

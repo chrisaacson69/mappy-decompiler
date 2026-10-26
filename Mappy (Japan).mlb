@@ -8,14 +8,14 @@ NesPrgRom:0BF5:ppu_clear_nametables:[HIGH] reset buffer idx $2A/$2B; set $2006=$
 NesPrgRom:0C15:ppu_run_draw_blocks:[HIGH] 278b walker over [count][ppu_addr][data...] blocks -> PPUADDR/PPUDATA; the palette/HUD/template draw
 NesPrgRom:0F69:ppu_draw_blocks_b:[MED] PPUADDR/PPUDATA block walker using ptr $16/$17 (tbl_CFA6 family: fixed frame + item placement)
 NesPrgRom:1126:ppu_draw_mansion_stamps:[HIGH] group=[count][data_ptr][N x ppu_addr]; stamps an RLE tile-run (runlen,tiles,signed-delta) at N addrs = mansion
-NesPrgRom:0DB7:fill_attr_source_0170:[MED] STA $0170,X / INX / DEY loop ; fills the $0170 attribute-bit source block consumed by the attr packer
-NesPrgRom:03B4:obj_field5_lookup_C47C:[MED] X = obj[$05] (via ptr $1E); $13 = tbl_$C47C[X]; returns A=X ; field-5 indexes a $C47C parameter table
+NesPrgRom:0DB7:fill_attr_map_run:[HIGH] Naming 2026-10-26: sta $0170,x / inx / dey: A into Y bytes of the attribute map at $0170+X, which clear_both_attribute_tables packs into $23
+NesPrgRom:03B4:lookup_obj_type_ptr_hi:[MED] Naming 2026-10-26: record +5 (obj_type) indexes the table $C47C; the byte goes to $13, the high half of a draw pointer. Was 'obj_field5_look
 NesPrgRom:1B83:obj_reset_fields_8_F:[MED] writes obj[$08]=$00, obj[$0F]=$06 via ptr $1E ; resets two object record fields (state/anim?)
 NesPrgRom:00D0:build_sprite_row_oam_shadow:[HIGH] Loop writes 4-byte OAM entries (Y=$11, tile from table $c123,y, attr #$02, X=$10 +=8 each) into shadow buffer $0700,x until cpx #$14 (5 spri
 NesPrgRom:0146:swap_stack_pointer:[HIGH] tsx/txa reads current SP into A, ldx $0100,y loads a saved value, sta $0100,y stores the old SP, txs installs the loaded value as new SP — a
 NesPrgRom:02D5:copy_4_bytes_absy_to_zpx:[HIGH] Sets counter $00=#4, then loops: lda $0000,y / iny / sta $00,x / inx / dec $00 / bne — a fixed 4-iteration byte copy from an absolute,Y sour
 NesPrgRom:02E5:clear_zeropage_from_20:[HIGH] ldx #$20 / lda #$00 / sta $00,x / inx / bne loop writes #$00 to zero-page $20..$FF until X wraps to 0 — a bounded zero-page clear.
-NesPrgRom:0342:data_or_unclear_c342:[LOW] Only 2 bytes / 1 instruction (`lda ($1e),y`) with no RTS, no HW regs, no loop/branch — a load fragment, not a self-contained routine.
+NesPrgRom:0342:dispatch_object_draw_from_record:[HIGH] Naming 2026-10-26: lda ($1E),y then falls into dispatch_object_draw_routine_by_index: an alternate entry that takes the draw index from reco
 NesPrgRom:03D1:lookup_table_c480_to_zp12:[HIGH] tax then `lda $c480,x` then `sta $12` — uses A as index into ROM table $C480, stores fetched byte to zero-page $12 (a table lookup).
 NesPrgRom:03D7:toggle_flag_if_field_positive:[MED] Reads field +6 via ($1e),y; if bit7 set (bmi) skips, else eor #$40 / sta $13 toggles bit6 of zero-page flag $13.
 NesPrgRom:03E3:extract_top2_bits:[MED] lda $13; rol a×3; and #$03; sta $14 — three left-rotates bring bits 6-7 of $13 down to bits 0-1, masked to 2 bits and stored to $14.
@@ -23,11 +23,11 @@ NesPrgRom:0465:compute_obj_visibility_flag:[MED] Reads state flag $7C and coords
 NesPrgRom:0510:test_bit3_of_record_field7:[MED] lda ($1e),y with y=7 reads field[7] of a zero-page pointer record, and #$08 masks bit 3, bne branches on it — a flag test.
 NesPrgRom:063D:ptr16_sub6_set_const:[MED] 16-bit borrow chain: $10=$10-6 (sec/sbc #$06), bcs skips dec $11 (high byte) — decrements little-endian pointer $10/$11 by 6; also stores co
 NesPrgRom:065C:load_const_3:[LOW] Single instruction `lda #$03` (2 bytes) — loads constant 3 into A, no registers/RAM/branches; looks like a fragment or mid-routine slice, se
-NesPrgRom:06FB:scan_ptr_buf_for_zero_terminator:[MED] ldy #$00 then lda ($12),y reads bytes via the zero-page pointer $12/$13; bne tests the byte for nonzero and iny advances the index — the cla
+NesPrgRom:06FB:draw_rle_text:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): walks ($12): [n][n tiles] written at the screen position $10/$11 (via $C78E),
 NesPrgRom:07E2:init_zp14_zp15_to_8:[MED] lda #$08 / sta $14 then lda #$08 / sta $15 — writes the constant 8 into two consecutive zero-page bytes, no HW regs or loop
-NesPrgRom:0818:append_record_to_buffer:[MED] Gated by flag $2D; uses $2A as write cursor into $0500, appends 4 bytes ($10,$11,#$01,table[$0180+Y]), inx after each, stores advanced curso
-NesPrgRom:0A81:swap_double_buffers_toggle_flag:[MED] eor #$01 toggles flag $41, then a 256-byte byte-swap loop exchanges OAM-shadow page $0200 with $0300 (lda/ldy/sta/sta), then a 64-byte swap 
-NesPrgRom:0AA7:clear_buffer_192_at_0400:[HIGH] lda #$00 then X-loop sta $0400,x; inx; cpx #$c0; bne writes zero to 192 bytes at $0400 (no PPU/APU regs, pure RAM fill)
+NesPrgRom:0818:write_attribute_byte:[HIGH] Naming 2026-10-26, top-down (render thread): one attribute byte $0180,y to the address $10/$11: a 1-byte packet in the VRAM queue $0500 when
+NesPrgRom:0A81:swap_player_state:[HIGH] Naming 2026-10-26, top-down (render thread): toggles bit 0 of $41 (the current player) and exchanges the two players' state: page $0200 with
+NesPrgRom:0AA7:clear_object_tables:[HIGH] Naming 2026-10-26: zeroes $0400-$04BF: the 9 sixteen-byte object records ($0400-$048F, the strided loops stop at $90) and the block after th
 NesPrgRom:0AC3:init_state_vars_and_pointer:[MED] Stores #$01 into $0615/$0616/$0617, clears $42, and loads pointer $01A4 into $0E/$0F (lo=$01,hi=$A4); pure constant-init of RAM flags + a ZP
 NesPrgRom:0B31:init_ptr_1e_from_const:[MED] Loads fixed ROM word $CB97/$CB98 (lo/hi) and stores into consecutive zero-page $1E/$1F, initializing a 16-bit pointer from a constant.
 NesPrgRom:0D2B:copy_5_bytes_table_to_ram_0490:[HIGH] ldx#0; lda $cd39,x; sta $0490,x; inx; cpx #$05; bne — copies 5 bytes from ROM table $CD39 into RAM $0490..$0494.
@@ -35,7 +35,7 @@ NesPrgRom:14E5:load_record_via_ptr_table:[HIGH] Reads 16-bit pointer from table 
 NesPrgRom:1502:bcd_add_packed_buffer:[HIGH] Per-nibble decimal-correct add: low nibble and #$0f + adc, cmp #$0a→adc #$05; high nibble and #$f0 + adc, cmp #$a0→adc #$5f + sec carry; loo
 NesPrgRom:1629:append_byte_to_0500_if_counter:[MED] bne/bmi guard then `sta $0500,y` + `iny`: stores A into the $0500 buffer at index Y and advances, gated by incoming Z flag and a `dec $15` c
 NesPrgRom:1694:clamp_var32_to_min:[HIGH] SEC then 4-iter SBC of $44,x-$71,x (x=3..0) is a 32-bit LE compare; BCS skips, else copies $71 block into $44 — so $44 = max($44,$71).
-NesPrgRom:177A:copy_var_record_to_0500_buffer:[MED] Loads src ptr from table $D7AD/$D7AE[y] into $10/$11, then sta ($10),y bytes into buffer $0500,x using cursor $2A; 3rd byte saved to $12 as 
+NesPrgRom:177A:queue_vram_packet:[HIGH] Naming 2026-10-26: copies packet Y of the table $D7AD ([addr hi][addr lo][n][n bytes]) into the VRAM queue $0500 at the cursor $2A. Was 'cop
 NesPrgRom:1825:set_two_zp_pointers:[MED] Stores immediate LE 16-bit consts into two zp pointer pairs ($28/$29=$1C00, $1E/$1F=$0400) and clears Y as an index; no hardware regs, pure 
 NesPrgRom:1894:init_object_record_via_ptr:[MED] Writes multiple fields through indirect ptr ($1e),y at offsets 0,1,3,4,5,8,15 — computed type byte (X*4+$20), X-indexed coords from $0264/$0
 NesPrgRom:18C0:init_ram_block_from_table:[HIGH] ldx#0 / lda $d8d3,x / sta $0410,x / inx / cpx #5 / bne copies a 5-byte ROM table into RAM $0410-$0414, then lda #$0e / sta $041f sets one mo
@@ -53,8 +53,8 @@ NesPrgRom:2DE2:advance_obj_state_if_matched:[MED] Indexed obj array: if $040B,x=
 NesPrgRom:33C1:load_record_by_index:[HIGH] Computes $7D*6 (asl/adc $7d/asl→tax) and copies 6 bytes from table $F3DF,x into $0063,y (cpy #$06 loop); clears $60/$61/$62 first.
 NesPrgRom:349F:jump_table_dispatch_via_index:[HIGH] asl a/tay makes index*2; pla/pla grab caller return addr into ptr $f6/$f7; lda ($f6),y twice reads a 16-bit target from the inline table; jm
 NesPrgRom:34B5:init_apu_channels_and_frame_counter:[HIGH] Writes #$0F to APU $4015 (enable pulse1/pulse2/triangle/noise) then #$C0 to $4017 (frame counter: 5-step mode, disable frame IRQ) — classic 
-NesPrgRom:34BF:init_object_tables:[MED] Loop1 zeroes a 25-entry flat array ($0600,x) and a stride-8 record field via ptr $F0/$F1 starting $0619 (cpx #$19); Loop2 copies 25 bytes fr
-NesPrgRom:355A:sound_engine_tick:[MED] Advances a 16-bit data pointer $f0/$f1 by 8, decrements counter $f4, and on expiry loops x=0..3 writing computed (asl/and#$10/eor#$10) contr
+NesPrgRom:34BF:init_sound_voices:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): zeroes the 25 sound triggers $0600-$0618 and each voice record's first byte a
+NesPrgRom:355A:sound_registers_next_voice:[MED] Naming 2026-10-26 (bytes read whole after the discover fixes): the register pass's loop tail inside update_sound_frame: next 8-byte voice re
 NesPrgRom:1DD4:dec_timer_field7_if_nonzero:[HIGH] ldy #$07; lda ($1e),y; beq exit; sec/sbc #$01; sta ($1e),y — reads offset-7 field of struct via ZP pointer $1e and decrements it only if non
 NesPrgRom:1E7A:dec_obj_timer_reload_on_zero:[MED] Decrements struct field ($1e)+7 (sec/sbc #1, sta); bne skips the reload, so on expiry it rewrites +$0f=$28, +4=$24, +7=$40 — a countdown tim
 NesPrgRom:1F8A:advance_pos_if_in_bounds:[MED] 16-bit add of $10 into accumulator $28/$29 (adc #$00 carries low→high), gated by ($1e)+5 flag, a $0401-$0F<$1C range check, $0406 sign check
@@ -90,9 +90,9 @@ NesPrgRom:30F0:check_obj_adjacency_set_hit_flag:[MED] For active obj ($90,x==1) 
 NesPrgRom:3233:load_ptr_from_table_by_state_bit:[MED] Bit4 of $21 (and #$10, lsr x3) indexes table $F263,y; reads 2-byte LE pointer into $12/$13; preceding lda $1b/lsr x3/eor $21/and #$0f/bne is
 NesPrgRom:32E6:advance_state_counter_to_60:[MED] Branches on state $60 (beq exits, cmp #$02 dispatches states 0/1/2 elsewhere); for state>2 increments counter $61 until it hits #$3c (60), t
 NesPrgRom:33B2:sub2_from_u16_counter:[HIGH] lda $0490; sec; sbc #$02; sta $0490; bcs +; dec $0491 — subtracts 2 from the low byte and borrows into the high byte of a 16-bit LE value at
-NesPrgRom:37F4:set_ptr_from_word_table_by_id:[HIGH] lda $f4; asl a; tax indexes word table at $f853; lda $f853,x->$f2 / lda $f854,x->$f3 loads a 16-bit pointer into zp $f2/$f3; cmp #$13/#$14 b
-NesPrgRom:380B:fetch_seq_byte_and_advance_index:[MED] Reads cursor at ($f0)+5, uses it as Y to load table byte via lda ($f2),y, returns that byte, then increments the cursor and stores it back t
-NesPrgRom:0150:flush_vram_fill_buffer:[HIGH] Calls ppu_disable_render, then walks buffer $0500 by X up to len $2A: reads 2 bytes -> $2006 (PPU addr hi/lo), then count+value -> repeated 
+NesPrgRom:37F4:load_voice_stream_ptr:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): $F2/$F3 = the voice's stream base from the 25-word table $F853 (voices $13/$1
+NesPrgRom:380B:fetch_voice_stream_byte:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): next stream byte: ($F2),index with index = record +5, post-incremented; voice
+NesPrgRom:0150:flush_vram_write_queue:[HIGH] Naming 2026-10-26, top-down (render thread): rendering off, then plays the VRAM queue $0500 up to the cursor $2A: [addr lo][addr hi][n][n by
 NesPrgRom:0177:flush_vram_readback_queue_and_restore_render:[MED] Loops over $04C0,x queue (vs end ptr $2b): writes hi/lo to $2006, reads $2007 (dummy+real) and stores result to ($1e),y=8; then jsr ppu_enab
 NesPrgRom:01C9:read_and_decode_input:[MED] Strobes JOYPAD $4016 (1 then 0), calls read_joypad twice for both pads, then ror/rol-shifts the input bits into edge-detection accumulators 
 NesPrgRom:0297:copy_4_bytes_zp_to_ram:[HIGH] lda #$04/sta $00 sets a 4-count, loop lda $00,x / inx / sta $0000,y / iny / dec $00 / bne copies 4 bytes from a ZP source (X) to a RAM dest 
@@ -108,14 +108,14 @@ NesPrgRom:0518:lookup_field5_set_bits24_to_zp12:[MED] jsr obj_field5_lookup_C47C
 NesPrgRom:05F6:build_object_sprite_attributes:[MED] Reads ($1e)+7 object flag byte, asl/lsr-tests bits, masks palette bits (#$0c/#$04) and ORs OAM attribute high bits (#$80/#$90/#$c0) into $12
 NesPrgRom:06AC:select_threshold_ptr_then_toggle_flag:[MED] reads struct field ($1e)+7, cmp #$08 picks $98 vs $9c into ptr $12/$13 (hi=$00), then tail-jmps toggle_flag_if_field_positive — branch on th
 NesPrgRom:0702:decode_position_stream_to_collision_bitmaps:[MED] Walks a ($12),y byte stream advancing a 16-bit cursor $10/$11 by signed deltas (terminator beq->rts), then derives a packed tile coord (asl/
-NesPrgRom:07C9:clear_both_attribute_tables:[MED] Loads pointer $10/$11 with $23C0 then $27C0 (the two PPU attribute-table addresses), zeroes counter $12/$13, and calls init_zp14_zp15_to_8 b
+NesPrgRom:07C9:flush_dirty_attribute_bytes:[HIGH] Naming 2026-10-26, top-down (render thread): clears nothing: for nametables $23C0 and $27C0 walks the dirty bitmap $0170 (8x8 bits each), an
 NesPrgRom:07EA:emit_records_for_set_bits_in_bitmap:[MED] Nested loop scans bitmask bytes at $0170,y ($12=row idx, $14=row count), lsr-shifts each byte and on carry-set (a set bit) calls append_reco
-NesPrgRom:0ECD:load_ptr_descriptor_and_scan:[MED] Copies a Y-indexed 4-byte descriptor from table $CF08 into scan buffer $10-$13, sets limit $14=#$80, then tail-calls (jmp) scan_ptr_buf_for_
+NesPrgRom:0ECD:draw_indexed_text_line:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): loads the 4-byte record $CF08,y ([screen address][text pointer]) into $10-$13
 NesPrgRom:14CA:add_bcd_table_amount_to_buffer:[MED] guards on $42!=0, builds 16-bit src ptr $12/$13 from table base $d561/$d562 indexed by Y, sets X=#$74 (dest buf) Y=#$03 (3-digit len), tail-
 NesPrgRom:15D9:build_buffer_entry_unpack_nibbles:[MED] Loads pointer from $D640,y into $10/$11, reads a header (->$12,$13,X,$14=count,$15), appends header + count*2 to $0500 buffer at persistent 
 NesPrgRom:16E8:load_record_and_advance_anim_counters:[MED] Calls load_record_via_ptr_table(Y=4), then advances $7A as a 4-bit counter (inc, and #$0f) and $7D as a counter cycling $1C-$1F (inc, cmp #$
 NesPrgRom:171C:copy_active_var_record_when_phase_aligned:[MED] Gates on $42!=0 and low-nibble($21)==0, builds word index Y from ($21 bit3)|$41 then asl, and tail-jmps copy_var_record_to_0500_buffer; rts 
-NesPrgRom:1735:copy_var_record_index_flag2_to_0500:[MED] Computes Y = (($41 | $02) << 1) as a word record index (lda #$02/ora $41/asl/tay) then tail-jmps to copy_var_record_to_0500_buffer ($D77A), 
+NesPrgRom:1735:queue_state_vram_packet:[MED] Naming 2026-10-26: Y = (game_state_flags | 2) * 2, then jmp queue_vram_packet. Called by the render loop on frames when $23 is set (the game
 NesPrgRom:173E:animate_two_sprite_walkcycles_into_buffer:[MED] Each block masks a tick counter ($24/$22 &3 ==1) to toggle a 2-frame walk bit ($4A/$2E eor #$01) every 4th tick, computes bit*2+offset as Y 
 NesPrgRom:17F1:init_object_from_rom_template:[MED] After set_two_zp_pointers sets the ($1e) dest pointer, it copies 7 bytes from ROM table $D838 into ($1e),y for y=0..6, then stores constant 
 NesPrgRom:180B:init_struct_from_rom_template:[HIGH] Calls set_two_zp_pointers, then copies 7 bytes from ROM table $D83F into ($1E)-pointed struct (loop cpy #$07), then writes 0 at offset 8 and
@@ -143,16 +143,16 @@ NesPrgRom:2A05:check_subject_vs_object_list_collision:[MED] Loops object table (
 NesPrgRom:304D:dispatch_obj0_state_then_fall_to_obj8:[MED] ldy #$00 then jsr dispatch_obj_state runs object-state dispatch for object index 0, then ldy #$08 sets up the next object index and falls th
 NesPrgRom:313A:load_object_table_from_def:[HIGH] Indexes pointer-table $F27F/$F280 by $7C into ptr $1C/$1D; reads count byte (÷8 = entry count), clears $50/$51 + 12-byte block $54, then loo
 NesPrgRom:23FE:tick_all_subcounters_stride8:[MED] Loops $1b from 0 by +8 each pass (adc #$08) until it hits bound $80, calling tick_subcounter_decrement_on_rollover per entry — a batch tick 
-NesPrgRom:2449:load_ptr_from_table_then_scan:[HIGH] Loads 16-bit pointer from table $E569,Y into ZP pointer $12/$13 (lda $e569,y/sta $12; lda $e56a,y/sta $13) then tail-jmps scan_ptr_buf_for_z
+NesPrgRom:2449:draw_text_from_table:[HIGH] Naming 2026-10-26: text pointer from the word table $E569,y into $12/$13, then jmp draw_rle_text. Was 'load_ptr_from_table_then_scan'. Earli
 NesPrgRom:2862:load_object_table_to_ram:[MED] Indexes ptr table $EAFC by $7A*2 into src ptr $1C/$1D, reads count $83, then loops X+=8 over count unpacking 3 src bytes into 8-byte structs
 NesPrgRom:2EC9:accumulate_for_matching_objects:[MED] Loops X=$20..$80 stride $10 over 16-byte object records; for each whose $040B,x field == zp $1E and $040F,x field == #$16, calls add_byte_to
 NesPrgRom:306D:obj_proximity_trigger_with_timer:[MED] Loads obj struct ptr ($0092/$0093,y) + a point-pair from table $F128,x, tail-calls scan_ptr_buf_for_zero_terminator then check_obj_near_poin
 NesPrgRom:30E7:check_two_obj_slots_for_hit:[MED] Calls check_obj_adjacency_set_hit_flag with ldx #$00 then ldx #$08 (two object slots), beq short-circuits when first slot hits — a two-slot 
 NesPrgRom:3250:load_indexed_ptr_then_scan_for_terminator:[MED] ldx $1b indexes a 16-bit pointer table at $0266/$0267 into ptr $10/$11, clears $14, then jmp (tail-call) to scan_ptr_buf_for_zero_terminator
-NesPrgRom:34F1:sound_command_dispatch:[MED] Inits APU regs ($4004/$4008), walks a sound-request table at ptr $F0/$F1=$0619, allocates 4 channel-busy slots $FC-$FF, and writes 4 data by
-NesPrgRom:006D:vblank_synced_frame_update_loop:[HIGH] Spins on vblank flag $20, then per-frame: OAMDMA ($4014<-#$07), flush_vram_fill_buffer, read_and_decode_input, build_sprite_row_oam_shadow, 
+NesPrgRom:34F1:update_sound_frame:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): the per-frame sound entry (render loop $C0A1 and the NMI $C2F9): for each voi
+NesPrgRom:006D:render_loop:[HIGH] Naming 2026-10-26, top-down (render thread): the main-context thread (Chris: the render loop draws at vblank; the game engine runs when it i
 NesPrgRom:025C:validate_magic_and_restore_state_vars:[MED] Gates on magic sentinel ($3E==$5A && $3F==$A5, else bails to $C2A7), conditionally swap_double_buffers_toggle_flag, then pack_state_vars_int
-NesPrgRom:02EF:nmi_sound_tick:[MED] Full register save/restore (php/pha x3 ... pla x3/plp) = interrupt handler; if flag $20!=0 calls sound_command_dispatch then inc $20 (per-fr
+NesPrgRom:02EF:nmi_count_vblank:[HIGH] Naming 2026-10-26, top-down (render thread): saves A/X/Y/P, increments $20 (the flag render_loop waits on), and runs update_sound_frame only
 NesPrgRom:040F:write_object_to_oam_and_bump_count:[MED] jsr write_object_to_shadow_oam then inc $12 — writes one object to shadow OAM and advances the per-object index/sprite counter at $12.
 NesPrgRom:0563:draw_indexed_object_if_present:[MED] Loads object id from table $C573,x; beq skips zero entries; sets param $12 and saves X in $17 then calls write_object_to_shadow_oam, restore
 NesPrgRom:065E:draw_object_tile_row:[MED] A-count→$17 loop calls write_object_to_shadow_oam per iter, advancing X-coord $10/$11 by +8 and tile $12 each pass; then rewinds $10 by $18 
@@ -219,13 +219,13 @@ NesPrgRom:05A3:emit_object_oam_at_70_variant2:[MED] Loads fixed params $13=#$02,
 NesPrgRom:05B2:draw_2x2_metasprite_tile_69:[MED] Loads tile base $12=#$69, counter $13=#$02, attr $14=#$00, then walks position $10/$11 (X, 16-bit) and $16 (Y) by ±8px between four OAM emit
 NesPrgRom:0DFF:setup_oam_params_and_emit_object_7c:[MED] Loads fixed pointer/param block into ZP $10-$16 ($10/$11=$007C src, $12/$13=$02CB, $14/$15=$0000 counter, $16=$AA tag) then jmp $C3EC emit_o
 NesPrgRom:1A02:set_field36_step_at_bounds_then_accumulate_dispatch:[MED] Reads $36; at boundary 9 sets step $37=+4, at boundary $19(25) sets $37=-4($FC), else leaves $37; then jmp/fallthrough into accumulate_field
-NesPrgRom:264A:dispatch_object_state_handler_e65a:[HIGH] Loads per-object state index from $0260,x, fetches a 2-byte pointer from inline table $E65A (entries = handler_rts_noop $C14F, resolve_objec
+NesPrgRom:264A:dispatch_item_state:[HIGH] Naming 2026-10-26: ldy $0260,x indexes the 3-handler table $E65A (noop, resolve_object_position_capture_and_score, draw_object_and_tick_stat
 NesPrgRom:31A5:dispatch_object_phase_handler:[HIGH] Indexes table $F1B5 by per-object phase $0260,x, loads 16-bit pointer into $1C/$1D, jmp ($1C); table entries are $C14F handler_rts_noop and 
 NesPrgRom:06C1:draw_object_by_animation_state:[MED] Reads state var $1E, three-way branches (<$20/==$20/>$20), loads $12/$13 pointer-param pairs and dispatches to draw_2x2_metasprite_tile_69 /
 NesPrgRom:1D17:reset_obj_to_state2_and_arm_field:[MED] Writes via ($1e),y object pointer: clears +2, sets +3=(field&$fc)|$02, +8=$4b, +0f=2, +4=2 (state-2 across fields); if counter +5==0 calls f
 NesPrgRom:2634:update_all_active_objects:[HIGH] Loops index $1b from 0 by stride #$08 up to count $81, calling dispatch_object_state_handler each pass — a per-object update loop over an 8-
 NesPrgRom:318F:dispatch_all_objects_phase_handler:[HIGH] Loops X from 0 by stride +8 (8-byte object slots) up to limit $53, storing index in $1B and calling dispatch_object_phase_handler each pass;
-NesPrgRom:0141:extract_x_top2_bits_to_y:[LOW] real bytes txa/and #$c0/tay = top 2 bits of X -> Y; entry off-by-one into the $C13E 1-target indirect-jump tail (read_table overread artifac
+NesPrgRom:0141:yield_to_render_loop:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): tsx / txa / and #$C0 / tay: the exchange slot from the caller's stack quarter
 NesPrgRom:0ADA:redraw_var_records_loop_until_count_or_phase:[MED] backward loop ($CADA-$CAFF) decrementing 16-bit counter $0E/$0F per pass while calling draw_fixed_glyph_string (gated on $40), init_ptr_1e_f
 NesPrgRom:0D49:build_stage_screen_layout:[MED] Indexes per-stage param tables ($cdbf/$cdc0/$cdc1/$cdc2,x via $7a*4), clears nametables + rebuilds buffers, optionally runs a 0xD2-count OAM
 NesPrgRom:0E94:run_entry_state_sequence_120_frames:[MED] Sets $0F=120 as a backward-loop counter (dec $0F/bne $CE98), and each iteration reloads draw/param bytes ($10=$38,$16=$70,$13=2,$11/$14=0) t
@@ -238,9 +238,9 @@ NesPrgRom:1E2D:tick_bonus_item_collect_or_timeout:[MED] dec $0427 lifetime timer
 NesPrgRom:1E61:tick_timer_0427_reset_obj_when_idle:[MED] dec $0427 + bne returns until counter expires; on zero, ora-tests flags $4B/$4F and only when both clear jmps reset_obj_to_state2_and_arm_fi
 NesPrgRom:0AB4:redraw_var_records_at_7800_if_flag_set:[MED] if $B0 flag set, loads pointer $0E/$0F = $7800 then jmp redraw_var_records_loop_until_count_or_phase; else beq exits at $CAC3
 NesPrgRom:0E1A:run_scripted_screen_cutscene_sequence:[MED] Disables render ($C241), clears nametables ($CBF5), draws blocks ($D703), re-enables render ($C239), then loads pointer descriptors / unpack
-NesPrgRom:1A2C:dispatch_object_state_handler_da42:[HIGH] Reads object field +$0F via ($1e),y into X, indexes 16-bit pointer table at $DA42 (entries = the per-state object handler callees), stores t
+NesPrgRom:1A2C:dispatch_object_state:[HIGH] Naming 2026-10-26: ldy #$0F / lda ($1E),y: record +F (obj_state, proven in the data phase) indexes the 23-handler table $DA42 -> jmp ($1C); 
 NesPrgRom:0031:reset_cold_boot_init:[HIGH] sei/cld/ldx#$5f/txs stack init, zeros PPUCTRL/MASK, polls PPUSTATUS warmup, clears 2KB RAM via ($00),y loop ($01=7 pages), calls validate_ma
-NesPrgRom:0128:switch_stack_and_jump_to_indexed_handler:[MED] Loads handler ptr from table $C13E[y] into ZP vector $1E/$1F, saves current SP (tsx/txa) into per-index slot $00C1,x via $C140[y], then jmp 
+NesPrgRom:0128:start_game_thread:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): reset's only call ($C062, Y=0): loads the task record $C13E,y (handler $C84F)
 NesPrgRom:0344:dispatch_object_draw_routine_by_index:[HIGH] Stores index to $15, `and #$fe`+tax makes an even table offset, loads 16-bit pointer from table at $C356 into $1C/$1D, `jmp ($001c)`; table 
 NesPrgRom:03A7:dispatch_on_obj_flag_bit3:[MED] Reads byte at offset 7 of struct via ptr ($1e), masks bit3 (and #$08); if set, loads param #$06 and tail-jmps to $C344, else falls to altern
 NesPrgRom:084F:init_stage_with_intro_animation_then_spawn:[MED] Calls init_object_tables, clears the $70-$3F state block, sets up/enables PPU render via setup_screen_layout, runs a dec-$0F intro loop call
@@ -250,8 +250,8 @@ NesPrgRom:0A28:dispatch_stage_state_and_rebuild_screen:[MED] Drains queue $040F,
 NesPrgRom:0B60:run_frame_game_logic_update:[HIGH] Pure ordered call chain (8 jsr + tail jmp, no own register/RAM use) sequencing tick_all_subcounters_stride8, tick_object_group_04a0, update_
 NesPrgRom:0B7B:run_frame_game_logic_tick:[MED] Pure linear pipeline: jsr tick_all_subcounters_stride8 -> jsr $d8d8 -> jsr dispatch_all_objects_phase_handler -> jsr copy_active_var_record_
 NesPrgRom:18D8:update_and_respawn_objects:[MED] Loops all 8 objects (ptr $1E/$1F=$0400, +$10 stride to $90) calling update_object_state_vs_reference + dispatch_object_state_handler + trans
-NesPrgRom:35B8:advance_to_next_8byte_record_and_loop:[MED] Entry adds #$08 to 16-bit ptr $f0/$f1 (carry→inc $f1), inc index $f4, cmp limit $f5, bcc back to loop body $f590 else rts — steps to the nex
-NesPrgRom:3606:run_object_animation_script:[HIGH] Loops at $F636 calling fetch_seq_byte_and_advance_index to read opcodes: <$60 = frame index (decodes via $f83b word table into object fields
+NesPrgRom:35B8:sound_streams_next_voice:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): the stream pass's loop tail: next voice record, and the return point of every
+NesPrgRom:3606:start_voice_stream:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): a triggered voice starts: reads the stream header into the record (+0 channel
 NesPrgRom:3F65:setup_stage_then_run_intro_frames:[HIGH] Disables render (ppu_disable_render), clears $0400 buffer, builds screen layout (build_stage_screen_layout), builds OAM/sprites, spawns obje
 NesPrgRom:037C:draw_two_tile_object:[MED] $12=tile($AE, or $66 when $1E==$20), $13=3 palette; jsr write_object_to_shadow_oam, advance X +8, $12=$67, jmp write_object_to_shadow_oam = 
 NesPrgRom:3FE1:tbl_demo_input_script:[HIGH] Attract-mode (demo) input track. Read ONLY at $D9D3/$D9DC (lda $ffe1,x) by the demo-input playback path (@D9C7), indexed by demo_script_curs
@@ -278,6 +278,27 @@ NesPrgRom:12D9:mansion_block_06:[HIGH] tbl_mansion_ptr[Y=6]; mansion_idx 6 -> ro
 NesPrgRom:1350:mansion_block_08:[HIGH] tbl_mansion_ptr[Y=8]; mansion_idx 8 (not referenced by tbl_round_attributes; spare/title layout).
 NesPrgRom:141C:mansion_block_0A:[HIGH] tbl_mansion_ptr[Y=$0A]; mansion_idx $0A -> bonus rounds 2,6,10,14 mansion.
 NesPrgRom:1483:mansion_frame_bonus:[HIGH] tbl_mansion_ptr[Y=$0C]; the bonus-round mansion frame (CD63 ldy #$0C).
+NesPrgRom:3636:run_voice_stream:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): reads stream bytes until one sets a duration: < $60 a note (bits 7-3 index th
+NesPrgRom:36D0:voice_op_end:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $E8: clears the voice's trigger $0600,x and its record's channel byte:
+NesPrgRom:36DE:voice_op_set_duty:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $E9: operand into the top 2 bits of the $4000 image (+1), the duty cyc
+NesPrgRom:36F0:voice_op_set_envelope:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $EA: operand into the low 6 bits of the $4000 image (+1): loop / const
+NesPrgRom:3702:voice_op_set_volume:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $EB: operand into the low nibble of the $4000 image (+1).
+NesPrgRom:3714:voice_op_set_sweep:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $EC: operand to record +2, copied to the channel's $4001 (sweep).
+NesPrgRom:371E:voice_op_set_length_period_hi:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $ED: operand to record +4, copied to the channel's $4003 (length count
+NesPrgRom:3728:voice_op_set_control:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $EE: operand to record +1 whole, the channel's $4000.
+NesPrgRom:3732:voice_op_clear_loop_counters:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $EF: zeroes the 9 shared loop counters $0161-$0169.
+NesPrgRom:373F:voice_op_repeat_0:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F0: counter $0161: count up; until it reaches the operand, jump (the 
+NesPrgRom:3743:voice_op_repeat_1:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F1: voice_op_repeat_0 on counter $0162 (ldx #1, bit-skips the ldx #2)
+NesPrgRom:3746:voice_op_repeat_2:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F2: voice_op_repeat_0 on counter $0163 (entered inside the bit $02A2 
+NesPrgRom:375A:voice_op_jump_on_count_0:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F3: counter $0164: count up; skip the target until it reaches the ope
+NesPrgRom:375E:voice_op_jump_on_count_1:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F4: voice_op_jump_on_count_0 on counter $0165.
+NesPrgRom:3761:voice_op_jump_on_count_2:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F5: voice_op_jump_on_count_0 on counter $0166.
+NesPrgRom:3775:voice_op_jump_on_count_3:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F6: voice_op_jump_on_count_0 on counter $0167.
+NesPrgRom:3779:voice_op_jump_on_count_4:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F7: voice_op_jump_on_count_0 on counter $0168.
+NesPrgRom:377C:voice_op_jump_on_count_5:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F8: voice_op_jump_on_count_0 on counter $0169.
+NesPrgRom:37C2:voice_op_jump:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F9: the operand becomes the stream position (+5; a 16-bit pointer for
+NesPrgRom:0EE8:dead_clear_zp_04_07:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): unreferenced (no word, mirrored word, immediate pair or RTS-trick address): z
+NesPrgRom:0EFC:dead_clear_zp_00_03:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): unreferenced, like dead_clear_zp_04_07: zeroes $00-$03.
 NesInternalRam:0000:indirect_ptr:[pointer] .
 NesInternalRam:0001:ptr_hi:[pointer] Flagged P (16-bit pointer). It is the HIGH byte of the general-purpose indirect pointer pair $0000/$0001: writers set it via `sty $01` (ppu_
 NesInternalRam:0002:src_ptr_hi:[pointer] Repeatedly dereferenced as a 16-bit pointer paired with $01: routines use ($01,x), ($02),y, and ($02,x). load_ptr_descriptor_and_scan (ora (

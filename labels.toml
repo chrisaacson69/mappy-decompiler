@@ -46,13 +46,11 @@ addr = "D126"; name = "ppu_draw_mansion_stamps"; kind = "leaf"; conf = "HIGH"; c
 why = "group=[count][data_ptr][N x ppu_addr]; stamps an RLE tile-run (runlen,tiles,signed-delta) at N addrs = mansion"
 
 [[label]]
-addr = "CDB7"; name = "fill_attr_source_0170"; kind = "leaf"; conf = "MED"; callers = 1
-why = "STA $0170,X / INX / DEY loop ; fills the $0170 attribute-bit source block consumed by the attr packer"
-
+addr = "CDB7"; name = "fill_attr_map_run"; kind = "leaf"; conf = "HIGH"; callers = 1
+why = "Naming 2026-10-26: sta $0170,x / inx / dey: A into Y bytes of the attribute map at $0170+X, which clear_both_attribute_tables packs into $23C0/$27C0 (render_level runs this order). Was 'fill_attr_source_0170'. Earlier note: STA $0170,X / INX / DEY loop ; fills the $0170 attribute-bit source block consumed by the attr packer"
 [[label]]
-addr = "C3B4"; name = "obj_field5_lookup_C47C"; kind = "leaf"; conf = "MED"; callers = 4
-why = "X = obj[$05] (via ptr $1E); $13 = tbl_$C47C[X]; returns A=X ; field-5 indexes a $C47C parameter table"
-
+addr = "C3B4"; name = "lookup_obj_type_ptr_hi"; kind = "leaf"; conf = "MED"; callers = 4
+why = "Naming 2026-10-26: record +5 (obj_type) indexes the table $C47C; the byte goes to $13, the high half of a draw pointer. Was 'obj_field5_lookup_C47C'. Earlier note: X = obj[$05] (via ptr $1E); $13 = tbl_$C47C[X]; returns A=X ; field-5 indexes a $C47C parameter table"
 [[label]]
 addr = "DB83"; name = "obj_reset_fields_8_F"; kind = "leaf"; conf = "MED"; callers = 6
 why = "writes obj[$08]=$00, obj[$0F]=$06 via ptr $1E ; resets two object record fields (state/anim?)"
@@ -95,11 +93,10 @@ why = "ldx #$20 / lda #$00 / sta $00,x / inx / bne loop writes #$00 to zero-page
 
 [[label]]
 addr = "C342"
-name = "data_or_unclear_c342"
+name = "dispatch_object_draw_from_record"
 kind = "leaf"
-conf = "LOW"
-why = "Only 2 bytes / 1 instruction (`lda ($1e),y`) with no RTS, no HW regs, no loop/branch — a load fragment, not a self-contained routine."
-
+conf = "HIGH"
+why = "Naming 2026-10-26: lda ($1E),y then falls into dispatch_object_draw_routine_by_index: an alternate entry that takes the draw index from record field Y (its caller passes Y=4, obj_draw_index). Traced; JSR caller $C33B. Was 'data_or_unclear_c342'. Earlier note: Only 2 bytes / 1 instruction (`lda ($1e),y`) with no RTS, no HW regs, no loop/branch — a load fragment, not a self-contained routine."
 [[label]]
 addr = "C3D1"
 name = "lookup_table_c480_to_zp12"
@@ -151,11 +148,10 @@ why = "Single instruction `lda #$03` (2 bytes) — loads constant 3 into A, no r
 
 [[label]]
 addr = "C6FB"
-name = "scan_ptr_buf_for_zero_terminator"
+name = "draw_rle_text"
 kind = "leaf"
-conf = "MED"
-why = "ldy #$00 then lda ($12),y reads bytes via the zero-page pointer $12/$13; bne tests the byte for nonzero and iny advances the index — the classic NUL-terminated buffer/string scan."
-
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): walks ($12): [n][n tiles] written at the screen position $10/$11 (via $C78E), [0][delta] moves the position by a signed delta, [0][0] ends. Run headless over the $CF08 records it draws EARNINGS / PERFECT GAME / TOTAL (rom_data.py). Was 'scan_ptr_buf_for_zero_terminator'. Earlier note: ldy #$00 then lda ($12),y reads bytes via the zero-page pointer $12/$13; bne tests the byte for nonzero and iny advances the index — the classic NUL-terminated buffer/string scan."
 [[label]]
 addr = "C7E2"
 name = "init_zp14_zp15_to_8"
@@ -165,25 +161,22 @@ why = "lda #$08 / sta $14 then lda #$08 / sta $15 — writes the constant 8 into
 
 [[label]]
 addr = "C818"
-name = "append_record_to_buffer"
-kind = "leaf"
-conf = "MED"
-why = "Gated by flag $2D; uses $2A as write cursor into $0500, appends 4 bytes ($10,$11,#$01,table[$0180+Y]), inx after each, stores advanced cursor back to $2A."
-
-[[label]]
-addr = "CA81"
-name = "swap_double_buffers_toggle_flag"
-kind = "leaf"
-conf = "MED"
-why = "eor #$01 toggles flag $41, then a 256-byte byte-swap loop exchanges OAM-shadow page $0200 with $0300 (lda/ldy/sta/sta), then a 64-byte swap of zero-page $70 vs $b0 (cpx #$40); pure buffer-flip, no callees."
-
-[[label]]
-addr = "CAA7"
-name = "clear_buffer_192_at_0400"
+name = "write_attribute_byte"
 kind = "leaf"
 conf = "HIGH"
-why = "lda #$00 then X-loop sta $0400,x; inx; cpx #$c0; bne writes zero to 192 bytes at $0400 (no PPU/APU regs, pure RAM fill)"
-
+why = "Naming 2026-10-26, top-down (render thread): one attribute byte $0180,y to the address $10/$11: a 1-byte packet in the VRAM queue $0500 when rendering is on, a direct PPUADDR/PPUDATA write when it is off. Was 'append_record_to_buffer'. Earlier note: Gated by flag $2D; uses $2A as write cursor into $0500, appends 4 bytes ($10,$11,#$01,table[$0180+Y]), inx after each, stores advanced cursor back to $2A."
+[[label]]
+addr = "CA81"
+name = "swap_player_state"
+kind = "leaf"
+conf = "HIGH"
+why = "Naming 2026-10-26, top-down (render thread): toggles bit 0 of $41 (the current player) and exchanges the two players' state: page $0200 with page $0300, and $70-$AF with $B0-$EF (p1_lives / p2_lives). Two-player alternation; the item records at $0260 are per player. Was 'swap_double_buffers_toggle_flag'. Earlier note: eor #$01 toggles flag $41, then a 256-byte byte-swap loop exchanges OAM-shadow page $0200 with $0300 (lda/ldy/sta/sta), then a 64-byte swap of zero-page $70 vs $b0 (cpx #$40); pure buffer-flip, no callees."
+[[label]]
+addr = "CAA7"
+name = "clear_object_tables"
+kind = "leaf"
+conf = "HIGH"
+why = "Naming 2026-10-26: zeroes $0400-$04BF: the 9 sixteen-byte object records ($0400-$048F, the strided loops stop at $90) and the block after them. Was 'clear_buffer_192_at_0400'. Earlier note: lda #$00 then X-loop sta $0400,x; inx; cpx #$c0; bne writes zero to 192 bytes at $0400 (no PPU/APU regs, pure RAM fill)"
 [[label]]
 addr = "CAC3"
 name = "init_state_vars_and_pointer"
@@ -235,11 +228,10 @@ why = "SEC then 4-iter SBC of $44,x-$71,x (x=3..0) is a 32-bit LE compare; BCS s
 
 [[label]]
 addr = "D77A"
-name = "copy_var_record_to_0500_buffer"
+name = "queue_vram_packet"
 kind = "leaf"
-conf = "MED"
-why = "Loads src ptr from table $D7AD/$D7AE[y] into $10/$11, then sta ($10),y bytes into buffer $0500,x using cursor $2A; 3rd byte saved to $12 as a dec/bne loop count for the trailing variable-length payload, then stx $2a."
-
+conf = "HIGH"
+why = "Naming 2026-10-26: copies packet Y of the table $D7AD ([addr hi][addr lo][n][n bytes]) into the VRAM queue $0500 at the cursor $2A. Was 'copy_var_record_to_0500_buffer'. Earlier note: Loads src ptr from table $D7AD/$D7AE[y] into $10/$11, then sta ($10),y bytes into buffer $0500,x using cursor $2A; 3rd byte saved to $12 as a dec/bne loop count for the trailing variable-length payload, then stx $2a."
 [[label]]
 addr = "D825"
 name = "set_two_zp_pointers"
@@ -361,18 +353,16 @@ why = "Writes #$0F to APU $4015 (enable pulse1/pulse2/triangle/noise) then #$C0 
 
 [[label]]
 addr = "F4BF"
-name = "init_object_tables"
+name = "init_sound_voices"
 kind = "leaf"
-conf = "MED"
-why = "Loop1 zeroes a 25-entry flat array ($0600,x) and a stride-8 record field via ptr $F0/$F1 starting $0619 (cpx #$19); Loop2 copies 25 bytes from ROM table $F89E to $06E2 — initializes 25-object RAM tables from defaults."
-
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): zeroes the 25 sound triggers $0600-$0618 and each voice record's first byte at $0619+8k, then loads the per-voice init table $F89E. Called by init_apu_channels_and_frame_counter (falls in) and 6 stage/intro setups. Was 'init_object_tables'. Earlier note: Loop1 zeroes a 25-entry flat array ($0600,x) and a stride-8 record field via ptr $F0/$F1 starting $0619 (cpx #$19); Loop2 copies 25 bytes from ROM table $F89E to $06E2 — initializes 25-object RAM tables from defaults."
 [[label]]
 addr = "F55A"
-name = "sound_engine_tick"
+name = "sound_registers_next_voice"
 kind = "leaf"
 conf = "MED"
-why = "Advances a 16-bit data pointer $f0/$f1 by 8, decrements counter $f4, and on expiry loops x=0..3 writing computed (asl/and#$10/eor#$10) control bytes to APU $4000,x per-channel while gating on per-channel state $fc,x and $0600,x."
-
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): the register pass's loop tail inside update_sound_frame: next 8-byte voice record, dec the voice index $F4, loop; then silence channels nobody claimed. Was 'sound_engine_tick'. Earlier note: Advances a 16-bit data pointer $f0/$f1 by 8, decrements counter $f4, and on expiry loops x=0..3 writing computed (asl/and#$10/eor#$10) control bytes to APU $4000,x per-channel while gating on per-channel state $fc,x and $0600,x."
 # --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
 
 [[label]]
@@ -622,27 +612,24 @@ why = "lda $0490; sec; sbc #$02; sta $0490; bcs +; dec $0491 — subtracts 2 fro
 
 [[label]]
 addr = "F7F4"
-name = "set_ptr_from_word_table_by_id"
+name = "load_voice_stream_ptr"
 kind = "leaf"
 conf = "HIGH"
-why = "lda $f4; asl a; tax indexes word table at $f853; lda $f853,x->$f2 / lda $f854,x->$f3 loads a 16-bit pointer into zp $f2/$f3; cmp #$13/#$14 beq skip leaves pointer unchanged for two ids"
-
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): $F2/$F3 = the voice's stream base from the 25-word table $F853 (voices $13/$14 keep 16-bit pointers of their own in $F8/$FA: their streams pass 256 bytes). Was 'set_ptr_from_word_table_by_id'. Earlier note: lda $f4; asl a; tax indexes word table at $f853; lda $f853,x->$f2 / lda $f854,x->$f3 loads a 16-bit pointer into zp $f2/$f3; cmp #$13/#$14 beq skip leaves pointer unchanged for two ids"
 [[label]]
 addr = "F80B"
-name = "fetch_seq_byte_and_advance_index"
+name = "fetch_voice_stream_byte"
 kind = "leaf"
-conf = "MED"
-why = "Reads cursor at ($f0)+5, uses it as Y to load table byte via lda ($f2),y, returns that byte, then increments the cursor and stores it back to ($f0)+5 — fetch-next-and-advance; preceded by cmp $f4 #$13/#$14 state dispatch."
-
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): next stream byte: ($F2),index with index = record +5, post-incremented; voices $13/$14 read through their 16-bit pointers $F8/$FA instead. Was 'fetch_seq_byte_and_advance_index'. Earlier note: Reads cursor at ($f0)+5, uses it as Y to load table byte via lda ($f2),y, returns that byte, then increments the cursor and stores it back to ($f0)+5 — fetch-next-and-advance; preceded by cmp $f4 #$13/#$14 state dispatch."
 # --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
 
 [[label]]
 addr = "C150"
-name = "flush_vram_fill_buffer"
+name = "flush_vram_write_queue"
 kind = "routine"
 conf = "HIGH"
-why = "Calls ppu_disable_render, then walks buffer $0500 by X up to len $2A: reads 2 bytes -> $2006 (PPU addr hi/lo), then count+value -> repeated $2007 writes via dey/bne loop; a queued VRAM block-fill flush."
-
+why = "Naming 2026-10-26, top-down (render thread): rendering off, then plays the VRAM queue $0500 up to the cursor $2A: [addr lo][addr hi][n][n bytes] packets; falls into the readback queue. Was 'flush_vram_fill_buffer'. Earlier note: Calls ppu_disable_render, then walks buffer $0500 by X up to len $2A: reads 2 bytes -> $2006 (PPU addr hi/lo), then count+value -> repeated $2007 writes via dey/bne loop; a queued VRAM block-fill flush."
 [[label]]
 addr = "C177"
 name = "flush_vram_readback_queue_and_restore_render"
@@ -750,11 +737,10 @@ why = "Walks a ($12),y byte stream advancing a 16-bit cursor $10/$11 by signed d
 
 [[label]]
 addr = "C7C9"
-name = "clear_both_attribute_tables"
+name = "flush_dirty_attribute_bytes"
 kind = "routine"
-conf = "MED"
-why = "Loads pointer $10/$11 with $23C0 then $27C0 (the two PPU attribute-table addresses), zeroes counter $12/$13, and calls init_zp14_zp15_to_8 between them — clearing/initializing both nametables' attribute tables."
-
+conf = "HIGH"
+why = "Naming 2026-10-26, top-down (render thread): clears nothing: for nametables $23C0 and $27C0 walks the dirty bitmap $0170 (8x8 bits each), and for each set bit writes the attribute shadow byte $0180,y (queued to $0500 while rendering, straight to the PPU when ppu_mask_shadow is 0). Was 'clear_both_attribute_tables'. Earlier note: Loads pointer $10/$11 with $23C0 then $27C0 (the two PPU attribute-table addresses), zeroes counter $12/$13, and calls init_zp14_zp15_to_8 between them — clearing/initializing both nametables' attribute tables."
 [[label]]
 addr = "C7EA"
 name = "emit_records_for_set_bits_in_bitmap"
@@ -764,11 +750,10 @@ why = "Nested loop scans bitmask bytes at $0170,y ($12=row idx, $14=row count), 
 
 [[label]]
 addr = "CECD"
-name = "load_ptr_descriptor_and_scan"
+name = "draw_indexed_text_line"
 kind = "routine"
-conf = "MED"
-why = "Copies a Y-indexed 4-byte descriptor from table $CF08 into scan buffer $10-$13, sets limit $14=#$80, then tail-calls (jmp) scan_ptr_buf_for_zero_terminator ($C6FB); a separate tail clears state blocks $04-$07 (with $51-gated $06=#$50) and $00-$03."
-
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): loads the 4-byte record $CF08,y ([screen address][text pointer]) into $10-$13, sets $14 = $80, jmp draw_rle_text. Was 'load_ptr_descriptor_and_scan'. Earlier note: Copies a Y-indexed 4-byte descriptor from table $CF08 into scan buffer $10-$13, sets limit $14=#$80, then tail-calls (jmp) scan_ptr_buf_for_zero_terminator ($C6FB); a separate tail clears state blocks $04-$07 (with $51-gated $06=#$50) and $00-$03."
 [[label]]
 addr = "D4CA"
 name = "add_bcd_table_amount_to_buffer"
@@ -799,11 +784,10 @@ why = "Gates on $42!=0 and low-nibble($21)==0, builds word index Y from ($21 bit
 
 [[label]]
 addr = "D735"
-name = "copy_var_record_index_flag2_to_0500"
+name = "queue_state_vram_packet"
 kind = "routine"
 conf = "MED"
-why = "Computes Y = (($41 | $02) << 1) as a word record index (lda #$02/ora $41/asl/tay) then tail-jmps to copy_var_record_to_0500_buffer ($D77A), i.e. force flag bit1 then copy that record"
-
+why = "Naming 2026-10-26: Y = (game_state_flags | 2) * 2, then jmp queue_vram_packet. Called by the render loop on frames when $23 is set (the game thread does not run those frames). Was 'copy_var_record_index_flag2_to_0500'. Earlier note: Computes Y = (($41 | $02) << 1) as a word record index (lda #$02/ora $41/asl/tay) then tail-jmps to copy_var_record_to_0500_buffer ($D77A), i.e. force flag bit1 then copy that record"
 [[label]]
 addr = "D73E"
 name = "animate_two_sprite_walkcycles_into_buffer"
@@ -997,11 +981,10 @@ why = "Loops $1b from 0 by +8 each pass (adc #$08) until it hits bound $80, call
 
 [[label]]
 addr = "E449"
-name = "load_ptr_from_table_then_scan"
+name = "draw_text_from_table"
 kind = "routine"
 conf = "HIGH"
-why = "Loads 16-bit pointer from table $E569,Y into ZP pointer $12/$13 (lda $e569,y/sta $12; lda $e56a,y/sta $13) then tail-jmps scan_ptr_buf_for_zero_terminator, so it selects a buffer by Y index and scans it."
-
+why = "Naming 2026-10-26: text pointer from the word table $E569,y into $12/$13, then jmp draw_rle_text. Was 'load_ptr_from_table_then_scan'. Earlier note: Loads 16-bit pointer from table $E569,Y into ZP pointer $12/$13 (lda $e569,y/sta $12; lda $e56a,y/sta $13) then tail-jmps scan_ptr_buf_for_zero_terminator, so it selects a buffer by Y index and scans it."
 [[label]]
 addr = "E862"
 name = "load_object_table_to_ram"
@@ -1039,20 +1022,18 @@ why = "ldx $1b indexes a 16-bit pointer table at $0266/$0267 into ptr $10/$11, c
 
 [[label]]
 addr = "F4F1"
-name = "sound_command_dispatch"
+name = "update_sound_frame"
 kind = "routine"
-conf = "MED"
-why = "Inits APU regs ($4004/$4008), walks a sound-request table at ptr $F0/$F1=$0619, allocates 4 channel-busy slots $FC-$FF, and writes 4 data bytes into $4000,x (x=channel*4 = the four APU register banks) before tailing into sound_engine_tick."
-
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): the per-frame sound entry (render loop $C0A1 and the NMI $C2F9): for each voice whose record is live, claim its channel in $FC-$FF and copy record +1..+4 to $4000+4*(ch-1); silence unclaimed channels; then run each voice's stream. With $23 set only voice 1 runs and square 2 / triangle are muted. Was 'sound_command_dispatch'. Earlier note: Inits APU regs ($4004/$4008), walks a sound-request table at ptr $F0/$F1=$0619, allocates 4 channel-busy slots $FC-$FF, and writes 4 data bytes into $4000,x (x=channel*4 = the four APU register banks) before tailing into sound_engine_tick."
 # --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
 
 [[label]]
 addr = "C06D"
-name = "vblank_synced_frame_update_loop"
+name = "render_loop"
 kind = "routine"
 conf = "HIGH"
-why = "Spins on vblank flag $20, then per-frame: OAMDMA ($4014<-#$07), flush_vram_fill_buffer, read_and_decode_input, build_sprite_row_oam_shadow, sets PPU $2005 scroll x2 + $2000 ctrl, sound_command_dispatch, inc frame ctr $21, clear flag $20, jmp back."
-
+why = "Naming 2026-10-26, top-down (render thread): the main-context thread (Chris: the render loop draws at vblank; the game engine runs when it is not drawing). Waits for the NMI's flag $20, OAM DMA from $0700, flushes the VRAM queues, reads input, builds sprites, sets scroll, runs update_sound_frame, then swap_stack_pointer (Y=0) hands the rest of the frame to the game thread, which yields back through yield_to_render_loop; on frames with $23 set it queues a state packet instead and the game thread does not run. Was 'vblank_synced_frame_update_loop'. Earlier note: Spins on vblank flag $20, then per-frame: OAMDMA ($4014<-#$07), flush_vram_fill_buffer, read_and_decode_input, build_sprite_row_oam_shadow, sets PPU $2005 scroll x2 + $2000 ctrl, sound_command_dispatch, inc frame ctr $21, clear flag $20, jmp back."
 [[label]]
 addr = "C25C"
 name = "validate_magic_and_restore_state_vars"
@@ -1062,11 +1043,10 @@ why = "Gates on magic sentinel ($3E==$5A && $3F==$A5, else bails to $C2A7), cond
 
 [[label]]
 addr = "C2EF"
-name = "nmi_sound_tick"
+name = "nmi_count_vblank"
 kind = "routine"
-conf = "MED"
-why = "Full register save/restore (php/pha x3 ... pla x3/plp) = interrupt handler; if flag $20!=0 calls sound_command_dispatch then inc $20 (per-frame counter) — a VBlank/NMI sound-driver tick"
-
+conf = "HIGH"
+why = "Naming 2026-10-26, top-down (render thread): saves A/X/Y/P, increments $20 (the flag render_loop waits on), and runs update_sound_frame only when $20 was already set, i.e. on a lag frame the render loop did not finish; falls into the RTI at $C304. Was 'nmi_sound_tick'. Earlier note: Full register save/restore (php/pha x3 ... pla x3/plp) = interrupt handler; if flag $20!=0 calls sound_command_dispatch then inc $20 (per-frame counter) — a VBlank/NMI sound-driver tick"
 [[label]]
 addr = "C40F"
 name = "write_object_to_oam_and_bump_count"
@@ -1537,11 +1517,10 @@ why = "Reads $36; at boundary 9 sets step $37=+4, at boundary $19(25) sets $37=-
 
 [[label]]
 addr = "E64A"
-name = "dispatch_object_state_handler_e65a"
+name = "dispatch_item_state"
 kind = "routine"
 conf = "HIGH"
-why = "Loads per-object state index from $0260,x, fetches a 2-byte pointer from inline table $E65A (entries = handler_rts_noop $C14F, resolve_object_position... $E660, draw_object_and_tick... $E6FA) into $1C/$1D and jmp ($1C) — a state-indexed jump-table dispatcher."
-
+why = "Naming 2026-10-26: ldy $0260,x indexes the 3-handler table $E65A (noop, resolve_object_position_capture_and_score, draw_object_and_tick_state_timer). $0260 is the item record: spawn_objects_from_level_descriptor sets it to 2 per item, and the pickup handler decrements round_items_remaining. Was 'dispatch_object_state_handler_e65a'. Earlier note: Loads per-object state index from $0260,x, fetches a 2-byte pointer from inline table $E65A (entries = handler_rts_noop $C14F, resolve_object_position... $E660, draw_object_and_tick... $E6FA) into $1C/$1D and jmp ($1C) — a state-indexed jump-table dispatcher."
 [[label]]
 addr = "F1A5"
 name = "dispatch_object_phase_handler"
@@ -1581,11 +1560,10 @@ why = "Loops X from 0 by stride +8 (8-byte object slots) up to limit $53, storin
 
 [[label]]
 addr = "C141"
-name = "extract_x_top2_bits_to_y"
+name = "yield_to_render_loop"
 kind = "leaf"
-conf = "LOW"
-why = "real bytes txa/and #$c0/tay = top 2 bits of X -> Y; entry off-by-one into the $C13E 1-target indirect-jump tail (read_table overread artifact)"
-
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): tsx / txa / and #$C0 / tay: the exchange slot from the caller's stack quarter, then falls into swap_stack_pointer. The game thread's 'wait one frame' (15 callers; lda #$78 / sta $0F / jsr here loops wait 120 frames). The old reading was the $C13E table overrun, fixed in discover. Was 'extract_x_top2_bits_to_y'. Earlier note: real bytes txa/and #$c0/tay = top 2 bits of X -> Y; entry off-by-one into the $C13E 1-target indirect-jump tail (read_table overread artifact)"
 # --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
 
 [[label]]
@@ -1676,11 +1654,10 @@ why = "Disables render ($C241), clears nametables ($CBF5), draws blocks ($D703),
 
 [[label]]
 addr = "DA2C"
-name = "dispatch_object_state_handler_da42"
+name = "dispatch_object_state"
 kind = "routine"
 conf = "HIGH"
-why = "Reads object field +$0F via ($1e),y into X, indexes 16-bit pointer table at $DA42 (entries = the per-state object handler callees), stores to $1C/$1D and jmp ($001c) — a state-indexed jump-table dispatcher."
-
+why = "Naming 2026-10-26: ldy #$0F / lda ($1E),y: record +F (obj_state, proven in the data phase) indexes the 23-handler table $DA42 -> jmp ($1C); in the bonus round ($7C set) the table is $E17A. Was 'dispatch_object_state_handler_da42'. Earlier note: Reads object field +$0F via ($1e),y into X, indexes 16-bit pointer table at $DA42 (entries = the per-state object handler callees), stores to $1C/$1D and jmp ($001c) — a state-indexed jump-table dispatcher."
 # --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
 
 [[label]]
@@ -1692,11 +1669,10 @@ why = "sei/cld/ldx#$5f/txs stack init, zeros PPUCTRL/MASK, polls PPUSTATUS warmu
 
 [[label]]
 addr = "C128"
-name = "switch_stack_and_jump_to_indexed_handler"
+name = "start_game_thread"
 kind = "routine"
-conf = "MED"
-why = "Loads handler ptr from table $C13E[y] into ZP vector $1E/$1F, saves current SP (tsx/txa) into per-index slot $00C1,x via $C140[y], then jmp ($001E) — a per-task stack-save + indirect dispatch (coroutine context switch)."
-
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): reset's only call ($C062, Y=0): loads the task record $C13E,y (handler $C84F) into $1E/$1F, saves SP to $00C1+$C140,y = $0100, sets the new SP, jmp ($001E). The game task then runs on its own stack. Was 'switch_stack_and_jump_to_indexed_handler'. Earlier note: Loads handler ptr from table $C13E[y] into ZP vector $1E/$1F, saves current SP (tsx/txa) into per-index slot $00C1,x via $C140[y], then jmp ($001E) — a per-task stack-save + indirect dispatch (coroutine context switch)."
 [[label]]
 addr = "C344"
 name = "dispatch_object_draw_routine_by_index"
@@ -1762,18 +1738,16 @@ why = "Loops all 8 objects (ptr $1E/$1F=$0400, +$10 stride to $90) calling updat
 
 [[label]]
 addr = "F5B8"
-name = "advance_to_next_8byte_record_and_loop"
-kind = "routine"
-conf = "MED"
-why = "Entry adds #$08 to 16-bit ptr $f0/$f1 (carry→inc $f1), inc index $f4, cmp limit $f5, bcc back to loop body $f590 else rts — steps to the next 8-byte table entry and continues/ends the iteration."
-
-[[label]]
-addr = "F606"
-name = "run_object_animation_script"
+name = "sound_streams_next_voice"
 kind = "routine"
 conf = "HIGH"
-why = "Loops at $F636 calling fetch_seq_byte_and_advance_index to read opcodes: <$60 = frame index (decodes via $f83b word table into object fields), $60-$e7 stored to field 6, >=$e8 dispatched through jump_table_dispatch_via_index into a handler pointer table ($F6B3+) whose handlers set per-object fields via ($f0),y (attr masks $3f/$c0/$f0), countdown timers $0161/$0164/$0167, and position $f8-$fb keyed on obj id $f4 — a bytecode animation/object-script interpreter."
-
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): the stream pass's loop tail: next voice record, and the return point of every stream opcode that ends a voice's turn (jmp $F5B8). Was 'advance_to_next_8byte_record_and_loop'. Earlier note: Entry adds #$08 to 16-bit ptr $f0/$f1 (carry→inc $f1), inc index $f4, cmp limit $f5, bcc back to loop body $f590 else rts — steps to the next 8-byte table entry and continues/ends the iteration."
+[[label]]
+addr = "F606"
+name = "start_voice_stream"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): a triggered voice starts: reads the stream header into the record (+0 channel, +1 $4000, +2 $4001, +4 $4003, +3 $4002 when the channel is 4 = noise), then runs the stream. Was 'run_object_animation_script'. Earlier note: Loops at $F636 calling fetch_seq_byte_and_advance_index to read opcodes: <$60 = frame index (decodes via $f83b word table into object fields), $60-$e7 stored to field 6, >=$e8 dispatched through jump_table_dispatch_via_index into a handler pointer table ($F6B3+) whose handlers set per-object fields via ($f0),y (attr masks $3f/$c0/$f0), countdown timers $0161/$0164/$0167, and position $f8-$fb keyed on obj id $f4 — a bytecode animation/object-script interpreter."
 [[label]]
 addr = "FF65"
 name = "setup_stage_then_run_intro_frames"
@@ -1957,3 +1931,150 @@ name = "mansion_frame_bonus"
 kind = "data"
 conf = "HIGH"
 why = "tbl_mansion_ptr[Y=$0C]; the bonus-round mansion frame (CD63 ldy #$0C)."
+
+[[label]]
+addr = "F636"
+name = "run_voice_stream"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): reads stream bytes until one sets a duration: < $60 a note (bits 7-3 index the 12-period table $F83B, bits 2-0 shift it down by octaves, into +3/+4), $60 a rest, $61-$E7 note length (+6), >= $E8 a control opcode via jump_table_dispatch_via_index ($F6AC, 18 handlers). Every stream in the ROM ends in $E8 or $F9 (sound lane, rom_data.py)."
+
+[[label]]
+addr = "F6D0"
+name = "voice_op_end"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $E8: clears the voice's trigger $0600,x and its record's channel byte: the voice stops. 21 of 25 streams end with it."
+
+[[label]]
+addr = "F6DE"
+name = "voice_op_set_duty"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $E9: operand into the top 2 bits of the $4000 image (+1), the duty cycle."
+
+[[label]]
+addr = "F6F0"
+name = "voice_op_set_envelope"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $EA: operand into the low 6 bits of the $4000 image (+1): loop / constant-volume flags and volume or envelope period."
+
+[[label]]
+addr = "F702"
+name = "voice_op_set_volume"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $EB: operand into the low nibble of the $4000 image (+1)."
+
+[[label]]
+addr = "F714"
+name = "voice_op_set_sweep"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $EC: operand to record +2, copied to the channel's $4001 (sweep)."
+
+[[label]]
+addr = "F71E"
+name = "voice_op_set_length_period_hi"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $ED: operand to record +4, copied to the channel's $4003 (length counter load and period high bits)."
+
+[[label]]
+addr = "F728"
+name = "voice_op_set_control"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $EE: operand to record +1 whole, the channel's $4000."
+
+[[label]]
+addr = "F732"
+name = "voice_op_clear_loop_counters"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $EF: zeroes the 9 shared loop counters $0161-$0169."
+
+[[label]]
+addr = "F73F"
+name = "voice_op_repeat_0"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F0: counter $0161: count up; until it reaches the operand, jump (the $F9 tail) back; then reset it and skip the target. ldx #0 / beq: shares its body with $F743/$F746."
+
+[[label]]
+addr = "F743"
+name = "voice_op_repeat_1"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F1: voice_op_repeat_0 on counter $0162 (ldx #1, bit-skips the ldx #2)."
+
+[[label]]
+addr = "F746"
+name = "voice_op_repeat_2"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F2: voice_op_repeat_0 on counter $0163 (entered inside the bit $02A2 operand: ldx #2)."
+
+[[label]]
+addr = "F75A"
+name = "voice_op_jump_on_count_0"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F3: counter $0164: count up; skip the target until it reaches the operand, then reset it and jump (alternate endings)."
+
+[[label]]
+addr = "F75E"
+name = "voice_op_jump_on_count_1"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F4: voice_op_jump_on_count_0 on counter $0165."
+
+[[label]]
+addr = "F761"
+name = "voice_op_jump_on_count_2"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F5: voice_op_jump_on_count_0 on counter $0166."
+
+[[label]]
+addr = "F775"
+name = "voice_op_jump_on_count_3"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F6: voice_op_jump_on_count_0 on counter $0167."
+
+[[label]]
+addr = "F779"
+name = "voice_op_jump_on_count_4"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F7: voice_op_jump_on_count_0 on counter $0168."
+
+[[label]]
+addr = "F77C"
+name = "voice_op_jump_on_count_5"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F8: voice_op_jump_on_count_0 on counter $0169."
+
+[[label]]
+addr = "F7C2"
+name = "voice_op_jump"
+kind = "routine"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): opcode $F9: the operand becomes the stream position (+5; a 16-bit pointer for voices $13/$14). The two looping themes and voices 1 and 14 end with it."
+
+[[label]]
+addr = "CEE8"
+name = "dead_clear_zp_04_07"
+kind = "dead"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): unreferenced (no word, mirrored word, immediate pair or RTS-trick address): zeroes $04-$07, and $06 = $50 when $51 is set. Dead code; not in the discover walk."
+
+[[label]]
+addr = "CEFC"
+name = "dead_clear_zp_00_03"
+kind = "dead"
+conf = "HIGH"
+why = "Naming 2026-10-26 (bytes read whole after the discover fixes): unreferenced, like dead_clear_zp_04_07: zeroes $00-$03."

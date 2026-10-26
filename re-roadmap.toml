@@ -46,10 +46,10 @@ evidence = ["call_graph.py", "call_tree.txt", "call_graph.json", "bottom_up_orde
 
 [phase.naming]
 status   = "partial"
-gate     = "258 routines named bottom-up in 8 levels, then a top-down adversarial verify (95% confirmed); the published disassembly read only at the end (it matched every overlap, anonymous on 188). Not met: 9 names carry an address key, 3 phantoms are named."
-checked  = "2026-06-25"
-toolset  = ""
-evidence = ["labels.toml", "vars.toml", "09-from-scratch-rederivation.md"]
+gate     = "2026-10-26 pass on the fixed discover, three batches through apply_names.py (walk.guard name mapping + every listing byte unchanged; a failed batch restores labels.toml): 26 renames, 21 new labels (the 18 sound opcodes, run_voice_stream, 2 dead routines). Bottom-up: the two threads (start_game_thread, yield_to_render_loop), the sound engine (25 voices; every stream ends in opcode $E8 or $F9, checked on the sound-lane extents), draw_rle_text, 7 address-keyed names by role. Top-down: the render thread (RESET, NMI, IRQ without the task edge, 54 routines) verified; 6 renamed (render_loop, swap_player_state, nmi_count_vblank, flush_dirty_attribute_bytes, ...). Not yet: the game thread's top-down pass (221 routines), the variable names."
+checked  = "2026-10-26"
+toolset  = "2f252ef"
+evidence = ["labels.toml", "apply_names.py", "mappy_labeled.asm", "call_tree.txt", "call_tree.html"]
 
 [phase.presentation]
 status   = "done"
@@ -118,7 +118,8 @@ closed = "2026-10-26: moved to naming (context names are naming work). Data phas
 item   = "9 names carry an address key: fill_attr_source_0170, obj_field5_lookup_C47C, clear_buffer_192_at_0400, copy_5_bytes_table_to_ram_0490, copy_var_record_index_flag2_to_0500, scan_table_at_e537, tick_object_group_04a0, dispatch_object_state_handler_e65a / _da42. Rename by role (a RAM address that IS the role may stay)."
 phase  = "naming"
 source = "build-tool trial 2026-10-26 (labels.toml)"
-status = "open"
+status = "closed"
+closed = "2026-10-26: 6 renamed by role (dispatch_object_state, dispatch_item_state, clear_object_tables, fill_attr_map_run, lookup_obj_type_ptr_hi, queue_vram_packet / queue_state_vram_packet). Still open in the game-thread revisit: scan_table_at_e537 ($E456 draws text into the RAM buffer, so a PPU-port run shows nothing), tick_object_group_04a0 (4 eight-byte records at $04A0, collision triggers sound slot 9), copy_5_bytes_table_to_ram_0490, obj_field5_or10_lookup_c480_to_zp12, and $DF09."
 
 [[revisit]]
 item   = "render_level.py sys.path-inserts nes-render and na1's na1dream.cpu6502: move it onto machines.nes.ppu and cpu.m6502, then check a round against the live PPU."
@@ -138,13 +139,15 @@ closed = "2026-10-26: same ROM. PRG (25482CEB) and CHR (B060AFC5) are byte-ident
 item   = "$C342 (lda ($1e),y then falls into the $C356 draw-routine dispatch at $C344, with Y=4 = the record's obj_draw_index) and $DF09 (ldx #$04, falls into $DF0B) are fall-through entries still named data_or_unclear_c342 / _df09. Name each by role, as an alternate entry of the routine it falls into."
 phase  = "naming"
 source = "discover revisit 2026-10-26"
-status = "open"
+status = "closed"
+closed = "2026-10-26: $C342 = dispatch_object_draw_from_record. $DF09 (ldx #$04 into move_object_clamp_and_flip_direction) stays open: what X=4 selects is not in that body; see the address-key revisit."
 
 [[revisit]]
 item   = "19 discovered entries carry no label: the 18 sound-stream opcode handlers in the $F6AC inline table ($F6D0..$F7C2, stream bytes >= $E8, called by the voice interpreter $F606; the bit-skip trios $F73F/$F743/$F746, $F75A.., $F775..) and $F636 (the interpreter loop head they jump back to)."
 phase  = "naming"
 source = "discover revisit 2026-10-26"
-status = "open"
+status = "closed"
+closed = "2026-10-26: labelled: run_voice_stream ($F636) and the 18 opcodes $E8-$F9 (voice_op_end, _set_duty, _set_envelope, _set_volume, _set_sweep, _set_length_period_hi, _set_control, _clear_loop_counters, _repeat_0..2, _jump_on_count_0..5, _jump)."
 
 [[revisit]]
 item   = "check_object_player_collision ($EE77-$EEC8) now owns $EEA9-$EEC8, which the dropped phantom's why described as a strided object-slot init. Re-verify the owner's name covers its tail."
@@ -195,13 +198,15 @@ status = "open"
 item   = "The sound engine is named as objects: init_object_tables ($F4BF) zeroes the 25 sound triggers and their 8-byte voice states ($0619+); run_object_animation_script ($F606) is the voice stream interpreter (its 18 $F6AC handlers are stream opcodes $E8+); scan_ptr_buf_for_zero_terminator ($C6FB) is a run-length text writer ([n][n tiles], [0][delta], [0][0]). $0600 is already renamed sound_trigger."
 phase  = "naming"
 source = "data phase 2026-10-26"
-status = "open"
+status = "closed"
+closed = "2026-10-26: renamed from the code (init_sound_voices, update_sound_frame, start_voice_stream, run_voice_stream, load_voice_stream_ptr, fetch_voice_stream_byte, ...); register images confirmed by the copy loop at $F54F (+1..+4 -> $4000+4*(ch-1)); draw_rle_text for $C6FB."
 
 [[revisit]]
 item   = "$CEE8 and $CEFC are dead code: two zero-fill loops ($04-$07, $00-$03) that nothing references as a word, a mirrored word, an immediate pair or an RTS-trick address. Label them as dead routines, not data."
 phase  = "naming"
 source = "data phase 2026-10-26"
-status = "open"
+status = "closed"
+closed = "2026-10-26: labelled kind = dead: dead_clear_zp_04_07, dead_clear_zp_00_03."
 
 [[revisit]]
 item   = "Context names for the record's polymorphic offsets (+8..+D are field_N) and its absolute in-table references: $041F (slot 1 +F), $0420/$0421/$0423/$0424/$0427/$042A/$042F (slot 2; $0427/$042A a bonus-item timer; $0420,x and $0423,x index the table from slot 2)."
@@ -209,5 +214,17 @@ phase  = "naming"
 source = "data phase 2026-10-26 (from the polymorphic-fields revisit)"
 status = "open"
 
+[[revisit]]
+item   = "Game thread top-down (221 routines from start_game_thread $C84F down; the stage loop is one SCC): verify each name against its code and its callers in call_tree.html. Carry the leftovers: $E456 (capture the $0500 text it queues), $ED4E's 4 records at $04A0, $CD2B's $0490 block, $C480 lookup, $DF09's X=4."
+phase  = "naming"
+source = "naming 2026-10-26"
+status = "open"
+
+[[revisit]]
+item   = "Render-thread variables found misnamed by the top-down pass: $20 = vblank flag ('scan_ptr'; nmi_count_vblank increments it, render_loop waits on it), $23 = the render-only-frame flag ('data_read_ptr'), $0E/$0F = a 16-bit frame-wait counter ('stage_phase_countdown'), $F5 = voices to update ('draw_source_ptr'), $0161-$0169 = shared stream loop counters; record +8 = the nametable tile read back under the object (flush_vram_readback_queue_and_restore_render stores PPUDATA to ($1E)+8)."
+phase  = "naming"
+source = "naming 2026-10-26"
+status = "open"
+
 [next]
-session = "naming: bottom-up from bottom_up_order.txt (an SCC is one unit), then a top-down verify; the 10 open naming revisits first (sound engine names, the 18 handlers, shared and phantom variable names, dead code, fall-through entries, address keys). The call tree page shows each routine's callers for the top-down pass."
+session = "naming, game thread: top-down from start_game_thread through the stage loop with call_tree.html beside the listing, then the variable pass (the 22 shared names, 9 phantom variables, the render-thread misnames)."
