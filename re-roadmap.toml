@@ -60,9 +60,9 @@ evidence = ["mappy_labeled.asm", "Mappy (Japan).mlb", "asm_gen.py", "mappy_mlb.p
 
 [phase.assets]
 status   = "partial"
-gate     = "16 round renders and the CHR atlas exist. Not met: render_level.py runs on the old nes-render and na1's 6502 core via sys.path, not the library; no check against the live PPU."
-checked  = "2026-06-26"
-toolset  = ""
+gate     = "render_level runs the ROM's own draw routines on the library (cpu.m6502, Bus + PPUPort, Canvas): all 16 rounds' VRAM and pixels identical to the old tool and the committed PNGs. Not met: no check against the live PPU."
+checked  = "2026-10-26"
+toolset  = "0c8f8a0"
 evidence = ["render_level.py", "mappy_levels_contact.png"]
 
 [phase.live]
@@ -118,7 +118,8 @@ status = "open"
 item   = "render_level.py sys.path-inserts nes-render and na1's na1dream.cpu6502: move it onto machines.nes.ppu and cpu.m6502, then check a round against the live PPU."
 phase  = "assets"
 source = "build-tool trial 2026-10-26"
-status = "open"
+status = "closed"
+closed = "2026-10-26: on the library (emu-harness dbaa486, PPUPort + Bus(ppu=)); 16/16 identical. The live-PPU check stays in the assets gate."
 
 [[revisit]]
 item   = "README gives CRC32 3F0E8E0A; our dump is 7354615C (whole file), 5D1301C5 (headerless), 25482CEB (PRG). Find which dump the chapters and the published disassembly describe."
@@ -127,4 +128,4 @@ source = "build-tool trial 2026-10-26"
 status = "open"
 
 [next]
-session = "discover: regenerate coverage/codegraph on today's tracer without clobbering the curated jump_tables.txt, count walker conflicts, mark the 3 phantoms DATA; then data's record/vars conflict."
+session = "recon: settle the README CRC32 (which dump the chapters and the published disassembly describe); then discover: regenerate coverage/codegraph on today's tracer without clobbering the curated jump_tables.txt, count walker conflicts, mark the 3 phantoms DATA."
