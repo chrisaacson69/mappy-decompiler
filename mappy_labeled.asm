@@ -1404,7 +1404,7 @@ title_screen:
     C8DD: 20 5B E3    jsr load_round_trampolines   ; $E35B
     C8E0: 20 C5 E5    jsr load_round_items   ; $E5C5
     C8E3: 20 62 E8    jsr load_round_doors   ; $E862
-    C8E6: 20 01 F0    jsr spawn_object_pair_for_state   ; $F001
+    C8E6: 20 01 F0    jsr spawn_floor_traps   ; $F001
     C8E9: 20 39 C2    jsr ppu_enable_render   ; $C239
     C8EC: A2 00       ldx #$00
 @C8EE:
@@ -1514,13 +1514,13 @@ next_round:
     C9BB: D0 12       bne @C9CF   ; $C9CF
     C9BD: 20 C5 E5    jsr load_round_items   ; $E5C5
     C9C0: 20 62 E8    jsr load_round_doors   ; $E862
-    C9C3: 20 01 F0    jsr spawn_object_pair_for_state   ; $F001
+    C9C3: 20 01 F0    jsr spawn_floor_traps   ; $F001
     C9C6: 20 17 EF    jsr load_dropped_objects   ; $EF17
     C9C9: 20 39 C2    jsr ppu_enable_render   ; $C239
     C9CC: 4C 02 C9    jmp play_round   ; $C902
 @C9CF:
     C9CF: 20 C1 F3    jsr load_stage_params   ; $F3C1
-    C9D2: 20 3A F1    jsr load_object_table_from_def   ; $F13A
+    C9D2: 20 3A F1    jsr load_bonus_targets   ; $F13A
     C9D5: 20 39 C2    jsr ppu_enable_render   ; $C239
     C9D8: 20 0B D8    jsr init_bonus_player   ; $D80B
     C9DB: 20 C0 D8    jsr init_bonus_goal_object   ; $D8C0
@@ -1743,20 +1743,20 @@ draw_sprite_text:
     CB5F: 60          rts
 
 update_round_frame:
-    CB60: 20 FE E3    jsr tick_all_subcounters_stride8   ; $E3FE
+    CB60: 20 FE E3    jsr animate_trampolines   ; $E3FE
     CB63: 20 D8 D8    jsr update_and_respawn_objects   ; $D8D8
-    CB66: 20 4E ED    jsr tick_object_group_04a0   ; $ED4E
+    CB66: 20 4E ED    jsr update_door_waves   ; $ED4E
     CB69: 20 3F EF    jsr update_dropped_objects   ; $EF3F
     CB6C: 20 34 E6    jsr update_items   ; $E634
-    CB6F: 20 CC E8    jsr update_all_objects_anim_and_phase   ; $E8CC
-    CB72: 20 4D F0    jsr dispatch_obj0_state_then_fall_to_obj8   ; $F04D
+    CB6F: 20 CC E8    jsr update_doors   ; $E8CC
+    CB72: 20 4D F0    jsr update_floor_traps   ; $F04D
     CB75: 20 1C D7    jsr blink_player_up_label   ; $D71C
     CB78: 4C AB D5    jmp update_score   ; $D5AB
 
 update_bonus_round_frame:
-    CB7B: 20 FE E3    jsr tick_all_subcounters_stride8   ; $E3FE
+    CB7B: 20 FE E3    jsr animate_trampolines   ; $E3FE
     CB7E: 20 D8 D8    jsr update_and_respawn_objects   ; $D8D8
-    CB81: 20 8F F1    jsr dispatch_all_objects_phase_handler   ; $F18F
+    CB81: 20 8F F1    jsr update_bonus_targets   ; $F18F
     CB84: 20 1C D7    jsr blink_player_up_label   ; $D71C
     CB87: 4C AB D5    jmp update_score   ; $D5AB
     CB8A: 8C          .byte $8C
@@ -4611,7 +4611,7 @@ update_and_respawn_objects:
     D8DC: A9 04       lda #$04
     D8DE: 85 1F       sta obj_record_ptr_hi   ; $1F
 @D8E0:
-    D8E0: 20 39 D9    jsr update_object_state_vs_reference   ; $D939
+    D8E0: 20 39 D9    jsr set_object_intent   ; $D939
     D8E3: 20 2C DA    jsr dispatch_object_state   ; $DA2C
     D8E6: 20 05 C3    jsr draw_object   ; $C305
     D8E9: A5 1E       lda obj_record_ptr   ; $1E
@@ -4656,7 +4656,7 @@ update_and_respawn_objects:
 @D938:
     D938: 60          rts
 
-update_object_state_vs_reference:
+set_object_intent:
     D939: A0 0D       ldy #$0d
     D93B: A5 1E       lda obj_record_ptr   ; $1E
     D93D: F0 4B       beq @D98A   ; $D98A
@@ -4849,8 +4849,8 @@ state02_walk:
     DA7E: 20 B7 E0    jsr walking_cat_touches_player   ; $E0B7
     DA81: F0 55       beq catch_player_or_knock_out   ; $DAD8
     DA83: 20 90 EA    jsr walker_meets_closed_door   ; $EA90
-    DA86: 20 B1 F0    jsr advance_obj_pair_on_proximity   ; $F0B1
-    DA89: 20 E7 F0    jsr check_two_obj_slots_for_hit   ; $F0E7
+    DA86: 20 B1 F0    jsr press_floor_traps   ; $F0B1
+    DA89: 20 E7 F0    jsr walker_over_open_trap   ; $F0E7
     DA8C: D0 03       bne @DA91   ; $DA91
     DA8E: 4C 83 DB    jmp enter_fall   ; $DB83
 @DA91:
@@ -5265,8 +5265,8 @@ bounce_back_into_shaft:
     DD5F: 4C B3 DA    jmp start_hop   ; $DAB3
 
 state10_door_knockback:
-    DD62: 20 B1 F0    jsr advance_obj_pair_on_proximity   ; $F0B1
-    DD65: 20 E7 F0    jsr check_two_obj_slots_for_hit   ; $F0E7
+    DD62: 20 B1 F0    jsr press_floor_traps   ; $F0B1
+    DD65: 20 E7 F0    jsr walker_over_open_trap   ; $F0E7
     DD68: F0 38       beq @DDA2   ; $DDA2
     DD6A: A0 08       ldy #$08
     DD6C: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -6251,11 +6251,11 @@ force_active_objects_to_state3:
     E3FB: D0 E3       bne @E3E0   ; $E3E0
     E3FD: 60          rts
 
-tick_all_subcounters_stride8:
+animate_trampolines:
     E3FE: A2 00       ldx #$00
 @E400:
     E400: 86 1B       stx cur_obj_index   ; $1B
-    E402: 20 10 E4    jsr tick_subcounter_decrement_on_rollover   ; $E410
+    E402: 20 10 E4    jsr animate_trampoline   ; $E410
     E405: A5 1B       lda cur_obj_index   ; $1B
     E407: 18          clc
     E408: 69 08       adc #$08
@@ -6265,7 +6265,7 @@ tick_all_subcounters_stride8:
 @E40F:
     E40F: 60          rts
 
-tick_subcounter_decrement_on_rollover:
+animate_trampoline:
     E410: BD 00 02    lda obj_timer,x   ; $0200
     E413: F0 FA       beq @E40F   ; $E40F
     E415: FE 01 02    inc obj_anim_timer,x   ; $0201
@@ -7100,13 +7100,13 @@ close_and_draw_doors:
 @E8CB:
     E8CB: 60          rts
 
-update_all_objects_anim_and_phase:
+update_doors:
     E8CC: A5 83       lda object_count   ; $83
     E8CE: F0 FB       beq @E8CB   ; $E8CB
     E8D0: A2 00       ldx #$00
 @E8D2:
     E8D2: 86 1B       stx cur_obj_index   ; $1B
-    E8D4: 20 1D E9    jsr advance_object_anim_timer_and_dispatch_phase   ; $E91D
+    E8D4: 20 1D E9    jsr animate_door_swing   ; $E91D
     E8D7: A5 1B       lda cur_obj_index   ; $1B
     E8D9: 18          clc
     E8DA: 69 08       adc #$08
@@ -7146,7 +7146,7 @@ draw_door_kind_y:
     E918: 85 14       sta scan_src_ptr   ; $14
     E91A: 4C FB C6    jmp draw_rle_text   ; $C6FB
 
-advance_object_anim_timer_and_dispatch_phase:
+animate_door_swing:
     E91D: BD B0 02    lda obj_anim_timer,x   ; $02B0
     E920: F0 20       beq @E942   ; $E942
     E922: FE B6 02    inc $02b6,x
@@ -7167,11 +7167,11 @@ advance_object_anim_timer_and_dispatch_phase:
 @E943:
     E943: 0A          asl a
     E944: 85 10       sta src_ptr   ; $10
-    E946: 20 4D E9    jsr dispatch_on_masked_state_field   ; $E94D
+    E946: 20 4D E9    jsr door_swing_frame   ; $E94D
     E949: A8          tay
     E94A: 4C 02 E9    jmp draw_door_kind_y   ; $E902
 
-dispatch_on_masked_state_field:
+door_swing_frame:
     E94D: BD B1 02    lda obj_state,x   ; $02B1
     E950: 29 06       and #$06
     E952: F0 0C       beq @E960   ; $E960
@@ -7973,7 +7973,7 @@ walker_meets_closed_door:
     ED11: 00          .byte $00
 @ED12:
     ED12: A9 60       lda #$60
-    ED14: 20 4D EE    jsr add_byte_to_obj_word_if_active   ; $EE4D
+    ED14: 20 4D EE    jsr move_record_x_by_direction   ; $EE4D
     ED17: 20 05 C3    jsr draw_object   ; $C305
     ED1A: D0 31       bne @ED4D   ; $ED4D
 
@@ -8007,13 +8007,13 @@ end_door_wave:
 @ED4D:
     ED4D: 60          rts
 
-tick_object_group_04a0:
+update_door_waves:
     ED4E: A9 A0       lda #$a0
     ED50: 85 1E       sta obj_record_ptr   ; $1E
     ED52: A9 04       lda #$04
     ED54: 85 1F       sta obj_record_ptr_hi   ; $1F
 @ED56:
-    ED56: 20 65 ED    jsr tick_object_state_collision_score   ; $ED65
+    ED56: 20 65 ED    jsr update_door_wave   ; $ED65
     ED59: A5 1E       lda obj_record_ptr   ; $1E
     ED5B: 18          clc
     ED5C: 69 08       adc #$08
@@ -8022,7 +8022,7 @@ tick_object_group_04a0:
     ED62: D0 F2       bne @ED56   ; $ED56
     ED64: 60          rts
 
-tick_object_state_collision_score:
+update_door_wave:
     ED65: A0 05       ldy #$05
     ED67: B1 1E       lda (obj_record_ptr),y   ; $1E
     ED69: F0 E2       beq @ED4D   ; $ED4D
@@ -8031,14 +8031,14 @@ tick_object_state_collision_score:
     ED6F: A5 42       lda game_phase   ; $42
     ED71: 8D 09 06    sta $0609
     ED74: 20 77 EE    jsr door_wave_catches_cats   ; $EE77
-    ED77: 20 C9 EE    jsr accumulate_for_matching_objects   ; $EEC9
+    ED77: 20 C9 EE    jsr carry_wave_cats   ; $EEC9
     ED7A: A9 08       lda #$08
     ED7C: A0 04       ldy #$04
     ED7E: 91 1E       sta (obj_record_ptr),y   ; $1E
     ED80: A5 63       lda record_ptr   ; $63
     ED82: 18          clc
     ED83: 69 08       adc #$08
-    ED85: 20 4D EE    jsr add_byte_to_obj_word_if_active   ; $EE4D
+    ED85: 20 4D EE    jsr move_record_x_by_direction   ; $EE4D
     ED88: 20 05 C3    jsr draw_object   ; $C305
     ED8B: D0 C0       bne @ED4D   ; $ED4D
     ED8D: A0 00       ldy #$00
@@ -8153,7 +8153,7 @@ find_first_empty_slot:
     EE49: 99 A1 04    sta $04a1,y
     EE4C: 60          rts
 
-add_byte_to_obj_word_if_active:
+move_record_x_by_direction:
     EE4D: 85 10       sta src_ptr   ; $10
     EE4F: A0 06       ldy #$06
     EE51: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -8229,7 +8229,7 @@ door_wave_catches_cats:
     EEC6: D0 B1       bne @EE79   ; $EE79
     EEC8: 60          rts
 
-accumulate_for_matching_objects:
+carry_wave_cats:
     EEC9: A2 20       ldx #$20
 @EECB:
     EECB: BD 0B 04    lda $040b,x
@@ -8241,7 +8241,7 @@ accumulate_for_matching_objects:
     EED9: A5 63       lda record_ptr   ; $63
     EEDB: 18          clc
     EEDC: 69 08       adc #$08
-    EEDE: 20 EB EE    jsr add_byte_to_word_if_active   ; $EEEB
+    EEDE: 20 EB EE    jsr move_cat_x_by_wave_direction   ; $EEEB
 @EEE1:
     EEE1: 8A          txa
     EEE2: 18          clc
@@ -8251,7 +8251,7 @@ accumulate_for_matching_objects:
     EEE8: D0 E1       bne @EECB   ; $EECB
     EEEA: 60          rts
 
-add_byte_to_word_if_active:
+move_cat_x_by_wave_direction:
     EEEB: 85 10       sta src_ptr   ; $10
     EEED: A0 06       ldy #$06
     EEEF: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -8415,7 +8415,7 @@ dropped_object_stuns_cats:
     EFFE: D0 9D       bne @EF9D   ; $EF9D
     F000: 60          rts
 
-spawn_object_pair_for_state:
+spawn_floor_traps:
     F001: A5 7A       lda stage_number   ; $7A
     F003: 0A          asl a
     F004: E9 15       sbc #$15
@@ -8424,10 +8424,10 @@ spawn_object_pair_for_state:
     F00A: 0A          asl a
     F00B: AA          tax
     F00C: A0 00       ldy #$00
-    F00E: 20 13 F0    jsr spawn_object_from_table_entry   ; $F013
+    F00E: 20 13 F0    jsr init_floor_trap   ; $F013
     F011: A0 08       ldy #$08
 
-spawn_object_from_table_entry:
+init_floor_trap:
     F013: A9 02       lda #$02
     F015: 99 90 00    sta obj_state,y   ; $0090
     F018: BD 41 F0    lda $f041,x
@@ -8445,7 +8445,7 @@ spawn_object_from_table_entry:
     F034: A5 11       lda zp_ptr_hi   ; $11
     F036: 99 95 00    sta obj_x,y   ; $0095
     F039: A2 00       ldx #$00
-    F03B: 20 6D F0    jsr obj_proximity_trigger_with_timer   ; $F06D
+    F03B: 20 6D F0    jsr draw_floor_trap_frame   ; $F06D
     F03E: A6 1B       ldx cur_obj_index   ; $1B
 @F040:
     F040: 60          rts
@@ -8462,12 +8462,12 @@ spawn_object_from_table_entry:
     F04B: 07          .byte $07
     F04C: 26          .byte $26
 
-dispatch_obj0_state_then_fall_to_obj8:
+update_floor_traps:
     F04D: A0 00       ldy #$00
-    F04F: 20 54 F0    jsr dispatch_obj_state   ; $F054
+    F04F: 20 54 F0    jsr update_floor_trap   ; $F054
     F052: A0 08       ldy #$08
 
-dispatch_obj_state:
+update_floor_trap:
     F054: B9 90 00    lda obj_state,y   ; $0090
     F057: F0 E7       beq @F040   ; $F040
     F059: C9 02       cmp #$02
@@ -8482,7 +8482,7 @@ dispatch_obj_state:
     F06B: 4A          lsr a
     F06C: AA          tax
 
-obj_proximity_trigger_with_timer:
+draw_floor_trap_frame:
     F06D: B9 92 00    lda obj_trigger_coord,y   ; $0092
     F070: 85 10       sta src_ptr   ; $10
     F072: B9 93 00    lda ppu_block_data_ptr,y   ; $0093
@@ -8495,14 +8495,14 @@ obj_proximity_trigger_with_timer:
     F083: 85 13       sta data_ptr_hi   ; $13
     F085: 4C FB C6    jmp draw_rle_text   ; $C6FB
 @F088:
-    F088: 20 CE F0    jsr check_obj_near_point   ; $F0CE
+    F088: 20 CE F0    jsr player_on_floor_trap   ; $F0CE
     F08B: F0 B3       beq @F040   ; $F040
     F08D: A9 01       lda #$01
     F08F: 99 90 00    sta obj_state,y   ; $0090
     F092: A9 78       lda #$78
     F094: 99 96 00    sta scratch_bitshift,y   ; $0096
     F097: A2 00       ldx #$00
-    F099: 4C 6D F0    jmp obj_proximity_trigger_with_timer   ; $F06D
+    F099: 4C 6D F0    jmp draw_floor_trap_frame   ; $F06D
 @F09C:
     F09C: B9 96 00    lda scratch_bitshift,y   ; $0096
     F09F: 38          sec
@@ -8512,25 +8512,25 @@ obj_proximity_trigger_with_timer:
     F0A7: A9 00       lda #$00
     F0A9: 99 90 00    sta obj_state,y   ; $0090
     F0AC: A2 04       ldx #$04
-    F0AE: 4C 6D F0    jmp obj_proximity_trigger_with_timer   ; $F06D
+    F0AE: 4C 6D F0    jmp draw_floor_trap_frame   ; $F06D
 
-advance_obj_pair_on_proximity:
+press_floor_traps:
     F0B1: A0 00       ldy #$00
-    F0B3: 20 B8 F0    jsr obj_state2_advance_on_proximity   ; $F0B8
+    F0B3: 20 B8 F0    jsr press_floor_trap   ; $F0B8
     F0B6: A0 08       ldy #$08
 
-obj_state2_advance_on_proximity:
+press_floor_trap:
     F0B8: B9 90 00    lda obj_state,y   ; $0090
     F0BB: C9 02       cmp #$02
     F0BD: D0 27       bne @F0E6   ; $F0E6
-    F0BF: 20 CE F0    jsr check_obj_near_point   ; $F0CE
+    F0BF: 20 CE F0    jsr player_on_floor_trap   ; $F0CE
     F0C2: D0 22       bne @F0E6   ; $F0E6
     F0C4: A9 03       lda #$03
     F0C6: 99 90 00    sta obj_state,y   ; $0090
     F0C9: A2 02       ldx #$02
-    F0CB: 4C 6D F0    jmp obj_proximity_trigger_with_timer   ; $F06D
+    F0CB: 4C 6D F0    jmp draw_floor_trap_frame   ; $F06D
 
-check_obj_near_point:
+player_on_floor_trap:
     F0CE: B9 94 00    lda obj_pos_field,y   ; $0094
     F0D1: 38          sec
     F0D2: ED 01 04    sbc $0401
@@ -8546,13 +8546,13 @@ check_obj_near_point:
 @F0E6:
     F0E6: 60          rts
 
-check_two_obj_slots_for_hit:
+walker_over_open_trap:
     F0E7: A2 00       ldx #$00
-    F0E9: 20 F0 F0    jsr check_obj_adjacency_set_hit_flag   ; $F0F0
+    F0E9: 20 F0 F0    jsr walker_over_open_trap_x   ; $F0F0
     F0EC: F0 39       beq @F127   ; $F127
     F0EE: A2 08       ldx #$08
 
-check_obj_adjacency_set_hit_flag:
+walker_over_open_trap_x:
     F0F0: B5 90       lda obj_state,x   ; $90
     F0F2: C9 01       cmp #$01
     F0F4: D0 31       bne @F127   ; $F127
@@ -8604,7 +8604,7 @@ check_obj_adjacency_set_hit_flag:
     F138: 4A          .byte $4A
     F139: 00          .byte $00
 
-load_object_table_from_def:
+load_bonus_targets:
     F13A: A4 7C       ldy is_bonus_round   ; $7C
     F13C: B9 7F F2    lda $f27f,y
     F13F: 85 1C       sta aux_ptr   ; $1C
@@ -8652,13 +8652,13 @@ load_object_table_from_def:
     F18C: D0 D5       bne @F163   ; $F163
     F18E: 60          rts
 
-dispatch_all_objects_phase_handler:
+update_bonus_targets:
     F18F: A5 53       lda object_def_ptr   ; $53
     F191: F0 11       beq @F1A4   ; $F1A4
     F193: A2 00       ldx #$00
 @F195:
     F195: 86 1B       stx cur_obj_index   ; $1B
-    F197: 20 A5 F1    jsr dispatch_object_phase_handler   ; $F1A5
+    F197: 20 A5 F1    jsr dispatch_bonus_target   ; $F1A5
     F19A: A5 1B       lda cur_obj_index   ; $1B
     F19C: 18          clc
     F19D: 69 08       adc #$08
@@ -8668,7 +8668,7 @@ dispatch_all_objects_phase_handler:
 @F1A4:
     F1A4: 60          rts
 
-dispatch_object_phase_handler:
+dispatch_bonus_target:
     F1A5: BC 60 02    ldy item_state,x   ; $0260
     F1A8: B9 B5 F1    lda $f1b5,y
     F1AB: 85 1C       sta aux_ptr   ; $1C
@@ -8676,11 +8676,11 @@ dispatch_object_phase_handler:
     F1B0: 85 1D       sta aux_ptr_hi   ; $1D
     F1B2: 6C 1C 00    jmp (aux_ptr)   ; $001C
     F1B5:            .word handler_rts_noop
-    F1B7:            .word check_object_reached_target_then_advance_phase
+    F1B7:            .word bonus_target_live
 
-check_object_reached_target_then_advance_phase:
-    F1B9: 20 33 F2    jsr load_ptr_from_table_by_state_bit   ; $F233
-    F1BC: 20 15 F2    jsr on_object_reaching_target_reset_and_rescan   ; $F215
+bonus_target_live:
+    F1B9: 20 33 F2    jsr animate_bonus_target   ; $F233
+    F1BC: 20 15 F2    jsr released_cat_pops_target   ; $F215
     F1BF: A6 1B       ldx cur_obj_index   ; $1B
     F1C1: BD 60 02    lda item_state,x   ; $0260
     F1C4: C9 02       cmp #$02
@@ -8695,7 +8695,7 @@ check_object_reached_target_then_advance_phase:
     F1D9: B0 39       bcs @F214   ; $F214
     F1DB: AD 0F 04    lda $040f
     F1DE: C9 08       cmp #$08
-    F1E0: D0 0F       bne init_object_record_load_data_and_scan   ; $F1F1
+    F1E0: D0 0F       bne pop_bonus_target   ; $F1F1
     F1E2: A9 00       lda #$00
     F1E4: 8D 08 04    sta $0408
     F1E7: A9 02       lda #$02
@@ -8703,7 +8703,7 @@ check_object_reached_target_then_advance_phase:
     F1EC: A9 06       lda #$06
     F1EE: 8D 04 04    sta $0404
 
-init_object_record_load_data_and_scan:
+pop_bonus_target:
     F1F1: A9 01       lda #$01
     F1F3: 8D 08 06    sta $0608
     F1F6: A9 00       lda #$00
@@ -8717,11 +8717,11 @@ init_object_record_load_data_and_scan:
     F20A: 85 12       sta gfx_src_ptr   ; $12
     F20C: AD 78 F2    lda $f278
     F20F: 85 13       sta data_ptr_hi   ; $13
-    F211: 4C 50 F2    jmp load_indexed_ptr_then_scan_for_terminator   ; $F250
+    F211: 4C 50 F2    jmp draw_bonus_target   ; $F250
 @F214:
     F214: 60          rts
 
-on_object_reaching_target_reset_and_rescan:
+released_cat_pops_target:
     F215: BD 65 02    lda item_y,x   ; $0265
     F218: CD 23 04    cmp obj_state   ; $0423
     F21B: D0 F7       bne @F214   ; $F214
@@ -8733,9 +8733,9 @@ on_object_reaching_target_reset_and_rescan:
     F228: A9 00       lda #$00
     F22A: 8D 2F 04    sta stage_phase_state   ; $042F
     F22D: 8D 24 04    sta obj_state   ; $0424
-    F230: 4C F1 F1    jmp init_object_record_load_data_and_scan   ; $F1F1
+    F230: 4C F1 F1    jmp pop_bonus_target   ; $F1F1
 
-load_ptr_from_table_by_state_bit:
+animate_bonus_target:
     F233: A5 1B       lda cur_obj_index   ; $1B
     F235: 4A          lsr a
     F236: 4A          lsr a
@@ -8754,7 +8754,7 @@ load_ptr_from_table_by_state_bit:
     F24B: B9 64 F2    lda $f264,y
     F24E: 85 13       sta data_ptr_hi   ; $13
 
-load_indexed_ptr_then_scan_for_terminator:
+draw_bonus_target:
     F250: A6 1B       ldx cur_obj_index   ; $1B
     F252: BD 66 02    lda $0266,x
     F255: 85 10       sta src_ptr   ; $10
@@ -11635,7 +11635,7 @@ attract_demo:
     FF78: 20 5B E3    jsr load_round_trampolines   ; $E35B
     FF7B: 20 C5 E5    jsr load_round_items   ; $E5C5
     FF7E: 20 62 E8    jsr load_round_doors   ; $E862
-    FF81: 20 01 F0    jsr spawn_object_pair_for_state   ; $F001
+    FF81: 20 01 F0    jsr spawn_floor_traps   ; $F001
     FF84: 20 39 C2    jsr ppu_enable_render   ; $C239
     FF87: A2 00       ldx #$00
 @FF89:

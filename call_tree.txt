@@ -188,7 +188,7 @@ reset_cold_boot_init  $C031
                                             draw_2x2_metasprite_tile_69  [jmp, flows-into]  (above)
                                             draw_object_and_advance_x8  [jmp, flows-into]  $E84D
                                                 write_sprite_to_oam  (above)
-                            update_object_state_vs_reference  $D939
+                            set_object_intent  $D939
                                 store_one_via_ptr  [jmp, flows-into]  $D9BC
                             dispatch_object_state  $DA2C
                                 handler_rts_noop  [dispatch]  (above)
@@ -226,16 +226,16 @@ reset_cold_boot_init  $C031
                                         add_door_if_in_reach  $E9B8
                                     walker_meets_closed_door  $EA90
                                         open_door  (above)
-                                    advance_obj_pair_on_proximity  $F0B1
-                                        obj_state2_advance_on_proximity  [flows-into]  $F0B8
-                                            obj_proximity_trigger_with_timer  [jmp, flows-into]  $F06D
+                                    press_floor_traps  $F0B1
+                                        press_floor_trap  [flows-into]  $F0B8
+                                            draw_floor_trap_frame  [jmp, flows-into]  $F06D
                                                 draw_rle_text  [jmp, flows-into]  $C6FB
                                                     decode_position_stream_to_collision_bitmaps  [jmp, flows-into]  $C702
                                                         ppu_buffer_enqueue  $C78E
                                                     ppu_buffer_enqueue  (above)
-                                            check_obj_near_point  $F0CE
-                                    check_two_obj_slots_for_hit  $F0E7
-                                        check_obj_adjacency_set_hit_flag  [flows-into]  $F0F0
+                                            player_on_floor_trap  $F0CE
+                                    walker_over_open_trap  $F0E7
+                                        walker_over_open_trap_x  [flows-into]  $F0F0
                                 state04_hop_off_ledge  [dispatch]  $DAC7
                                     enter_fall  [jmp, flows-into]  (above)
                                     advance_object_subpixel_position_then_clamp  [jmp, flows-into]  $E03D
@@ -287,8 +287,8 @@ reset_cold_boot_init  $C031
                                     land_on_floor  [jmp, flows-into]  (above)
                                     data_or_unclear_df09  (above)
                                     player_knockback_pushes_cats  $E134
-                                    advance_obj_pair_on_proximity  (above)
-                                    check_two_obj_slots_for_hit  (above)
+                                    press_floor_traps  (above)
+                                    walker_over_open_trap  (above)
                                 state12_stunned  [dispatch]  $DDA8
                                 state14_recover  [dispatch]  $DDC6
                                     land_on_floor  [jmp, flows-into]  (above)
@@ -334,21 +334,21 @@ reset_cold_boot_init  $C031
                                     sub16_from_struct_field_at_offset2  [jmp, flows-into]  (above)
                                     scan_table_at_e537  $E456
                                         draw_text_from_table  [jmp, flows-into]  (above)
-                        tick_all_subcounters_stride8  $E3FE
-                            tick_subcounter_decrement_on_rollover  $E410
+                        animate_trampolines  $E3FE
+                            animate_trampoline  $E410
                                 draw_trampoline  [flows-into]  (above)
-                        dispatch_all_objects_phase_handler  $F18F
-                            dispatch_object_phase_handler  $F1A5
+                        update_bonus_targets  $F18F
+                            dispatch_bonus_target  $F1A5
                                 handler_rts_noop  [dispatch]  (above)
-                                check_object_reached_target_then_advance_phase  [dispatch]  $F1B9
-                                    init_object_record_load_data_and_scan  [flows-into]  $F1F1
+                                bonus_target_live  [dispatch]  $F1B9
+                                    pop_bonus_target  [flows-into]  $F1F1
                                         bcd_add_from_table  (above)
-                                        load_indexed_ptr_then_scan_for_terminator  [jmp, flows-into]  $F250
+                                        draw_bonus_target  [jmp, flows-into]  $F250
                                             draw_rle_text  [jmp, flows-into]  (above)
-                                    on_object_reaching_target_reset_and_rescan  $F215
-                                        init_object_record_load_data_and_scan  [jmp, flows-into]  (above)
-                                    load_ptr_from_table_by_state_bit  $F233
-                                        load_indexed_ptr_then_scan_for_terminator  [flows-into]  (above)
+                                    released_cat_pops_target  $F215
+                                        pop_bonus_target  [jmp, flows-into]  (above)
+                                    animate_bonus_target  $F233
+                                        draw_bonus_target  [flows-into]  (above)
                     build_stage_screen_layout  $CD49
                         yield_to_render_loop  (above)
                         ppu_enable_render  (above)
@@ -403,11 +403,11 @@ reset_cold_boot_init  $C031
                                 draw_door_kind_y  [flows-into]  $E902
                                     draw_rle_text  [jmp, flows-into]  (above)
                     load_dropped_objects  $EF17
-                    spawn_object_pair_for_state  $F001
-                        spawn_object_from_table_entry  [flows-into]  $F013
+                    spawn_floor_traps  $F001
+                        init_floor_trap  [flows-into]  $F013
                             ppu_addr_to_tile_xy  (above)
-                            obj_proximity_trigger_with_timer  (above)
-                    load_object_table_from_def  $F13A
+                            draw_floor_trap_frame  (above)
+                    load_bonus_targets  $F13A
                         ppu_addr_to_tile_xy  (above)
                     load_stage_params  $F3C1
                     init_sound_voices  (above)
@@ -438,7 +438,7 @@ reset_cold_boot_init  $C031
                         update_score  [jmp, flows-into]  (above)
                         blink_player_up_label  (above)
                         update_and_respawn_objects  (above)
-                        tick_all_subcounters_stride8  (above)
+                        animate_trampolines  (above)
                         update_items  $E634
                             dispatch_item_state  $E64A
                                 handler_rts_noop  [dispatch]  (above)
@@ -455,32 +455,32 @@ reset_cold_boot_init  $C031
                                 draw_object_and_tick_state_timer  [dispatch]  $E6FA
                                     draw_composite_object_sprite  $E7F5
                                         draw_object_and_advance_x8  [flows-into]  (above)
-                        update_all_objects_anim_and_phase  $E8CC
+                        update_doors  $E8CC
                             draw_door  [flows-into]  (above)
                             draw_door_kind_y  [flows-into]  (above)
-                            advance_object_anim_timer_and_dispatch_phase  $E91D
+                            animate_door_swing  $E91D
                                 draw_door  [flows-into]  (above)
                                 draw_door_kind_y  [jmp, flows-into]  (above)
-                                dispatch_on_masked_state_field  $E94D
-                        tick_object_group_04a0  $ED4E
-                            tick_object_state_collision_score  $ED65
+                                door_swing_frame  $E94D
+                        update_door_waves  $ED4E
+                            update_door_wave  $ED65
                                 draw_object  (above)
                                 add_score_n_times  [jmp, flows-into]  (above)
                                 end_door_wave  [jmp, flows-into]  $ED1C
                                 hide_wave_cats  $EDE2
-                                add_byte_to_obj_word_if_active  $EE4D
+                                move_record_x_by_direction  $EE4D
                                 door_wave_catches_cats  $EE77
-                                accumulate_for_matching_objects  $EEC9
-                                    add_byte_to_word_if_active  $EEEB
+                                carry_wave_cats  $EEC9
+                                    move_cat_x_by_wave_direction  $EEEB
                         update_dropped_objects  $EF3F
                             update_dropped_object  [flows-into]  $EF4E
                                 draw_object  [jmp, flows-into]  (above)
                                 dropped_object_stuns_cats  $EF9B
                                     add_score_from_table  (above)
-                        dispatch_obj0_state_then_fall_to_obj8  $F04D
-                            dispatch_obj_state  [flows-into]  $F054
-                                obj_proximity_trigger_with_timer  [jmp, flows-into]  (above)
-                                check_obj_near_point  (above)
+                        update_floor_traps  $F04D
+                            update_floor_trap  [flows-into]  $F054
+                                draw_floor_trap_frame  [jmp, flows-into]  (above)
+                                player_on_floor_trap  (above)
                     build_stage_screen_layout  (above)
                     blink_player_up_label  (above)
                     load_round_trampolines  (above)
@@ -516,7 +516,7 @@ reset_cold_boot_init  $C031
             load_round_trampolines  (above)
             load_round_items  (above)
             load_round_doors  (above)
-            spawn_object_pair_for_state  (above)
+            spawn_floor_traps  (above)
             init_sound_voices  (above)
             attract_demo  [jmp, flows-into]  $FF65
                 yield_to_render_loop  (above)
@@ -531,7 +531,7 @@ reset_cold_boot_init  $C031
                 load_round_trampolines  (above)
                 load_round_items  (above)
                 load_round_doors  (above)
-                spawn_object_pair_for_state  (above)
+                spawn_floor_traps  (above)
                 tick_round_timer  (above)
                 load_stage_params  (above)
     validate_magic_and_restore_state_vars  $C25C

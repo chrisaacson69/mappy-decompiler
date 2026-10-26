@@ -68,26 +68,26 @@ NesPrgRom:219C:bonus_state04_ended:[HIGH] Bonus state 04: a bare RTS, the player
 NesPrgRom:22A1:bonus_state0A_walk_off:[HIGH] Bonus state 0A, walking off the shaft for up to 33 frames. Tile +8 in $49-$58: reverse +6, timer 6, +B = 0, +C = 9, state 0C. Otherwise fall
 NesPrgRom:22E0:bonus_state10_slot3_timeout:[MED] Bonus state 10, slot 3 (absolute $043x): counts $0437 down, then clears its anim and state. No decoded instruction stores state 10 for slot 
 NesPrgRom:23BD:ppu_addr_to_tile_xy:[HIGH] Top-down 2026-10-26 (game thread, round setup): $10/$11 = nametable address -> $10 = column + 32 if the second nametable, $11 = row. Was 'sh
-NesPrgRom:2410:tick_subcounter_decrement_on_rollover:[MED] Skips when $0200,x==0 (beq); else inc $0201,x, cmp #$0a, and on reaching 10 resets $0201,x to 0 and dec $0200,x — a per-index mod-10 sub-tic
+NesPrgRom:2410:animate_trampoline:[HIGH] Top-down 2026-10-26 (game thread, frame update): while +0 (bounce animations left) is nonzero: +1 steps 0-9, and at 10 wraps with +0 - 1; fa
 NesPrgRom:2469:find_object_at_coords:[MED] Loops x by stride 8 over records at $0202/$0204/$0205 until x==$80, testing each: skips if $0202,x is negative (inactive), checks ($1e),y vs
 NesPrgRom:24A4:set_obj_state_and_load_next_ptr:[MED] Writes #$06 to struct field +4 via ($1e),y; uses field +7 (asl=*2) to index word table $E4CD/$E4CE, stores that 16-bit value (hi byte += $02
 NesPrgRom:271E:branch_on_state21_bits:[MED] Reads zp $21 twice; tests (and #$03 / eor #$01 / bne) low-2-bits==1 and (and #$04 / beq) bit2, branching to $E71D/$E70A — pure predicate tes
 NesPrgRom:272C:draw_item:[HIGH] Top-down 2026-10-26 (game thread, round setup): picture $E7B9[(kind >> 1) & $FE] (one per pair), $14 = 0 for the first 3 pairs, 2 after; fal
 NesPrgRom:2757:slot2_sits_on_item:[MED] Slot 2 walking with no cooldown ($042A = 0) at an item's x/y ($0264/$0265,x): $0420 = 0, anim $13, state 1E, $0427 = 120. Was 'trigger_state
 NesPrgRom:28FF:draw_door:[HIGH] Top-down 2026-10-26 (game thread, round setup): Y = the door's kind ($02B1), falls into draw_door_kind_y. Was 'load_y_from_table_x'. Earlier
-NesPrgRom:294D:dispatch_on_masked_state_field:[MED] lda $02b1,x; and #$06 isolates 2-bit field then cmp #$04 with beq/bcc branches to 4 cases (0/2/4/6); fall-through returns A = #$22 - $10.
+NesPrgRom:294D:door_swing_frame:[HIGH] Top-down 2026-10-26 (game thread, frame update): picture index for swing frame $10 (=2*frame) by kind & 6: 0 -> $10+f, 2 -> $1A-f, 4 -> $18+
 NesPrgRom:29B8:add_door_if_in_reach:[MED] Door X near the object (its row or the one above; on screen for the player): appends X and the x distance to the list at $12 for player_open
 NesPrgRom:2A46:jmp_indirect_zp_vector:[HIGH] Single instruction `jmp ($001c)` — an indirect jump through the zero-page pointer at $1C/$1D, i.e. a dispatch trampoline to a runtime-set ad
 NesPrgRom:2D1C:end_door_wave:[HIGH] Clears the wave record (+5, +4); its cats in state 18 -> state 1A with timer $3C; respawn_slot = $30. Was 'update_matching_object_state'. Ea
 NesPrgRom:2E04:find_first_empty_slot:[MED] Scans table $04A5 in 8-byte strides (Y 0..$20), beq exits on first zero lead-byte leaving Y as index; classic find-first-free/inactive slot 
-NesPrgRom:2E4D:add_byte_to_obj_word_if_active:[HIGH] Stores A to $10, checks ($1e)+6 sign via BMI to skip; else 16-bit adds $10 into ($1e)+0/+1 (clc/adc low, adc #$00 high for carry).
+NesPrgRom:2E4D:move_record_x_by_direction:[HIGH] Top-down 2026-10-26 (game thread, frame update): +0/+1 of the 8-byte record at ($1E) += A, or -= A when +6 is negative. Was 'add_byte_to_obj
 NesPrgRom:2E77:door_wave_catches_cats:[HIGH] For the current $04A0 wave: each visible cat not already in states 16-1B, on its row within 2 tiles (direction-adjusted): +B = wave id, +7 =
-NesPrgRom:2EEB:add_byte_to_word_if_active:[MED] Stores A to $10, then if bit7 of ($1e),y[6] is clear does a 16-bit add: $0400,x += $10 with carry into $0401,x (clc/adc $10/sta, then adc #$
+NesPrgRom:2EEB:move_cat_x_by_wave_direction:[HIGH] Top-down 2026-10-26 (game thread, frame update): cat X ($0400,x +0/+1) += A, or -= A when the wave's +6 is negative. Was 'add_byte_to_word_i
 NesPrgRom:2F17:load_dropped_objects:[HIGH] Top-down 2026-10-26 (game thread, round setup): stage index 7-9 only (rounds 8-10): copies the 16-byte template $EF2F to $A0-$AF, the two dr
-NesPrgRom:3054:dispatch_obj_state:[MED] Reads per-object state byte lda $0090,y then branches on state values (beq, cmp #$02/bcc/bne) and masks frame-counter $21 (and #$03, and #$0
-NesPrgRom:30CE:check_obj_near_point:[MED] Subtracts ref X $0401 from obj $0094,y and ref Y $0403 from obj $0095,y, cmp #$02 with bcs/beq window checks, returns #$FF on out-of-range —
-NesPrgRom:30F0:check_obj_adjacency_set_hit_flag:[MED] For active obj ($90,x==1) it subtracts ($1e)-record coords from $95,x/$94,x, gates on dY==2 & dX in {0,1} plus a $C0/$40 sub-pixel threshold
-NesPrgRom:3233:load_ptr_from_table_by_state_bit:[MED] Bit4 of $21 (and #$10, lsr x3) indexes table $F263,y; reads 2-byte LE pointer into $12/$13; preceding lda $1b/lsr x3/eor $21/and #$0f/bne is
+NesPrgRom:3054:update_floor_trap:[MED] Top-down 2026-10-26 (game thread, frame update): state 2: armed, blinks every 4th frame. 3 (pressed, see press_floor_traps): the player step
+NesPrgRom:30CE:player_on_floor_trap:[MED] Top-down 2026-10-26 (game thread, frame update): the player's x within 0-1 of the trap and its row 2 above: Z set (A = 2); else A = $FF. Was
+NesPrgRom:30F0:walker_over_open_trap_x:[MED] Top-down 2026-10-26 (game thread, frame update): trap X open (state 1), the walker 2 rows above, x on it within the fraction window ($40 / $
+NesPrgRom:3233:animate_bonus_target:[HIGH] Top-down 2026-10-26 (game thread, frame update): once every 16 frames, staggered by the target's index: picture $F263[frame & $10] drawn. Wa
 NesPrgRom:32E6:tick_round_timer:[HIGH] Top-down 2026-10-26 (game thread, round setup): phase $60: 0 counts seconds ($61 frames to 60, $62 seconds) to $66, then loads the $0490 spr
 NesPrgRom:33B2:sub2_from_u16_counter:[HIGH] Top-down 2026-10-26 (game thread, round setup): $0490/$0491 -= 2: the phase-1 column's x. Kept (name checked against the code). Earlier note
 NesPrgRom:37F4:load_voice_stream_ptr:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): $F2/$F3 = the voice's stream base from the 25-word table $F853 (voices $13/$1
@@ -120,7 +120,7 @@ NesPrgRom:173E:animate_two_sprite_walkcycles_into_buffer:[MED] Each block masks 
 NesPrgRom:17F1:init_player_record:[HIGH] Top-down 2026-10-26 (game thread, round setup): camera $1C00; player record +0..+6 from $D838, +8 = $4B, state 0 (play_round sets 02 after R
 NesPrgRom:180B:init_bonus_player:[HIGH] Bonus-round setup (next_round's bonus branch, only caller): camera $1C00, player record +0..+6 from the template at $D83F, +8 = 0, state 02 
 NesPrgRom:1846:init_round_cats:[HIGH] Top-down 2026-10-26 (game thread, round setup): respawn_slot $30, respawn_tick 0, respawn_interval $10; cats from slot 3 to $68 as type 3 at
-NesPrgRom:1939:update_object_state_vs_reference:[MED] Walks an entity record via ($1E),y reading type/state at off 0,1,3,a,d,f, compares its X/Y to reference $0400/$0401 and state flags $040F/$0
+NesPrgRom:1939:set_object_intent:[MED] Top-down 2026-10-26 (game thread, frame update): record +D, read by the rise and step-off states. Player: the pad direction (+E the button h
 NesPrgRom:1AA2:start_hop_off_ledge:[HIGH] Cats align to the player's floor ($DEA6, not slot 2); timer +7 = 11, then start_hop with +B = $D0. Entered when the tile under foot leaves t
 NesPrgRom:1B55:state2A_wait_then_start_tune:[MED] State 2A, player only, after state08_player_caught: waits until the first two $04A0-bank records are idle ($04A5|$04AD = 0), restarts the so
 NesPrgRom:1B7B:state2C_wait_tune:[MED] State 2C, player only: counts $0407 up to $80, then zero_struct_fields_4_and_15 (state 00). Trace (state_census.py, 3 play logs): 128 frames
@@ -140,15 +140,15 @@ NesPrgRom:28B2:close_and_draw_doors:[HIGH] Top-down 2026-10-26 (game thread, rou
 NesPrgRom:2902:draw_door_kind_y:[HIGH] Top-down 2026-10-26 (game thread, round setup): draw_rle_text of $EC4F[Y] at the door's address $02B2/$02B3, $14 = $80. Was 'setup_ptrs_and_
 NesPrgRom:2972:player_opens_nearest_door:[HIGH] On a fresh press (record +E & 3 = 1), collects doors in reach (add_door_if_in_reach) and opens the nearest (open_door). Was 'select_overlapp
 NesPrgRom:2A05:door_knock_back_objects:[HIGH] For each active object (slot 1 excluded, not in state 16) on the door's row: X delta to the door, dispatched by door kind ($02B1 & 6) throug
-NesPrgRom:304D:dispatch_obj0_state_then_fall_to_obj8:[MED] ldy #$00 then jsr dispatch_obj_state runs object-state dispatch for object index 0, then ldy #$08 sets up the next object index and falls th
-NesPrgRom:313A:load_object_table_from_def:[HIGH] Indexes pointer-table $F27F/$F280 by $7C into ptr $1C/$1D; reads count byte (÷8 = entry count), clears $50/$51 + 12-byte block $54, then loo
-NesPrgRom:23FE:tick_all_subcounters_stride8:[MED] Loops $1b from 0 by +8 each pass (adc #$08) until it hits bound $80, calling tick_subcounter_decrement_on_rollover per entry — a batch tick 
+NesPrgRom:304D:update_floor_traps:[MED] Top-down 2026-10-26 (game thread, frame update): update_floor_trap for $90 and $98. Was 'dispatch_obj0_state_then_fall_to_obj8'. Earlier not
+NesPrgRom:313A:load_bonus_targets:[HIGH] Top-down 2026-10-26 (game thread, frame update): list $F27F[is_bonus_round]: its length in $53, targets left in $52 (length / 8), $50-$5F cl
+NesPrgRom:23FE:animate_trampolines:[HIGH] Top-down 2026-10-26 (game thread, frame update): animate_trampoline for each record up to $80. Was 'tick_all_subcounters_stride8'. Earlier n
 NesPrgRom:2449:draw_text_from_table:[HIGH] Naming 2026-10-26: text pointer from the word table $E569,y into $12/$13, then jmp draw_rle_text. Was 'load_ptr_from_table_then_scan'. Earli
 NesPrgRom:2862:load_round_doors:[HIGH] Top-down 2026-10-26 (game thread, round setup): $EAFC[stage] -> count in $83, then per 8-byte door at $02B0: +0 = 0 (closed), +6 = 0, +1 kin
-NesPrgRom:2EC9:accumulate_for_matching_objects:[MED] Loops X=$20..$80 stride $10 over 16-byte object records; for each whose $040B,x field == zp $1E and $040F,x field == #$16, calls add_byte_to
-NesPrgRom:306D:obj_proximity_trigger_with_timer:[MED] Loads obj struct ptr ($0092/$0093,y) + a point-pair from table $F128,x, tail-calls scan_ptr_buf_for_zero_terminator then check_obj_near_poin
-NesPrgRom:30E7:check_two_obj_slots_for_hit:[MED] Calls check_obj_adjacency_set_hit_flag with ldx #$00 then ldx #$08 (two object slots), beq short-circuits when first slot hits — a two-slot 
-NesPrgRom:3250:load_indexed_ptr_then_scan_for_terminator:[MED] ldx $1b indexes a 16-bit pointer table at $0266/$0267 into ptr $10/$11, clears $14, then jmp (tail-call) to scan_ptr_buf_for_zero_terminator
+NesPrgRom:2EC9:carry_wave_cats:[HIGH] Top-down 2026-10-26 (game thread, frame update): cats in state 16 carried by this wave (+B = wave) move with it ($63 + 8). Was 'accumulate_f
+NesPrgRom:306D:draw_floor_trap_frame:[MED] Top-down 2026-10-26 (game thread, frame update): draw_rle_text of $F128[X] at the trap's address: X 0 open ($51 $51), 2 pressed ($50 $50), 4
+NesPrgRom:30E7:walker_over_open_trap:[MED] Top-down 2026-10-26 (game thread, frame update): walker_over_open_trap_x for $90, then $98; Z set when the walker at ($1E) is over an open t
+NesPrgRom:3250:draw_bonus_target:[HIGH] Top-down 2026-10-26 (game thread, frame update): draw_rle_text of $12 at the target's address +6/+7. Was 'load_indexed_ptr_then_scan_for_ter
 NesPrgRom:34F1:update_sound_frame:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): the per-frame sound entry (render loop $C0A1 and the NMI $C2F9): for each voi
 NesPrgRom:006D:render_loop:[HIGH] Naming 2026-10-26, top-down (render thread): the main-context thread (Chris: the render loop draws at vblank; the game engine runs when it i
 NesPrgRom:025C:validate_magic_and_restore_state_vars:[MED] Gates on magic sentinel ($3E==$5A && $3F==$A5, else bails to $C2A7), conditionally swap_double_buffers_toggle_flag, then pack_state_vars_int
@@ -173,12 +173,12 @@ NesPrgRom:2427:draw_trampoline:[HIGH] Top-down 2026-10-26 (game thread, round se
 NesPrgRom:2456:scan_table_at_e537:[MED] Loads fixed ptr $E537/$E538 into $10/$11, clears $14, ldy #$14, jmp load_ptr_from_table_then_scan — a wrapper that sets up one specific tabl
 NesPrgRom:270A:erase_item:[HIGH] Top-down 2026-10-26 (game thread, round setup): entry 10 of $E7B9 with $14 = $80, at the item's address (after player_collects_item). Was 'l
 NesPrgRom:284D:draw_object_and_advance_x8:[MED] Zeros $14/$15, calls write_object_to_shadow_oam, then advances 16-bit pointer $10/$11 by +8 (carry-propagated inc $11) — emits one object th
-NesPrgRom:291D:advance_object_anim_timer_and_dispatch_phase:[MED] Per-X object: gates on active flag $02b0,x; increments counter $02b6,x to threshold #$05 then resets state+counter and cycles 2-bit phase fi
-NesPrgRom:29A4:open_door:[HIGH] $02B0,x = 1 (open), knock back the objects at it (door_knock_back_objects); a door with $02B1 bit 3 set and bit 1 clear launches a door wave
+NesPrgRom:291D:animate_door_swing:[HIGH] Top-down 2026-10-26 (game thread, frame update): a swinging door (+0 set) steps +6 through 5 frames (picture from door_swing_frame); then +0
+NesPrgRom:29A4:open_door:[HIGH] Top-down 2026-10-26 (game thread, frame update): +0 = 1 starts the door's 5-frame swing (animate_door_swing toggles open/closed at its end);
 NesPrgRom:2F9B:dropped_object_stuns_cats:[HIGH] Cats (states < 16) within 1 in x and y of the falling object: +7 = $65, state 26, anim $22, y clamped to $19, score $08 ($44 for slot 2). Wa
-NesPrgRom:3013:spawn_object_from_table_entry:[MED] Sets struct[Y+0]=#$02 (active state), consumes 2 bytes from param table $F041 via X into struct +2/+3 and zp $10/$11, calls shl3_pack_zp_ptr
-NesPrgRom:30B8:obj_state2_advance_on_proximity:[HIGH] Reads object state $0090,y; if state==2 and check_obj_near_point() matches, sets state=3 and tail-calls obj_proximity_trigger_with_timer wit
-NesPrgRom:31F1:init_object_record_load_data_and_scan:[MED] Sets flag $0608=1, clears per-object slot $0260,x, decrements counter $52, loads two records via load_record_via_ptr_table (Y=6,8), seeds po
+NesPrgRom:3013:init_floor_trap:[MED] Top-down 2026-10-26 (game thread, frame update): state 2 (armed), nametable address +2/+3, tile x/y +4/+5, drawn (draw_floor_trap_frame). Wa
+NesPrgRom:30B8:press_floor_trap:[MED] Top-down 2026-10-26 (game thread, frame update): an armed trap (state 2) with the player standing on it -> state 3, pressed picture. Was 'ob
+NesPrgRom:31F1:pop_bonus_target:[HIGH] Top-down 2026-10-26 (game thread, frame update): sound $0608, state 0, targets left ($52) - 1, two score adds (tables 6, 8), erased with the
 NesPrgRom:3383:draw_vertical_sprite_column:[HIGH] Top-down 2026-10-26 (game thread, round setup): copies the $0490 record to $10-$17 and draws $17 sprites from it with palette = frame & 3. T
 NesPrgRom:0401:draw_sprite_pair:[HIGH] Top-down 2026-10-26 (game thread, draw): write_sprite_next_tile, X += 8, then falls into a second one. Was 'write_object_oam_and_advance_poi
 NesPrgRom:0543:draw_object_pair_advance_slot:[MED] Calls draw_indexed_object_if_present twice — second after $16+=8 (X coord, then restored) drawing a horizontally-adjacent pair — then advanc
@@ -196,13 +196,13 @@ NesPrgRom:235B:load_round_trampolines:[HIGH] Top-down 2026-10-26 (game thread, r
 NesPrgRom:23DE:force_active_objects_to_state3:[MED] Loops object slots in $0202,x (stride +8, capped by $80); skips negative/already-3 state bytes, else writes #$03 and calls setup_obj_ptr_and
 NesPrgRom:2660:player_collects_item:[HIGH] Top-down 2026-10-26 (game thread, round setup): per item: slot2_sits_on_item first, then the player on its row with x within 2 collects it: 
 NesPrgRom:27F5:draw_composite_object_sprite:[MED] Computes screen X (object $0264/$0265 minus scroll $28/$29, ×8 via asl/rol) and Y ($16), tile/palette params ($12 tile, $13=3 palette), then
-NesPrgRom:28CC:update_all_objects_anim_and_phase:[MED] Loops X 0..$83 stride 8 (object-table count), stores slot index in $1B and calls advance_object_anim_timer_and_dispatch_phase per object, th
+NesPrgRom:28CC:update_doors:[HIGH] Top-down 2026-10-26 (game thread, frame update): animate_door_swing for each door; then one door per frame (frame & 3) that is a closed wave
 NesPrgRom:2A90:walker_meets_closed_door:[HIGH] Walking object at a closed door ($02B0 = 0, $02B1 bit 1 clear) on its row, in its facing direction: marks +9 (blocked) and the door's $02B7.
-NesPrgRom:2D65:tick_object_state_collision_score:[MED] Reads obj state field ( y=5) at ($1e), dispatches on 0/1/>=2; in state 1 runs check_object_player_collision + accumulate_for_matching_object
+NesPrgRom:2D65:update_door_wave:[HIGH] Top-down 2026-10-26 (game thread, frame update): +5: 0 idle. 1 moving: sound $0609, door_wave_catches_cats, carry_wave_cats, anim 8, x += st
 NesPrgRom:2F4E:update_dropped_object:[MED] +5 = 0 idle; 1: hangs until the player is on its row within 2 x, then +5 = 2 and sound $0607; >= 2: y fraction += $80 per frame (falls half 
-NesPrgRom:3001:spawn_object_pair_for_state:[MED] Reads state var $7A, derives a bounded index (asl/sbc #$15/cmp #$06/bcs exit), then asl→tax and calls spawn_object_from_table_entry with Y=$
-NesPrgRom:30B1:advance_obj_pair_on_proximity:[MED] ldy #$00 / jsr obj_state2_advance_on_proximity / ldy #$08 then falls through into $F0B8 — runs the shared proximity-advance handler twice wi
-NesPrgRom:3215:on_object_reaching_target_reset_and_rescan:[MED] Compares object[x] coords ($0265,x==$0423 and $0264,x within 2 of $0421); on proximity match clears flags $042F/$0424 (#$00) and tail-jumps 
+NesPrgRom:3001:spawn_floor_traps:[MED] Top-down 2026-10-26 (game thread, frame update): stage index 11-13 only (rounds 12-14): two floor traps at $90 / $98 from the nametable addr
+NesPrgRom:30B1:press_floor_traps:[MED] Top-down 2026-10-26 (game thread, frame update): press_floor_trap for $90 and $98 (called from the walk and door-knockback states). Was 'adv
+NesPrgRom:3215:released_cat_pops_target:[HIGH] Top-down 2026-10-26 (game thread, frame update): slot 2 (the cat released by the goal) on a target: slot 2 cleared, the target popped. Was '
 NesPrgRom:3323:start_timer_phase_tune:[MED] Top-down 2026-10-26 (game thread, round setup): init_sound_voices, then sound triggers $06F5 / $06F6 = 3. Entered at both of tick_round_time
 NesPrgRom:03EC:draw_metasprite_2x2:[HIGH] Top-down 2026-10-26 (game thread, draw): draw_sprite_pair, then X -= 8 and Y += 8 and falls into a second pair: a 16x16 object from four con
 NesPrgRom:0540:draw_object_pair_once:[MED] Single instruction `jsr $C543 -> draw_object_pair_advance_slot`; a 3-byte trampoline that invokes the draw-pair routine exactly one time bef
@@ -211,20 +211,20 @@ NesPrgRom:0B02:draw_player_number_text:[HIGH] Top-down 2026-10-26 (game thread, 
 NesPrgRom:1A17:add_field37_to_field36:[MED] $DA17 does $36 += $37; rts (8-bit accumulate helper); the adjacent dispatcher at $DA1F loads a 16-bit handler pointer from table $E17A,x int
 NesPrgRom:1A70:state02_walk:[HIGH] State 02, walking a floor (player, cats). Player: caught by a walking cat ($E0B7); a closed door in the path blocks it or is opened by a cat
 NesPrgRom:26FA:draw_object_and_tick_state_timer:[HIGH] jsr draw_composite_object_sprite, then ldx $1b indexes a per-object timer array: dec $0262,x; on expiry (bne falls through) clears state byt
-NesPrgRom:2D4E:tick_object_group_04a0:[MED] Sets pointer $1E/$1F=$04A0, calls tick_object_state_collision_score per entry, advances $1E by stride 8 until $C0 (4 iterations) — loops the
+NesPrgRom:2D4E:update_door_waves:[HIGH] Top-down 2026-10-26 (game thread, frame update): update_door_wave for the 4 records $04A0-$04BF. Was 'tick_object_group_04a0'. Earlier note:
 NesPrgRom:2F3F:update_dropped_objects:[MED] Runs update_dropped_object on the two zero-page records $A0 and $A8. Was 'update_object_pair_state_at_a0_a8'. Earlier note: Sets 16-bit poin
-NesPrgRom:31B9:check_object_reached_target_then_advance_phase:[MED] Indexes obj slot $1B into $0260/$0264/$0265 (state/X/Y), gates on state==2 and X/Y within dist<2 of target $0401/$0403, then on mode $040F==
+NesPrgRom:31B9:bonus_target_live:[HIGH] Top-down 2026-10-26 (game thread, frame update): animate_bonus_target; released_cat_pops_target; the player on it pops it (pop_bonus_target)
 NesPrgRom:0521:draw_object_animated_sprite:[MED] Derives anim frame from global timer $21 (lsr/and #3 -> $13, $14=0), reads object byte ($1e),y=7 as tile-pair index (asl/tax) and calls draw
 NesPrgRom:05A3:emit_object_oam_at_70_variant2:[MED] Loads fixed params $13=#$02,$12=#$70,$14=#$00 into the zero-page arg block then tail-jmps to emit_object_oam_step_pointers_8 ($C3EC); a para
 NesPrgRom:05B2:draw_2x2_metasprite_tile_69:[MED] Loads tile base $12=#$69, counter $13=#$02, attr $14=#$00, then walks position $10/$11 (X, 16-bit) and $16 (Y) by ±8px between four OAM emit
 NesPrgRom:0DFF:draw_bonus_intro_sprite:[MED] Top-down 2026-10-26 (game thread, round setup): one 2x2 metasprite (tile $CB, palette 2) at x $7C, y $AA; the bonus intro's only drawing. Wa
 NesPrgRom:1A02:set_field36_step_at_bounds_then_accumulate_dispatch:[MED] Reads $36; at boundary 9 sets step $37=+4, at boundary $19(25) sets $37=-4($FC), else leaves $37; then jmp/fallthrough into accumulate_field
 NesPrgRom:264A:dispatch_item_state:[HIGH] Naming 2026-10-26: ldy $0260,x indexes the 3-handler table $E65A (noop, resolve_object_position_capture_and_score, draw_object_and_tick_stat
-NesPrgRom:31A5:dispatch_object_phase_handler:[HIGH] Indexes table $F1B5 by per-object phase $0260,x, loads 16-bit pointer into $1C/$1D, jmp ($1C); table entries are $C14F handler_rts_noop and 
+NesPrgRom:31A5:dispatch_bonus_target:[HIGH] Top-down 2026-10-26 (game thread, frame update): by +0 through $F1B5: 0 none, 2 bonus_target_live. Was 'dispatch_object_phase_handler'. Earl
 NesPrgRom:06C1:draw_object_by_animation_state:[MED] Reads state var $1E, three-way branches (<$20/==$20/>$20), loads $12/$13 pointer-param pairs and dispatches to draw_2x2_metasprite_tile_69 /
 NesPrgRom:1D17:land_on_floor:[HIGH] Shared entry of state 02: y fraction 0, y row aligned (&$FC|2), +8 = $4B (a floor tile), state 02, anim 2; the player landing also runs forc
 NesPrgRom:2634:update_items:[HIGH] Top-down 2026-10-26 (game thread): dispatch_item_state for each 8-byte item record, X = 0 .. item_table_len ($81) step 8. Was 'update_all_ac
-NesPrgRom:318F:dispatch_all_objects_phase_handler:[HIGH] Loops X from 0 by stride +8 (8-byte object slots) up to limit $53, storing index in $1B and calling dispatch_object_phase_handler each pass;
+NesPrgRom:318F:update_bonus_targets:[HIGH] Top-down 2026-10-26 (game thread, frame update): dispatch_bonus_target for each record up to $53. Was 'dispatch_all_objects_phase_handler'. 
 NesPrgRom:0141:yield_to_render_loop:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): tsx / txa / and #$C0 / tay: the exchange slot from the caller's stack quarter
 NesPrgRom:0ADA:redraw_var_records_loop_until_count_or_phase:[MED] backward loop ($CADA-$CAFF) decrementing 16-bit counter $0E/$0F per pass while calling draw_fixed_glyph_string (gated on $40), init_ptr_1e_f
 NesPrgRom:0D49:build_stage_screen_layout:[HIGH] Top-down 2026-10-26 (game thread, round setup): clear nametables, draw_hud; is_bonus_round from tbl_round_attributes[stage] byte 0. A bonus 
@@ -249,7 +249,7 @@ NesPrgRom:099F:next_round:[HIGH] Top-down 2026-10-26 (game thread): advances to 
 NesPrgRom:0A28:handle_player_caught:[HIGH] Top-down 2026-10-26 (game thread): waits until the player's state ($040F) returns to 0, then: lives left -> lose one ($70), in a two-player 
 NesPrgRom:0B60:update_round_frame:[HIGH] Top-down 2026-10-26 (game thread): one frame of a normal round (play_round, handle_player_caught, attract_demo): sub-counters, the 9 objects
 NesPrgRom:0B7B:update_bonus_round_frame:[HIGH] Top-down 2026-10-26 (game thread): one frame of the bonus round (only next_round's bonus loop calls it): sub-counters, the 9 objects, the bo
-NesPrgRom:18D8:update_and_respawn_objects:[MED] Loops all 8 objects (ptr $1E/$1F=$0400, +$10 stride to $90) calling update_object_state_vs_reference + dispatch_object_state_handler + trans
+NesPrgRom:18D8:update_and_respawn_objects:[HIGH] Top-down 2026-10-26 (game thread, frame update): slots 0-8: set_object_intent, dispatch_object_state, draw_object; then every respawn_interv
 NesPrgRom:35B8:sound_streams_next_voice:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): the stream pass's loop tail: next voice record, and the return point of every
 NesPrgRom:3606:start_voice_stream:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): a triggered voice starts: reads the stream header into the record (+0 channel
 NesPrgRom:3F65:attract_demo:[HIGH] Top-down 2026-10-26 (game thread): builds round 1 ($7A = $7D = 0) and plays it on the demo script (demo_script_cursor $3D) until round_clear
