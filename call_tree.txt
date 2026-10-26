@@ -112,13 +112,13 @@ reset_cold_boot_init  $C031
                         update_score  [jmp, flows-into]  $D5AB
                             add_score_n_times  $D4BE
                                 add_score_from_table  $D4CA
-                                    bcd_add_packed_buffer  [jmp, flows-into]  $D502
+                                    bcd_add  [jmp, flows-into]  $D502
                             queue_bcd_number  [jmp, flows-into]  $D5D9
-                                append_byte_to_0500_if_counter  $D629
+                                queue_digit_blank_leading_zero  $D629
                             update_high_score  $D694
                             award_extra_life  $D6AA
                                 bcd_add_from_table  $D4E5
-                                    bcd_add_packed_buffer  [flows-into]  (above)
+                                    bcd_add  [flows-into]  (above)
                                 queue_bcd_number  [jmp, flows-into]  (above)
                         blink_player_up_label  $D71C
                             show_player_up_label  [flows-into]  (above)
@@ -222,7 +222,7 @@ reset_cold_boot_init  $C031
                                                 door_kind0_knock_back  [dispatch]  $EA5E
                                                     knock_back_right_if_in_range  [flows-into]  (above)
                                                 door_kind2_knock_back  [dispatch]  (above)
-                                            find_first_empty_slot  [jmp, flows-into]  $EE04
+                                            launch_door_wave  [jmp, flows-into]  $EE04
                                         add_door_if_in_reach  $E9B8
                                     walker_meets_closed_door  $EA90
                                         open_door  (above)
@@ -363,16 +363,16 @@ reset_cold_boot_init  $C031
                         draw_hud  $D703
                             ppu_run_draw_blocks  (above)
                             queue_bcd_number  [jmp, flows-into]  (above)
-                    run_scripted_screen_cutscene_sequence  $CE1A
+                    show_bonus_results  $CE1A
                         ppu_enable_render  (above)
                         ppu_disable_render  (above)
                         ppu_clear_nametables  (above)
-                        run_entry_state_sequence_120_frames  $CE94
+                        wait_120_frames_with_sprite  $CE94
                             yield_to_render_loop  (above)
                             ptr16_sub6_set_const  (above)
                             update_score  (above)
                             blink_player_up_label  (above)
-                        run_entry_state_pump_120_iterations  $CEBB
+                        wait_120_frames  $CEBB
                             yield_to_render_loop  (above)
                             update_score  (above)
                             blink_player_up_label  (above)
@@ -381,11 +381,11 @@ reset_cold_boot_init  $C031
                         bcd_add_from_table  [jmp, flows-into]  (above)
                         queue_bcd_number  (above)
                         draw_hud  (above)
-                    load_record_and_advance_anim_counters  $D6E8
+                    advance_to_next_round  $D6E8
                         bcd_add_from_table  (above)
                     blink_player_up_label  (above)
                     init_bonus_player  $D80B
-                        set_two_zp_pointers  $D825
+                        reset_camera_and_point_at_player  $D825
                     init_bonus_goal_object  $D8C0
                     load_round_trampolines  $E35B
                         ppu_addr_to_tile_xy  $E3BD
@@ -419,9 +419,9 @@ reset_cold_boot_init  $C031
                     play_round  [jmp, flows-into]  (above)
                     swap_player_state  $CA81
                     clear_object_tables  (above)
-                    redraw_var_records_at_7800_if_flag_set  $CAB4
-                        init_state_vars_and_pointer  [flows-into]  $CAC3
-                            redraw_var_records_loop_until_count_or_phase  [flows-into]  $CADA
+                    game_over_for_one_player  $CAB4
+                        game_over  [flows-into]  $CAC3
+                            show_game_over  [flows-into]  $CADA
                                 yield_to_render_loop  (above)
                                 draw_player_number_text  $CB02
                                     draw_sprite_glyph  [flows-into]  $CB14
@@ -431,8 +431,8 @@ reset_cold_boot_init  $C031
                                 draw_game_over_text  $CB31
                                     draw_sprite_text  [flows-into]  (above)
                                 blink_player_up_label  (above)
-                        redraw_var_records_loop_until_count_or_phase  [jmp, flows-into]  (above)
-                    init_state_vars_and_pointer  (above)
+                        show_game_over  [jmp, flows-into]  (above)
+                    game_over  (above)
                     draw_game_over_text  (above)
                     update_round_frame  $CB60
                         update_score  [jmp, flows-into]  (above)
@@ -452,7 +452,7 @@ reset_cold_boot_init  $C031
                                         draw_item  [flows-into]  (above)
                                     draw_item  (above)
                                     slot2_sits_on_item  $E757
-                                draw_object_and_tick_state_timer  [dispatch]  $E6FA
+                                show_item_points  [dispatch]  $E6FA
                                     draw_item_points_sprites  $E7F5
                                         draw_sprite_advance_x  [flows-into]  (above)
                         update_doors  $E8CC
@@ -490,7 +490,7 @@ reset_cold_boot_init  $C031
                 draw_sprite_text  (above)
                 update_round_frame  (above)
                 init_player_record  $D7F1
-                    set_two_zp_pointers  (above)
+                    reset_camera_and_point_at_player  (above)
                 init_round_cats  $D846
                     init_cat_record  [flows-into]  $D894
                 tick_round_timer  $F2E6
@@ -511,7 +511,7 @@ reset_cold_boot_init  $C031
             draw_title_object  $CD3E
                 draw_object  [jmp, flows-into]  (above)
             build_stage_screen_layout  (above)
-            animate_two_sprite_walkcycles_into_buffer  $D73E
+            title_menu_cursor  $D73E
                 queue_vram_packet  [jmp, flows-into]  (above)
             load_round_trampolines  (above)
             load_round_items  (above)

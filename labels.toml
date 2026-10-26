@@ -174,11 +174,10 @@ conf = "HIGH"
 why = "Naming 2026-10-26: zeroes $0400-$04BF: the 9 sixteen-byte object records ($0400-$048F, the strided loops stop at $90) and the block after them. Was 'clear_buffer_192_at_0400'. Earlier note: lda #$00 then X-loop sta $0400,x; inx; cpx #$c0; bne writes zero to 192 bytes at $0400 (no PPU/APU regs, pure RAM fill)"
 [[label]]
 addr = "CAC3"
-name = "init_state_vars_and_pointer"
+name = "game_over"
 kind = "leaf"
-conf = "MED"
-why = "Stores #$01 into $0615/$0616/$0617, clears $42, and loads pointer $01A4 into $0E/$0F (lo=$01,hi=$A4); pure constant-init of RAM flags + a ZP pointer, no HW regs."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, flows): sound $0615-$0617, game_phase = 0, then show_game_over for $1A4 (420) frames. handle_player_caught's 1-player end and both players out. Was 'init_state_vars_and_pointer'. Earlier note: Stores #$01 into $0615/$0616/$0617, clears $42, and loads pointer $01A4 into $0E/$0F (lo=$01,hi=$A4); pure constant-init of RAM flags + a ZP pointer, no HW regs."
 [[label]]
 addr = "CB31"
 name = "draw_game_over_text"
@@ -199,18 +198,16 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread): record Y of the table $D536: [destination X][source pointer][length], then bcd_add_packed_buffer. Used for the extra-life threshold and the lives count. Was 'load_record_via_ptr_table'. Earlier note: Reads 16-bit pointer from table $D536/$D537 indexed by Y into ZP ptr $10/$11, then via lda ($10),y loads 4 sequential record bytes into X, $12, $13, and Y."
 [[label]]
 addr = "D502"
-name = "bcd_add_packed_buffer"
+name = "bcd_add"
 kind = "leaf"
 conf = "HIGH"
-why = "Per-nibble decimal-correct add: low nibble and #$0f + adc, cmp #$0a→adc #$05; high nibble and #$f0 + adc, cmp #$a0→adc #$5f + sec carry; loops ($12),y operand into $00,x via dex/dey/bpl = multi-byte packed-BCD addition."
-
+why = "Top-down 2026-10-26 (game thread, flows): packed BCD: ($12),Y added into zero page X, Y and X counting down, the carry kept across bytes. Was 'bcd_add_packed_buffer'. Earlier note: Per-nibble decimal-correct add: low nibble and #$0f + adc, cmp #$0a→adc #$05; high nibble and #$f0 + adc, cmp #$a0→adc #$5f + sec carry; loops ($12),y operand into $00,x via dex/dey/bpl = multi-byte packed-BCD addition."
 [[label]]
 addr = "D629"
-name = "append_byte_to_0500_if_counter"
+name = "queue_digit_blank_leading_zero"
 kind = "leaf"
-conf = "MED"
-why = "bne/bmi guard then `sta $0500,y` + `iny`: stores A into the $0500 buffer at index Y and advances, gated by incoming Z flag and a `dec $15` countdown (skips store when zero-set or counter goes negative)."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, flows): a 0 digit while $15 > 0 is queued as tile 0 (blank) and $15 - 1; any other digit is queued as tile digit + 1 and ends the blanking ($15 = 0). Was 'append_byte_to_0500_if_counter'. Earlier note: bne/bmi guard then `sta $0500,y` + `iny`: stores A into the $0500 buffer at index Y and advances, gated by incoming Z flag and a `dec $15` countdown (skips store when zero-set or counter goes negative)."
 [[label]]
 addr = "D694"
 name = "update_high_score"
@@ -225,11 +222,10 @@ conf = "HIGH"
 why = "Naming 2026-10-26: copies packet Y of the table $D7AD ([addr hi][addr lo][n][n bytes]) into the VRAM queue $0500 at the cursor $2A. Was 'copy_var_record_to_0500_buffer'. Earlier note: Loads src ptr from table $D7AD/$D7AE[y] into $10/$11, then sta ($10),y bytes into buffer $0500,x using cursor $2A; 3rd byte saved to $12 as a dec/bne loop count for the trailing variable-length payload, then stx $2a."
 [[label]]
 addr = "D825"
-name = "set_two_zp_pointers"
+name = "reset_camera_and_point_at_player"
 kind = "leaf"
-conf = "MED"
-why = "Stores immediate LE 16-bit consts into two zp pointer pairs ($28/$29=$1C00, $1E/$1F=$0400) and clears Y as an index; no hardware regs, pure pointer setup."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, flows): camera $1C00, $1E/$1F = $0400 (the player's record), Y = 0. Shared by init_player_record and init_bonus_player. Was 'set_two_zp_pointers'. Earlier note: Stores immediate LE 16-bit consts into two zp pointer pairs ($28/$29=$1C00, $1E/$1F=$0400) and clears Y as an index; no hardware regs, pure pointer setup."
 [[label]]
 addr = "D894"
 name = "init_cat_record"
@@ -490,11 +486,10 @@ conf = "HIGH"
 why = "Clears the wave record (+5, +4); its cats in state 18 -> state 1A with timer $3C; respawn_slot = $30. Was 'update_matching_object_state'. Earlier note: Sets $4C=#$30, zeros ($1e),y offsets 4/5, then loops x=$20..$90 step $10 over a 16-byte-stride object table: where $040B,x==$1E and $040F,x==#$18 it writes $040F,x=#$1A and $0407,x=#$3C (conditional per-record field mutation)."
 [[label]]
 addr = "EE04"
-name = "find_first_empty_slot"
+name = "launch_door_wave"
 kind = "leaf"
-conf = "MED"
-why = "Scans table $04A5 in 8-byte strides (Y 0..$20), beq exits on first zero lead-byte leaving Y as index; classic find-first-free/inactive slot in a 4-entry, 8-byte-record array."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, flows): the first idle wave record ($04A0 + 8n, +5 = 0): +5 = 1, x/y fractions 0, row = the door's row - 1, direction by door kind bit 2 ($FF and x = door x - 2, or 1 and x = door x). Was 'find_first_empty_slot'. Earlier note: Scans table $04A5 in 8-byte strides (Y 0..$20), beq exits on first zero lead-byte leaving Y as index; classic find-first-free/inactive slot in a 4-entry, 8-byte-record array."
 [[label]]
 addr = "EE4D"
 name = "move_record_x_by_direction"
@@ -710,11 +705,10 @@ conf = "MED"
 why = "Top-down 2026-10-26 (game thread, round setup): entry Y of $D640: [PPU address][zero-page source X][byte count][flag]; queues each source byte as two nibble tiles into the $0500 VRAM buffer (append_byte_to_0500_if_counter does each digit). Was 'build_buffer_entry_unpack_nibbles'. Earlier note: Loads pointer from $D640,y into $10/$11, reads a header (->$12,$13,X,$14=count,$15), appends header + count*2 to $0500 buffer at persistent cursor $2A, then loops $14 times splitting each $00,x byte into hi/lo nibbles via append_byte_to_0500_if_counter, saving cursor with sty $2a."
 [[label]]
 addr = "D6E8"
-name = "load_record_and_advance_anim_counters"
+name = "advance_to_next_round"
 kind = "routine"
-conf = "MED"
-why = "Calls load_record_via_ptr_table(Y=4), then advances $7A as a 4-bit counter (inc, and #$0f) and $7D as a counter cycling $1C-$1F (inc, cmp #$20, wrap to #$1c) — fetch-then-step-cursors."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, flows): score table entry 4; stage_number = (stage + 1) & 15; stage_index + 1, and past 31 back to 28 ($1C): the last 4 stages repeat for ever. Was 'load_record_and_advance_anim_counters'. Earlier note: Calls load_record_via_ptr_table(Y=4), then advances $7A as a 4-bit counter (inc, and #$0f) and $7D as a counter cycling $1C-$1F (inc, cmp #$20, wrap to #$1c) — fetch-then-step-cursors."
 [[label]]
 addr = "D71C"
 name = "blink_player_up_label"
@@ -729,11 +723,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread): queues packet (player | 2) * 2: the current player's 1UP / 2UP, shown steadily. render_loop calls it on paused frames. Was 'queue_state_vram_packet'. Earlier note: Naming 2026-10-26: Y = (game_state_flags | 2) * 2, then jmp queue_vram_packet. Called by the render loop on frames when $23 is set (the game thread does not run those frames). Was 'copy_var_record_index_flag2_to_0500'. Earlier note: Computes Y = (($41 | $02) << 1) as a word record index (lda #$02/ora $41/asl/tay) then tail-jmps to copy_var_record_to_0500_buffer ($D77A), i.e. force flag bit1 then copy that record"
 [[label]]
 addr = "D73E"
-name = "animate_two_sprite_walkcycles_into_buffer"
+name = "title_menu_cursor"
 kind = "leaf"
-conf = "MED"
-why = "Each block masks a tick counter ($24/$22 &3 ==1) to toggle a 2-frame walk bit ($4A/$2E eor #$01) every 4th tick, computes bit*2+offset as Y index, and calls copy_var_record_to_0500_buffer twice to copy the matching sprite records for two objects."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, flows): on a fresh press ($24 & 3 = 1): countdown $F0 and toggle $4A (the 1 / 2 player choice); then VRAM packets 8 + 2*$4A and 12 + 2*$4A: the cursor tile $AF at $21E9 or $2229, the other row blank. Was 'animate_two_sprite_walkcycles_into_buffer'. Earlier note: Each block masks a tick counter ($24/$22 &3 ==1) to toggle a 2-frame walk bit ($4A/$2E eor #$01) every 4th tick, computes bit*2+offset as Y index, and calls copy_var_record_to_0500_buffer twice to copy the matching sprite records for two objects."
 [[label]]
 addr = "D7F1"
 name = "init_player_record"
@@ -1022,9 +1015,8 @@ why = "Top-down 2026-10-26 (game thread, round setup): draw blocks entry 0, then
 addr = "DAEF"
 name = "reset_objects_except_persistent_types"
 kind = "routine"
-conf = "MED"
-why = "Calls init_object_tables, then loops X=$10..$80 step $10 over object slots, reading state byte $040F,x and zeroing both $040F,x and $0404,x unless the byte is $16 or $20 (preserved types)."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, flows): init_sound_voices, then every slot 1-8 not in state 16 (riding a door wave) or 20 (slot 2 scored) is cleared. After the player is caught and when the last item is collected. Kept (name checked against the code). Earlier note: Calls init_object_tables, then loops X=$10..$80 step $10 over object slots, reading state byte $040F,x and zeroing both $040F,x and $0404,x unless the byte is $16 or $20 (preserved types)."
 [[label]]
 addr = "DBBA"
 name = "land_on_trampoline"
@@ -1311,11 +1303,10 @@ conf = "HIGH"
 why = "State 02, walking a floor (player, cats). Player: caught by a walking cat ($E0B7); a closed door in the path blocks it or is opened by a cat ($EA90); the door wave and bonus checks run. Tile under foot +8 outside $49-$51 -> start_hop_off_ledge (state 04). Trace (state_census.py, 3 play logs): -> 04 x83, 10 x17, 1E (slot 2), 08. Was 'update_object_proximity_collision_tick'. Earlier note: Per-object ($1E ptr) tick: decrements timer $042A in mode $20, calls find_adjacent_entity (early-out beq), scan_objects_for_adjacent_contact_and_trigger + advance_obj_pair_on_proximity + check_two_obj_slots_for_hit; no-hit -> obj_reset_fields_8_F, hit + field+8 in range -> advance_object_state_counter then select_overlapping_target_object."
 [[label]]
 addr = "E6FA"
-name = "draw_object_and_tick_state_timer"
+name = "show_item_points"
 kind = "routine"
 conf = "HIGH"
-why = "jsr draw_composite_object_sprite, then ldx $1b indexes a per-object timer array: dec $0262,x; on expiry (bne falls through) clears state byte sta #$00,$0260,x"
-
+why = "Top-down 2026-10-26 (game thread, flows): a collected item (state 4): draw_item_points_sprites until its timer +2 ($3C = 60 frames) runs out, then state 0. Was 'draw_object_and_tick_state_timer'. Earlier note: jsr draw_composite_object_sprite, then ldx $1b indexes a per-object timer array: dec $0262,x; on expiry (bne falls through) clears state byte sta #$00,$0260,x"
 [[label]]
 addr = "ED4E"
 name = "update_door_waves"
@@ -1418,11 +1409,10 @@ why = "Naming 2026-10-26 (bytes read whole after the discover fixes): tsx / txa 
 
 [[label]]
 addr = "CADA"
-name = "redraw_var_records_loop_until_count_or_phase"
+name = "show_game_over"
 kind = "routine"
-conf = "MED"
-why = "backward loop ($CADA-$CAFF) decrementing 16-bit counter $0E/$0F per pass while calling draw_fixed_glyph_string (gated on $40), init_ptr_1e_from_const, copy_active_var_record_when_phase_aligned; exits early when ($25 & 3)==1 or counter hits 0"
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, flows): per frame: PLAYER n (2-player game), GAME OVER, the blinking 1UP/2UP; ends on a fresh press (joypad_state & 3 = 1) or when $0E/$0F runs out. Was 'redraw_var_records_loop_until_count_or_phase'. Earlier note: backward loop ($CADA-$CAFF) decrementing 16-bit counter $0E/$0F per pass while calling draw_fixed_glyph_string (gated on $40), init_ptr_1e_from_const, copy_active_var_record_when_phase_aligned; exits early when ($25 & 3)==1 or counter hits 0"
 [[label]]
 addr = "CD49"
 name = "build_stage_screen_layout"
@@ -1431,18 +1421,16 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, round setup): clear nametables, draw_hud; is_bonus_round from tbl_round_attributes[stage] byte 0. A bonus round first shows an intro (mansion stamps $0C, sound $060E-$0610, 210 frames of draw_bonus_intro_sprite), then redraws. Then the round's blocks and stamps from bytes 1-3, and the attribute fill. Kept (name checked against the code). Earlier note: Indexes per-stage param tables ($cdbf/$cdc0/$cdc1/$cdc2,x via $7a*4), clears nametables + rebuilds buffers, optionally runs a 0xD2-count OAM emit sequence (ppu_draw_mansion_stamps/enable/setup_oam_params/disable), then draws layered blocks (ppu_run_draw_blocks/ppu_draw_blocks_b/mansion_stamps) and fills attributes — a full stage screen builder keyed on stage var $7a."
 [[label]]
 addr = "CE94"
-name = "run_entry_state_sequence_120_frames"
+name = "wait_120_frames_with_sprite"
 kind = "routine"
 conf = "MED"
-why = "Sets $0F=120 as a backward-loop counter (dec $0F/bne $CE98), and each iteration reloads draw/param bytes ($10=$38,$16=$70,$13=2,$11/$14=0) then calls ptr16_sub6_set_const + copy_active_var_record_when_phase_aligned + pump_pending_amount_then_step_entry_state, repeatedly pumping the entry-state machine for a fixed 120-step sequence."
-
+why = "Top-down 2026-10-26 (game thread, flows): 120 frames of: a sprite group at x $38, y $70 (via $C63D), the blinking 1UP, update_score. Was 'run_entry_state_sequence_120_frames'. Earlier note: Sets $0F=120 as a backward-loop counter (dec $0F/bne $CE98), and each iteration reloads draw/param bytes ($10=$38,$16=$70,$13=2,$11/$14=0) then calls ptr16_sub6_set_const + copy_active_var_record_when_phase_aligned + pump_pending_amount_then_step_entry_state, repeatedly pumping the entry-state machine for a fixed 120-step sequence."
 [[label]]
 addr = "CEBB"
-name = "run_entry_state_pump_120_iterations"
+name = "wait_120_frames"
 kind = "routine"
-conf = "MED"
-why = "Loads $0F=#$78(120) as loop counter, then loops calling extract_x_top2_bits_to_y + copy_active_var_record_when_phase_aligned + pump_pending_amount_then_step_entry_state, dec $0f / bne until 120 reps done."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, flows): 120 frames of the blinking 1UP and update_score. Was 'run_entry_state_pump_120_iterations'. Earlier note: Loads $0F=#$78(120) as loop counter, then loops calling extract_x_top2_bits_to_y + copy_active_var_record_when_phase_aligned + pump_pending_amount_then_step_entry_state, dec $0f / bne until 120 reps done."
 [[label]]
 addr = "DB37"
 name = "state22_knocked_out"
@@ -1483,18 +1471,16 @@ why = "State 20, slot 2 after the player reached it on an item (score $44 alread
 
 [[label]]
 addr = "CAB4"
-name = "redraw_var_records_at_7800_if_flag_set"
+name = "game_over_for_one_player"
 kind = "routine"
-conf = "MED"
-why = "if $B0 flag set, loads pointer $0E/$0F = $7800 then jmp redraw_var_records_loop_until_count_or_phase; else beq exits at $CAC3"
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, flows): 2-player game, player 1 out: if player 2 still has lives, 120 frames of GAME OVER (show_game_over); otherwise the final game_over. Was 'redraw_var_records_at_7800_if_flag_set'. Earlier note: if $B0 flag set, loads pointer $0E/$0F = $7800 then jmp redraw_var_records_loop_until_count_or_phase; else beq exits at $CAC3"
 [[label]]
 addr = "CE1A"
-name = "run_scripted_screen_cutscene_sequence"
+name = "show_bonus_results"
 kind = "routine"
-conf = "MED"
-why = "Disables render ($C241), clears nametables ($CBF5), draws blocks ($D703), re-enables render ($C239), then loads pointer descriptors / unpacks buffer entries (load_ptr_descriptor_and_scan, build_buffer_entry_unpack_nibbles) interleaved with repeated 120-frame timed sequences (run_entry_state_sequence_120_frames) and a state-conditional branch on $5A/$52 — a scripted timed screen-presentation/cutscene driver."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, flows): after the bonus round (2,220-frame limit, next_round's bonus branch): camera 0, clear, draw_hud; the $CF08 text lines 0, 4, 8 with BCD totals ($0E/$12, $10/$14), each followed by 120 frames; line $0C only when the goal was reached ($5A) and no targets are left ($52 = 0), adding $50 to $5E; line $10 with a score add (table $A) and total $16; then score_update_phase = 1 and score table $C. Was 'run_scripted_screen_cutscene_sequence'. Earlier note: Disables render ($C241), clears nametables ($CBF5), draws blocks ($D703), re-enables render ($C239), then loads pointer descriptors / unpacks buffer entries (load_ptr_descriptor_and_scan, build_buffer_entry_unpack_nibbles) interleaved with repeated 120-frame timed sequences (run_entry_state_sequence_120_frames) and a state-conditional branch on $5A/$52 — a scripted timed screen-presentation/cutscene driver."
 [[label]]
 addr = "DA2C"
 name = "dispatch_object_state"
@@ -1948,3 +1934,10 @@ name = "knock_back_right_if_in_range"
 kind = "routine"
 conf = "HIGH"
 why = "Shared tail: carry clear -> direction 1, then +4 = $0C, state 10, +7 = 8; a cat knocked by a door the player opened ($02B7 = 0) adds pending_score_count."
+
+[[label]]
+addr = "D762"
+name = "dead_toggle_cat_touch_flag"
+kind = "dead"
+conf = "MED"
+why = "Top-down 2026-10-26 (game thread, flows): 24 bytes no operand, table or trace reaches (rom_data 'read at -', CDL never executed), shaped like title_menu_cursor and falling into queue_vram_packet: on a fresh press ($22 & 3 = 1) countdown $F0, toggle $2E, queue packet $10 + 2*$2E (blank / 'N' at $21AC). $2E is the flag walking_cat_touches_player checks first: set, no cat can catch the player. An unreachable invincibility switch."

@@ -1367,7 +1367,7 @@ title_screen:
     C896: EA          nop
     C897: EA          nop
     C898: EA          nop
-    C899: 20 3E D7    jsr animate_two_sprite_walkcycles_into_buffer   ; $D73E
+    C899: 20 3E D7    jsr title_menu_cursor   ; $D73E
     C89C: A5 25       lda joypad_state   ; $25
     C89E: 29 03       and #$03
     C8A0: C9 01       cmp #$01
@@ -1498,7 +1498,7 @@ play_round:
     C99C: 20 BF F4    jsr init_sound_voices   ; $F4BF
 
 next_round:
-    C99F: 20 E8 D6    jsr load_record_and_advance_anim_counters   ; $D6E8
+    C99F: 20 E8 D6    jsr advance_to_next_round   ; $D6E8
     C9A2: 20 A7 CA    jsr clear_object_tables   ; $CAA7
     C9A5: A2 20       ldx #$20
     C9A7: A9 00       lda #$00
@@ -1560,7 +1560,7 @@ next_round:
     CA1B: C6 0F       dec countdown_lo   ; $0F
     CA1D: D0 F6       bne @CA15   ; $CA15
     CA1F: 20 BF F4    jsr init_sound_voices   ; $F4BF
-    CA22: 20 1A CE    jsr run_scripted_screen_cutscene_sequence   ; $CE1A
+    CA22: 20 1A CE    jsr show_bonus_results   ; $CE1A
     CA25: 4C 9F C9    jmp next_round   ; $C99F
 
 handle_player_caught:
@@ -1572,12 +1572,12 @@ handle_player_caught:
     CA35: D0 0A       bne @CA41   ; $CA41
     CA37: A5 70       lda p1_lives   ; $70
     CA39: D0 2C       bne @CA67   ; $CA67
-    CA3B: 20 C3 CA    jsr init_state_vars_and_pointer   ; $CAC3
+    CA3B: 20 C3 CA    jsr game_over   ; $CAC3
     CA3E: 4C 4F C8    jmp title_screen   ; $C84F
 @CA41:
     CA41: A5 70       lda p1_lives   ; $70
     CA43: D0 1B       bne @CA60   ; $CA60
-    CA45: 20 B4 CA    jsr redraw_var_records_at_7800_if_flag_set   ; $CAB4
+    CA45: 20 B4 CA    jsr game_over_for_one_player   ; $CAB4
     CA48: A5 B0       lda p2_lives   ; $B0
     CA4A: D0 18       bne @CA64   ; $CA64
     CA4C: A9 3C       lda #$3c
@@ -1638,16 +1638,16 @@ clear_object_tables:
     CAB1: D0 F8       bne @CAAB   ; $CAAB
     CAB3: 60          rts
 
-redraw_var_records_at_7800_if_flag_set:
+game_over_for_one_player:
     CAB4: A5 B0       lda p2_lives   ; $B0
-    CAB6: F0 0B       beq init_state_vars_and_pointer   ; $CAC3
+    CAB6: F0 0B       beq game_over   ; $CAC3
     CAB8: A9 78       lda #$78
     CABA: 85 0F       sta countdown_lo   ; $0F
     CABC: A9 00       lda #$00
     CABE: 85 0E       sta countdown_hi   ; $0E
-    CAC0: 4C DA CA    jmp redraw_var_records_loop_until_count_or_phase   ; $CADA
+    CAC0: 4C DA CA    jmp show_game_over   ; $CADA
 
-init_state_vars_and_pointer:
+game_over:
     CAC3: A9 01       lda #$01
     CAC5: 8D 15 06    sta $0615
     CAC8: 8D 16 06    sta $0616
@@ -1659,7 +1659,7 @@ init_state_vars_and_pointer:
     CAD6: A9 01       lda #$01
     CAD8: 85 0E       sta countdown_hi   ; $0E
 
-redraw_var_records_loop_until_count_or_phase:
+show_game_over:
     CADA: 20 41 C1    jsr yield_to_render_loop   ; $C141
     CADD: A5 40       lda two_player_game   ; $40
     CADF: F0 03       beq @CAE4   ; $CAE4
@@ -1679,7 +1679,7 @@ redraw_var_records_loop_until_count_or_phase:
     CAFB: C6 0E       dec countdown_hi   ; $0E
 @CAFD:
     CAFD: 05 0E       ora countdown_hi   ; $0E
-    CAFF: D0 D9       bne redraw_var_records_loop_until_count_or_phase   ; $CADA
+    CAFF: D0 D9       bne show_game_over   ; $CADA
 @CB01:
     CB01: 60          rts
 
@@ -2285,7 +2285,7 @@ draw_bonus_intro_sprite:
     CE15: 85 13       sta data_ptr_hi   ; $13
     CE17: 4C EC C3    jmp draw_metasprite_2x2   ; $C3EC
 
-run_scripted_screen_cutscene_sequence:
+show_bonus_results:
     CE1A: A9 00       lda #$00
     CE1C: 85 28       sta camera_x_lo   ; $28
     CE1E: 85 29       sta camera_x   ; $29
@@ -2298,21 +2298,21 @@ run_scripted_screen_cutscene_sequence:
     CE31: A9 01       lda #$01
     CE33: 8D 01 06    sta $0601
     CE36: 8D 18 06    sta $0618
-    CE39: 20 BB CE    jsr run_entry_state_pump_120_iterations   ; $CEBB
+    CE39: 20 BB CE    jsr wait_120_frames   ; $CEBB
     CE3C: A0 04       ldy #$04
     CE3E: 20 CD CE    jsr draw_indexed_text_line   ; $CECD
     CE41: A0 0E       ldy #$0e
     CE43: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
     CE46: A0 12       ldy #$12
     CE48: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
-    CE4B: 20 BB CE    jsr run_entry_state_pump_120_iterations   ; $CEBB
+    CE4B: 20 BB CE    jsr wait_120_frames   ; $CEBB
     CE4E: A0 08       ldy #$08
     CE50: 20 CD CE    jsr draw_indexed_text_line   ; $CECD
     CE53: A0 10       ldy #$10
     CE55: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
     CE58: A0 14       ldy #$14
     CE5A: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
-    CE5D: 20 94 CE    jsr run_entry_state_sequence_120_frames   ; $CE94
+    CE5D: 20 94 CE    jsr wait_120_frames_with_sprite   ; $CE94
     CE60: A5 5A       lda ppu_block_src_ptr   ; $5A
     CE62: 85 5E       sta $5e
     CE64: F0 10       beq @CE76   ; $CE76
@@ -2325,20 +2325,20 @@ run_scripted_screen_cutscene_sequence:
     CE72: 69 50       adc #$50
     CE74: 85 5E       sta $5e
 @CE76:
-    CE76: 20 94 CE    jsr run_entry_state_sequence_120_frames   ; $CE94
+    CE76: 20 94 CE    jsr wait_120_frames_with_sprite   ; $CE94
     CE79: A0 10       ldy #$10
     CE7B: 20 CD CE    jsr draw_indexed_text_line   ; $CECD
     CE7E: A0 0A       ldy #$0a
     CE80: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
     CE83: A0 16       ldy #$16
     CE85: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
-    CE88: 20 94 CE    jsr run_entry_state_sequence_120_frames   ; $CE94
+    CE88: 20 94 CE    jsr wait_120_frames_with_sprite   ; $CE94
     CE8B: A9 01       lda #$01
     CE8D: 85 43       sta score_update_phase   ; $43
     CE8F: A0 0C       ldy #$0c
     CE91: 4C E5 D4    jmp bcd_add_from_table   ; $D4E5
 
-run_entry_state_sequence_120_frames:
+wait_120_frames_with_sprite:
     CE94: A9 78       lda #$78
     CE96: 85 0F       sta countdown_lo   ; $0F
 @CE98:
@@ -2359,7 +2359,7 @@ run_entry_state_sequence_120_frames:
     CEB8: D0 DE       bne @CE98   ; $CE98
     CEBA: 60          rts
 
-run_entry_state_pump_120_iterations:
+wait_120_frames:
     CEBB: A9 78       lda #$78
     CEBD: 85 0F       sta countdown_lo   ; $0F
 @CEBF:
@@ -3865,7 +3865,7 @@ add_score_from_table:
     D4DC: 85 13       sta data_ptr_hi   ; $13
     D4DE: A2 74       ldx #$74
     D4E0: A0 03       ldy #$03
-    D4E2: 4C 02 D5    jmp bcd_add_packed_buffer   ; $D502
+    D4E2: 4C 02 D5    jmp bcd_add   ; $D502
 
 bcd_add_from_table:
     D4E5: B9 36 D5    lda $d536,y
@@ -3885,7 +3885,7 @@ bcd_add_from_table:
     D4FF: B1 10       lda (src_ptr),y   ; $10
     D501: A8          tay
 
-bcd_add_packed_buffer:
+bcd_add:
     D502: 18          clc
 @D503:
     D503: B1 12       lda (gfx_src_ptr),y   ; $12
@@ -4099,18 +4099,18 @@ queue_bcd_number:
     D614: 4A          lsr a
     D615: 4A          lsr a
     D616: 4A          lsr a
-    D617: 20 29 D6    jsr append_byte_to_0500_if_counter   ; $D629
+    D617: 20 29 D6    jsr queue_digit_blank_leading_zero   ; $D629
     D61A: B5 00       lda indirect_ptr,x   ; $00
     D61C: E8          inx
     D61D: 29 0F       and #$0f
-    D61F: 20 29 D6    jsr append_byte_to_0500_if_counter   ; $D629
+    D61F: 20 29 D6    jsr queue_digit_blank_leading_zero   ; $D629
     D622: C6 14       dec scan_src_ptr   ; $14
     D624: D0 EB       bne @D611   ; $D611
     D626: 84 2A       sty ppu_buffer_cursor   ; $2A
 @D628:
     D628: 60          rts
 
-append_byte_to_0500_if_counter:
+queue_digit_blank_leading_zero:
     D629: D0 09       bne @D634   ; $D634
     D62B: C6 15       dec scratch_counter   ; $15
     D62D: 30 05       bmi @D634   ; $D634
@@ -4262,7 +4262,7 @@ award_extra_life:
     D6E3: A0 0A       ldy #$0a
     D6E5: 4C D9 D5    jmp queue_bcd_number   ; $D5D9
 
-load_record_and_advance_anim_counters:
+advance_to_next_round:
     D6E8: A0 04       ldy #$04
     D6EA: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
     D6ED: E6 7A       inc stage_number   ; $7A
@@ -4316,7 +4316,7 @@ show_player_up_label:
     D73A: A8          tay
     D73B: 4C 7A D7    jmp queue_vram_packet   ; $D77A
 
-animate_two_sprite_walkcycles_into_buffer:
+title_menu_cursor:
     D73E: A5 24       lda draw_data_ptr   ; $24
     D740: 29 03       and #$03
     D742: C9 01       cmp #$01
@@ -4338,6 +4338,8 @@ animate_two_sprite_walkcycles_into_buffer:
     D75C: 69 04       adc #$04
     D75E: A8          tay
     D75F: 4C 7A D7    jmp queue_vram_packet   ; $D77A
+
+dead_toggle_cat_touch_flag:
     D762: A5          .byte $A5
     D763: 22          .byte $22
     D764: 29          .byte $29
@@ -4462,7 +4464,7 @@ queue_vram_packet:
     D7F0: 18          .byte $18
 
 init_player_record:
-    D7F1: 20 25 D8    jsr set_two_zp_pointers   ; $D825
+    D7F1: 20 25 D8    jsr reset_camera_and_point_at_player   ; $D825
 @D7F4:
     D7F4: B9 38 D8    lda $d838,y
     D7F7: 91 1E       sta (obj_record_ptr),y   ; $1E
@@ -4478,7 +4480,7 @@ init_player_record:
     D80A: 60          rts
 
 init_bonus_player:
-    D80B: 20 25 D8    jsr set_two_zp_pointers   ; $D825
+    D80B: 20 25 D8    jsr reset_camera_and_point_at_player   ; $D825
 @D80E:
     D80E: B9 3F D8    lda $d83f,y
     D811: 91 1E       sta (obj_record_ptr),y   ; $1E
@@ -4493,7 +4495,7 @@ init_bonus_player:
     D822: 91 1E       sta (obj_record_ptr),y   ; $1E
     D824: 60          rts
 
-set_two_zp_pointers:
+reset_camera_and_point_at_player:
     D825: A9 00       lda #$00
     D827: 85 28       sta camera_x_lo   ; $28
     D829: A9 1C       lda #$1c
@@ -6710,7 +6712,7 @@ dispatch_item_state:
     E657: 6C 1C 00    jmp (aux_ptr)   ; $001C
     E65A:            .word handler_rts_noop
     E65C:            .word player_collects_item
-    E65E:            .word draw_object_and_tick_state_timer
+    E65E:            .word show_item_points
 
 player_collects_item:
     E660: 20 57 E7    jsr slot2_sits_on_item   ; $E757
@@ -6791,7 +6793,7 @@ player_collects_item:
     E6F7: E6 31       inc obj_record_ptr   ; $31
     E6F9: 60          rts
 
-draw_object_and_tick_state_timer:
+show_item_points:
     E6FA: 20 F5 E7    jsr draw_item_points_sprites   ; $E7F5
     E6FD: A6 1B       ldx cur_obj_index   ; $1B
     E6FF: DE 62 02    dec $0262,x
@@ -7239,7 +7241,7 @@ open_door:
     E9AF: 29 0A       and #$0a
     E9B1: 49 08       eor #$08
     E9B3: D0 BC       bne @E971   ; $E971
-    E9B5: 4C 04 EE    jmp find_first_empty_slot   ; $EE04
+    E9B5: 4C 04 EE    jmp launch_door_wave   ; $EE04
 
 add_door_if_in_reach:
     E9B8: 84 11       sty zp_ptr_hi   ; $11
@@ -8114,7 +8116,7 @@ hide_wave_cats:
 @EE03:
     EE03: 60          rts
 
-find_first_empty_slot:
+launch_door_wave:
     EE04: A0 00       ldy #$00
 @EE06:
     EE06: B9 A5 04    lda obj_state,y   ; $04A5
