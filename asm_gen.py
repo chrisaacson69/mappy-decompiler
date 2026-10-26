@@ -12,6 +12,7 @@ import re, sys, bisect
 from pathlib import Path
 from code_map import table_lines   # jump_tables.txt + data_ptr_tables.txt
 from emu_harness.cpu.m6502 import disasm as disasm6502   # the shared 6502 tables (emu-harness rows B / A3)
+from emu_harness.cpu.m6502.cpu import NMI_VECTOR, RESET_VECTOR, IRQ_VECTOR
 OPS, MODE_LEN, fmt = disasm6502.OPS, disasm6502.MODE_LEN, disasm6502.fmt_operand
 IMP,ACC,IMM,ZP,ZPX,ZPY,ABS,ABX,ABY,IND,IZX,IZY,REL = range(13)
 
@@ -46,8 +47,12 @@ for line in table_lines():
     for k,t in enumerate(ents):
         a=base+2*k
         TABLE[a]=FUNC.get(t,f"L_{t:04X}"); is_data[norm(a)]=is_data[norm(a+1)]=1
+# the 6502's own vector words: the CPU reads NMI / RESET / IRQ entry points from them
+VECTORS={v:PRG[norm(v)]|PRG[norm(v+1)]<<8 for v in (NMI_VECTOR,RESET_VECTOR,IRQ_VECTOR)}
+for v,t in VECTORS.items():
+    TABLE[v]=FUNC.get(t,f"L_{t:04X}"); is_data[norm(v)]=is_data[norm(v+1)]=1
 
-entries=sorted(set(FUNC)|{0xC031,0xC2EF,0xC304})
+entries=sorted(set(FUNC)|set(VECTORS.values()))
 end_of={e:(entries[i+1] if i+1<len(entries) else 0x10000) for i,e in enumerate(entries)}
 
 # coverage (code vs data)

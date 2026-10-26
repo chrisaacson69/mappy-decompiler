@@ -8939,8 +8939,8 @@ start_timer_phase_tune:
     F32B: 8D F6 06    sta $06f6
     F32E: 60          rts
 @F32F:
-    F32F: 20 83 F3    jsr draw_vertical_sprite_column   ; $F383
-    F332: 20 B2 F3    jsr sub2_from_u16_counter   ; $F3B2
+    F32F: 20 83 F3    jsr draw_hurry_sprite   ; $F383
+    F332: 20 B2 F3    jsr scroll_hurry_sprite_left   ; $F3B2
     F335: A5 42       lda game_phase   ; $42
     F337: 8D 05 06    sta $0605
     F33A: AD 91 04    lda $0491
@@ -8978,7 +8978,7 @@ start_timer_phase_tune:
     F37D: 8D 15 04    sta $0415
     F380: 4C 23 F3    jmp start_timer_phase_tune   ; $F323
 
-draw_vertical_sprite_column:
+draw_hurry_sprite:
     F383: A2 00       ldx #$00
 @F385:
     F385: BD 90 04    lda obj_state_counter,x   ; $0490
@@ -9011,7 +9011,7 @@ draw_vertical_sprite_column:
     F3B0: 68          .byte $68
     F3B1: 04          .byte $04
 
-sub2_from_u16_counter:
+scroll_hurry_sprite_left:
     F3B2: AD 90 04    lda obj_state_counter   ; $0490
     F3B5: 38          sec
     F3B6: E9 02       sbc #$02
@@ -11713,9 +11713,6 @@ tbl_demo_input_script:
     FFF9: FF          .byte $FF
 
 cpu_interrupt_vectors:
-    FFFA: EF          .byte $EF
-    FFFB: C2          .byte $C2
-    FFFC: 31          .byte $31
-    FFFD: C0          .byte $C0
-    FFFE: 04          .byte $04
-    FFFF: C3          .byte $C3
+    FFFA:            .word nmi_count_vblank
+    FFFC:            .word reset_cold_boot_init
+    FFFE:            .word irq_rti_stub

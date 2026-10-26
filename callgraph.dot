@@ -248,8 +248,8 @@ digraph mappy {
   "F250"[label="draw_bonus_target\n$F250"];
   "F2E6"[label="tick_round_timer\n$F2E6"];
   "F323"[label="start_timer_phase_tune\n$F323"];
-  "F383"[label="draw_vertical_sprite_column\n$F383"];
-  "F3B2"[label="sub2_from_u16_counter\n$F3B2"];
+  "F383"[label="draw_hurry_sprite\n$F383"];
+  "F3B2"[label="scroll_hurry_sprite_left\n$F3B2"];
   "F3C1"[label="load_stage_params\n$F3C1"];
   "F49F"[label="jump_table_dispatch_via_index\n$F49F"];
   "F4B5"[label="init_apu_channels_and_frame_counter\n$F4B5"];

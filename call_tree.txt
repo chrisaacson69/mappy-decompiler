@@ -496,9 +496,9 @@ reset_cold_boot_init  $C031
                 tick_round_timer  $F2E6
                     start_timer_phase_tune  [jmp, flows-into]  $F323
                         init_sound_voices  (above)
-                    draw_vertical_sprite_column  $F383
+                    draw_hurry_sprite  $F383
                         write_sprite_to_oam  (above)
-                    sub2_from_u16_counter  $F3B2
+                    scroll_hurry_sprite_left  $F3B2
                 load_stage_params  (above)
                 init_sound_voices  (above)
             swap_player_state  (above)

@@ -529,13 +529,13 @@ addr = "F2E6"
 name = "tick_round_timer"
 kind = "leaf"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, round setup): phase $60: 0 counts seconds ($61 frames to 60, $62 seconds) to $66, then loads the $0490 sprite column from $F3AA (phase 1); 1 scrolls it left 2 px a frame with sound $0605 until its x goes negative, then puts an extra cat (type 3) into slot $68 via state 1A (phase 2); 2 counts to $67, then slot 1 enters as type 1 via state 1A (phase 3). Census with the limits poked to 1 s / 2 s: phase 1 took 125 frames; the extra cat came in at slot 6; slot 1 (type 1) dropped in and ran the full state machine. Was 'advance_state_counter_to_60'. Earlier note: Branches on state $60 (beq exits, cmp #$02 dispatches states 0/1/2 elsewhere); for state>2 increments counter $61 until it hits #$3c (60), then stores $42 into $0605."
+why = "Second pass 2026-10-26 (Chris named the sprite): phase $60: 0 counts seconds ($61 frames to 60, $62 seconds) to $66, then HURRY: the sprite record $0490 from $F3AA and start_timer_phase_tune (phase 1); 1 scrolls HURRY left with sound $0605 until it leaves, then an extra cat (type 3) enters slot $68 via state 1A (phase 2); 2 counts to $67, then slot 1 enters as type 1 via state 1A (phase 3). Census with the limits poked to 1 s / 2 s: HURRY took 125 frames; the extra cat came in at slot 6; slot 1 (type 1) dropped in and ran the full state machine. Kept (name checked against the code). Earlier note: Top-down 2026-10-26 (game thread, round setup): phase $60: 0 counts seconds ($61 frames to 60, $62 seconds) to $66, then loads the $0490 sprite column from $F3AA (phase 1); 1 scrolls it left 2 px a frame with sound $0605 until its x goes negative, then puts an extra cat (type 3) into slot $68 via state 1A (phase 2); 2 counts to $67, then slot 1 enters as type 1 via state 1A (phase 3). Census with the limits poked to 1 s / 2 s: phase 1 took 125 frames; the extra cat came in at slot 6; slot 1 (type 1) dropped in and ran the full state machine. Was 'advance_state_counter_to_60'. Earlier note: Branches on state $60 (beq exits, cmp #$02 dispatches states 0/1/2 elsewhere); for state>2 increments counter $61 until it hits #$3c (60), then stores $42 into $0605."
 [[label]]
 addr = "F3B2"
-name = "sub2_from_u16_counter"
+name = "scroll_hurry_sprite_left"
 kind = "leaf"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, round setup): $0490/$0491 -= 2: the phase-1 column's x. Kept (name checked against the code). Earlier note: lda $0490; sec; sbc #$02; sta $0490; bcs +; dec $0491 — subtracts 2 from the low byte and borrows into the high byte of a 16-bit LE value at $0490/$0491."
+why = "Second pass 2026-10-26 (Chris named the sprite): $0490/$0491 -= 2: HURRY crosses right to left; tick_round_timer ends phase 1 when x goes negative. Was 'sub2_from_u16_counter'. Earlier note: Top-down 2026-10-26 (game thread, round setup): $0490/$0491 -= 2: the phase-1 column's x. Kept (name checked against the code). Earlier note: lda $0490; sec; sbc #$02; sta $0490; bcs +; dec $0491 — subtracts 2 from the low byte and borrows into the high byte of a 16-bit LE value at $0490/$0491."
 [[label]]
 addr = "F7F4"
 name = "load_voice_stream_ptr"
@@ -1084,10 +1084,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, frame update): sound $0608, state 0, targets left ($52) - 1, two score adds (tables 6, 8), erased with the picture at ($F277). Was 'init_object_record_load_data_and_scan'. Earlier note: Sets flag $0608=1, clears per-object slot $0260,x, decrements counter $52, loads two records via load_record_via_ptr_table (Y=6,8), seeds pointer $12/$13 from a ROM table ($F277/$F278), then tail-jumps to load_indexed_ptr_then_scan_for_terminator — an object/entity setup that loads records and kicks off a data scan."
 [[label]]
 addr = "F383"
-name = "draw_vertical_sprite_column"
+name = "draw_hurry_sprite"
 kind = "routine"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, round setup): copies the $0490 record to $10-$17 and draws $17 sprites from it with palette = frame & 3. The round timer's phase 1 sprite. Kept (name checked against the code). Earlier note: Loads 8-byte descriptor from $0490 into param block $10-$17, sets $13=$21&3 (palette/frame), then loops $17 times calling write_object_to_shadow_oam, adding #$08 to Y ($10) and inc'ing tile/attr ($11/$12) each pass — stacks N sprites vertically."
+why = "Second pass 2026-10-26 (Chris named the sprite): the HURRY sprite of tick_round_timer's phase 1: copies the $0490 record to $10-$17 and draws $17 sprites from it, palette = frame & 3. Past phase 0 the cats run 4 faster (object_speed) and play_round changes the music; Chris: the round bonus is gone (not yet seen in code). Was 'draw_vertical_sprite_column'. Earlier note: Top-down 2026-10-26 (game thread, round setup): copies the $0490 record to $10-$17 and draws $17 sprites from it with palette = frame & 3. The round timer's phase 1 sprite. Kept (name checked against the code). Earlier note: Loads 8-byte descriptor from $0490 into param block $10-$17, sets $13=$21&3 (palette/frame), then loops $17 times calling write_object_to_shadow_oam, adding #$08 to Y ($10) and inc'ing tile/attr ($11/$12) each pass — stacks N sprites vertically."
 # --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
 
 [[label]]

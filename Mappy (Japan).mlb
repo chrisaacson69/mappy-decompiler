@@ -88,8 +88,8 @@ NesPrgRom:3054:update_floor_trap:[MED] Top-down 2026-10-26 (game thread, frame u
 NesPrgRom:30CE:player_on_floor_trap:[MED] Top-down 2026-10-26 (game thread, frame update): the player's x within 0-1 of the trap and its row 2 above: Z set (A = 2); else A = $FF. Was
 NesPrgRom:30F0:walker_over_open_trap_x:[MED] Top-down 2026-10-26 (game thread, frame update): trap X open (state 1), the walker 2 rows above, x on it within the fraction window ($40 / $
 NesPrgRom:3233:animate_bonus_target:[HIGH] Top-down 2026-10-26 (game thread, frame update): once every 16 frames, staggered by the target's index: picture $F263[frame & $10] drawn. Wa
-NesPrgRom:32E6:tick_round_timer:[HIGH] Top-down 2026-10-26 (game thread, round setup): phase $60: 0 counts seconds ($61 frames to 60, $62 seconds) to $66, then loads the $0490 spr
-NesPrgRom:33B2:sub2_from_u16_counter:[HIGH] Top-down 2026-10-26 (game thread, round setup): $0490/$0491 -= 2: the phase-1 column's x. Kept (name checked against the code). Earlier note
+NesPrgRom:32E6:tick_round_timer:[HIGH] Second pass 2026-10-26 (Chris named the sprite): phase $60: 0 counts seconds ($61 frames to 60, $62 seconds) to $66, then HURRY: the sprite 
+NesPrgRom:33B2:scroll_hurry_sprite_left:[HIGH] Second pass 2026-10-26 (Chris named the sprite): $0490/$0491 -= 2: HURRY crosses right to left; tick_round_timer ends phase 1 when x goes ne
 NesPrgRom:37F4:load_voice_stream_ptr:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): $F2/$F3 = the voice's stream base from the 25-word table $F853 (voices $13/$1
 NesPrgRom:380B:fetch_voice_stream_byte:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): next stream byte: ($F2),index with index = record +5, post-incremented; voice
 NesPrgRom:0150:flush_vram_write_queue:[HIGH] Naming 2026-10-26, top-down (render thread): rendering off, then plays the VRAM queue $0500 up to the cursor $2A: [addr lo][addr hi][n][n by
@@ -179,7 +179,7 @@ NesPrgRom:2F9B:dropped_object_stuns_cats:[HIGH] Cats (states < 16) within 1 in x
 NesPrgRom:3013:init_floor_trap:[MED] Top-down 2026-10-26 (game thread, frame update): state 2 (armed), nametable address +2/+3, tile x/y +4/+5, drawn (draw_floor_trap_frame). Wa
 NesPrgRom:30B8:press_floor_trap:[MED] Top-down 2026-10-26 (game thread, frame update): an armed trap (state 2) with the player standing on it -> state 3, pressed picture. Was 'ob
 NesPrgRom:31F1:pop_bonus_target:[HIGH] Top-down 2026-10-26 (game thread, frame update): sound $0608, state 0, targets left ($52) - 1, two score adds (tables 6, 8), erased with the
-NesPrgRom:3383:draw_vertical_sprite_column:[HIGH] Top-down 2026-10-26 (game thread, round setup): copies the $0490 record to $10-$17 and draws $17 sprites from it with palette = frame & 3. T
+NesPrgRom:3383:draw_hurry_sprite:[HIGH] Second pass 2026-10-26 (Chris named the sprite): the HURRY sprite of tick_round_timer's phase 1: copies the $0490 record to $10-$17 and draw
 NesPrgRom:0401:draw_sprite_pair:[HIGH] Top-down 2026-10-26 (game thread, draw): write_sprite_next_tile, X += 8, then falls into a second one. Was 'write_object_oam_and_advance_poi
 NesPrgRom:0543:draw_score_column:[HIGH] Top-down 2026-10-26 (game thread, draw path): two stacked tiles from $C573[X], X + 1 (8 down), then x + 8. Was 'draw_object_pair_advance_slo
 NesPrgRom:064C:draw_tile_block_3x4:[HIGH] Top-down 2026-10-26 (game thread, draw path): 3 rows of 3 sprites then a row of 2, tiles counting up from $12. Was 'draw_object_tile_rows'. 
