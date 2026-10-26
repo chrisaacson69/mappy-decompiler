@@ -17,11 +17,10 @@ CLI:
 """
 import re, sys, json, bisect
 from pathlib import Path
-sys.path.insert(0, r"C:\Users\Chris.Isaacson\koei-nes\tools")
-import disasm6502
+from emu_harness.cpu.m6502 import disasm as disasm6502     # pip install -e ../emu-harness (was koei-nes's alias)
+from emu_harness.cpu.m6502.disasm import IMP,ACC,IMM,ZP,ZPX,ZPY,ABS,ABX,ABY,IND,IZX,IZY,REL
 OPS, MODE_LEN = disasm6502.OPS, disasm6502.MODE_LEN
 fmt = disasm6502.fmt_operand
-IMP,ACC,IMM,ZP,ZPX,ZPY,ABS,ABX,ABY,IND,IZX,IZY,REL = range(13)
 
 HERE = Path(__file__).parent
 PRG = (HERE / "Mappy (Japan).nes").read_bytes()[16:16+0x4000]
