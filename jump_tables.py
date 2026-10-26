@@ -18,7 +18,7 @@ This finds tables the demo never executed (bonus $E17A via the un-taken $DA29 si
 import re
 
 from emu_harness.passes.native import NativeMap, dispatch_tables
-from code_map import HERE, WIN
+from code_map import HERE, INLINE_DISPATCH, WIN
 
 def in_code(a): return 0xC000 <= a <= 0xFFFF or 0x8000 <= a <= 0xBFFF
 
@@ -31,10 +31,10 @@ for line in open(HERE / "codegraph.txt"):
     if m and 'JMP' not in line:
         seeds.update(int(x[1:],16) for x in m.group(2).split() if in_code(int(x[1:],16)))
 
-M = NativeMap(WIN, bytearray((HERE / "coverage.bin").read_bytes()))
+M = NativeMap(WIN, bytearray((HERE / "coverage.bin").read_bytes()), noreturn=INLINE_DISPATCH)
 code = M.code
 # ---- iterate: descend -> find sites -> resolve+seed tables -> repeat (emu_harness.passes.native) ----
-tables, known_sites, routines, _ = dispatch_tables(M, seeds)
+tables, known_sites, routines, _ = dispatch_tables(M, seeds, inline=INLINE_DISPATCH)
 cpu = M.canon
 covered=sum(code)
 print(f"dispatch sites (JMP indirect): {len(known_sites)}")

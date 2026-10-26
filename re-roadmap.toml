@@ -24,11 +24,11 @@ toolset  = "aa8fa5a"
 evidence = ["01-reset-and-frame-structure.md", "repo_header.bin", "repo_CHR_ROM.chr"]
 
 [phase.discover]
-status   = "partial"
-gate     = "Trace 30% -> descent 60% -> idiom jump-table sweep 96.7% code recall, all 6 dispatch tables (incl. bonus $E17A, never executed). Row R re-ran the pipeline on the library: every output identical. Not met: walker conflicts never counted; 3 phantoms carry routine labels."
+status   = "done"
+gate     = "Trace 5,024 B (30.7%) -> descent 60.2% -> 7 dispatch tables incl. the $F6A9 inline table (18 handlers, new) -> 275 routines, 10,843 B (66.2%); code recall vs the published disassembly 99.4% (was 96.9%; graded after, never an input). Walker conflicts 4, unexplained 0 (3 bit-skip $F746/$F761/$F77C, 1 dead-path $CC41). Tables end at evidence ($C356 x19, $C13E x1: the old 20th/2nd words were the next routine's bytes). Stored-pointer installs 0 (the 4 old ones were data pointers, counters, a mis-pair). Phantoms $EEA9, $FA3F dropped."
 checked  = "2026-10-26"
-toolset  = "aba120d"
-evidence = ["coverage_full2.bin", "routines_full.txt", "jump_tables.txt", "09-from-scratch-rederivation.md"]
+toolset  = "4eb3022"
+evidence = ["conflicts.txt", "jump_tables.txt", "data_ptr_tables.txt", "routines_full.txt", "coverage_full2.bin", "stored_pointers.py"]
 
 [phase.data]
 status   = "partial"
@@ -53,9 +53,9 @@ evidence = ["labels.toml", "vars.toml", "09-from-scratch-rederivation.md"]
 
 [phase.presentation]
 status   = "done"
-gate     = "Native ladder: mappy_labeled.asm (asm_gen on passes.listing, row A3: regenerated unchanged) and Mappy (Japan).mlb (backends.mesen.labels, row A)."
-checked  = "2026-10-23"
-toolset  = "350f686"
+gate     = "Native ladder: mappy_labeled.asm (asm_gen on passes.listing) and Mappy (Japan).mlb (backends.mesen.labels), regenerated from the 2026-10-26 discover: 280 routines, 94 table words (78 before: -2 overrun words, +18 inline), the inline table rendered as .word."
+checked  = "2026-10-26"
+toolset  = "4eb3022"
 evidence = ["mappy_labeled.asm", "Mappy (Japan).mlb", "asm_gen.py", "mappy_mlb.py"]
 
 [phase.assets]
@@ -76,19 +76,22 @@ evidence = ["demo_in_real_game.py", "seed_test.py"]
 item   = "Committed coverage.bin / codegraph.txt come from an older tracer (4,940 bytes, 158 edges; today's gives 5,024 / 162), and the static pipeline is seeded from that stale pair. Regenerate."
 phase  = "discover"
 source = "emu-harness MIGRATION.md row C"
-status = "open"
+status = "closed"
+closed = "2026-10-26: regenerated (5,024 B / 162 edges, +84 B in 5 runs incl. $C6AC). Every static output on the old library was byte-identical: descent already reached the new bytes."
 
 [[revisit]]
 item   = "jump_tables.py overwrites the curated jump_tables.txt (3 hand-added tables: $CC15, $CF69, $D126, from 673a53d). Make it merge or write beside."
 phase  = "discover"
 source = "emu-harness MIGRATION.md rows B, R"
-status = "open"
+status = "closed"
+closed = "2026-10-26: the 3 are DATA pointer tables (draw-command blobs), not dispatch. Moved to hand-kept data_ptr_tables.txt; code_map.table_lines() reads both for all 6 consumers; listing regenerated identical before the discover fixes."
 
 [[revisit]]
 item   = "3 phantoms are labelled as routines: data_or_unclear_c342 ($C342, a 2-byte fragment), data_or_unclear_df09 ($DF09), data_or_unclear ($FA3F, a data blob). Mark them DATA or drop them."
 phase  = "discover"
 source = "build-tool trial 2026-10-26 (labels.toml)"
-status = "open"
+status = "closed"
+closed = "2026-10-26: 1 of 3 was a phantom, plus 1 not listed. $FA3F (made by the $C13E table overrun, $BA3F) and $EEA9 'init_object_slots_strided' (made by the $C356 overrun, $AEA9; an operand byte of adc #$01 inside check_object_player_collision; its why read: loops X += $10 to $90 writing $040B,x/$0407,x/$040F,x) are dropped from labels.toml. $C342 and $DF09 are REAL: traced, JSR callers $C33B/$DD7E, fall-through entries into $C344/$DF0B (naming revisit below)."
 
 [[revisit]]
 item   = "The $0400 object record contradicts vars.toml: vars.toml says $0401 = obj_y, the record says +1 = obj_x_hi (9 bytes disagree; the source of the 9 .mlb conflicts)."
@@ -128,5 +131,41 @@ source = "build-tool trial 2026-10-26"
 status = "closed"
 closed = "2026-10-26: same ROM. PRG (25482CEB) and CHR (B060AFC5) are byte-identical to the repo's; only the iNES header differs (ours NES 2.0, byte 7 = $08, byte 15 = $01; the repo's iNES 1.0, both $00). Our body under repo_header.bin gives 3F0E8E0A exactly. README now says so."
 
+[[revisit]]
+item   = "$C342 (lda ($1e),y then falls into the $C356 mode dispatch at $C344) and $DF09 (ldx #$04, falls into $DF0B) are fall-through entries still named data_or_unclear_c342 / _df09. Name each by role, as an alternate entry of the routine it falls into."
+phase  = "naming"
+source = "discover revisit 2026-10-26"
+status = "open"
+
+[[revisit]]
+item   = "19 discovered entries carry no label: the 18 animation-script opcode handlers in the $F6AC inline table ($F6D0..$F7C2, opcodes >= $E8, the bit-skip trios $F73F/$F743/$F746, $F75A.., $F775..) and $F636 (the script loop head they jump back to)."
+phase  = "naming"
+source = "discover revisit 2026-10-26"
+status = "open"
+
+[[revisit]]
+item   = "check_object_player_collision ($EE77-$EEC8) now owns $EEA9-$EEC8, which the dropped phantom's why described as a strided object-slot init. Re-verify the owner's name covers its tail."
+phase  = "naming"
+source = "discover revisit 2026-10-26"
+status = "open"
+
+[[revisit]]
+item   = "Call-graph reachability from the vectors is 175/275 (64%; $C06D, the frame loop, unreached: fall-through and RESET flow are not edges), and pointer_tables.py's pointer_runs adds 98 entries, mostly mid-routine, which splits the partition (14%). Neither feeds a written artifact yet; fix before the call graph is rebuilt."
+phase  = "structure"
+source = "discover revisit 2026-10-26"
+status = "open"
+
+[[revisit]]
+item   = "labels.toml is not valid TOML (compact rows use ';' separators), so tomllib cannot read it and every consumer parses it by regex."
+phase  = "naming"
+source = "discover revisit 2026-10-26"
+status = "open"
+
+[[revisit]]
+item   = "$C140 is one unreached byte ($3F) between the 1-entry $C13E table and extract_x_top2_bits_to_y ($C141). Identify it (padding, or a table the code never indexes past entry 0)."
+phase  = "data"
+source = "discover revisit 2026-10-26"
+status = "open"
+
 [next]
-session = "discover: regenerate coverage/codegraph on today's tracer without clobbering the curated jump_tables.txt, count walker conflicts, mark the 3 phantoms DATA."
+session = "data (pure lane): reconcile the $0400 record with vars.toml (9 bytes), fix $7B (enemy counter, not draw_data_ptr) and sweep its kind, context-tagged names for the polymorphic fields; the gate is stale only if its tools changed."

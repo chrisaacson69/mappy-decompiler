@@ -16,15 +16,15 @@ from pathlib import Path
 
 from emu_harness.machines.nes.memory import register_name as hwname
 from emu_harness.passes.native import NativeMap, owner as _owner, partition_edges, routine_listing
-from code_map import HERE, WIN
+from code_map import HERE, INLINE_DISPATCH, WIN, table_lines
 
-M = NativeMap(WIN)
+M = NativeMap(WIN, noreturn=INLINE_DISPATCH)
 def norm(a): return M.off(a)
 
 entries = sorted({0xC031,0xC2EF,0xC304} | {int(l.strip()[1:],16) for l in open(HERE/"routines_full.txt")})
 ent = set(entries)
 tables = {}
-for line in open(HERE/"jump_tables.txt"):
+for line in table_lines():
     p=line.split(); tables[int(p[0][1:],16)]=(int(p[1],16),[int(x,16) for x in p[2:]])
 is_data = M.is_data
 for site,(base,e) in tables.items():

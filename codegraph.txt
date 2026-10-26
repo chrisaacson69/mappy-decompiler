@@ -1,9 +1,9 @@
-# coverage=4940/16384  edges=158  indirect=4
+# coverage=5024/16384  edges=162  indirect=4
 ## indirect JMP sites (jump tables) and resolved targets:
   $C13B -> $C84F
-  $C353 -> $C14F $C3C0 $C4A8 $C4B0 $C5A3 $C5B2 $C687 $C6C1
+  $C353 -> $C14F $C3C0 $C4A8 $C4B0 $C5A3 $C5B2 $C687 $C6AC $C6C1
   $DA3F -> $C14F $DA70 $DAC7 $DB37 $DB94 $DC02 $DC5C $DCFE $DE2D $DE61
-  $E657 -> $E660 $E6FA
+  $E657 -> $C14F $E660 $E6FA
 ## direct call/jump targets (sorted):
   $C06D
   $C0D0
@@ -35,6 +35,7 @@
   $C5A3
   $C5B2
   $C687
+  $C6AC
   $C6C1
   $C6FB
   $C702

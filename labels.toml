@@ -339,13 +339,6 @@ conf = "MED"
 why = "Indexed obj array: if $040B,x==$1E and $040F,x==#$16, sets $040F,x=#$18 and $0404,x=0, then iny / (cpx #$20 → ora #$40 into Y); pure RAM state transition, no PPU/APU."
 
 [[label]]
-addr = "EEA9"
-name = "init_object_slots_strided"
-kind = "leaf"
-conf = "MED"
-why = "Loops X += #$10 up to #$90 (9 records of 16 bytes), writing per-record fields $040B,x = $1E, $0407,x = 0, $040F,x = #$16 — strided initialization of a 16-byte object table."
-
-[[label]]
 addr = "F3C1"
 name = "load_record_by_index"
 kind = "leaf"
@@ -640,13 +633,6 @@ name = "fetch_seq_byte_and_advance_index"
 kind = "leaf"
 conf = "MED"
 why = "Reads cursor at ($f0)+5, uses it as Y to load table byte via lda ($f2),y, returns that byte, then increments the cursor and stores it back to ($f0)+5 — fetch-next-and-advance; preceded by cmp $f4 #$13/#$14 state dispatch."
-
-[[label]]
-addr = "FA3F"
-name = "data_or_unclear"
-kind = "leaf"
-conf = "LOW"
-why = "Disassembly is dominated by .db undefined-opcode bytes ($64,$52,$67,$22,$1A,$02...) with no coherent control flow, no PPU/APU/joypad register access, and no sensible instruction sequence — it decodes as a data blob, not executable code."
 
 # --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
 

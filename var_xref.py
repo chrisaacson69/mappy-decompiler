@@ -17,6 +17,7 @@ CLI:
 """
 import re, sys, json, bisect
 from pathlib import Path
+from code_map import table_lines   # jump_tables.txt + data_ptr_tables.txt
 from emu_harness.cpu.m6502 import disasm as disasm6502     # pip install -e ../emu-harness (was koei-nes's alias)
 from emu_harness.cpu.m6502.disasm import IMP,ACC,IMM,ZP,ZPX,ZPY,ABS,ABX,ABY,IND,IZX,IZY,REL
 OPS, MODE_LEN = disasm6502.OPS, disasm6502.MODE_LEN
@@ -36,7 +37,7 @@ for l in (HERE/"labels.toml").read_text(encoding="utf-8").splitlines():
     if m and cur is not None: LABELS[cur]=m.group(1); cur=None
 entries=sorted(set(LABELS)|{0xC031,0xC2EF,0xC304})
 is_data=bytearray(0x4000)
-for line in open(HERE/"jump_tables.txt"):
+for line in table_lines():
     p=line.split(); base=int(p[1],16)
     for k in range(len(p)-2): is_data[norm(base+2*k)]=is_data[norm(base+2*k+1)]=1
 def owner_name(a):

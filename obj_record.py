@@ -18,9 +18,9 @@ import re, sys, json
 from pathlib import Path
 
 from emu_harness.passes.native import NativeMap, field_census
-from code_map import HERE, WIN
+from code_map import HERE, INLINE_DISPATCH, WIN, table_lines
 
-M=NativeMap(WIN)
+M=NativeMap(WIN, noreturn=INLINE_DISPATCH)
 def norm(a): return M.off(a)
 def cpu(a):  return M.canon(a)
 
@@ -31,7 +31,7 @@ for l in (HERE/"labels.toml").read_text(encoding="utf-8").splitlines():
     m=re.search(r'name\s*=\s*"([^"]+)"',l)
     if m and cur is not None: LABELS[cur]=m.group(1); cur=None
 entries=sorted(set(LABELS)|{0xC031,0xC2EF,0xC304})
-for line in open(HERE/"jump_tables.txt"):
+for line in table_lines():
     p=line.split(); M.mark_data(int(p[1],16), 2*(len(p)-2))
 
 # object-record pointer low bytes (from vars.toml: names containing obj + record + ptr, not _hi)

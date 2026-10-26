@@ -10,6 +10,7 @@ jump-table bytes emit as `.word handler_name`; uncovered bytes emit as `.byte` d
 """
 import re, sys, bisect
 from pathlib import Path
+from code_map import table_lines   # jump_tables.txt + data_ptr_tables.txt
 from emu_harness.cpu.m6502 import disasm as disasm6502   # the shared 6502 tables (emu-harness rows B / A3)
 OPS, MODE_LEN, fmt = disasm6502.OPS, disasm6502.MODE_LEN, disasm6502.fmt_operand
 IMP,ACC,IMM,ZP,ZPX,ZPY,ABS,ABX,ABY,IND,IZX,IZY,REL = range(13)
@@ -40,7 +41,7 @@ for a in range(0x4000,0x4014): HW[a]=f"APU_{a:04X}"
 
 # jump tables: data ranges -> {addr: handler_name}
 TABLE={}; is_data=bytearray(0x4000)
-for line in open(HERE/"jump_tables.txt"):
+for line in table_lines():
     p=line.split(); base=int(p[1],16); ents=[int(x,16) for x in p[2:]]
     for k,t in enumerate(ents):
         a=base+2*k

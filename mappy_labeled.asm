@@ -156,10 +156,10 @@ switch_stack_and_jump_to_indexed_handler:
     C13A: 9A          txs
     C13B: 6C 1E 00    jmp (obj_record_ptr)   ; $001E
     C13E:            .word init_stage_with_intro_animation_then_spawn
-    C140:            .word L_BA3F
+    C140: 3F          .byte $3F
 
 extract_x_top2_bits_to_y:
-    C141: BA          .byte $BA
+    C141: BA          tsx
     C142: 8A          txa
     C143: 29 C0       and #$c0
     C145: A8          tay
@@ -520,48 +520,29 @@ dispatch_object_draw_routine_by_index:
     C37A:            .word dispatch_on_obj_flag_bit3
 
 draw_two_tile_object:
-    C37C:            .word L_AEA9
-    C37E: 85          .byte $85
-    C37F: 12          .byte $12
-    C380: A9          .byte $A9
-    C381: 00          .byte $00
-    C382: 85          .byte $85
-    C383: 14          .byte $14
-    C384: A9          .byte $A9
-    C385: 03          .byte $03
-    C386: 85          .byte $85
-    C387: 13          .byte $13
-    C388: A5          .byte $A5
-    C389: 1E          .byte $1E
-    C38A: C9          .byte $C9
-    C38B: 20          .byte $20
-    C38C: D0          .byte $D0
-    C38D: 04          .byte $04
-    C38E: A9          .byte $A9
-    C38F: 66          .byte $66
-    C390: 85          .byte $85
-    C391: 12          .byte $12
-    C392: 20          .byte $20
-    C393: 15          .byte $15
-    C394: C4          .byte $C4
-    C395: A9          .byte $A9
-    C396: 67          .byte $67
-    C397: 85          .byte $85
-    C398: 12          .byte $12
-    C399: A5          .byte $A5
-    C39A: 10          .byte $10
-    C39B: 18          .byte $18
-    C39C: 69          .byte $69
-    C39D: 08          .byte $08
-    C39E: 85          .byte $85
-    C39F: 10          .byte $10
-    C3A0: 90          .byte $90
-    C3A1: 02          .byte $02
-    C3A2: E6          .byte $E6
-    C3A3: 11          .byte $11
-    C3A4: 4C          .byte $4C
-    C3A5: 15          .byte $15
-    C3A6: C4          .byte $C4
+    C37C: A9 AE       lda #$ae
+    C37E: 85 12       sta gfx_src_ptr   ; $12
+    C380: A9 00       lda #$00
+    C382: 85 14       sta scan_src_ptr   ; $14
+    C384: A9 03       lda #$03
+    C386: 85 13       sta data_ptr_hi   ; $13
+    C388: A5 1E       lda obj_record_ptr   ; $1E
+    C38A: C9 20       cmp #$20
+    C38C: D0 04       bne @C392   ; $C392
+    C38E: A9 66       lda #$66
+    C390: 85 12       sta gfx_src_ptr   ; $12
+@C392:
+    C392: 20 15 C4    jsr write_object_to_shadow_oam   ; $C415
+    C395: A9 67       lda #$67
+    C397: 85 12       sta gfx_src_ptr   ; $12
+    C399: A5 10       lda src_ptr   ; $10
+    C39B: 18          clc
+    C39C: 69 08       adc #$08
+    C39E: 85 10       sta src_ptr   ; $10
+    C3A0: 90 02       bcc @C3A4   ; $C3A4
+    C3A2: E6 11       inc zp_ptr_hi   ; $11
+@C3A4:
+    C3A4: 4C 15 C4    jmp write_object_to_shadow_oam   ; $C415
 
 dispatch_on_obj_flag_bit3:
     C3A7: A0 07       ldy #$07
@@ -6529,7 +6510,8 @@ set_obj_state_and_load_next_ptr:
     E557: 88          .byte $88
     E558: 26          .byte $26
     E559: 16          .byte $16
-    E55A: 26 0C       rol seq_ptr_hi   ; $0C
+    E55A: 26          .byte $26
+    E55B: 0C          .byte $0C
     E55C: 27          .byte $27
     E55D: 82          .byte $82
     E55E: 27          .byte $27
@@ -7742,11 +7724,14 @@ scan_objects_for_adjacent_contact_and_trigger:
     EC05: 27          .byte $27
     EC06: 04          .byte $04
     EC07: 26          .byte $26
-    EC08: 25 40       and stage_state   ; $40
-    EC0A: 08          php
-    EC0B: 30 21       bmi @EC2E   ; $EC2E
-    EC0D: 08          php
-    EC0E: 26 26       rol obj_record_ptr   ; $26
+    EC08: 25          .byte $25
+    EC09: 40          .byte $40
+    EC0A: 08          .byte $08
+    EC0B: 30          .byte $30
+    EC0C: 21          .byte $21
+    EC0D: 08          .byte $08
+    EC0E: 26          .byte $26
+    EC0F: 26          .byte $26
     EC10: 0C          .byte $0C
     EC11: 35          .byte $35
     EC12: 23          .byte $23
@@ -7777,7 +7762,6 @@ scan_objects_for_adjacent_contact_and_trigger:
     EC2B: 26          .byte $26
     EC2C: 0C          .byte $0C
     EC2D: B5          .byte $B5
-@EC2E:
     EC2E: 22          .byte $22
     EC2F: 50          .byte $50
     EC30: 08          .byte $08
@@ -8244,9 +8228,7 @@ check_object_player_collision:
     EEA6: 68          pla
     EEA7: 18          clc
     EEA8: 69 01       adc #$01
-
-init_object_slots_strided:
-    EEA9: 01 48       ora (indirect_ptr,x)   ; $48
+    EEAA: 48          pha
 @EEAB:
     EEAB: 68          pla
     EEAC: C9 02       cmp #$02
@@ -9578,328 +9560,165 @@ run_object_animation_script:
 @F6A7:
     F6A7: E9 E8       sbc #$e8
     F6A9: 20 9F F4    jsr jump_table_dispatch_via_index   ; $F49F
-    F6AC: D0 F6       bne @F6A4   ; $F6A4
-    F6AE: DE F6 F0    dec $f0f6,x
-    F6B1: F6 02       inc src_ptr_hi,x   ; $02
-    F6B3: F7          .byte $F7
-    F6B4: 14          .byte $14
-    F6B5: F7          .byte $F7
-    F6B6: 1E F7 28    asl $28f7,x
-    F6B9: F7          .byte $F7
-    F6BA: 32          .byte $32
-    F6BB: F7          .byte $F7
-    F6BC: 3F          .byte $3F
-    F6BD: F7          .byte $F7
-    F6BE: 43          .byte $43
-    F6BF: F7          .byte $F7
-    F6C0: 46          .byte $46
-    F6C1: F7          .byte $F7
-    F6C2: 5A          .byte $5A
-    F6C3: F7          .byte $F7
-    F6C4: 5E          .byte $5E
-    F6C5: F7          .byte $F7
-    F6C6: 61          .byte $61
-    F6C7: F7          .byte $F7
-    F6C8: 75          .byte $75
-    F6C9: F7          .byte $F7
-    F6CA: 79          .byte $79
-    F6CB: F7          .byte $F7
-    F6CC: 7C          .byte $7C
-    F6CD: F7          .byte $F7
-    F6CE: C2          .byte $C2
-    F6CF: F7          .byte $F7
-    F6D0: A6          .byte $A6
-    F6D1: F4          .byte $F4
-    F6D2: A9          .byte $A9
-    F6D3: 00          .byte $00
-    F6D4: 9D          .byte $9D
-    F6D5: 00          .byte $00
-    F6D6: 06          .byte $06
-    F6D7: A0          .byte $A0
-    F6D8: 00          .byte $00
-    F6D9: 91          .byte $91
-    F6DA: F0          .byte $F0
-    F6DB: 4C          .byte $4C
-    F6DC: B8          .byte $B8
-    F6DD: F5          .byte $F5
-    F6DE: 20          .byte $20
-    F6DF: 0B          .byte $0B
-    F6E0: F8          .byte $F8
-    F6E1: 85          .byte $85
-    F6E2: F6          .byte $F6
-    F6E3: A0          .byte $A0
-    F6E4: 01          .byte $01
-    F6E5: B1          .byte $B1
-    F6E6: F0          .byte $F0
-    F6E7: 29          .byte $29
-    F6E8: 3F          .byte $3F
-    F6E9: 05          .byte $05
-    F6EA: F6          .byte $F6
-    F6EB: 91          .byte $91
-    F6EC: F0          .byte $F0
-    F6ED: 4C          .byte $4C
-    F6EE: 36          .byte $36
-    F6EF: F6          .byte $F6
-    F6F0: 20          .byte $20
-    F6F1: 0B          .byte $0B
-    F6F2: F8          .byte $F8
-    F6F3: 85          .byte $85
-    F6F4: F6          .byte $F6
-    F6F5: A0          .byte $A0
-    F6F6: 01          .byte $01
-    F6F7: B1          .byte $B1
-    F6F8: F0          .byte $F0
-    F6F9: 29          .byte $29
-    F6FA: C0          .byte $C0
-    F6FB: 05          .byte $05
-    F6FC: F6          .byte $F6
-    F6FD: 91          .byte $91
-    F6FE: F0          .byte $F0
-    F6FF: 4C          .byte $4C
-    F700: 36          .byte $36
-    F701: F6          .byte $F6
-    F702: 20          .byte $20
-    F703: 0B          .byte $0B
-    F704: F8          .byte $F8
-    F705: 85          .byte $85
-    F706: F6          .byte $F6
-    F707: A0          .byte $A0
-    F708: 01          .byte $01
-    F709: B1          .byte $B1
-    F70A: F0          .byte $F0
-    F70B: 29          .byte $29
-    F70C: F0          .byte $F0
-    F70D: 05          .byte $05
-    F70E: F6          .byte $F6
-    F70F: 91          .byte $91
-    F710: F0          .byte $F0
-    F711: 4C          .byte $4C
-    F712: 36          .byte $36
-    F713: F6          .byte $F6
-    F714: 20          .byte $20
-    F715: 0B          .byte $0B
-    F716: F8          .byte $F8
-    F717: A0          .byte $A0
-    F718: 02          .byte $02
-    F719: 91          .byte $91
-    F71A: F0          .byte $F0
-    F71B: 4C          .byte $4C
-    F71C: 36          .byte $36
-    F71D: F6          .byte $F6
-    F71E: 20          .byte $20
-    F71F: 0B          .byte $0B
-    F720: F8          .byte $F8
-    F721: A0          .byte $A0
-    F722: 04          .byte $04
-    F723: 91          .byte $91
-    F724: F0          .byte $F0
-    F725: 4C          .byte $4C
-    F726: 36          .byte $36
-    F727: F6          .byte $F6
-    F728: 20          .byte $20
-    F729: 0B          .byte $0B
-    F72A: F8          .byte $F8
-    F72B: A0          .byte $A0
-    F72C: 01          .byte $01
-    F72D: 91          .byte $91
-    F72E: F0          .byte $F0
-    F72F: 4C          .byte $4C
-    F730: 36          .byte $36
-    F731: F6          .byte $F6
-    F732: A9          .byte $A9
-    F733: 00          .byte $00
-    F734: A2          .byte $A2
-    F735: 08          .byte $08
-    F736: 9D          .byte $9D
-    F737: 61          .byte $61
-    F738: 01          .byte $01
-    F739: CA          .byte $CA
-    F73A: 10          .byte $10
-    F73B: FA          .byte $FA
-    F73C: 4C          .byte $4C
-    F73D: 36          .byte $36
-    F73E: F6          .byte $F6
-    F73F: A2          .byte $A2
-    F740: 00          .byte $00
-    F741: F0          .byte $F0
-    F742: 05          .byte $05
-    F743: A2          .byte $A2
-    F744: 01          .byte $01
-    F745: 2C          .byte $2C
-    F746: A2          .byte $A2
-    F747: 02          .byte $02
-    F748: 20          .byte $20
-    F749: 0B          .byte $0B
-    F74A: F8          .byte $F8
-    F74B: FE          .byte $FE
-    F74C: 61          .byte $61
-    F74D: 01          .byte $01
-    F74E: DD          .byte $DD
-    F74F: 61          .byte $61
-    F750: 01          .byte $01
-    F751: D0          .byte $D0
-    F752: 6F          .byte $6F
-    F753: A9          .byte $A9
-    F754: 00          .byte $00
-    F755: 9D          .byte $9D
-    F756: 61          .byte $61
-    F757: 01          .byte $01
-    F758: F0          .byte $F0
-    F759: 36          .byte $36
-    F75A: A2          .byte $A2
-    F75B: 00          .byte $00
-    F75C: F0          .byte $F0
-    F75D: 05          .byte $05
-    F75E: A2          .byte $A2
-    F75F: 01          .byte $01
-    F760: 2C          .byte $2C
-    F761: A2          .byte $A2
-    F762: 02          .byte $02
-    F763: 20          .byte $20
-    F764: 0B          .byte $0B
-    F765: F8          .byte $F8
-    F766: FE          .byte $FE
-    F767: 64          .byte $64
-    F768: 01          .byte $01
-    F769: DD          .byte $DD
-    F76A: 64          .byte $64
-    F76B: 01          .byte $01
-    F76C: D0          .byte $D0
-    F76D: 22          .byte $22
-    F76E: A9          .byte $A9
-    F76F: 00          .byte $00
-    F770: 9D          .byte $9D
-    F771: 64          .byte $64
-    F772: 01          .byte $01
-    F773: F0          .byte $F0
-    F774: 4D          .byte $4D
-    F775: A2          .byte $A2
-    F776: 00          .byte $00
-    F777: F0          .byte $F0
-    F778: 05          .byte $05
-    F779: A2          .byte $A2
-    F77A: 01          .byte $01
-    F77B: 2C          .byte $2C
-    F77C: A2          .byte $A2
-    F77D: 02          .byte $02
-    F77E: 20          .byte $20
-    F77F: 0B          .byte $0B
-    F780: F8          .byte $F8
-    F781: FE          .byte $FE
-    F782: 67          .byte $67
-    F783: 01          .byte $01
-    F784: DD          .byte $DD
-    F785: 67          .byte $67
-    F786: 01          .byte $01
-    F787: D0          .byte $D0
-    F788: 07          .byte $07
-    F789: A9          .byte $A9
-    F78A: 00          .byte $00
-    F78B: 9D          .byte $9D
-    F78C: 67          .byte $67
-    F78D: 01          .byte $01
-    F78E: F0          .byte $F0
-    F78F: 32          .byte $32
-    F790: A5          .byte $A5
-    F791: F4          .byte $F4
-    F792: C9          .byte $C9
-    F793: 13          .byte $13
-    F794: F0          .byte $F0
-    F795: 10          .byte $10
-    F796: C9          .byte $C9
-    F797: 14          .byte $14
-    F798: F0          .byte $F0
-    F799: 1A          .byte $1A
-    F79A: A0          .byte $A0
-    F79B: 05          .byte $05
-    F79C: B1          .byte $B1
-    F79D: F0          .byte $F0
-    F79E: 18          .byte $18
-    F79F: 69          .byte $69
-    F7A0: 01          .byte $01
-    F7A1: 91          .byte $91
-    F7A2: F0          .byte $F0
-    F7A3: 4C          .byte $4C
-    F7A4: 36          .byte $36
-    F7A5: F6          .byte $F6
-    F7A6: A5          .byte $A5
-    F7A7: F8          .byte $F8
-    F7A8: 18          .byte $18
-    F7A9: 69          .byte $69
-    F7AA: 02          .byte $02
-    F7AB: 85          .byte $85
-    F7AC: F8          .byte $F8
-    F7AD: 90          .byte $90
-    F7AE: 02          .byte $02
-    F7AF: E6          .byte $E6
-    F7B0: F9          .byte $F9
-    F7B1: 4C          .byte $4C
-    F7B2: 36          .byte $36
-    F7B3: F6          .byte $F6
-    F7B4: A5          .byte $A5
-    F7B5: FA          .byte $FA
-    F7B6: 18          .byte $18
-    F7B7: 69          .byte $69
-    F7B8: 02          .byte $02
-    F7B9: 85          .byte $85
-    F7BA: FA          .byte $FA
-    F7BB: 90          .byte $90
-    F7BC: 02          .byte $02
-    F7BD: E6          .byte $E6
-    F7BE: FB          .byte $FB
-    F7BF: 4C          .byte $4C
-    F7C0: 36          .byte $36
-    F7C1: F6          .byte $F6
-    F7C2: A5          .byte $A5
-    F7C3: F4          .byte $F4
-    F7C4: C9          .byte $C9
-    F7C5: 13          .byte $13
-    F7C6: F0          .byte $F0
-    F7C7: 0E          .byte $0E
-    F7C8: C9          .byte $C9
-    F7C9: 14          .byte $14
-    F7CA: F0          .byte $F0
-    F7CB: 19          .byte $19
-    F7CC: 20          .byte $20
-    F7CD: 0B          .byte $0B
-    F7CE: F8          .byte $F8
-    F7CF: A0          .byte $A0
-    F7D0: 05          .byte $05
-    F7D1: 91          .byte $91
-    F7D2: F0          .byte $F0
-    F7D3: 4C          .byte $4C
-    F7D4: 36          .byte $36
-    F7D5: F6          .byte $F6
-    F7D6: 20          .byte $20
-    F7D7: 0B          .byte $0B
-    F7D8: F8          .byte $F8
-    F7D9: 48          .byte $48
-    F7DA: 20          .byte $20
-    F7DB: 0B          .byte $0B
-    F7DC: F8          .byte $F8
-    F7DD: 85          .byte $85
-    F7DE: F9          .byte $F9
-    F7DF: 68          .byte $68
-    F7E0: 85          .byte $85
-    F7E1: F8          .byte $F8
-    F7E2: 4C          .byte $4C
-    F7E3: 36          .byte $36
-    F7E4: F6          .byte $F6
-    F7E5: 20          .byte $20
-    F7E6: 0B          .byte $0B
-    F7E7: F8          .byte $F8
-    F7E8: 48          .byte $48
-    F7E9: 20          .byte $20
-    F7EA: 0B          .byte $0B
-    F7EB: F8          .byte $F8
-    F7EC: 85          .byte $85
-    F7ED: FB          .byte $FB
-    F7EE: 68          .byte $68
-    F7EF: 85          .byte $85
-    F7F0: FA          .byte $FA
-    F7F1: 4C          .byte $4C
-    F7F2: 36          .byte $36
-    F7F3: F6          .byte $F6
+    F6AC:            .word L_F6D0
+    F6AE:            .word L_F6DE
+    F6B0:            .word L_F6F0
+    F6B2:            .word L_F702
+    F6B4:            .word L_F714
+    F6B6:            .word L_F71E
+    F6B8:            .word L_F728
+    F6BA:            .word L_F732
+    F6BC:            .word L_F73F
+    F6BE:            .word L_F743
+    F6C0:            .word L_F746
+    F6C2:            .word L_F75A
+    F6C4:            .word L_F75E
+    F6C6:            .word L_F761
+    F6C8:            .word L_F775
+    F6CA:            .word L_F779
+    F6CC:            .word L_F77C
+    F6CE:            .word L_F7C2
+    F6D0: A6 F4       ldx sound_seq_index   ; $F4
+    F6D2: A9 00       lda #$00
+    F6D4: 9D 00 06    sta obj_state_table,x   ; $0600
+    F6D7: A0 00       ldy #$00
+    F6D9: 91 F0       sta (work_ptr),y   ; $F0
+    F6DB: 4C B8 F5    jmp advance_to_next_8byte_record_and_loop   ; $F5B8
+    F6DE: 20 0B F8    jsr fetch_seq_byte_and_advance_index   ; $F80B
+    F6E1: 85 F6       sta indirect_ptr   ; $F6
+    F6E3: A0 01       ldy #$01
+    F6E5: B1 F0       lda (work_ptr),y   ; $F0
+    F6E7: 29 3F       and #$3f
+    F6E9: 05 F6       ora indirect_ptr   ; $F6
+    F6EB: 91 F0       sta (work_ptr),y   ; $F0
+    F6ED: 4C 36 F6    jmp $f636
+    F6F0: 20 0B F8    jsr fetch_seq_byte_and_advance_index   ; $F80B
+    F6F3: 85 F6       sta indirect_ptr   ; $F6
+    F6F5: A0 01       ldy #$01
+    F6F7: B1 F0       lda (work_ptr),y   ; $F0
+    F6F9: 29 C0       and #$c0
+    F6FB: 05 F6       ora indirect_ptr   ; $F6
+    F6FD: 91 F0       sta (work_ptr),y   ; $F0
+    F6FF: 4C 36 F6    jmp $f636
+    F702: 20 0B F8    jsr fetch_seq_byte_and_advance_index   ; $F80B
+    F705: 85 F6       sta indirect_ptr   ; $F6
+    F707: A0 01       ldy #$01
+    F709: B1 F0       lda (work_ptr),y   ; $F0
+    F70B: 29 F0       and #$f0
+    F70D: 05 F6       ora indirect_ptr   ; $F6
+    F70F: 91 F0       sta (work_ptr),y   ; $F0
+    F711: 4C 36 F6    jmp $f636
+    F714: 20 0B F8    jsr fetch_seq_byte_and_advance_index   ; $F80B
+    F717: A0 02       ldy #$02
+    F719: 91 F0       sta (work_ptr),y   ; $F0
+    F71B: 4C 36 F6    jmp $f636
+    F71E: 20 0B F8    jsr fetch_seq_byte_and_advance_index   ; $F80B
+    F721: A0 04       ldy #$04
+    F723: 91 F0       sta (work_ptr),y   ; $F0
+    F725: 4C 36 F6    jmp $f636
+    F728: 20 0B F8    jsr fetch_seq_byte_and_advance_index   ; $F80B
+    F72B: A0 01       ldy #$01
+    F72D: 91 F0       sta (work_ptr),y   ; $F0
+    F72F: 4C 36 F6    jmp $f636
+    F732: A9 00       lda #$00
+    F734: A2 08       ldx #$08
+@F736:
+    F736: 9D 61 01    sta $0161,x
+    F739: CA          dex
+    F73A: 10 FA       bpl @F736   ; $F736
+    F73C: 4C 36 F6    jmp $f636
+    F73F: A2 00       ldx #$00
+    F741: F0 05       beq @F748   ; $F748
+    F743: A2 01       ldx #$01
+    F745: 2C A2 02    bit $02a2
+@F748:
+    F748: 20 0B F8    jsr fetch_seq_byte_and_advance_index   ; $F80B
+    F74B: FE 61 01    inc $0161,x
+    F74E: DD 61 01    cmp $0161,x
+    F751: D0 6F       bne @F7C2   ; $F7C2
+    F753: A9 00       lda #$00
+    F755: 9D 61 01    sta $0161,x
+    F758: F0 36       beq @F790   ; $F790
+    F75A: A2 00       ldx #$00
+    F75C: F0 05       beq @F763   ; $F763
+    F75E: A2 01       ldx #$01
+    F760: 2C A2 02    bit $02a2
+@F763:
+    F763: 20 0B F8    jsr fetch_seq_byte_and_advance_index   ; $F80B
+    F766: FE 64 01    inc $0164,x
+    F769: DD 64 01    cmp $0164,x
+    F76C: D0 22       bne @F790   ; $F790
+    F76E: A9 00       lda #$00
+    F770: 9D 64 01    sta $0164,x
+    F773: F0 4D       beq @F7C2   ; $F7C2
+    F775: A2 00       ldx #$00
+    F777: F0 05       beq @F77E   ; $F77E
+    F779: A2 01       ldx #$01
+    F77B: 2C A2 02    bit $02a2
+@F77E:
+    F77E: 20 0B F8    jsr fetch_seq_byte_and_advance_index   ; $F80B
+    F781: FE 67 01    inc $0167,x
+    F784: DD 67 01    cmp $0167,x
+    F787: D0 07       bne @F790   ; $F790
+    F789: A9 00       lda #$00
+    F78B: 9D 67 01    sta $0167,x
+    F78E: F0 32       beq @F7C2   ; $F7C2
+@F790:
+    F790: A5 F4       lda sound_seq_index   ; $F4
+    F792: C9 13       cmp #$13
+    F794: F0 10       beq @F7A6   ; $F7A6
+    F796: C9 14       cmp #$14
+    F798: F0 1A       beq @F7B4   ; $F7B4
+    F79A: A0 05       ldy #$05
+    F79C: B1 F0       lda (work_ptr),y   ; $F0
+    F79E: 18          clc
+    F79F: 69 01       adc #$01
+    F7A1: 91 F0       sta (work_ptr),y   ; $F0
+    F7A3: 4C 36 F6    jmp $f636
+@F7A6:
+    F7A6: A5 F8       lda anim_script_ptr   ; $F8
+    F7A8: 18          clc
+    F7A9: 69 02       adc #$02
+    F7AB: 85 F8       sta anim_script_ptr   ; $F8
+    F7AD: 90 02       bcc @F7B1   ; $F7B1
+    F7AF: E6 F9       inc anim_script_ptr_hi   ; $F9
+@F7B1:
+    F7B1: 4C 36 F6    jmp $f636
+@F7B4:
+    F7B4: A5 FA       lda anim_script_ptr   ; $FA
+    F7B6: 18          clc
+    F7B7: 69 02       adc #$02
+    F7B9: 85 FA       sta anim_script_ptr   ; $FA
+    F7BB: 90 02       bcc @F7BF   ; $F7BF
+    F7BD: E6 FB       inc seq_data_ptr_hi   ; $FB
+@F7BF:
+    F7BF: 4C 36 F6    jmp $f636
+@F7C2:
+    F7C2: A5 F4       lda sound_seq_index   ; $F4
+    F7C4: C9 13       cmp #$13
+    F7C6: F0 0E       beq @F7D6   ; $F7D6
+    F7C8: C9 14       cmp #$14
+    F7CA: F0 19       beq @F7E5   ; $F7E5
+    F7CC: 20 0B F8    jsr fetch_seq_byte_and_advance_index   ; $F80B
+    F7CF: A0 05       ldy #$05
+    F7D1: 91 F0       sta (work_ptr),y   ; $F0
+    F7D3: 4C 36 F6    jmp $f636
+@F7D6:
+    F7D6: 20 0B F8    jsr fetch_seq_byte_and_advance_index   ; $F80B
+    F7D9: 48          pha
+    F7DA: 20 0B F8    jsr fetch_seq_byte_and_advance_index   ; $F80B
+    F7DD: 85 F9       sta anim_script_ptr_hi   ; $F9
+    F7DF: 68          pla
+    F7E0: 85 F8       sta anim_script_ptr   ; $F8
+    F7E2: 4C 36 F6    jmp $f636
+@F7E5:
+    F7E5: 20 0B F8    jsr fetch_seq_byte_and_advance_index   ; $F80B
+    F7E8: 48          pha
+    F7E9: 20 0B F8    jsr fetch_seq_byte_and_advance_index   ; $F80B
+    F7EC: 85 FB       sta seq_data_ptr_hi   ; $FB
+    F7EE: 68          pla
+    F7EF: 85 FA       sta anim_script_ptr   ; $FA
+    F7F1: 4C 36 F6    jmp $f636
 
 set_ptr_from_word_table_by_id:
     F7F4: A5 F4       lda sound_seq_index   ; $F4
@@ -10465,10 +10284,9 @@ fetch_seq_byte_and_advance_index:
     FA3C: 64          .byte $64
     FA3D: 02          .byte $02
     FA3E: 63          .byte $63
-
-data_or_unclear:
-    FA3F: 2A          rol a
-    FA40: 61 3A       adc ($3a,x)
+    FA3F: 2A          .byte $2A
+    FA40: 61          .byte $61
+    FA41: 3A          .byte $3A
     FA42: 64          .byte $64
     FA43: 4A          .byte $4A
     FA44: 68          .byte $68

@@ -16,16 +16,16 @@ import re
 from pathlib import Path
 
 from emu_harness.passes.native import NativeMap, owner as _owner, partition_edges, pointer_runs, reachable
-from code_map import HERE, WIN
+from code_map import HERE, INLINE_DISPATCH, WIN, table_lines
 
 def cpu(a):  return M.canon(a)
 
 seeds = {0xC031,0xC2EF,0xC304} | {int(l.strip()[1:],16) for l in open(HERE/"routines_full.txt")}
 M = NativeMap(WIN, bytearray((HERE/"coverage_full2.bin").read_bytes() if (HERE/"coverage_full2.bin").exists()
-                             else (HERE/"coverage_full.bin").read_bytes()))
+                             else (HERE/"coverage_full.bin").read_bytes()), noreturn=INLINE_DISPATCH)
 code, PRG = M.code, M.buf
 known_tables = {}
-for line in open(HERE/"jump_tables.txt"):
+for line in table_lines():
     p=line.split(); known_tables[int(p[0][1:],16)]=(int(p[1],16),[int(x,16) for x in p[2:]])
     M.mark_data(int(p[1],16), 2*(len(p)-2))
 
