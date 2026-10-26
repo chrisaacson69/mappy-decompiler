@@ -293,6 +293,27 @@ Compare Adventure (1.19 MHz / 60 Hz = **~19,912 cycles per frame**, of which ~5,
 
 **Big find of chapter 1:** the structural shift isn't just "NES has more capability." It's that **logic and rendering happen in parallel** because they're on different chips, with NMI as the synchronization primitive. Adventure forced the CPU to spend most cycles painting the picture; Mappy spends ~5× more CPU time on game logic because the PPU paints autonomously. This single architectural change is what enables NES games to carry richer state machines, scripted events, and continuous music — the storytelling-as-code shift the project README posits.
 
+## Correction (2026-10-26): two threads, two stacks
+
+The emu-harness revisit (`re-roadmap.toml`, naming phase) read the stack code whole. The "one 96-byte stack" above
+is wrong, and so is "the main loop has no per-frame timer" as a full account. Mappy runs **two threads**:
+
+- **The render loop** (`render_loop`, `$C06D`) runs in the reset context on the stack from `$015F` down
+  (`LDX #$5F / TXS`). Each frame it waits for the NMI's flag, uploads OAM and the VRAM queues, reads input, runs
+  sound, then calls `swap_stack_pointer` with Y=0.
+- **The game thread** starts at reset through `start_game_thread` (`$C128`): its record at `$C13E` gives the
+  entry `$C84F` and the stack top `$3F`, so it runs on the stack from `$013F` down. It gives the frame back
+  through `yield_to_render_loop` (`$C141`: `TSX / TXA / AND #$C0 / TAY`, then the same swap), which 15 places
+  call, often in "wait N frames" loops.
+- **The swap** (`$C146`) is five instructions: save this SP in `$0100`, load the other's, `TXS`, `RTS`, which
+  returns into the other thread. On frames where `$23` is set, the render loop skips the swap and the game
+  thread does not run.
+
+The rest of page 1 is what the "reserved" upper part holds: `$0161`-`$0169` are the sound streams' loop
+counters, `$0170`-`$017F` the attribute dirty bitmap and `$0180`-`$01FF` the attribute shadow
+(`flush_dirty_attribute_bytes`). The interactive call tree (`call_tree.html`, from `call_graph.py`) shows the
+task switch as its own edge kind.
+
 ## What chapter 1 sets up for chapter 2
 
 - **The 16-byte object record** (already documented in `bank_val.inc`) — sub-pixel positions, animation, type, direction, timer, and 7 player-only extension bytes. That's where game state lives, and how Mappy's "objects" compare to Adventure's 5-byte movables.
