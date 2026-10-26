@@ -1905,3 +1905,1165 @@ name = "dead_toggle_cat_touch_flag"
 kind = "dead"
 conf = "MED"
 why = "Top-down 2026-10-26 (game thread, flows): 24 bytes no operand, table or trace reaches (rom_data 'read at -', CDL never executed), shaped like title_menu_cursor and falling into queue_vram_packet: on a fresh press ($22 & 3 = 1) countdown $F0, toggle $2E, queue packet $10 + 2*$2E (blank / 'N' at $21AC). $2E is the flag walking_cat_touches_player checks first: set, no cat can catch the player. An unreachable invincibility switch."
+
+[[label]]
+addr = "C000"
+name = "rom_copyright_ascii"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: ASCII 'COPYRIGHT 1983 1984 NAMCO LTD.ALL RIGHTS RESERVED' (49 bytes). choose_cat_target_floor reads $C000 + frame_counter as its random bit, so the cats' coin flips come from this text and the code after it."
+
+[[label]]
+addr = "C123"
+name = "txt_pause_sprites"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: D0 D2 DC CF D4: PAUSE in the sprite pattern table, read by build_sprite_row_oam_shadow (proven in the variables pass)."
+
+[[label]]
+addr = "C13E"
+name = "game_thread_task"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: one 3-byte task record [handler $C84F start_game_thread's body][stack slot $3F], read by start_game_thread."
+
+[[label]]
+addr = "C258"
+name = "pad_lr_to_direction"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 00 FF 01 00: read_and_decode_input maps the pad's left/right bits to a direction (none, -1, +1, both = none)."
+
+[[label]]
+addr = "C356"
+name = "tbl_draw_by_anim"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 19 handler words, indexed by anim & $FE (dispatch_object_draw_by_anim)."
+
+[[label]]
+addr = "C455"
+name = "write_sprite_to_oam_data_c455"
+kind = "data"
+conf = "MED"
+why = "Data walk 2026-10-26: 00 F0 20 D0 40 B0 60 90 ...: EORed with X by write_sprite_to_oam, indexed by the attribute's low nibble."
+
+[[label]]
+addr = "C47C"
+name = "tbl_type_sprite_palette"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 00 02 02 01: the sprite palette per type (player 0, types 1 and 2 palette 2, cats 1), load_type_sprite_palette."
+
+[[label]]
+addr = "C480"
+name = "tbl_pose_tile_base"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: first tile of each pose's metasprite, indexed by the pose number (load_metasprite_tile_base)."
+
+[[label]]
+addr = "C573"
+name = "tbl_wave_score_tiles"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: sprite tiles, 0 = none, read by draw_score_tile_if_any for the door wave's score (draw_wave_score)."
+
+[[label]]
+addr = "CB8A"
+name = "ptr_player_text"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: word -> $CB8C, the sprite text block PLAYER (draw_player_number_text)."
+
+[[label]]
+addr = "CB8C"
+name = "spr_text_player"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: [x 58 00][y 78][7] P L A Y E R blank, sprite glyphs (draw_sprite_text)."
+
+[[label]]
+addr = "CB97"
+name = "ptr_game_over_text"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: word -> $CB99 (draw_game_over_text)."
+
+[[label]]
+addr = "CB99"
+name = "spr_text_game_over"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: [x 58 00][y 88][9] G A M E blank O V E R."
+
+[[label]]
+addr = "CBA6"
+name = "ptr_ready_text"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: word -> $CBA8 (play_round)."
+
+[[label]]
+addr = "CBA8"
+name = "spr_text_ready"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: [x 60 00][y 88][5] R E A D Y."
+
+[[label]]
+addr = "CBED"
+name = "title_logo_row_addrs"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 4 nametable words $2107 $2127 $2147 $2167: the rows of the 20-tile title logo (draw_title_screen)."
+
+[[label]]
+addr = "CD39"
+name = "title_object_record"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 00 0C 00 14 1C: x $0C.00, y $14.00, anim $1C (init_title_object)."
+
+[[label]]
+addr = "CF08"
+name = "tbl_text_lines"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 4-byte records [nametable address][text pointer], indexed by draw_indexed_text_line: the bonus results lines (EARNINGS / PERFECT GAME / TOTAL, decoded by rom_data.py)."
+
+[[label]]
+addr = "D536"
+name = "tbl_bcd_add_records"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: words -> records [zero-page target X][amount pointer][byte count], read by bcd_add_from_table."
+
+[[label]]
+addr = "D561"
+name = "ptr_score_amounts"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: word -> $D563: add_score_from_table adds ($D563 + Y), 4 BCD bytes, into the score at $71-$74."
+
+[[label]]
+addr = "D563"
+name = "tbl_score_amounts"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 4-byte BCD amounts by offset Y (the callers' Y: $08 a knocked-out cat, $3C a trampoline bounce, $44 slot 2, ...)."
+
+[[label]]
+addr = "D640"
+name = "tbl_bcd_number_entries"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: words -> [PPU address][zero-page source][byte count][flag] (queue_bcd_number)."
+
+[[label]]
+addr = "D7AD"
+name = "tbl_vram_packets"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 10 words -> [address][count][tiles]: 00/02 blanks, 04/06 1UP/2UP, 08-0E the menu cursor, 10/12 the dead switch's blank / 'N' (queue_vram_packet)."
+
+[[label]]
+addr = "D838"
+name = "player_record_template"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 00 34 00 1A 02 00 FF: x $34, y $1A, anim 2, type 0, facing left (init_player_record)."
+
+[[label]]
+addr = "D83F"
+name = "bonus_player_template"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 00 35 00 0A 06 00 FF: x $35, y $0A, anim 6 (init_bonus_player)."
+
+[[label]]
+addr = "D8D3"
+name = "bonus_goal_template"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 00 05 00 18 18: x 5, y $18, anim $18 (init_bonus_goal_object)."
+
+[[label]]
+addr = "DA42"
+name = "tbl_object_state_handlers"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 23 handler words by state (dispatch_object_state)."
+
+[[label]]
+addr = "E010"
+name = "tile_read_offsets"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 4 (dx, dy) tile pairs by X = 0, 2, 4, 6 (queue_tile_read)."
+
+[[label]]
+addr = "E17A"
+name = "tbl_bonus_state_handlers"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 10 handler words by state in a bonus round."
+
+[[label]]
+addr = "E332"
+name = "released_cat_template"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 00 05 00 18 06 02 FF: slot 2 at x 5, y $18, anim 6, type 2, facing left (bonus_state0E_goal_object)."
+
+[[label]]
+addr = "E4CD"
+name = "trampoline_bounce_curve"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: signed word offsets from the trampoline's row, one per bounce frame (trampoline_bounce_step; find_trampoline_below reads the first)."
+
+[[label]]
+addr = "E4E1"
+name = "tbl_round_trampoline_set"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: per stage_number: which trampoline list (load_round_trampolines)."
+
+[[label]]
+addr = "E4F1"
+name = "tbl_trampoline_set_ptrs"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: words -> [count][position indexes ...] (load_round_trampolines)."
+
+[[label]]
+addr = "E537"
+name = "tbl_trampoline_addrs"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: nametable address words by position index (load / draw / erase)."
+
+[[label]]
+addr = "E569"
+name = "tbl_trampoline_pictures"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: words -> RLE pictures: the bounce frames and $14 the broken trampoline (draw_text_from_table)."
+
+[[label]]
+addr = "E65A"
+name = "tbl_item_state_handlers"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 3 handler words by item state: 0 none, 2 player_collects_item, 4 show_item_points."
+
+[[label]]
+addr = "E798"
+name = "ptr_round_items"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: word -> $E79A, the one item descriptor every normal round uses (load_round_items)."
+
+[[label]]
+addr = "E79A"
+name = "round_items_descriptor"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: $50 (10 items x 8 bytes), then the 10 kinds 00 02 ... 12."
+
+[[label]]
+addr = "E7A5"
+name = "tbl_item_addrs"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: nametable address words by item kind (draw_at_item_address, load_round_items)."
+
+[[label]]
+addr = "E7B9"
+name = "tbl_item_pictures"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: words -> RLE pictures, one per pair; entry 10 the erase (draw_item, erase_item)."
+
+[[label]]
+addr = "EA49"
+name = "tbl_door_kind_knockback"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 4 handler words by door kind & 6, jumped through $EA46."
+
+[[label]]
+addr = "EAFC"
+name = "tbl_round_door_lists"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: words by stage_number -> [count][kind, address ...] (load_round_doors)."
+
+[[label]]
+addr = "EC4F"
+name = "tbl_door_pictures"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: words -> RLE pictures by door kind / swing frame (draw_door_kind_y)."
+
+[[label]]
+addr = "EF2F"
+name = "dropped_objects_template"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 16 bytes copied to $A0-$AF in rounds 8-10 (load_dropped_objects)."
+
+[[label]]
+addr = "F041"
+name = "floor_trap_addrs"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: nametable address words, 2 per round 12-14 (init_floor_trap)."
+
+[[label]]
+addr = "F128"
+name = "tbl_floor_trap_pictures"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 3 words -> open ($51 $51), pressed ($50 $50), floor ($4A $4A)."
+
+[[label]]
+addr = "F1B5"
+name = "tbl_bonus_target_handlers"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 2 handler words: 0 none, 2 bonus_target_live."
+
+[[label]]
+addr = "F263"
+name = "tbl_bonus_target_pictures"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 2 words -> the target's two animation frames (animate_bonus_target)."
+
+[[label]]
+addr = "F277"
+name = "ptr_popped_target_picture"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: word -> the erase picture (pop_bonus_target)."
+
+[[label]]
+addr = "F27F"
+name = "tbl_bonus_target_lists"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: words by is_bonus_round -> [length][addresses ...] (load_bonus_targets)."
+
+[[label]]
+addr = "F3AA"
+name = "hurry_sprite_record"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 8 bytes copied to $0490 at the time limit: the HURRY sprite (tick_round_timer)."
+
+[[label]]
+addr = "F3DF"
+name = "tbl_stage_params"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 6 bytes per stage_index into $63-$68 (load_stage_params)."
+
+[[label]]
+addr = "F83B"
+name = "tbl_note_periods"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: 11-bit APU period words ($07F2, $0780, $0714 ...) read by run_voice_stream."
+
+[[label]]
+addr = "F853"
+name = "tbl_voice_stream_ptrs"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: stream pointer words by voice (load_voice_stream_ptr)."
+
+[[label]]
+addr = "F879"
+name = "voice13_stream"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: word -> voice 13's stream (sound_streams_next_voice)."
+
+[[label]]
+addr = "F87B"
+name = "voice14_stream"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: word -> voice 14's stream (sound_streams_next_voice)."
+
+[[label]]
+addr = "F885"
+name = "sound_registers_next_voice_data_f885"
+kind = "data"
+conf = "MED"
+why = "Data walk 2026-10-26: 25 bytes, one per voice, 0 or 1; a nonzero one is tested against its trigger."
+
+[[label]]
+addr = "F89E"
+name = "init_sound_voices_data_f89e"
+kind = "data"
+conf = "MED"
+why = "Data walk 2026-10-26: 25 bytes, one per voice (01, or 04 for voices 19-20), copied to $06E2+."
+
+[[label]]
+addr = "CF1C"
+name = "text_line_00"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_text_lines at offset $00 (draw_indexed_text_line; Y 0-$10 by 4 (show_bonus_results))."
+
+[[label]]
+addr = "CF26"
+name = "text_line_04"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_text_lines at offset $04 (draw_indexed_text_line; Y 0-$10 by 4 (show_bonus_results))."
+
+[[label]]
+addr = "CF3A"
+name = "text_line_08"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_text_lines at offset $08 (draw_indexed_text_line; Y 0-$10 by 4 (show_bonus_results))."
+
+[[label]]
+addr = "CF48"
+name = "text_line_0c"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_text_lines at offset $0C (draw_indexed_text_line; Y 0-$10 by 4 (show_bonus_results))."
+
+[[label]]
+addr = "CF5F"
+name = "text_line_10"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_text_lines at offset $10 (draw_indexed_text_line; Y 0-$10 by 4 (show_bonus_results))."
+
+[[label]]
+addr = "D544"
+name = "bcd_add_record_00"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_add_records at offset $00 (bcd_add_from_table; Y up to $0C)."
+
+[[label]]
+addr = "D548"
+name = "bcd_add_record_02"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_add_records at offset $02 (bcd_add_from_table; Y up to $0C)."
+
+[[label]]
+addr = "D54C"
+name = "bcd_add_record_04"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_add_records at offset $04 (bcd_add_from_table; Y up to $0C)."
+
+[[label]]
+addr = "D550"
+name = "bcd_add_record_06"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_add_records at offset $06 (bcd_add_from_table; Y up to $0C)."
+
+[[label]]
+addr = "D554"
+name = "bcd_add_record_08"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_add_records at offset $08 (bcd_add_from_table; Y up to $0C)."
+
+[[label]]
+addr = "D558"
+name = "bcd_add_record_0a"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_add_records at offset $0A (bcd_add_from_table; Y up to $0C)."
+
+[[label]]
+addr = "D55C"
+name = "bcd_add_record_0c"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_add_records at offset $0C (bcd_add_from_table; Y up to $0C)."
+
+[[label]]
+addr = "D658"
+name = "bcd_number_entry_00"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $00 (queue_bcd_number; ends at its first target $D658)."
+
+[[label]]
+addr = "D65D"
+name = "bcd_number_entry_02"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $02 (queue_bcd_number; ends at its first target $D658)."
+
+[[label]]
+addr = "D662"
+name = "bcd_number_entry_06"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $06 (queue_bcd_number; ends at its first target $D658)."
+
+[[label]]
+addr = "D667"
+name = "bcd_number_entry_04"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $04 (queue_bcd_number; ends at its first target $D658)."
+
+[[label]]
+addr = "D66C"
+name = "bcd_number_entry_08"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $08 (queue_bcd_number; ends at its first target $D658)."
+
+[[label]]
+addr = "D671"
+name = "bcd_number_entry_0a"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $0A (queue_bcd_number; ends at its first target $D658)."
+
+[[label]]
+addr = "D676"
+name = "bcd_number_entry_0c"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $0C (queue_bcd_number; ends at its first target $D658)."
+
+[[label]]
+addr = "D67B"
+name = "bcd_number_entry_0e"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $0E (queue_bcd_number; ends at its first target $D658)."
+
+[[label]]
+addr = "D680"
+name = "bcd_number_entry_10"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $10 (queue_bcd_number; ends at its first target $D658)."
+
+[[label]]
+addr = "D685"
+name = "bcd_number_entry_12"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $12 (queue_bcd_number; ends at its first target $D658)."
+
+[[label]]
+addr = "D68A"
+name = "bcd_number_entry_14"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $14 (queue_bcd_number; ends at its first target $D658)."
+
+[[label]]
+addr = "D68F"
+name = "bcd_number_entry_16"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $16 (queue_bcd_number; ends at its first target $D658)."
+
+[[label]]
+addr = "D7C1"
+name = "vram_packet_00"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $00 (queue_vram_packet; ends at its first target $D7C1)."
+
+[[label]]
+addr = "D7C7"
+name = "vram_packet_02"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $02 (queue_vram_packet; ends at its first target $D7C1)."
+
+[[label]]
+addr = "D7CD"
+name = "vram_packet_04"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $04 (queue_vram_packet; ends at its first target $D7C1)."
+
+[[label]]
+addr = "D7D3"
+name = "vram_packet_06"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $06 (queue_vram_packet; ends at its first target $D7C1)."
+
+[[label]]
+addr = "D7D9"
+name = "vram_packet_08"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $08 (queue_vram_packet; ends at its first target $D7C1)."
+
+[[label]]
+addr = "D7DD"
+name = "vram_packet_0c"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $0C (queue_vram_packet; ends at its first target $D7C1)."
+
+[[label]]
+addr = "D7E1"
+name = "vram_packet_0a"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $0A (queue_vram_packet; ends at its first target $D7C1)."
+
+[[label]]
+addr = "D7E5"
+name = "vram_packet_0e"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $0E (queue_vram_packet; ends at its first target $D7C1)."
+
+[[label]]
+addr = "D7E9"
+name = "vram_packet_10"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $10 (queue_vram_packet; ends at its first target $D7C1)."
+
+[[label]]
+addr = "D7ED"
+name = "vram_packet_12"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $12 (queue_vram_packet; ends at its first target $D7C1)."
+
+[[label]]
+addr = "E4FF"
+name = "trampoline_set_00"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_set_ptrs at offset $00 (load_round_trampolines; tbl_round_trampoline_set holds 0-$0C)."
+
+[[label]]
+addr = "E504"
+name = "trampoline_set_0a"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_set_ptrs at offset $0A (load_round_trampolines; tbl_round_trampoline_set holds 0-$0C)."
+
+[[label]]
+addr = "E50B"
+name = "trampoline_set_02"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_set_ptrs at offset $02 (load_round_trampolines; tbl_round_trampoline_set holds 0-$0C)."
+
+[[label]]
+addr = "E512"
+name = "trampoline_set_04"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_set_ptrs at offset $04 (load_round_trampolines; tbl_round_trampoline_set holds 0-$0C)."
+
+[[label]]
+addr = "E519"
+name = "trampoline_set_06"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_set_ptrs at offset $06 (load_round_trampolines; tbl_round_trampoline_set holds 0-$0C)."
+
+[[label]]
+addr = "E521"
+name = "trampoline_set_0c"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_set_ptrs at offset $0C (load_round_trampolines; tbl_round_trampoline_set holds 0-$0C)."
+
+[[label]]
+addr = "E52A"
+name = "trampoline_set_08"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_set_ptrs at offset $08 (load_round_trampolines; tbl_round_trampoline_set holds 0-$0C)."
+
+[[label]]
+addr = "E57F"
+name = "trampoline_picture_00"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offsets $00, $0C (draw_text_from_table; frames 0-9, $14 broken)."
+
+[[label]]
+addr = "E58B"
+name = "trampoline_picture_02"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offsets $02, $0A (draw_text_from_table; frames 0-9, $14 broken)."
+
+[[label]]
+addr = "E591"
+name = "trampoline_picture_04"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offsets $04, $08 (draw_text_from_table; frames 0-9, $14 broken)."
+
+[[label]]
+addr = "E597"
+name = "trampoline_picture_06"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offset $06 (draw_text_from_table; frames 0-9, $14 broken)."
+
+[[label]]
+addr = "E59D"
+name = "trampoline_picture_0e"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offsets $0E, $12 (draw_text_from_table; frames 0-9, $14 broken)."
+
+[[label]]
+addr = "E5A9"
+name = "trampoline_picture_10"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offset $10 (draw_text_from_table; frames 0-9, $14 broken)."
+
+[[label]]
+addr = "E5B5"
+name = "trampoline_picture_14"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offset $14 (draw_text_from_table; frames 0-9, $14 broken)."
+
+[[label]]
+addr = "E7C5"
+name = "item_picture_00"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $00 (draw_item (pairs 0-8) and erase_item ($0A))."
+
+[[label]]
+addr = "E7CD"
+name = "item_picture_02"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $02 (draw_item (pairs 0-8) and erase_item ($0A))."
+
+[[label]]
+addr = "E7D5"
+name = "item_picture_04"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $04 (draw_item (pairs 0-8) and erase_item ($0A))."
+
+[[label]]
+addr = "E7DD"
+name = "item_picture_06"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $06 (draw_item (pairs 0-8) and erase_item ($0A))."
+
+[[label]]
+addr = "E7E5"
+name = "item_picture_08"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $08 (draw_item (pairs 0-8) and erase_item ($0A))."
+
+[[label]]
+addr = "E7ED"
+name = "item_picture_0a"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $0A (draw_item (pairs 0-8) and erase_item ($0A))."
+
+[[label]]
+addr = "EB1C"
+name = "round_doors_00"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $00 (load_round_doors by stage_number*2; ends at its first target $EB1C)."
+
+[[label]]
+addr = "EB3B"
+name = "round_doors_02"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $02 (load_round_doors by stage_number*2; ends at its first target $EB1C)."
+
+[[label]]
+addr = "EB5A"
+name = "round_doors_06"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $06 (load_round_doors by stage_number*2; ends at its first target $EB1C)."
+
+[[label]]
+addr = "EB73"
+name = "round_doors_08"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $08 (load_round_doors by stage_number*2; ends at its first target $EB1C)."
+
+[[label]]
+addr = "EB8C"
+name = "round_doors_0a"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $0A (load_round_doors by stage_number*2; ends at its first target $EB1C)."
+
+[[label]]
+addr = "EBA8"
+name = "round_doors_0e"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $0E (load_round_doors by stage_number*2; ends at its first target $EB1C)."
+
+[[label]]
+addr = "EBC4"
+name = "round_doors_10"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $10 (load_round_doors by stage_number*2; ends at its first target $EB1C)."
+
+[[label]]
+addr = "EBDD"
+name = "round_doors_12"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $12 (load_round_doors by stage_number*2; ends at its first target $EB1C)."
+
+[[label]]
+addr = "EBF3"
+name = "round_doors_16"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $16 (load_round_doors by stage_number*2; ends at its first target $EB1C)."
+
+[[label]]
+addr = "EC09"
+name = "round_doors_18"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $18 (load_round_doors by stage_number*2; ends at its first target $EB1C)."
+
+[[label]]
+addr = "EC22"
+name = "round_doors_1a"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $1A (load_round_doors by stage_number*2; ends at its first target $EB1C)."
+
+[[label]]
+addr = "EC2F"
+name = "round_doors_1e"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $1E (load_round_doors by stage_number*2; ends at its first target $EB1C)."
+
+[[label]]
+addr = "EC4E"
+name = "round_doors_04"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offsets $04, $0C, $14, $1C (load_round_doors by stage_number*2; ends at its first target $EB1C)."
+
+[[label]]
+addr = "EC71"
+name = "door_picture_00"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $00 (draw_door_kind_y; ends at its first target $EC71)."
+
+[[label]]
+addr = "EC7A"
+name = "door_picture_04"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $04 (draw_door_kind_y; ends at its first target $EC71)."
+
+[[label]]
+addr = "EC83"
+name = "door_picture_08"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $08 (draw_door_kind_y; ends at its first target $EC71)."
+
+[[label]]
+addr = "EC8C"
+name = "door_picture_0c"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $0C (draw_door_kind_y; ends at its first target $EC71)."
+
+[[label]]
+addr = "EC95"
+name = "door_picture_10"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $10 (draw_door_kind_y; ends at its first target $EC71)."
+
+[[label]]
+addr = "EC9E"
+name = "door_picture_12"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $12 (draw_door_kind_y; ends at its first target $EC71)."
+
+[[label]]
+addr = "ECAA"
+name = "door_picture_14"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $14 (draw_door_kind_y; ends at its first target $EC71)."
+
+[[label]]
+addr = "ECB6"
+name = "door_picture_16"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $16 (draw_door_kind_y; ends at its first target $EC71)."
+
+[[label]]
+addr = "ECC5"
+name = "door_picture_02"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offsets $02, $0A, $18 (draw_door_kind_y; ends at its first target $EC71)."
+
+[[label]]
+addr = "ECD4"
+name = "door_picture_1a"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $1A (draw_door_kind_y; ends at its first target $EC71)."
+
+[[label]]
+addr = "ECE2"
+name = "door_picture_1c"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $1C (draw_door_kind_y; ends at its first target $EC71)."
+
+[[label]]
+addr = "ECF0"
+name = "door_picture_1e"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $1E (draw_door_kind_y; ends at its first target $EC71)."
+
+[[label]]
+addr = "ED01"
+name = "door_picture_06"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offsets $06, $0E, $20 (draw_door_kind_y; ends at its first target $EC71)."
+
+[[label]]
+addr = "F12E"
+name = "floor_trap_picture_00"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_floor_trap_pictures at offset $00 (draw_floor_trap_frame; X 0, 2, 4)."
+
+[[label]]
+addr = "F132"
+name = "floor_trap_picture_02"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_floor_trap_pictures at offset $02 (draw_floor_trap_frame; X 0, 2, 4)."
+
+[[label]]
+addr = "F136"
+name = "floor_trap_picture_04"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_floor_trap_pictures at offset $04 (draw_floor_trap_frame; X 0, 2, 4)."
+
+[[label]]
+addr = "F267"
+name = "bonus_target_picture_00"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_pictures at offset $00 (animate_bonus_target; frame & $10 >> 3)."
+
+[[label]]
+addr = "F26F"
+name = "bonus_target_picture_02"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_pictures at offset $02 (animate_bonus_target; frame & $10 >> 3)."
+
+[[label]]
+addr = "F289"
+name = "bonus_targets_02"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_lists at offset $02 (load_bonus_targets by is_bonus_round (2-8; 0 has none))."
+
+[[label]]
+addr = "F2A8"
+name = "bonus_targets_04"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_lists at offset $04 (load_bonus_targets by is_bonus_round (2-8; 0 has none))."
+
+[[label]]
+addr = "F2C7"
+name = "bonus_targets_06"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_lists at offsets $06, $08 (load_bonus_targets by is_bonus_round (2-8; 0 has none))."
+
+[[label]]
+addr = "FB13"
+name = "voice_stream_04"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $04 (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FB2B"
+name = "voice_stream_06"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $06 (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FB3D"
+name = "voice_stream_08"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $08 (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FB55"
+name = "voice_stream_1c"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $1C (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FBF5"
+name = "voice_stream_1e"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $1E (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FC69"
+name = "voice_stream_20"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $20 (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FD1A"
+name = "voice_stream_16"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $16 (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FD38"
+name = "voice_stream_18"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $18 (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FD47"
+name = "voice_stream_1a"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $1A (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FD56"
+name = "voice_stream_14"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $14 (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FD64"
+name = "voice_stream_12"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $12 (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FD89"
+name = "voice_stream_10"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $10 (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FD9F"
+name = "voice_stream_0e"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $0E (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FDA6"
+name = "voice_stream_0c"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $0C (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FDBA"
+name = "voice_stream_0a"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $0A (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FE5A"
+name = "voice_stream_22"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $22 (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FE72"
+name = "voice_stream_24"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $24 (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "FE92"
+name = "voice_stream_02"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $02 (load_voice_stream_ptr by voice*2, voice 0 skipped (beq); ends at voice13_stream $F879)."
+
+[[label]]
+addr = "DB34"
+name = "knockout_score_offsets"
+kind = "data"
+conf = "HIGH"
+why = "Data walk 2026-10-26: catch_player_or_knock_out does ldy $DB33,x with X = the type (1-3; the player never gets there), so its table starts at $DB34, the byte after the jmp whose operand is $DB33: $44, $44, $08 = the tbl_score_amounts offsets for types 1, 2, 3."
+
+[[label]]
+addr = "E788"
+name = "unreferenced_e788"
+kind = "data"
+conf = "MED"
+why = "Data walk 2026-10-26: 16 bytes, 02 02 00 02 four times, that no operand, pointer table or play run reaches (data_frontier.py, rom_data.txt 'read at -'). Not named for a role."

@@ -305,6 +305,172 @@ NesPrgRom:2A69:door_kind2_knock_back:[HIGH] Delta in 2..4: knocked left (directi
 NesPrgRom:2A59:door_kind3_knock_back:[HIGH] Delta in 0..3: knocked right, via knock_back_right_if_in_range.
 NesPrgRom:2A63:knock_back_right_if_in_range:[HIGH] Shared tail: carry clear -> direction 1, then +4 = $0C, state 10, +7 = 8; a cat knocked by a door the player opened ($02B7 = 0) adds pending
 NesPrgRom:1762:dead_toggle_cat_touch_flag:[MED] Top-down 2026-10-26 (game thread, flows): 24 bytes no operand, table or trace reaches (rom_data 'read at -', CDL never executed), shaped lik
+NesPrgRom:0000:rom_copyright_ascii:[HIGH] Data walk 2026-10-26: ASCII 'COPYRIGHT 1983 1984 NAMCO LTD.ALL RIGHTS RESERVED' (49 bytes). choose_cat_target_floor reads $C000 + frame_coun
+NesPrgRom:0123:txt_pause_sprites:[HIGH] Data walk 2026-10-26: D0 D2 DC CF D4: PAUSE in the sprite pattern table, read by build_sprite_row_oam_shadow (proven in the variables pass).
+NesPrgRom:013E:game_thread_task:[HIGH] Data walk 2026-10-26: one 3-byte task record [handler $C84F start_game_thread's body][stack slot $3F], read by start_game_thread.
+NesPrgRom:0258:pad_lr_to_direction:[HIGH] Data walk 2026-10-26: 00 FF 01 00: read_and_decode_input maps the pad's left/right bits to a direction (none, -1, +1, both = none).
+NesPrgRom:0356:tbl_draw_by_anim:[HIGH] Data walk 2026-10-26: 19 handler words, indexed by anim & $FE (dispatch_object_draw_by_anim).
+NesPrgRom:0455:write_sprite_to_oam_data_c455:[MED] Data walk 2026-10-26: 00 F0 20 D0 40 B0 60 90 ...: EORed with X by write_sprite_to_oam, indexed by the attribute's low nibble.
+NesPrgRom:047C:tbl_type_sprite_palette:[HIGH] Data walk 2026-10-26: 00 02 02 01: the sprite palette per type (player 0, types 1 and 2 palette 2, cats 1), load_type_sprite_palette.
+NesPrgRom:0480:tbl_pose_tile_base:[HIGH] Data walk 2026-10-26: first tile of each pose's metasprite, indexed by the pose number (load_metasprite_tile_base).
+NesPrgRom:0573:tbl_wave_score_tiles:[HIGH] Data walk 2026-10-26: sprite tiles, 0 = none, read by draw_score_tile_if_any for the door wave's score (draw_wave_score).
+NesPrgRom:0B8A:ptr_player_text:[HIGH] Data walk 2026-10-26: word -> $CB8C, the sprite text block PLAYER (draw_player_number_text).
+NesPrgRom:0B8C:spr_text_player:[HIGH] Data walk 2026-10-26: [x 58 00][y 78][7] P L A Y E R blank, sprite glyphs (draw_sprite_text).
+NesPrgRom:0B97:ptr_game_over_text:[HIGH] Data walk 2026-10-26: word -> $CB99 (draw_game_over_text).
+NesPrgRom:0B99:spr_text_game_over:[HIGH] Data walk 2026-10-26: [x 58 00][y 88][9] G A M E blank O V E R.
+NesPrgRom:0BA6:ptr_ready_text:[HIGH] Data walk 2026-10-26: word -> $CBA8 (play_round).
+NesPrgRom:0BA8:spr_text_ready:[HIGH] Data walk 2026-10-26: [x 60 00][y 88][5] R E A D Y.
+NesPrgRom:0BED:title_logo_row_addrs:[HIGH] Data walk 2026-10-26: 4 nametable words $2107 $2127 $2147 $2167: the rows of the 20-tile title logo (draw_title_screen).
+NesPrgRom:0D39:title_object_record:[HIGH] Data walk 2026-10-26: 00 0C 00 14 1C: x $0C.00, y $14.00, anim $1C (init_title_object).
+NesPrgRom:0F08:tbl_text_lines:[HIGH] Data walk 2026-10-26: 4-byte records [nametable address][text pointer], indexed by draw_indexed_text_line: the bonus results lines (EARNINGS
+NesPrgRom:1536:tbl_bcd_add_records:[HIGH] Data walk 2026-10-26: words -> records [zero-page target X][amount pointer][byte count], read by bcd_add_from_table.
+NesPrgRom:1561:ptr_score_amounts:[HIGH] Data walk 2026-10-26: word -> $D563: add_score_from_table adds ($D563 + Y), 4 BCD bytes, into the score at $71-$74.
+NesPrgRom:1563:tbl_score_amounts:[HIGH] Data walk 2026-10-26: 4-byte BCD amounts by offset Y (the callers' Y: $08 a knocked-out cat, $3C a trampoline bounce, $44 slot 2, ...).
+NesPrgRom:1640:tbl_bcd_number_entries:[HIGH] Data walk 2026-10-26: words -> [PPU address][zero-page source][byte count][flag] (queue_bcd_number).
+NesPrgRom:17AD:tbl_vram_packets:[HIGH] Data walk 2026-10-26: 10 words -> [address][count][tiles]: 00/02 blanks, 04/06 1UP/2UP, 08-0E the menu cursor, 10/12 the dead switch's blank
+NesPrgRom:1838:player_record_template:[HIGH] Data walk 2026-10-26: 00 34 00 1A 02 00 FF: x $34, y $1A, anim 2, type 0, facing left (init_player_record).
+NesPrgRom:183F:bonus_player_template:[HIGH] Data walk 2026-10-26: 00 35 00 0A 06 00 FF: x $35, y $0A, anim 6 (init_bonus_player).
+NesPrgRom:18D3:bonus_goal_template:[HIGH] Data walk 2026-10-26: 00 05 00 18 18: x 5, y $18, anim $18 (init_bonus_goal_object).
+NesPrgRom:1A42:tbl_object_state_handlers:[HIGH] Data walk 2026-10-26: 23 handler words by state (dispatch_object_state).
+NesPrgRom:2010:tile_read_offsets:[HIGH] Data walk 2026-10-26: 4 (dx, dy) tile pairs by X = 0, 2, 4, 6 (queue_tile_read).
+NesPrgRom:217A:tbl_bonus_state_handlers:[HIGH] Data walk 2026-10-26: 10 handler words by state in a bonus round.
+NesPrgRom:2332:released_cat_template:[HIGH] Data walk 2026-10-26: 00 05 00 18 06 02 FF: slot 2 at x 5, y $18, anim 6, type 2, facing left (bonus_state0E_goal_object).
+NesPrgRom:24CD:trampoline_bounce_curve:[HIGH] Data walk 2026-10-26: signed word offsets from the trampoline's row, one per bounce frame (trampoline_bounce_step; find_trampoline_below rea
+NesPrgRom:24E1:tbl_round_trampoline_set:[HIGH] Data walk 2026-10-26: per stage_number: which trampoline list (load_round_trampolines).
+NesPrgRom:24F1:tbl_trampoline_set_ptrs:[HIGH] Data walk 2026-10-26: words -> [count][position indexes ...] (load_round_trampolines).
+NesPrgRom:2537:tbl_trampoline_addrs:[HIGH] Data walk 2026-10-26: nametable address words by position index (load / draw / erase).
+NesPrgRom:2569:tbl_trampoline_pictures:[HIGH] Data walk 2026-10-26: words -> RLE pictures: the bounce frames and $14 the broken trampoline (draw_text_from_table).
+NesPrgRom:265A:tbl_item_state_handlers:[HIGH] Data walk 2026-10-26: 3 handler words by item state: 0 none, 2 player_collects_item, 4 show_item_points.
+NesPrgRom:2798:ptr_round_items:[HIGH] Data walk 2026-10-26: word -> $E79A, the one item descriptor every normal round uses (load_round_items).
+NesPrgRom:279A:round_items_descriptor:[HIGH] Data walk 2026-10-26: $50 (10 items x 8 bytes), then the 10 kinds 00 02 ... 12.
+NesPrgRom:27A5:tbl_item_addrs:[HIGH] Data walk 2026-10-26: nametable address words by item kind (draw_at_item_address, load_round_items).
+NesPrgRom:27B9:tbl_item_pictures:[HIGH] Data walk 2026-10-26: words -> RLE pictures, one per pair; entry 10 the erase (draw_item, erase_item).
+NesPrgRom:2A49:tbl_door_kind_knockback:[HIGH] Data walk 2026-10-26: 4 handler words by door kind & 6, jumped through $EA46.
+NesPrgRom:2AFC:tbl_round_door_lists:[HIGH] Data walk 2026-10-26: words by stage_number -> [count][kind, address ...] (load_round_doors).
+NesPrgRom:2C4F:tbl_door_pictures:[HIGH] Data walk 2026-10-26: words -> RLE pictures by door kind / swing frame (draw_door_kind_y).
+NesPrgRom:2F2F:dropped_objects_template:[HIGH] Data walk 2026-10-26: 16 bytes copied to $A0-$AF in rounds 8-10 (load_dropped_objects).
+NesPrgRom:3041:floor_trap_addrs:[HIGH] Data walk 2026-10-26: nametable address words, 2 per round 12-14 (init_floor_trap).
+NesPrgRom:3128:tbl_floor_trap_pictures:[HIGH] Data walk 2026-10-26: 3 words -> open ($51 $51), pressed ($50 $50), floor ($4A $4A).
+NesPrgRom:31B5:tbl_bonus_target_handlers:[HIGH] Data walk 2026-10-26: 2 handler words: 0 none, 2 bonus_target_live.
+NesPrgRom:3263:tbl_bonus_target_pictures:[HIGH] Data walk 2026-10-26: 2 words -> the target's two animation frames (animate_bonus_target).
+NesPrgRom:3277:ptr_popped_target_picture:[HIGH] Data walk 2026-10-26: word -> the erase picture (pop_bonus_target).
+NesPrgRom:327F:tbl_bonus_target_lists:[HIGH] Data walk 2026-10-26: words by is_bonus_round -> [length][addresses ...] (load_bonus_targets).
+NesPrgRom:33AA:hurry_sprite_record:[HIGH] Data walk 2026-10-26: 8 bytes copied to $0490 at the time limit: the HURRY sprite (tick_round_timer).
+NesPrgRom:33DF:tbl_stage_params:[HIGH] Data walk 2026-10-26: 6 bytes per stage_index into $63-$68 (load_stage_params).
+NesPrgRom:383B:tbl_note_periods:[HIGH] Data walk 2026-10-26: 11-bit APU period words ($07F2, $0780, $0714 ...) read by run_voice_stream.
+NesPrgRom:3853:tbl_voice_stream_ptrs:[HIGH] Data walk 2026-10-26: stream pointer words by voice (load_voice_stream_ptr).
+NesPrgRom:3879:voice13_stream:[HIGH] Data walk 2026-10-26: word -> voice 13's stream (sound_streams_next_voice).
+NesPrgRom:387B:voice14_stream:[HIGH] Data walk 2026-10-26: word -> voice 14's stream (sound_streams_next_voice).
+NesPrgRom:3885:sound_registers_next_voice_data_f885:[MED] Data walk 2026-10-26: 25 bytes, one per voice, 0 or 1; a nonzero one is tested against its trigger.
+NesPrgRom:389E:init_sound_voices_data_f89e:[MED] Data walk 2026-10-26: 25 bytes, one per voice (01, or 04 for voices 19-20), copied to $06E2+.
+NesPrgRom:0F1C:text_line_00:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_text_lines at offset $00 (draw_indexed_text_line; Y 0-$10 by 4 (show_bonus_results))
+NesPrgRom:0F26:text_line_04:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_text_lines at offset $04 (draw_indexed_text_line; Y 0-$10 by 4 (show_bonus_results))
+NesPrgRom:0F3A:text_line_08:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_text_lines at offset $08 (draw_indexed_text_line; Y 0-$10 by 4 (show_bonus_results))
+NesPrgRom:0F48:text_line_0c:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_text_lines at offset $0C (draw_indexed_text_line; Y 0-$10 by 4 (show_bonus_results))
+NesPrgRom:0F5F:text_line_10:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_text_lines at offset $10 (draw_indexed_text_line; Y 0-$10 by 4 (show_bonus_results))
+NesPrgRom:1544:bcd_add_record_00:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_add_records at offset $00 (bcd_add_from_table; Y up to $0C).
+NesPrgRom:1548:bcd_add_record_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_add_records at offset $02 (bcd_add_from_table; Y up to $0C).
+NesPrgRom:154C:bcd_add_record_04:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_add_records at offset $04 (bcd_add_from_table; Y up to $0C).
+NesPrgRom:1550:bcd_add_record_06:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_add_records at offset $06 (bcd_add_from_table; Y up to $0C).
+NesPrgRom:1554:bcd_add_record_08:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_add_records at offset $08 (bcd_add_from_table; Y up to $0C).
+NesPrgRom:1558:bcd_add_record_0a:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_add_records at offset $0A (bcd_add_from_table; Y up to $0C).
+NesPrgRom:155C:bcd_add_record_0c:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_add_records at offset $0C (bcd_add_from_table; Y up to $0C).
+NesPrgRom:1658:bcd_number_entry_00:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $00 (queue_bcd_number; ends at its first target $D658).
+NesPrgRom:165D:bcd_number_entry_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $02 (queue_bcd_number; ends at its first target $D658).
+NesPrgRom:1662:bcd_number_entry_06:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $06 (queue_bcd_number; ends at its first target $D658).
+NesPrgRom:1667:bcd_number_entry_04:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $04 (queue_bcd_number; ends at its first target $D658).
+NesPrgRom:166C:bcd_number_entry_08:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $08 (queue_bcd_number; ends at its first target $D658).
+NesPrgRom:1671:bcd_number_entry_0a:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $0A (queue_bcd_number; ends at its first target $D658).
+NesPrgRom:1676:bcd_number_entry_0c:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $0C (queue_bcd_number; ends at its first target $D658).
+NesPrgRom:167B:bcd_number_entry_0e:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $0E (queue_bcd_number; ends at its first target $D658).
+NesPrgRom:1680:bcd_number_entry_10:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $10 (queue_bcd_number; ends at its first target $D658).
+NesPrgRom:1685:bcd_number_entry_12:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $12 (queue_bcd_number; ends at its first target $D658).
+NesPrgRom:168A:bcd_number_entry_14:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $14 (queue_bcd_number; ends at its first target $D658).
+NesPrgRom:168F:bcd_number_entry_16:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bcd_number_entries at offset $16 (queue_bcd_number; ends at its first target $D658).
+NesPrgRom:17C1:vram_packet_00:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $00 (queue_vram_packet; ends at its first target $D7C1).
+NesPrgRom:17C7:vram_packet_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $02 (queue_vram_packet; ends at its first target $D7C1).
+NesPrgRom:17CD:vram_packet_04:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $04 (queue_vram_packet; ends at its first target $D7C1).
+NesPrgRom:17D3:vram_packet_06:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $06 (queue_vram_packet; ends at its first target $D7C1).
+NesPrgRom:17D9:vram_packet_08:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $08 (queue_vram_packet; ends at its first target $D7C1).
+NesPrgRom:17DD:vram_packet_0c:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $0C (queue_vram_packet; ends at its first target $D7C1).
+NesPrgRom:17E1:vram_packet_0a:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $0A (queue_vram_packet; ends at its first target $D7C1).
+NesPrgRom:17E5:vram_packet_0e:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $0E (queue_vram_packet; ends at its first target $D7C1).
+NesPrgRom:17E9:vram_packet_10:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $10 (queue_vram_packet; ends at its first target $D7C1).
+NesPrgRom:17ED:vram_packet_12:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_vram_packets at offset $12 (queue_vram_packet; ends at its first target $D7C1).
+NesPrgRom:24FF:trampoline_set_00:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_set_ptrs at offset $00 (load_round_trampolines; tbl_round_trampoline_set 
+NesPrgRom:2504:trampoline_set_0a:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_set_ptrs at offset $0A (load_round_trampolines; tbl_round_trampoline_set 
+NesPrgRom:250B:trampoline_set_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_set_ptrs at offset $02 (load_round_trampolines; tbl_round_trampoline_set 
+NesPrgRom:2512:trampoline_set_04:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_set_ptrs at offset $04 (load_round_trampolines; tbl_round_trampoline_set 
+NesPrgRom:2519:trampoline_set_06:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_set_ptrs at offset $06 (load_round_trampolines; tbl_round_trampoline_set 
+NesPrgRom:2521:trampoline_set_0c:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_set_ptrs at offset $0C (load_round_trampolines; tbl_round_trampoline_set 
+NesPrgRom:252A:trampoline_set_08:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_set_ptrs at offset $08 (load_round_trampolines; tbl_round_trampoline_set 
+NesPrgRom:257F:trampoline_picture_00:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offsets $00, $0C (draw_text_from_table; frames 0-9, $14 broke
+NesPrgRom:258B:trampoline_picture_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offsets $02, $0A (draw_text_from_table; frames 0-9, $14 broke
+NesPrgRom:2591:trampoline_picture_04:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offsets $04, $08 (draw_text_from_table; frames 0-9, $14 broke
+NesPrgRom:2597:trampoline_picture_06:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offset $06 (draw_text_from_table; frames 0-9, $14 broken).
+NesPrgRom:259D:trampoline_picture_0e:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offsets $0E, $12 (draw_text_from_table; frames 0-9, $14 broke
+NesPrgRom:25A9:trampoline_picture_10:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offset $10 (draw_text_from_table; frames 0-9, $14 broken).
+NesPrgRom:25B5:trampoline_picture_14:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offset $14 (draw_text_from_table; frames 0-9, $14 broken).
+NesPrgRom:27C5:item_picture_00:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $00 (draw_item (pairs 0-8) and erase_item ($0A)).
+NesPrgRom:27CD:item_picture_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $02 (draw_item (pairs 0-8) and erase_item ($0A)).
+NesPrgRom:27D5:item_picture_04:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $04 (draw_item (pairs 0-8) and erase_item ($0A)).
+NesPrgRom:27DD:item_picture_06:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $06 (draw_item (pairs 0-8) and erase_item ($0A)).
+NesPrgRom:27E5:item_picture_08:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $08 (draw_item (pairs 0-8) and erase_item ($0A)).
+NesPrgRom:27ED:item_picture_0a:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $0A (draw_item (pairs 0-8) and erase_item ($0A)).
+NesPrgRom:2B1C:round_doors_00:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $00 (load_round_doors by stage_number*2; ends at its firs
+NesPrgRom:2B3B:round_doors_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $02 (load_round_doors by stage_number*2; ends at its firs
+NesPrgRom:2B5A:round_doors_06:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $06 (load_round_doors by stage_number*2; ends at its firs
+NesPrgRom:2B73:round_doors_08:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $08 (load_round_doors by stage_number*2; ends at its firs
+NesPrgRom:2B8C:round_doors_0a:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $0A (load_round_doors by stage_number*2; ends at its firs
+NesPrgRom:2BA8:round_doors_0e:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $0E (load_round_doors by stage_number*2; ends at its firs
+NesPrgRom:2BC4:round_doors_10:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $10 (load_round_doors by stage_number*2; ends at its firs
+NesPrgRom:2BDD:round_doors_12:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $12 (load_round_doors by stage_number*2; ends at its firs
+NesPrgRom:2BF3:round_doors_16:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $16 (load_round_doors by stage_number*2; ends at its firs
+NesPrgRom:2C09:round_doors_18:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $18 (load_round_doors by stage_number*2; ends at its firs
+NesPrgRom:2C22:round_doors_1a:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $1A (load_round_doors by stage_number*2; ends at its firs
+NesPrgRom:2C2F:round_doors_1e:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $1E (load_round_doors by stage_number*2; ends at its firs
+NesPrgRom:2C4E:round_doors_04:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offsets $04, $0C, $14, $1C (load_round_doors by stage_number*2; 
+NesPrgRom:2C71:door_picture_00:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $00 (draw_door_kind_y; ends at its first target $EC71).
+NesPrgRom:2C7A:door_picture_04:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $04 (draw_door_kind_y; ends at its first target $EC71).
+NesPrgRom:2C83:door_picture_08:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $08 (draw_door_kind_y; ends at its first target $EC71).
+NesPrgRom:2C8C:door_picture_0c:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $0C (draw_door_kind_y; ends at its first target $EC71).
+NesPrgRom:2C95:door_picture_10:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $10 (draw_door_kind_y; ends at its first target $EC71).
+NesPrgRom:2C9E:door_picture_12:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $12 (draw_door_kind_y; ends at its first target $EC71).
+NesPrgRom:2CAA:door_picture_14:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $14 (draw_door_kind_y; ends at its first target $EC71).
+NesPrgRom:2CB6:door_picture_16:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $16 (draw_door_kind_y; ends at its first target $EC71).
+NesPrgRom:2CC5:door_picture_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offsets $02, $0A, $18 (draw_door_kind_y; ends at its first target $
+NesPrgRom:2CD4:door_picture_1a:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $1A (draw_door_kind_y; ends at its first target $EC71).
+NesPrgRom:2CE2:door_picture_1c:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $1C (draw_door_kind_y; ends at its first target $EC71).
+NesPrgRom:2CF0:door_picture_1e:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offset $1E (draw_door_kind_y; ends at its first target $EC71).
+NesPrgRom:2D01:door_picture_06:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_door_pictures at offsets $06, $0E, $20 (draw_door_kind_y; ends at its first target $
+NesPrgRom:312E:floor_trap_picture_00:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_floor_trap_pictures at offset $00 (draw_floor_trap_frame; X 0, 2, 4).
+NesPrgRom:3132:floor_trap_picture_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_floor_trap_pictures at offset $02 (draw_floor_trap_frame; X 0, 2, 4).
+NesPrgRom:3136:floor_trap_picture_04:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_floor_trap_pictures at offset $04 (draw_floor_trap_frame; X 0, 2, 4).
+NesPrgRom:3267:bonus_target_picture_00:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_pictures at offset $00 (animate_bonus_target; frame & $10 >> 3).
+NesPrgRom:326F:bonus_target_picture_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_pictures at offset $02 (animate_bonus_target; frame & $10 >> 3).
+NesPrgRom:3289:bonus_targets_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_lists at offset $02 (load_bonus_targets by is_bonus_round (2-8; 0 has n
+NesPrgRom:32A8:bonus_targets_04:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_lists at offset $04 (load_bonus_targets by is_bonus_round (2-8; 0 has n
+NesPrgRom:32C7:bonus_targets_06:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_lists at offsets $06, $08 (load_bonus_targets by is_bonus_round (2-8; 0
+NesPrgRom:3B13:voice_stream_04:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $04 (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3B2B:voice_stream_06:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $06 (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3B3D:voice_stream_08:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $08 (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3B55:voice_stream_1c:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $1C (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3BF5:voice_stream_1e:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $1E (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3C69:voice_stream_20:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $20 (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3D1A:voice_stream_16:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $16 (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3D38:voice_stream_18:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $18 (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3D47:voice_stream_1a:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $1A (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3D56:voice_stream_14:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $14 (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3D64:voice_stream_12:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $12 (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3D89:voice_stream_10:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $10 (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3D9F:voice_stream_0e:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $0E (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3DA6:voice_stream_0c:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $0C (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3DBA:voice_stream_0a:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $0A (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3E5A:voice_stream_22:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $22 (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3E72:voice_stream_24:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $24 (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:3E92:voice_stream_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $02 (load_voice_stream_ptr by voice*2, voice 0 skipped (
+NesPrgRom:1B34:knockout_score_offsets:[HIGH] Data walk 2026-10-26: catch_player_or_knock_out does ldy $DB33,x with X = the type (1-3; the player never gets there), so its table starts a
+NesPrgRom:2788:unreferenced_e788:[MED] Data walk 2026-10-26: 16 bytes, 02 02 00 02 four times, that no operand, pointer table or play run reaches (data_frontier.py, rom_data.txt '
 NesInternalRam:0000:indirect_ptr:[pointer] .
 NesInternalRam:0001:ptr_hi:[pointer] Flagged P (16-bit pointer). It is the HIGH byte of the general-purpose indirect pointer pair $0000/$0001: writers set it via `sty $01` (ppu_
 NesInternalRam:0002:src_ptr_hi:[pointer] Repeatedly dereferenced as a 16-bit pointer paired with $01: routines use ($01,x), ($02),y, and ($02,x). load_ptr_descriptor_and_scan (ora (

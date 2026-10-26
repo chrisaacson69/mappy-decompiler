@@ -2,7 +2,7 @@
 ; labels.toml + vars.toml + jump_tables.txt (from-scratch RE; no external labels).
 
 
-L_C000:
+rom_copyright_ascii:
     C000: 43          .byte $43
     C001: 4F          .byte $4F
     C002: 50          .byte $50
@@ -160,7 +160,7 @@ build_sprite_row_oam_shadow:
     C0F0: A5 11       lda zp_ptr_hi   ; $11
     C0F2: 9D 00 07    sta $0700,x
     C0F5: E8          inx
-    C0F6: B9 23 C1    lda $c123,y
+    C0F6: B9 23 C1    lda txt_pause_sprites,y   ; $C123
     C0F9: C8          iny
     C0FA: 9D 00 07    sta $0700,x
     C0FD: E8          inx
@@ -189,6 +189,8 @@ build_sprite_row_oam_shadow:
     C11F: E8          inx
     C120: D0 F7       bne @C119   ; $C119
     C122: 60          rts
+
+txt_pause_sprites:
     C123: D0          .byte $D0
     C124: D2          .byte $D2
     C125: DC          .byte $DC
@@ -196,7 +198,7 @@ build_sprite_row_oam_shadow:
     C127: D4          .byte $D4
 
 start_game_thread:
-    C128: B9 3E C1    lda $c13e,y
+    C128: B9 3E C1    lda game_thread_task,y   ; $C13E
     C12B: 85 1E       sta obj_record_ptr   ; $1E
     C12D: B9 3F C1    lda $c13f,y
     C130: 85 1F       sta obj_record_ptr_hi   ; $1F
@@ -206,6 +208,8 @@ start_game_thread:
     C137: 9D C1 00    sta thread_sp_slot,x   ; $00C1
     C13A: 9A          txs
     C13B: 6C 1E 00    jmp (obj_record_ptr)   ; $001E
+
+game_thread_task:
     C13E:            .word title_screen
     C140: 3F          .byte $3F
 
@@ -326,7 +330,7 @@ read_and_decode_input:
     C200: 4A          lsr a
     C201: 4A          lsr a
     C202: AA          tax
-    C203: BD 58 C2    lda $c258,x
+    C203: BD 58 C2    lda pad_lr_to_direction,x   ; $C258
     C206: A2 00       ldx #$00
     C208: C5 26       cmp pad_dir   ; $26
     C20A: F0 01       beq @C20D   ; $C20D
@@ -379,6 +383,8 @@ read_joypad:
     C254: 88          dey
     C255: D0 F4       bne @C24B   ; $C24B
     C257: 60          rts
+
+pad_lr_to_direction:
     C258: 00          .byte $00
     C259: FF          .byte $FF
     C25A: 01          .byte $01
@@ -545,11 +551,13 @@ dispatch_object_draw_by_anim:
     C344: 85 15       sta scratch_counter   ; $15
     C346: 29 FE       and #$fe
     C348: AA          tax
-    C349: BD 56 C3    lda $c356,x
+    C349: BD 56 C3    lda tbl_draw_by_anim,x   ; $C356
     C34C: 85 1C       sta aux_ptr   ; $1C
     C34E: BD 57 C3    lda $c357,x
     C351: 85 1D       sta aux_ptr_hi   ; $1D
     C353: 6C 1C 00    jmp (aux_ptr)   ; $001C
+
+tbl_draw_by_anim:
     C356:            .word handler_rts_noop
     C358:            .word draw_walk_cycle
     C35A:            .word draw_type_pose_10
@@ -607,7 +615,7 @@ load_type_sprite_palette:
     C3B4: A0 05       ldy #$05
     C3B6: B1 1E       lda (obj_record_ptr),y   ; $1E
     C3B8: AA          tax
-    C3B9: BD 7C C4    lda $c47c,x
+    C3B9: BD 7C C4    lda tbl_type_sprite_palette,x   ; $C47C
     C3BC: 85 13       sta data_ptr_hi   ; $13
     C3BE: 8A          txa
 @C3BF:
@@ -627,7 +635,7 @@ draw_walk_cycle:
 
 load_metasprite_tile_base:
     C3D1: AA          tax
-    C3D2: BD 80 C4    lda $c480,x
+    C3D2: BD 80 C4    lda tbl_pose_tile_base,x   ; $C480
     C3D5: 85 12       sta gfx_src_ptr   ; $12
 
 apply_facing_flip:
@@ -687,7 +695,7 @@ write_sprite_to_oam:
     C427: 29 0F       and #$0f
     C429: A8          tay
     C42A: 8A          txa
-    C42B: 59 55 C4    eor $c455,y
+    C42B: 59 55 C4    eor write_sprite_to_oam_data_c455,y   ; $C455
     C42E: C9 34       cmp #$34
     C430: 90 01       bcc @C433   ; $C433
     C432: AA          tax
@@ -709,6 +717,8 @@ write_sprite_to_oam:
     C452: 85 2C       sta oam_cursor   ; $2C
 @C454:
     C454: 60          rts
+
+write_sprite_to_oam_data_c455:
     C455: 00          .byte $00
     C456: F0          .byte $F0
     C457: 20          .byte $20
@@ -742,10 +752,14 @@ sprite_attr_with_priority:
 @C479:
     C479: A5 13       lda data_ptr_hi   ; $13
     C47B: 60          rts
+
+tbl_type_sprite_palette:
     C47C: 00          .byte $00
     C47D: 02          .byte $02
     C47E: 02          .byte $02
     C47F: 01          .byte $01
+
+tbl_pose_tile_base:
     C480: 04          .byte $04
     C481: 00          .byte $00
     C482: 04          .byte $04
@@ -907,7 +921,7 @@ draw_score_column:
     C562: 60          rts
 
 draw_score_tile_if_any:
-    C563: BD 73 C5    lda $c573,x
+    C563: BD 73 C5    lda tbl_wave_score_tiles,x   ; $C573
     C566: F0 09       beq @C571   ; $C571
     C568: 85 12       sta gfx_src_ptr   ; $12
     C56A: 86 17       stx draw_row_counter   ; $17
@@ -916,6 +930,8 @@ draw_score_tile_if_any:
 @C571:
     C571: E8          inx
     C572: 60          rts
+
+tbl_wave_score_tiles:
     C573: 00          .byte $00
     C574: 00          .byte $00
     C575: 58          .byte $58
@@ -1485,7 +1501,7 @@ play_round:
     C917: 20 41 C1    jsr yield_to_render_loop   ; $C141
     C91A: 20 60 CB    jsr update_round_frame   ; $CB60
     C91D: 20 02 CB    jsr draw_player_number_text   ; $CB02
-    C920: AD A6 CB    lda $cba6
+    C920: AD A6 CB    lda ptr_ready_text   ; $CBA6
     C923: 85 1E       sta obj_record_ptr   ; $1E
     C925: AD A7 CB    lda $cba7
     C928: 85 1F       sta obj_record_ptr_hi   ; $1F
@@ -1735,7 +1751,7 @@ show_game_over:
     CB01: 60          rts
 
 draw_player_number_text:
-    CB02: AD 8A CB    lda $cb8a
+    CB02: AD 8A CB    lda ptr_player_text   ; $CB8A
     CB05: 85 1E       sta obj_record_ptr   ; $1E
     CB07: AD 8B CB    lda $cb8b
     CB0A: 85 1F       sta obj_record_ptr_hi   ; $1F
@@ -1764,7 +1780,7 @@ draw_sprite_glyph:
     CB30: 60          rts
 
 draw_game_over_text:
-    CB31: AD 97 CB    lda $cb97
+    CB31: AD 97 CB    lda ptr_game_over_text   ; $CB97
     CB34: 85 1E       sta obj_record_ptr   ; $1E
     CB36: AD 98 CB    lda $cb98
     CB39: 85 1F       sta obj_record_ptr_hi   ; $1F
@@ -1810,8 +1826,12 @@ update_bonus_round_frame:
     CB81: 20 8F F1    jsr update_bonus_targets   ; $F18F
     CB84: 20 1C D7    jsr blink_player_up_label   ; $D71C
     CB87: 4C AB D5    jmp update_score   ; $D5AB
+
+ptr_player_text:
     CB8A: 8C          .byte $8C
     CB8B: CB          .byte $CB
+
+spr_text_player:
     CB8C: 58          .byte $58
     CB8D: 00          .byte $00
     CB8E: 78          .byte $78
@@ -1823,8 +1843,12 @@ update_bonus_round_frame:
     CB94: D4          .byte $D4
     CB95: D5          .byte $D5
     CB96: 00          .byte $00
+
+ptr_game_over_text:
     CB97: 99          .byte $99
     CB98: CB          .byte $CB
+
+spr_text_game_over:
     CB99: 58          .byte $58
     CB9A: 00          .byte $00
     CB9B: 88          .byte $88
@@ -1838,8 +1862,12 @@ update_bonus_round_frame:
     CBA3: DB          .byte $DB
     CBA4: D4          .byte $D4
     CBA5: D5          .byte $D5
+
+ptr_ready_text:
     CBA6: A8          .byte $A8
     CBA7: CB          .byte $CB
+
+spr_text_ready:
     CBA8: 60          .byte $60
     CBA9: 00          .byte $00
     CBAA: 88          .byte $88
@@ -1867,7 +1895,7 @@ draw_title_screen:
     CBCE: A2 14       ldx #$14
     CBD0: B9 EE CB    lda $cbee,y
     CBD3: 8D 06 20    sta PPUADDR   ; $2006
-    CBD6: B9 ED CB    lda $cbed,y
+    CBD6: B9 ED CB    lda title_logo_row_addrs,y   ; $CBED
     CBD9: 8D 06 20    sta PPUADDR   ; $2006
 @CBDC:
     CBDC: A5 10       lda src_ptr   ; $10
@@ -1880,6 +1908,8 @@ draw_title_screen:
     CBE8: C0 08       cpy #$08
     CBEA: D0 E2       bne @CBCE   ; $CBCE
     CBEC: 60          rts
+
+title_logo_row_addrs:
     CBED: 07          .byte $07
     CBEE: 21          .byte $21
     CBEF: 27          .byte $27
@@ -2179,12 +2209,14 @@ palhud_block_08:
 init_title_object:
     CD2B: A2 00       ldx #$00
 @CD2D:
-    CD2D: BD 39 CD    lda $cd39,x
+    CD2D: BD 39 CD    lda title_object_record,x   ; $CD39
     CD30: 9D 90 04    sta obj_state_counter,x   ; $0490
     CD33: E8          inx
     CD34: E0 05       cpx #$05
     CD36: D0 F5       bne @CD2D   ; $CD2D
     CD38: 60          rts
+
+title_object_record:
     CD39: 00          .byte $00
     CD3A: 0C          .byte $0C
     CD3B: 00          .byte $00
@@ -2422,7 +2454,7 @@ wait_120_frames:
     CECC: 60          rts
 
 draw_indexed_text_line:
-    CECD: B9 08 CF    lda $cf08,y
+    CECD: B9 08 CF    lda tbl_text_lines,y   ; $CF08
     CED0: 85 10       sta src_ptr   ; $10
     CED2: B9 09 CF    lda $cf09,y
     CED5: 85 11       sta zp_ptr_hi   ; $11
@@ -2469,6 +2501,8 @@ dead_clear_zp_00_03:
     CF05: D0          .byte $D0
     CF06: F9          .byte $F9
     CF07: 60          .byte $60
+
+tbl_text_lines:
     CF08: 0C          .byte $0C
     CF09: 21          .byte $21
     CF0A: 1C          .byte $1C
@@ -2489,6 +2523,8 @@ dead_clear_zp_00_03:
     CF19: 23          .byte $23
     CF1A: 5F          .byte $5F
     CF1B: CF          .byte $CF
+
+text_line_00:
     CF1C: 08          .byte $08
     CF1D: 0F          .byte $0F
     CF1E: 0B          .byte $0B
@@ -2499,6 +2535,8 @@ dead_clear_zp_00_03:
     CF23: 11          .byte $11
     CF24: 1D          .byte $1D
     CF25: 00          .byte $00
+
+text_line_04:
     CF26: 02          .byte $02
     CF27: 28          .byte $28
     CF28: 29          .byte $29
@@ -2519,6 +2557,8 @@ dead_clear_zp_00_03:
     CF37: 00          .byte $00
     CF38: 8A          .byte $8A
     CF39: 00          .byte $00
+
+text_line_08:
     CF3A: 0C          .byte $0C
     CF3B: 03          .byte $03
     CF3C: 01          .byte $01
@@ -2533,6 +2573,8 @@ dead_clear_zp_00_03:
     CF45: 00          .byte $00
     CF46: 8A          .byte $8A
     CF47: 00          .byte $00
+
+text_line_0c:
     CF48: 15          .byte $15
     CF49: 1A          .byte $1A
     CF4A: 0F          .byte $0F
@@ -2556,6 +2598,8 @@ dead_clear_zp_00_03:
     CF5C: 01          .byte $01
     CF5D: 01          .byte $01
     CF5E: 00          .byte $00
+
+text_line_10:
     CF5F: 08          .byte $08
     CF60: 1E          .byte $1E
     CF61: 19          .byte $19
@@ -3909,7 +3953,7 @@ add_score_from_table:
     D4CE: 85 43       sta score_update_phase   ; $43
     D4D0: 98          tya
     D4D1: 18          clc
-    D4D2: 6D 61 D5    adc $d561
+    D4D2: 6D 61 D5    adc ptr_score_amounts   ; $D561
     D4D5: 85 12       sta gfx_src_ptr   ; $12
     D4D7: AD 62 D5    lda $d562
     D4DA: 69 00       adc #$00
@@ -3919,7 +3963,7 @@ add_score_from_table:
     D4E2: 4C 02 D5    jmp bcd_add   ; $D502
 
 bcd_add_from_table:
-    D4E5: B9 36 D5    lda $d536,y
+    D4E5: B9 36 D5    lda tbl_bcd_add_records,y   ; $D536
     D4E8: 85 10       sta src_ptr   ; $10
     D4EA: B9 37 D5    lda $d537,y
     D4ED: 85 11       sta zp_ptr_hi   ; $11
@@ -3970,6 +4014,8 @@ bcd_add:
     D532: 88          dey
     D533: 10 CE       bpl @D503   ; $D503
     D535: 60          rts
+
+tbl_bcd_add_records:
     D536: 44          .byte $44
     D537: D5          .byte $D5
     D538: 48          .byte $48
@@ -3984,37 +4030,55 @@ bcd_add:
     D541: D5          .byte $D5
     D542: 5C          .byte $5C
     D543: D5          .byte $D5
+
+bcd_add_record_00:
     D544: 76          .byte $76
     D545: 49          .byte $49
     D546: 00          .byte $00
     D547: 00          .byte $00
+
+bcd_add_record_02:
     D548: 70          .byte $70
     D549: 60          .byte $60
     D54A: D5          .byte $D5
     D54B: 00          .byte $00
+
+bcd_add_record_04:
     D54C: 77          .byte $77
     D54D: 60          .byte $60
     D54E: D5          .byte $D5
     D54F: 00          .byte $00
+
+bcd_add_record_06:
     D550: 50          .byte $50
     D551: 60          .byte $60
     D552: D5          .byte $D5
     D553: 00          .byte $00
+
+bcd_add_record_08:
     D554: 57          .byte $57
     D555: 67          .byte $67
     D556: D5          .byte $D5
     D557: 03          .byte $03
+
+bcd_add_record_0a:
     D558: 5F          .byte $5F
     D559: 54          .byte $54
     D55A: 00          .byte $00
     D55B: 03          .byte $03
+
+bcd_add_record_0c:
     D55C: 74          .byte $74
     D55D: 5C          .byte $5C
     D55E: 00          .byte $00
     D55F: 03          .byte $03
     D560: 01          .byte $01
+
+ptr_score_amounts:
     D561: 63          .byte $63
     D562: D5          .byte $D5
+
+tbl_score_amounts:
     D563: 00          .byte $00
     D564: 00          .byte $00
     D565: 01          .byte $01
@@ -4114,7 +4178,7 @@ update_score:
     D5D7: A0 00       ldy #$00
 
 queue_bcd_number:
-    D5D9: B9 40 D6    lda $d640,y
+    D5D9: B9 40 D6    lda tbl_bcd_number_entries,y   ; $D640
     D5DC: 85 10       sta src_ptr   ; $10
     D5DE: B9 41 D6    lda $d641,y
     D5E1: 85 11       sta zp_ptr_hi   ; $11
@@ -4176,6 +4240,8 @@ queue_digit_blank_leading_zero:
     D63B: A9 00       lda #$00
     D63D: 85 15       sta scratch_counter   ; $15
     D63F: 60          rts
+
+tbl_bcd_number_entries:
     D640: 58          .byte $58
     D641: D6          .byte $D6
     D642: 5D          .byte $5D
@@ -4200,61 +4266,85 @@ queue_digit_blank_leading_zero:
     D655: D6          .byte $D6
     D656: 8F          .byte $8F
     D657: D6          .byte $D6
+
+bcd_number_entry_00:
     D658: 62          .byte $62
     D659: 20          .byte $20
     D65A: 71          .byte $71
     D65B: 04          .byte $04
     D65C: 06          .byte $06
+
+bcd_number_entry_02:
     D65D: 74          .byte $74
     D65E: 20          .byte $20
     D65F: 71          .byte $71
     D660: 04          .byte $04
     D661: 06          .byte $06
+
+bcd_number_entry_06:
     D662: 62          .byte $62
     D663: 20          .byte $20
     D664: B1          .byte $B1
     D665: 04          .byte $04
     D666: 06          .byte $06
+
+bcd_number_entry_04:
     D667: 74          .byte $74
     D668: 20          .byte $20
     D669: B1          .byte $B1
     D66A: 04          .byte $04
     D66B: 06          .byte $06
+
+bcd_number_entry_08:
     D66C: 6B          .byte $6B
     D66D: 20          .byte $20
     D66E: 44          .byte $44
     D66F: 04          .byte $04
     D670: 06          .byte $06
+
+bcd_number_entry_0a:
     D671: 76          .byte $76
     D672: 20          .byte $20
     D673: 70          .byte $70
     D674: 01          .byte $01
     D675: 01          .byte $01
+
+bcd_number_entry_0c:
     D676: 7A          .byte $7A
     D677: 20          .byte $20
     D678: 77          .byte $77
     D679: 01          .byte $01
     D67A: 01          .byte $01
+
+bcd_number_entry_0e:
     D67B: 90          .byte $90
     D67C: 21          .byte $21
     D67D: 50          .byte $50
     D67E: 01          .byte $01
     D67F: 01          .byte $01
+
+bcd_number_entry_10:
     D680: 10          .byte $10
     D681: 22          .byte $22
     D682: 51          .byte $51
     D683: 01          .byte $01
     D684: 01          .byte $01
+
+bcd_number_entry_12:
     D685: 97          .byte $97
     D686: 21          .byte $21
     D687: 56          .byte $56
     D688: 02          .byte $02
     D689: 02          .byte $02
+
+bcd_number_entry_14:
     D68A: 17          .byte $17
     D68B: 22          .byte $22
     D68C: 5A          .byte $5A
     D68D: 02          .byte $02
     D68E: 02          .byte $02
+
+bcd_number_entry_16:
     D68F: 15          .byte $15
     D690: 23          .byte $23
     D691: 5D          .byte $5D
@@ -4417,7 +4507,7 @@ dead_toggle_cat_touch_flag:
     D779: A8          .byte $A8
 
 queue_vram_packet:
-    D77A: B9 AD D7    lda $d7ad,y
+    D77A: B9 AD D7    lda tbl_vram_packets,y   ; $D7AD
     D77D: 85 10       sta src_ptr   ; $10
     D77F: B9 AE D7    lda $d7ae,y
     D782: 85 11       sta zp_ptr_hi   ; $11
@@ -4445,6 +4535,8 @@ queue_vram_packet:
     D7A8: D0 F5       bne @D79F   ; $D79F
     D7AA: 86 2A       stx ppu_buffer_cursor   ; $2A
     D7AC: 60          rts
+
+tbl_vram_packets:
     D7AD: C1          .byte $C1
     D7AE: D7          .byte $D7
     D7AF: C7          .byte $C7
@@ -4465,50 +4557,70 @@ queue_vram_packet:
     D7BE: D7          .byte $D7
     D7BF: ED          .byte $ED
     D7C0: D7          .byte $D7
+
+vram_packet_00:
     D7C1: 45          .byte $45
     D7C2: 20          .byte $20
     D7C3: 03          .byte $03
     D7C4: 00          .byte $00
     D7C5: 00          .byte $00
     D7C6: 00          .byte $00
+
+vram_packet_02:
     D7C7: 45          .byte $45
     D7C8: 20          .byte $20
     D7C9: 03          .byte $03
     D7CA: 00          .byte $00
     D7CB: 00          .byte $00
     D7CC: 00          .byte $00
+
+vram_packet_04:
     D7CD: 45          .byte $45
     D7CE: 20          .byte $20
     D7CF: 03          .byte $03
     D7D0: A8          .byte $A8
     D7D1: AA          .byte $AA
     D7D2: AB          .byte $AB
+
+vram_packet_06:
     D7D3: 45          .byte $45
     D7D4: 20          .byte $20
     D7D5: 03          .byte $03
     D7D6: A9          .byte $A9
     D7D7: AA          .byte $AA
     D7D8: AB          .byte $AB
+
+vram_packet_08:
     D7D9: E9          .byte $E9
     D7DA: 21          .byte $21
     D7DB: 01          .byte $01
     D7DC: AF          .byte $AF
+
+vram_packet_0c:
     D7DD: 29          .byte $29
     D7DE: 22          .byte $22
     D7DF: 01          .byte $01
     D7E0: 00          .byte $00
+
+vram_packet_0a:
     D7E1: E9          .byte $E9
     D7E2: 21          .byte $21
     D7E3: 01          .byte $01
     D7E4: 00          .byte $00
+
+vram_packet_0e:
     D7E5: 29          .byte $29
     D7E6: 22          .byte $22
     D7E7: 01          .byte $01
     D7E8: AF          .byte $AF
+
+vram_packet_10:
     D7E9: AC          .byte $AC
     D7EA: 21          .byte $21
     D7EB: 01          .byte $01
     D7EC: 00          .byte $00
+
+vram_packet_12:
     D7ED: AC          .byte $AC
     D7EE: 21          .byte $21
     D7EF: 01          .byte $01
@@ -4517,7 +4629,7 @@ queue_vram_packet:
 init_player_record:
     D7F1: 20 25 D8    jsr reset_camera_and_point_at_player   ; $D825
 @D7F4:
-    D7F4: B9 38 D8    lda $d838,y
+    D7F4: B9 38 D8    lda player_record_template,y   ; $D838
     D7F7: 91 1E       sta (obj_record_ptr),y   ; $1E
     D7F9: C8          iny
     D7FA: C0 07       cpy #$07
@@ -4533,7 +4645,7 @@ init_player_record:
 init_bonus_player:
     D80B: 20 25 D8    jsr reset_camera_and_point_at_player   ; $D825
 @D80E:
-    D80E: B9 3F D8    lda $d83f,y
+    D80E: B9 3F D8    lda bonus_player_template,y   ; $D83F
     D811: 91 1E       sta (obj_record_ptr),y   ; $1E
     D813: C8          iny
     D814: C0 07       cpy #$07
@@ -4557,6 +4669,8 @@ reset_camera_and_point_at_player:
     D833: 85 1F       sta obj_record_ptr_hi   ; $1F
     D835: A0 00       ldy #$00
     D837: 60          rts
+
+player_record_template:
     D838: 00          .byte $00
     D839: 34          .byte $34
     D83A: 00          .byte $00
@@ -4564,6 +4678,8 @@ reset_camera_and_point_at_player:
     D83C: 02          .byte $02
     D83D: 00          .byte $00
     D83E: FF          .byte $FF
+
+bonus_player_template:
     D83F: 00          .byte $00
     D840: 35          .byte $35
     D841: 00          .byte $00
@@ -4644,7 +4760,7 @@ init_cat_record:
 init_bonus_goal_object:
     D8C0: A2 00       ldx #$00
 @D8C2:
-    D8C2: BD D3 D8    lda $d8d3,x
+    D8C2: BD D3 D8    lda bonus_goal_template,x   ; $D8D3
     D8C5: 9D 10 04    sta $0410,x
     D8C8: E8          inx
     D8C9: E0 05       cpx #$05
@@ -4652,6 +4768,8 @@ init_bonus_goal_object:
     D8CD: A9 0E       lda #$0e
     D8CF: 8D 1F 04    sta obj_state   ; $041F
     D8D2: 60          rts
+
+bonus_goal_template:
     D8D3: 00          .byte $00
     D8D4: 05          .byte $05
     D8D5: 00          .byte $00
@@ -4850,7 +4968,7 @@ slot2_add_floor_step:
 @DA1E:
     DA1E: 60          rts
 @DA1F:
-    DA1F: BD 7A E1    lda $e17a,x
+    DA1F: BD 7A E1    lda tbl_bonus_state_handlers,x   ; $E17A
     DA22: 85 1C       sta aux_ptr   ; $1C
     DA24: BD 7B E1    lda $e17b,x
     DA27: 85 1D       sta aux_ptr_hi   ; $1D
@@ -4862,11 +4980,13 @@ dispatch_object_state:
     DA30: AA          tax
     DA31: A5 7C       lda is_bonus_round   ; $7C
     DA33: D0 EA       bne @DA1F   ; $DA1F
-    DA35: BD 42 DA    lda $da42,x
+    DA35: BD 42 DA    lda tbl_object_state_handlers,x   ; $DA42
     DA38: 85 1C       sta aux_ptr   ; $1C
     DA3A: BD 43 DA    lda $da43,x
     DA3D: 85 1D       sta aux_ptr_hi   ; $1D
     DA3F: 6C 1C 00    jmp (aux_ptr)   ; $001C
+
+tbl_object_state_handlers:
     DA42:            .word handler_rts_noop
     DA44:            .word state02_walk
     DA46:            .word state04_hop_off_ledge
@@ -5002,6 +5122,8 @@ reset_objects_except_persistent_types:
     DB2C: 91 1E       sta (obj_record_ptr),y   ; $1E
     DB2E: BC 33 DB    ldy $db33,x
     DB31: 4C CA D4    jmp add_score_from_table   ; $D4CA
+
+knockout_score_offsets:
     DB34: 44          .byte $44
     DB35: 44          .byte $44
     DB36: 08          .byte $08
@@ -5529,7 +5651,7 @@ choose_cat_target_floor:
     DECC: C5 10       cmp src_ptr   ; $10
     DECE: D0 11       bne @DEE1   ; $DEE1
     DED0: A6 21       ldx frame_counter   ; $21
-    DED2: BD 00 C0    lda $c000,x
+    DED2: BD 00 C0    lda rom_copyright_ascii,x   ; $C000
     DED5: 4A          lsr a
     DED6: A9 04       lda #$04
     DED8: 90 02       bcc @DEDC   ; $DEDC
@@ -5689,7 +5811,7 @@ queue_tile_read:
     DFCD: A0 01       ldy #$01
     DFCF: B1 1E       lda (obj_record_ptr),y   ; $1E
     DFD1: 18          clc
-    DFD2: 7D 10 E0    adc $e010,x
+    DFD2: 7D 10 E0    adc tile_read_offsets,x   ; $E010
     DFD5: 0A          asl a
     DFD6: 0A          asl a
     DFD7: 0A          asl a
@@ -5724,6 +5846,8 @@ queue_tile_read:
     E00C: E8          inx
     E00D: 86 2B       stx vram_queue_cursor   ; $2B
     E00F: 60          rts
+
+tile_read_offsets:
     E010: 01          .byte $01
     E011: 00          .byte $00
     E012: 02          .byte $02
@@ -5942,6 +6066,8 @@ player_knockback_pushes_cats:
     E175: E0 90       cpx #$90
     E177: D0 BD       bne @E136   ; $E136
     E179: 60          rts
+
+tbl_bonus_state_handlers:
     E17A:            .word handler_rts_noop
     E17C:            .word bonus_state02_fall
     E17E:            .word bonus_state04_ended
@@ -6178,7 +6304,7 @@ bonus_state0E_goal_object:
     E31C: 8D 2F 04    sta stage_phase_state   ; $042F
     E31F: A2 00       ldx #$00
 @E321:
-    E321: BD 32 E3    lda $e332,x
+    E321: BD 32 E3    lda released_cat_template,x   ; $E332
     E324: 9D 20 04    sta stamp_position_table,x   ; $0420
     E327: E8          inx
     E328: E0 07       cpx #$07
@@ -6187,6 +6313,8 @@ bonus_state0E_goal_object:
     E32E: 8D 2B 04    sta $042b
 @E331:
     E331: 60          rts
+
+released_cat_template:
     E332: 00          .byte $00
     E333: 05          .byte $05
     E334: 00          .byte $00
@@ -6216,8 +6344,8 @@ bonus_state12_released_cat_rises:
 
 load_round_trampolines:
     E35B: A6 7A       ldx stage_number   ; $7A
-    E35D: BC E1 E4    ldy $e4e1,x
-    E360: B9 F1 E4    lda $e4f1,y
+    E35D: BC E1 E4    ldy tbl_round_trampoline_set,x   ; $E4E1
+    E360: B9 F1 E4    lda tbl_trampoline_set_ptrs,y   ; $E4F1
     E363: 85 1C       sta aux_ptr   ; $1C
     E365: B9 F2 E4    lda $e4f2,y
     E368: 85 1D       sta aux_ptr_hi   ; $1D
@@ -6237,7 +6365,7 @@ load_round_trampolines:
     E383: 84 1B       sty cur_obj_index   ; $1B
     E385: 9D 03 02    sta $0203,x
     E388: A8          tay
-    E389: B9 37 E5    lda $e537,y
+    E389: B9 37 E5    lda tbl_trampoline_addrs,y   ; $E537
     E38C: 85 10       sta src_ptr   ; $10
     E38E: B9 38 E5    lda $e538,y
     E391: 85 11       sta zp_ptr_hi   ; $11
@@ -6331,7 +6459,7 @@ animate_trampoline:
 
 draw_trampoline:
     E427: BC 03 02    ldy $0203,x
-    E42A: B9 37 E5    lda $e537,y
+    E42A: B9 37 E5    lda tbl_trampoline_addrs,y   ; $E537
     E42D: 85 10       sta src_ptr   ; $10
     E42F: B9 38 E5    lda $e538,y
     E432: 85 11       sta zp_ptr_hi   ; $11
@@ -6348,14 +6476,14 @@ draw_trampoline:
     E448: A8          tay
 
 draw_text_from_table:
-    E449: B9 69 E5    lda $e569,y
+    E449: B9 69 E5    lda tbl_trampoline_pictures,y   ; $E569
     E44C: 85 12       sta gfx_src_ptr   ; $12
     E44E: B9 6A E5    lda $e56a,y
     E451: 85 13       sta data_ptr_hi   ; $13
     E453: 4C FB C6    jmp draw_rle_text   ; $C6FB
 
 erase_first_trampoline:
-    E456: AD 37 E5    lda $e537
+    E456: AD 37 E5    lda tbl_trampoline_addrs   ; $E537
     E459: 85 10       sta src_ptr   ; $10
     E45B: AD 38 E5    lda $e538
     E45E: 85 11       sta zp_ptr_hi   ; $11
@@ -6384,7 +6512,7 @@ find_trampoline_below:
     E488: A0 02       ldy #$02
     E48A: B1 1E       lda (obj_record_ptr),y   ; $1E
     E48C: 18          clc
-    E48D: ED CD E4    sbc $e4cd
+    E48D: ED CD E4    sbc trampoline_bounce_curve   ; $E4CD
     E490: C8          iny
     E491: B1 1E       lda (obj_record_ptr),y   ; $1E
     E493: E5 11       sbc zp_ptr_hi   ; $11
@@ -6412,7 +6540,7 @@ trampoline_bounce_step:
     E4AF: A8          tay
     E4B0: B9 CE E4    lda $e4ce,y
     E4B3: 48          pha
-    E4B4: B9 CD E4    lda $e4cd,y
+    E4B4: B9 CD E4    lda trampoline_bounce_curve,y   ; $E4CD
     E4B7: A0 02       ldy #$02
     E4B9: 91 1E       sta (obj_record_ptr),y   ; $1E
     E4BB: C8          iny
@@ -6426,6 +6554,8 @@ trampoline_bounce_step:
     E4C8: 69 01       adc #$01
     E4CA: 91 1E       sta (obj_record_ptr),y   ; $1E
     E4CC: 60          rts
+
+trampoline_bounce_curve:
     E4CD: 40          .byte $40
     E4CE: FE          .byte $FE
     E4CF: 80          .byte $80
@@ -6446,6 +6576,8 @@ trampoline_bounce_step:
     E4DE: FD          .byte $FD
     E4DF: 00          .byte $00
     E4E0: FE          .byte $FE
+
+tbl_round_trampoline_set:
     E4E1: 00          .byte $00
     E4E2: 0A          .byte $0A
     E4E3: 08          .byte $08
@@ -6462,6 +6594,8 @@ trampoline_bounce_step:
     E4EE: 06          .byte $06
     E4EF: 08          .byte $08
     E4F0: 00          .byte $00
+
+tbl_trampoline_set_ptrs:
     E4F1: FF          .byte $FF
     E4F2: E4          .byte $E4
     E4F3: 0B          .byte $0B
@@ -6476,11 +6610,15 @@ trampoline_bounce_step:
     E4FC: E5          .byte $E5
     E4FD: 21          .byte $21
     E4FE: E5          .byte $E5
+
+trampoline_set_00:
     E4FF: 20          .byte $20
     E500: 0E          .byte $0E
     E501: 14          .byte $14
     E502: 28          .byte $28
     E503: 30          .byte $30
+
+trampoline_set_0a:
     E504: 30          .byte $30
     E505: 0E          .byte $0E
     E506: 14          .byte $14
@@ -6488,6 +6626,8 @@ trampoline_bounce_step:
     E508: 30          .byte $30
     E509: 06          .byte $06
     E50A: 22          .byte $22
+
+trampoline_set_02:
     E50B: 30          .byte $30
     E50C: 04          .byte $04
     E50D: 08          .byte $08
@@ -6495,6 +6635,8 @@ trampoline_bounce_step:
     E50F: 18          .byte $18
     E510: 20          .byte $20
     E511: 30          .byte $30
+
+trampoline_set_04:
     E512: 30          .byte $30
     E513: 04          .byte $04
     E514: 0A          .byte $0A
@@ -6502,6 +6644,8 @@ trampoline_bounce_step:
     E516: 14          .byte $14
     E517: 28          .byte $28
     E518: 30          .byte $30
+
+trampoline_set_06:
     E519: 38          .byte $38
     E51A: 02          .byte $02
     E51B: 0C          .byte $0C
@@ -6510,6 +6654,8 @@ trampoline_bounce_step:
     E51E: 1A          .byte $1A
     E51F: 24          .byte $24
     E520: 30          .byte $30
+
+trampoline_set_0c:
     E521: 40          .byte $40
     E522: 02          .byte $02
     E523: 04          .byte $04
@@ -6519,6 +6665,8 @@ trampoline_bounce_step:
     E527: 1A          .byte $1A
     E528: 24          .byte $24
     E529: 30          .byte $30
+
+trampoline_set_08:
     E52A: 60          .byte $60
     E52B: 00          .byte $00
     E52C: 08          .byte $08
@@ -6532,6 +6680,8 @@ trampoline_bounce_step:
     E534: 2A          .byte $2A
     E535: 2C          .byte $2C
     E536: 2E          .byte $2E
+
+tbl_trampoline_addrs:
     E537: 04          .byte $04
     E538: 22          .byte $22
     E539: 02          .byte $02
@@ -6582,6 +6732,8 @@ trampoline_bounce_step:
     E566: 27          .byte $27
     E567: 96          .byte $96
     E568: 27          .byte $27
+
+tbl_trampoline_pictures:
     E569: 7F          .byte $7F
     E56A: E5          .byte $E5
     E56B: 8B          .byte $8B
@@ -6604,6 +6756,8 @@ trampoline_bounce_step:
     E57C: E5          .byte $E5
     E57D: B5          .byte $B5
     E57E: E5          .byte $E5
+
+trampoline_picture_00:
     E57F: 04          .byte $04
     E580: 30          .byte $30
     E581: 30          .byte $30
@@ -6616,24 +6770,32 @@ trampoline_bounce_step:
     E588: 00          .byte $00
     E589: 00          .byte $00
     E58A: 00          .byte $00
+
+trampoline_picture_02:
     E58B: 04          .byte $04
     E58C: 31          .byte $31
     E58D: 32          .byte $32
     E58E: 33          .byte $33
     E58F: 34          .byte $34
     E590: 00          .byte $00
+
+trampoline_picture_04:
     E591: 04          .byte $04
     E592: 35          .byte $35
     E593: 36          .byte $36
     E594: 37          .byte $37
     E595: 38          .byte $38
     E596: 00          .byte $00
+
+trampoline_picture_06:
     E597: 04          .byte $04
     E598: 39          .byte $39
     E599: 3A          .byte $3A
     E59A: 3B          .byte $3B
     E59B: 3C          .byte $3C
     E59C: 00          .byte $00
+
+trampoline_picture_0e:
     E59D: 04          .byte $04
     E59E: 3D          .byte $3D
     E59F: 59          .byte $59
@@ -6646,6 +6808,8 @@ trampoline_bounce_step:
     E5A6: 40          .byte $40
     E5A7: 41          .byte $41
     E5A8: 00          .byte $00
+
+trampoline_picture_10:
     E5A9: 04          .byte $04
     E5AA: 43          .byte $43
     E5AB: 59          .byte $59
@@ -6658,6 +6822,8 @@ trampoline_bounce_step:
     E5B2: 46          .byte $46
     E5B3: 47          .byte $47
     E5B4: 00          .byte $00
+
+trampoline_picture_14:
     E5B5: 04          .byte $04
     E5B6: 85          .byte $85
     E5B7: 00          .byte $00
@@ -6676,7 +6842,7 @@ trampoline_bounce_step:
     E5C4: 00          .byte $00
 
 load_round_items:
-    E5C5: AD 98 E7    lda $e798
+    E5C5: AD 98 E7    lda ptr_round_items   ; $E798
     E5C8: 85 1C       sta aux_ptr   ; $1C
     E5CA: AD 99 E7    lda $e799
     E5CD: 85 1D       sta aux_ptr_hi   ; $1D
@@ -6700,7 +6866,7 @@ load_round_items:
     E5EC: 84 1B       sty cur_obj_index   ; $1B
     E5EE: 9D 61 02    sta obj_type,x   ; $0261
     E5F1: A8          tay
-    E5F2: B9 A5 E7    lda $e7a5,y
+    E5F2: B9 A5 E7    lda tbl_item_addrs,y   ; $E7A5
     E5F5: 85 10       sta src_ptr   ; $10
     E5F7: B9 A6 E7    lda $e7a6,y
     E5FA: 85 11       sta zp_ptr_hi   ; $11
@@ -6756,11 +6922,13 @@ update_items:
 
 dispatch_item_state:
     E64A: BC 60 02    ldy item_state,x   ; $0260
-    E64D: B9 5A E6    lda $e65a,y
+    E64D: B9 5A E6    lda tbl_item_state_handlers,y   ; $E65A
     E650: 85 1C       sta aux_ptr   ; $1C
     E652: B9 5B E6    lda $e65b,y
     E655: 85 1D       sta aux_ptr_hi   ; $1D
     E657: 6C 1C 00    jmp (aux_ptr)   ; $001C
+
+tbl_item_state_handlers:
     E65A:            .word handler_rts_noop
     E65C:            .word player_collects_item
     E65E:            .word show_item_points
@@ -6855,7 +7023,7 @@ show_item_points:
 
 erase_item:
     E70A: A0 0A       ldy #$0a
-    E70C: B9 B9 E7    lda $e7b9,y
+    E70C: B9 B9 E7    lda tbl_item_pictures,y   ; $E7B9
     E70F: 85 12       sta gfx_src_ptr   ; $12
     E711: B9 BA E7    lda $e7ba,y
     E714: 85 13       sta data_ptr_hi   ; $13
@@ -6885,14 +7053,14 @@ draw_item:
     E739: A9 02       lda #$02
 @E73B:
     E73B: 85 14       sta scan_src_ptr   ; $14
-    E73D: B9 B9 E7    lda $e7b9,y
+    E73D: B9 B9 E7    lda tbl_item_pictures,y   ; $E7B9
     E740: 85 12       sta gfx_src_ptr   ; $12
     E742: B9 BA E7    lda $e7ba,y
     E745: 85 13       sta data_ptr_hi   ; $13
 
 draw_at_item_address:
     E747: BC 61 02    ldy obj_type,x   ; $0261
-    E74A: B9 A5 E7    lda $e7a5,y
+    E74A: B9 A5 E7    lda tbl_item_addrs,y   ; $E7A5
     E74D: 85 10       sta src_ptr   ; $10
     E74F: B9 A6 E7    lda $e7a6,y
     E752: 85 11       sta zp_ptr_hi   ; $11
@@ -6920,6 +7088,8 @@ slot2_sits_on_item:
     E784: 8D 27 04    sta bonus_item_timer   ; $0427
 @E787:
     E787: 60          rts
+
+unreferenced_e788:
     E788: 02          .byte $02
     E789: 02          .byte $02
     E78A: 00          .byte $00
@@ -6936,8 +7106,12 @@ slot2_sits_on_item:
     E795: 02          .byte $02
     E796: 00          .byte $00
     E797: 02          .byte $02
+
+ptr_round_items:
     E798: 9A          .byte $9A
     E799: E7          .byte $E7
+
+round_items_descriptor:
     E79A: 50          .byte $50
     E79B: 00          .byte $00
     E79C: 02          .byte $02
@@ -6949,6 +7123,8 @@ slot2_sits_on_item:
     E7A2: 0E          .byte $0E
     E7A3: 10          .byte $10
     E7A4: 12          .byte $12
+
+tbl_item_addrs:
     E7A5: 52          .byte $52
     E7A6: 25          .byte $25
     E7A7: D8          .byte $D8
@@ -6969,6 +7145,8 @@ slot2_sits_on_item:
     E7B6: 21          .byte $21
     E7B7: 53          .byte $53
     E7B8: 26          .byte $26
+
+tbl_item_pictures:
     E7B9: C5          .byte $C5
     E7BA: E7          .byte $E7
     E7BB: CD          .byte $CD
@@ -6981,6 +7159,8 @@ slot2_sits_on_item:
     E7C2: E7          .byte $E7
     E7C3: ED          .byte $ED
     E7C4: E7          .byte $E7
+
+item_picture_00:
     E7C5: 02          .byte $02
     E7C6: 8C          .byte $8C
     E7C7: 8D          .byte $8D
@@ -6989,6 +7169,8 @@ slot2_sits_on_item:
     E7CA: 8E          .byte $8E
     E7CB: 8F          .byte $8F
     E7CC: 00          .byte $00
+
+item_picture_02:
     E7CD: 02          .byte $02
     E7CE: 90          .byte $90
     E7CF: 91          .byte $91
@@ -6997,6 +7179,8 @@ slot2_sits_on_item:
     E7D2: 92          .byte $92
     E7D3: 93          .byte $93
     E7D4: 00          .byte $00
+
+item_picture_04:
     E7D5: 02          .byte $02
     E7D6: 94          .byte $94
     E7D7: 95          .byte $95
@@ -7005,6 +7189,8 @@ slot2_sits_on_item:
     E7DA: 96          .byte $96
     E7DB: 97          .byte $97
     E7DC: 00          .byte $00
+
+item_picture_06:
     E7DD: 02          .byte $02
     E7DE: 98          .byte $98
     E7DF: 99          .byte $99
@@ -7013,6 +7199,8 @@ slot2_sits_on_item:
     E7E2: 9A          .byte $9A
     E7E3: 9B          .byte $9B
     E7E4: 00          .byte $00
+
+item_picture_08:
     E7E5: 02          .byte $02
     E7E6: 9C          .byte $9C
     E7E7: 9D          .byte $9D
@@ -7021,6 +7209,8 @@ slot2_sits_on_item:
     E7EA: 9E          .byte $9E
     E7EB: 9F          .byte $9F
     E7EC: 00          .byte $00
+
+item_picture_0a:
     E7ED: 02          .byte $02
     E7EE: 00          .byte $00
     E7EF: 00          .byte $00
@@ -7098,7 +7288,7 @@ load_round_doors:
     E862: A5 7A       lda stage_number   ; $7A
     E864: 0A          asl a
     E865: A8          tay
-    E866: B9 FC EA    lda $eafc,y
+    E866: B9 FC EA    lda tbl_round_door_lists,y   ; $EAFC
     E869: 85 1C       sta aux_ptr   ; $1C
     E86B: B9 FD EA    lda $eafd,y
     E86E: 85 1D       sta aux_ptr_hi   ; $1D
@@ -7191,7 +7381,7 @@ draw_door_kind_y:
     E905: 85 10       sta src_ptr   ; $10
     E907: BD B3 02    lda $02b3,x
     E90A: 85 11       sta zp_ptr_hi   ; $11
-    E90C: B9 4F EC    lda $ec4f,y
+    E90C: B9 4F EC    lda tbl_door_pictures,y   ; $EC4F
     E90F: 85 12       sta gfx_src_ptr   ; $12
     E911: B9 50 EC    lda $ec50,y
     E914: 85 13       sta data_ptr_hi   ; $13
@@ -7345,7 +7535,7 @@ door_knock_back_objects:
     EA05: BD B1 02    lda obj_state,x   ; $02B1
     EA08: 29 06       and #$06
     EA0A: A8          tay
-    EA0B: B9 49 EA    lda $ea49,y
+    EA0B: B9 49 EA    lda tbl_door_kind_knockback,y   ; $EA49
     EA0E: 85 1C       sta aux_ptr   ; $1C
     EA10: B9 4A EA    lda $ea4a,y
     EA13: 85 1D       sta aux_ptr_hi   ; $1D
@@ -7378,6 +7568,8 @@ door_knock_back_objects:
 
 jmp_indirect_zp_vector:
     EA46: 6C 1C 00    jmp (aux_ptr)   ; $001C
+
+tbl_door_kind_knockback:
     EA49:            .word door_kind0_knock_back
     EA4B:            .word door_kind1_knock_back
     EA4D:            .word door_kind2_knock_back
@@ -7490,6 +7682,8 @@ walker_meets_closed_door:
     EAF7: F1 1E       sbc (obj_record_ptr),y   ; $1E
     EAF9: 91 1E       sta (obj_record_ptr),y   ; $1E
     EAFB: 60          rts
+
+tbl_round_door_lists:
     EAFC: 1C          .byte $1C
     EAFD: EB          .byte $EB
     EAFE: 3B          .byte $3B
@@ -7522,6 +7716,8 @@ walker_meets_closed_door:
     EB19: EC          .byte $EC
     EB1A: 2F          .byte $2F
     EB1B: EC          .byte $EC
+
+round_doors_00:
     EB1C: 50          .byte $50
     EB1D: 08          .byte $08
     EB1E: AC          .byte $AC
@@ -7553,6 +7749,8 @@ walker_meets_closed_door:
     EB38: 04          .byte $04
     EB39: 2F          .byte $2F
     EB3A: 26          .byte $26
+
+round_doors_02:
     EB3B: 50          .byte $50
     EB3C: 08          .byte $08
     EB3D: 2C          .byte $2C
@@ -7584,6 +7782,8 @@ walker_meets_closed_door:
     EB57: 04          .byte $04
     EB58: A5          .byte $A5
     EB59: 25          .byte $25
+
+round_doors_06:
     EB5A: 40          .byte $40
     EB5B: 08          .byte $08
     EB5C: 2C          .byte $2C
@@ -7609,6 +7809,8 @@ walker_meets_closed_door:
     EB70: 04          .byte $04
     EB71: 30          .byte $30
     EB72: 26          .byte $26
+
+round_doors_08:
     EB73: 40          .byte $40
     EB74: 08          .byte $08
     EB75: AB          .byte $AB
@@ -7634,6 +7836,8 @@ walker_meets_closed_door:
     EB89: 04          .byte $04
     EB8A: 31          .byte $31
     EB8B: 23          .byte $23
+
+round_doors_0a:
     EB8C: 48          .byte $48
     EB8D: 08          .byte $08
     EB8E: 2C          .byte $2C
@@ -7662,6 +7866,8 @@ walker_meets_closed_door:
     EBA5: 04          .byte $04
     EBA6: 30          .byte $30
     EBA7: 26          .byte $26
+
+round_doors_0e:
     EBA8: 48          .byte $48
     EBA9: 08          .byte $08
     EBAA: AC          .byte $AC
@@ -7690,6 +7896,8 @@ walker_meets_closed_door:
     EBC1: 04          .byte $04
     EBC2: B5          .byte $B5
     EBC3: 25          .byte $25
+
+round_doors_10:
     EBC4: 40          .byte $40
     EBC5: 08          .byte $08
     EBC6: 2C          .byte $2C
@@ -7715,6 +7923,8 @@ walker_meets_closed_door:
     EBDA: 04          .byte $04
     EBDB: 3D          .byte $3D
     EBDC: 23          .byte $23
+
+round_doors_12:
     EBDD: 38          .byte $38
     EBDE: 0C          .byte $0C
     EBDF: AC          .byte $AC
@@ -7737,6 +7947,8 @@ walker_meets_closed_door:
     EBF0: 00          .byte $00
     EBF1: 2F          .byte $2F
     EBF2: 26          .byte $26
+
+round_doors_16:
     EBF3: 38          .byte $38
     EBF4: 08          .byte $08
     EBF5: 30          .byte $30
@@ -7759,6 +7971,8 @@ walker_meets_closed_door:
     EC06: 04          .byte $04
     EC07: 26          .byte $26
     EC08: 25          .byte $25
+
+round_doors_18:
     EC09: 40          .byte $40
     EC0A: 08          .byte $08
     EC0B: 30          .byte $30
@@ -7784,6 +7998,8 @@ walker_meets_closed_door:
     EC1F: 04          .byte $04
     EC20: AB          .byte $AB
     EC21: 25          .byte $25
+
+round_doors_1a:
     EC22: 20          .byte $20
     EC23: 08          .byte $08
     EC24: 35          .byte $35
@@ -7797,6 +8013,8 @@ walker_meets_closed_door:
     EC2C: 0C          .byte $0C
     EC2D: B5          .byte $B5
     EC2E: 22          .byte $22
+
+round_doors_1e:
     EC2F: 50          .byte $50
     EC30: 08          .byte $08
     EC31: BD          .byte $BD
@@ -7828,7 +8046,11 @@ walker_meets_closed_door:
     EC4B: 04          .byte $04
     EC4C: 2F          .byte $2F
     EC4D: 26          .byte $26
+
+round_doors_04:
     EC4E: 00          .byte $00
+
+tbl_door_pictures:
     EC4F: 71          .byte $71
     EC50: EC          .byte $EC
     EC51: C5          .byte $C5
@@ -7863,6 +8085,8 @@ walker_meets_closed_door:
     EC6E: EC          .byte $EC
     EC6F: 01          .byte $01
     EC70: ED          .byte $ED
+
+door_picture_00:
     EC71: 01          .byte $01
     EC72: 56          .byte $56
     EC73: 1F          .byte $1F
@@ -7872,6 +8096,8 @@ walker_meets_closed_door:
     EC77: 01          .byte $01
     EC78: 56          .byte $56
     EC79: 00          .byte $00
+
+door_picture_04:
     EC7A: 01          .byte $01
     EC7B: 56          .byte $56
     EC7C: 1F          .byte $1F
@@ -7881,6 +8107,8 @@ walker_meets_closed_door:
     EC80: 01          .byte $01
     EC81: 56          .byte $56
     EC82: 00          .byte $00
+
+door_picture_08:
     EC83: 01          .byte $01
     EC84: 53          .byte $53
     EC85: 1F          .byte $1F
@@ -7890,6 +8118,8 @@ walker_meets_closed_door:
     EC89: 01          .byte $01
     EC8A: 53          .byte $53
     EC8B: 00          .byte $00
+
+door_picture_0c:
     EC8C: 01          .byte $01
     EC8D: 53          .byte $53
     EC8E: 1F          .byte $1F
@@ -7899,6 +8129,8 @@ walker_meets_closed_door:
     EC92: 01          .byte $01
     EC93: 53          .byte $53
     EC94: 00          .byte $00
+
+door_picture_10:
     EC95: 01          .byte $01
     EC96: 52          .byte $52
     EC97: 1F          .byte $1F
@@ -7908,6 +8140,8 @@ walker_meets_closed_door:
     EC9B: 01          .byte $01
     EC9C: 52          .byte $52
     EC9D: 00          .byte $00
+
+door_picture_12:
     EC9E: 02          .byte $02
     EC9F: 87          .byte $87
     ECA0: 00          .byte $00
@@ -7920,6 +8154,8 @@ walker_meets_closed_door:
     ECA7: 87          .byte $87
     ECA8: 00          .byte $00
     ECA9: 00          .byte $00
+
+door_picture_14:
     ECAA: 02          .byte $02
     ECAB: 87          .byte $87
     ECAC: 89          .byte $89
@@ -7932,6 +8168,8 @@ walker_meets_closed_door:
     ECB3: 87          .byte $87
     ECB4: 89          .byte $89
     ECB5: 00          .byte $00
+
+door_picture_16:
     ECB6: 03          .byte $03
     ECB7: 87          .byte $87
     ECB8: 88          .byte $88
@@ -7947,6 +8185,8 @@ walker_meets_closed_door:
     ECC2: 88          .byte $88
     ECC3: 00          .byte $00
     ECC4: 00          .byte $00
+
+door_picture_02:
     ECC5: 03          .byte $03
     ECC6: 87          .byte $87
     ECC7: 88          .byte $88
@@ -7962,6 +8202,8 @@ walker_meets_closed_door:
     ECD1: 88          .byte $88
     ECD2: 89          .byte $89
     ECD3: 00          .byte $00
+
+door_picture_1a:
     ECD4: 00          .byte $00
     ECD5: FF          .byte $FF
     ECD6: 02          .byte $02
@@ -7976,6 +8218,8 @@ walker_meets_closed_door:
     ECDF: 00          .byte $00
     ECE0: 89          .byte $89
     ECE1: 00          .byte $00
+
+door_picture_1c:
     ECE2: 00          .byte $00
     ECE3: FF          .byte $FF
     ECE4: 02          .byte $02
@@ -7990,6 +8234,8 @@ walker_meets_closed_door:
     ECED: 87          .byte $87
     ECEE: 89          .byte $89
     ECEF: 00          .byte $00
+
+door_picture_1e:
     ECF0: 00          .byte $00
     ECF1: FE          .byte $FE
     ECF2: 03          .byte $03
@@ -8007,6 +8253,8 @@ walker_meets_closed_door:
     ECFE: 88          .byte $88
     ECFF: 89          .byte $89
     ED00: 00          .byte $00
+
+door_picture_06:
     ED01: 00          .byte $00
     ED02: FE          .byte $FE
     ED03: 03          .byte $03
@@ -8336,13 +8584,15 @@ load_dropped_objects:
     EF20: B0 0C       bcs @EF2E   ; $EF2E
     EF22: A2 00       ldx #$00
 @EF24:
-    EF24: BD 2F EF    lda $ef2f,x
+    EF24: BD 2F EF    lda dropped_objects_template,x   ; $EF2F
     EF27: 95 A0       sta block_data_ptr,x   ; $A0
     EF29: E8          inx
     EF2A: E0 10       cpx #$10
     EF2C: D0 F6       bne @EF24   ; $EF24
 @EF2E:
     EF2E: 60          rts
+
+dropped_objects_template:
     EF2F: 00          .byte $00
     EF30: 03          .byte $03
     EF31: 00          .byte $00
@@ -8483,11 +8733,11 @@ spawn_floor_traps:
 init_floor_trap:
     F013: A9 02       lda #$02
     F015: 99 90 00    sta obj_state,y   ; $0090
-    F018: BD 41 F0    lda $f041,x
+    F018: BD 41 F0    lda floor_trap_addrs,x   ; $F041
     F01B: E8          inx
     F01C: 99 92 00    sta obj_trigger_coord,y   ; $0092
     F01F: 85 10       sta src_ptr   ; $10
-    F021: BD 41 F0    lda $f041,x
+    F021: BD 41 F0    lda floor_trap_addrs,x   ; $F041
     F024: E8          inx
     F025: 86 1B       stx cur_obj_index   ; $1B
     F027: 99 93 00    sta ppu_block_data_ptr,y   ; $0093
@@ -8502,6 +8752,8 @@ init_floor_trap:
     F03E: A6 1B       ldx cur_obj_index   ; $1B
 @F040:
     F040: 60          rts
+
+floor_trap_addrs:
     F041: 09          .byte $09
     F042: 22          .byte $22
     F043: 88          .byte $88
@@ -8542,7 +8794,7 @@ draw_floor_trap_frame:
     F075: 85 11       sta zp_ptr_hi   ; $11
     F077: A9 80       lda #$80
     F079: 85 14       sta scan_src_ptr   ; $14
-    F07B: BD 28 F1    lda $f128,x
+    F07B: BD 28 F1    lda tbl_floor_trap_pictures,x   ; $F128
     F07E: 85 12       sta gfx_src_ptr   ; $12
     F080: BD 29 F1    lda $f129,x
     F083: 85 13       sta data_ptr_hi   ; $13
@@ -8638,20 +8890,28 @@ walker_over_open_trap_x:
     F125: A9 00       lda #$00
 @F127:
     F127: 60          rts
+
+tbl_floor_trap_pictures:
     F128: 2E          .byte $2E
     F129: F1          .byte $F1
     F12A: 32          .byte $32
     F12B: F1          .byte $F1
     F12C: 36          .byte $36
     F12D: F1          .byte $F1
+
+floor_trap_picture_00:
     F12E: 02          .byte $02
     F12F: 51          .byte $51
     F130: 51          .byte $51
     F131: 00          .byte $00
+
+floor_trap_picture_02:
     F132: 02          .byte $02
     F133: 50          .byte $50
     F134: 50          .byte $50
     F135: 00          .byte $00
+
+floor_trap_picture_04:
     F136: 02          .byte $02
     F137: 4A          .byte $4A
     F138: 4A          .byte $4A
@@ -8659,7 +8919,7 @@ walker_over_open_trap_x:
 
 load_bonus_targets:
     F13A: A4 7C       ldy is_bonus_round   ; $7C
-    F13C: B9 7F F2    lda $f27f,y
+    F13C: B9 7F F2    lda tbl_bonus_target_lists,y   ; $F27F
     F13F: 85 1C       sta aux_ptr   ; $1C
     F141: B9 80 F2    lda $f280,y
     F144: 85 1D       sta aux_ptr_hi   ; $1D
@@ -8723,11 +8983,13 @@ update_bonus_targets:
 
 dispatch_bonus_target:
     F1A5: BC 60 02    ldy item_state,x   ; $0260
-    F1A8: B9 B5 F1    lda $f1b5,y
+    F1A8: B9 B5 F1    lda tbl_bonus_target_handlers,y   ; $F1B5
     F1AB: 85 1C       sta aux_ptr   ; $1C
     F1AD: B9 B6 F1    lda $f1b6,y
     F1B0: 85 1D       sta aux_ptr_hi   ; $1D
     F1B2: 6C 1C 00    jmp (aux_ptr)   ; $001C
+
+tbl_bonus_target_handlers:
     F1B5:            .word handler_rts_noop
     F1B7:            .word bonus_target_live
 
@@ -8766,7 +9028,7 @@ pop_bonus_target:
     F1FF: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
     F202: A0 08       ldy #$08
     F204: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
-    F207: AD 77 F2    lda $f277
+    F207: AD 77 F2    lda ptr_popped_target_picture   ; $F277
     F20A: 85 12       sta gfx_src_ptr   ; $12
     F20C: AD 78 F2    lda $f278
     F20F: 85 13       sta data_ptr_hi   ; $13
@@ -8802,7 +9064,7 @@ animate_bonus_target:
     F243: 4A          lsr a
     F244: 4A          lsr a
     F245: A8          tay
-    F246: B9 63 F2    lda $f263,y
+    F246: B9 63 F2    lda tbl_bonus_target_pictures,y   ; $F263
     F249: 85 12       sta gfx_src_ptr   ; $12
     F24B: B9 64 F2    lda $f264,y
     F24E: 85 13       sta data_ptr_hi   ; $13
@@ -8816,10 +9078,14 @@ draw_bonus_target:
     F25C: A9 00       lda #$00
     F25E: 85 14       sta scan_src_ptr   ; $14
     F260: 4C FB C6    jmp draw_rle_text   ; $C6FB
+
+tbl_bonus_target_pictures:
     F263: 67          .byte $67
     F264: F2          .byte $F2
     F265: 6F          .byte $6F
     F266: F2          .byte $F2
+
+bonus_target_picture_00:
     F267: 02          .byte $02
     F268: 28          .byte $28
     F269: 29          .byte $29
@@ -8828,6 +9094,8 @@ draw_bonus_target:
     F26C: 2A          .byte $2A
     F26D: 2B          .byte $2B
     F26E: 00          .byte $00
+
+bonus_target_picture_02:
     F26F: 02          .byte $02
     F270: 2C          .byte $2C
     F271: 2D          .byte $2D
@@ -8836,6 +9104,8 @@ draw_bonus_target:
     F274: 2E          .byte $2E
     F275: 2F          .byte $2F
     F276: 00          .byte $00
+
+ptr_popped_target_picture:
     F277: 79          .byte $79
     F278: F2          .byte $F2
     F279: 02          .byte $02
@@ -8844,6 +9114,8 @@ draw_bonus_target:
     F27C: 1E          .byte $1E
     F27D: 02          .byte $02
     F27E: 00          .byte $00
+
+tbl_bonus_target_lists:
     F27F: 00          .byte $00
     F280: 00          .byte $00
     F281: 89          .byte $89
@@ -8854,6 +9126,8 @@ draw_bonus_target:
     F286: F2          .byte $F2
     F287: C7          .byte $C7
     F288: F2          .byte $F2
+
+bonus_targets_02:
     F289: 78          .byte $78
     F28A: D5          .byte $D5
     F28B: 24          .byte $24
@@ -8885,6 +9159,8 @@ draw_bonus_target:
     F2A5: 21          .byte $21
     F2A6: C5          .byte $C5
     F2A7: 20          .byte $20
+
+bonus_targets_04:
     F2A8: 78          .byte $78
     F2A9: D5          .byte $D5
     F2AA: 24          .byte $24
@@ -8916,6 +9192,8 @@ draw_bonus_target:
     F2C4: 20          .byte $20
     F2C5: C5          .byte $C5
     F2C6: 20          .byte $20
+
+bonus_targets_06:
     F2C7: 78          .byte $78
     F2C8: D5          .byte $D5
     F2C9: 24          .byte $24
@@ -8977,7 +9255,7 @@ tick_round_timer:
     F314: 85 60       sta sequence_state   ; $60
     F316: A2 00       ldx #$00
 @F318:
-    F318: BD AA F3    lda $f3aa,x
+    F318: BD AA F3    lda hurry_sprite_record,x   ; $F3AA
     F31B: 9D 90 04    sta obj_state_counter,x   ; $0490
     F31E: E8          inx
     F31F: E0 08       cpx #$08
@@ -9053,6 +9331,8 @@ draw_hurry_sprite:
     F3A5: C6 17       dec draw_row_counter   ; $17
     F3A7: D0 EC       bne @F395   ; $F395
     F3A9: 60          rts
+
+hurry_sprite_record:
     F3AA: F8          .byte $F8
     F3AB: 00          .byte $00
     F3AC: A0          .byte $A0
@@ -9084,13 +9364,15 @@ load_stage_params:
     F3CF: AA          tax
     F3D0: A0 00       ldy #$00
 @F3D2:
-    F3D2: BD DF F3    lda $f3df,x
+    F3D2: BD DF F3    lda tbl_stage_params,x   ; $F3DF
     F3D5: 99 63 00    sta record_ptr,y   ; $0063
     F3D8: E8          inx
     F3D9: C8          iny
     F3DA: C0 06       cpy #$06
     F3DC: D0 F4       bne @F3D2   ; $F3D2
     F3DE: 60          rts
+
+tbl_stage_params:
     F3DF: 20          .byte $20
     F3E0: 1C          .byte $1C
     F3E1: B4          .byte $B4
@@ -9330,7 +9612,7 @@ init_sound_voices:
     F4E2: A2 19       ldx #$19
     F4E4: A0 00       ldy #$00
 @F4E6:
-    F4E6: B9 9E F8    lda $f89e,y
+    F4E6: B9 9E F8    lda init_sound_voices_data_f89e,y   ; $F89E
     F4E9: 99 E2 06    sta $06e2,y
     F4EC: C8          iny
     F4ED: CA          dex
@@ -9437,7 +9719,7 @@ sound_registers_next_voice:
     F58E: 85 F1       sta voice_rec_ptr_hi   ; $F1
 @F590:
     F590: A6 F4       ldx voice_index   ; $F4
-    F592: BD 85 F8    lda $f885,x
+    F592: BD 85 F8    lda sound_registers_next_voice_data_f885,x   ; $F885
     F595: F0 0D       beq @F5A4   ; $F5A4
     F597: BD 00 06    lda sound_trigger,x   ; $0600
     F59A: D0 15       bne @F5B1   ; $F5B1
@@ -9490,13 +9772,13 @@ sound_streams_next_voice:
     F5E9: 20 F4 F7    jsr load_voice_stream_ptr   ; $F7F4
     F5EC: 4C 06 F6    jmp start_voice_stream   ; $F606
 @F5EF:
-    F5EF: AD 79 F8    lda $f879
+    F5EF: AD 79 F8    lda voice13_stream   ; $F879
     F5F2: 85 F8       sta voice13_stream_ptr   ; $F8
     F5F4: AD 7A F8    lda $f87a
     F5F7: 85 F9       sta voice13_stream_ptr_hi   ; $F9
     F5F9: 4C 06 F6    jmp start_voice_stream   ; $F606
 @F5FC:
-    F5FC: AD 7B F8    lda $f87b
+    F5FC: AD 7B F8    lda voice14_stream   ; $F87B
     F5FF: 85 FA       sta voice14_stream_ptr   ; $FA
     F601: AD 7C F8    lda $f87c
     F604: 85 FB       sta voice14_stream_ptr_hi   ; $FB
@@ -9537,7 +9819,7 @@ run_voice_stream:
     F646: 4A          lsr a
     F647: 4A          lsr a
     F648: AA          tax
-    F649: BD 3B F8    lda $f83b,x
+    F649: BD 3B F8    lda tbl_note_periods,x   ; $F83B
     F64C: 85 F6       sta sound_scratch   ; $F6
     F64E: BD 3C F8    lda $f83c,x
     F651: 85 F7       sta $f7
@@ -9801,7 +10083,7 @@ load_voice_stream_ptr:
     F7FC: F0 0C       beq @F80A   ; $F80A
     F7FE: 0A          asl a
     F7FF: AA          tax
-    F800: BD 53 F8    lda $f853,x
+    F800: BD 53 F8    lda tbl_voice_stream_ptrs,x   ; $F853
     F803: 85 F2       sta voice_stream_ptr   ; $F2
     F805: BD 54 F8    lda $f854,x
     F808: 85 F3       sta voice_stream_ptr_hi   ; $F3
@@ -9841,6 +10123,8 @@ fetch_voice_stream_byte:
     F838: E6 FB       inc voice14_stream_ptr_hi   ; $FB
 @F83A:
     F83A: 60          rts
+
+tbl_note_periods:
     F83B: 07          .byte $07
     F83C: F2          .byte $F2
     F83D: 07          .byte $07
@@ -9865,6 +10149,8 @@ fetch_voice_stream_byte:
     F850: 76          .byte $76
     F851: 04          .byte $04
     F852: 36          .byte $36
+
+tbl_voice_stream_ptrs:
     F853: 86          .byte $86
     F854: FE          .byte $FE
     F855: 92          .byte $92
@@ -9903,8 +10189,12 @@ fetch_voice_stream_byte:
     F876: FE          .byte $FE
     F877: 72          .byte $72
     F878: FE          .byte $FE
+
+voice13_stream:
     F879: B7          .byte $B7
     F87A: F8          .byte $F8
+
+voice14_stream:
     F87B: 14          .byte $14
     F87C: FA          .byte $FA
     F87D: C2          .byte $C2
@@ -9915,6 +10205,8 @@ fetch_voice_stream_byte:
     F882: FE          .byte $FE
     F883: 0D          .byte $0D
     F884: FF          .byte $FF
+
+sound_registers_next_voice_data_f885:
     F885: 00          .byte $00
     F886: 00          .byte $00
     F887: 00          .byte $00
@@ -9940,6 +10232,8 @@ fetch_voice_stream_byte:
     F89B: 00          .byte $00
     F89C: 00          .byte $00
     F89D: 00          .byte $00
+
+init_sound_voices_data_f89e:
     F89E: 01          .byte $01
     F89F: 01          .byte $01
     F8A0: 01          .byte $01
@@ -10569,6 +10863,8 @@ fetch_voice_stream_byte:
     FB10: F9          .byte $F9
     FB11: 94          .byte $94
     FB12: FA          .byte $FA
+
+voice_stream_04:
     FB13: 01          .byte $01
     FB14: 04          .byte $04
     FB15: 7F          .byte $7F
@@ -10593,6 +10889,8 @@ fetch_voice_stream_byte:
     FB28: 73          .byte $73
     FB29: 4B          .byte $4B
     FB2A: E8          .byte $E8
+
+voice_stream_06:
     FB2B: 03          .byte $03
     FB2C: 23          .byte $23
     FB2D: 7F          .byte $7F
@@ -10611,6 +10909,8 @@ fetch_voice_stream_byte:
     FB3A: 73          .byte $73
     FB3B: 32          .byte $32
     FB3C: E8          .byte $E8
+
+voice_stream_08:
     FB3D: 02          .byte $02
     FB3E: 04          .byte $04
     FB3F: 7F          .byte $7F
@@ -10635,6 +10935,8 @@ fetch_voice_stream_byte:
     FB52: 73          .byte $73
     FB53: 13          .byte $13
     FB54: E8          .byte $E8
+
+voice_stream_1c:
     FB55: 01          .byte $01
     FB56: 07          .byte $07
     FB57: 7F          .byte $7F
@@ -10795,6 +11097,8 @@ fetch_voice_stream_byte:
     FBF2: 52          .byte $52
     FBF3: F9          .byte $F9
     FBF4: 1A          .byte $1A
+
+voice_stream_1e:
     FBF5: 02          .byte $02
     FBF6: 07          .byte $07
     FBF7: 7F          .byte $7F
@@ -10911,6 +11215,8 @@ fetch_voice_stream_byte:
     FC66: 92          .byte $92
     FC67: 42          .byte $42
     FC68: E8          .byte $E8
+
+voice_stream_20:
     FC69: 03          .byte $03
     FC6A: 15          .byte $15
     FC6B: 7F          .byte $7F
@@ -11088,6 +11394,8 @@ fetch_voice_stream_byte:
     FD17: 43          .byte $43
     FD18: 04          .byte $04
     FD19: E8          .byte $E8
+
+voice_stream_16:
     FD1A: 01          .byte $01
     FD1B: 05          .byte $05
     FD1C: 7F          .byte $7F
@@ -11118,6 +11426,8 @@ fetch_voice_stream_byte:
     FD35: 2A          .byte $2A
     FD36: 60          .byte $60
     FD37: E8          .byte $E8
+
+voice_stream_18:
     FD38: 03          .byte $03
     FD39: 2A          .byte $2A
     FD3A: 7F          .byte $7F
@@ -11133,6 +11443,8 @@ fetch_voice_stream_byte:
     FD44: 03          .byte $03
     FD45: 60          .byte $60
     FD46: E8          .byte $E8
+
+voice_stream_1a:
     FD47: 02          .byte $02
     FD48: 86          .byte $86
     FD49: 7F          .byte $7F
@@ -11148,6 +11460,8 @@ fetch_voice_stream_byte:
     FD53: 59          .byte $59
     FD54: 49          .byte $49
     FD55: E8          .byte $E8
+
+voice_stream_14:
     FD56: 02          .byte $02
     FD57: FF          .byte $FF
     FD58: 7F          .byte $7F
@@ -11162,6 +11476,8 @@ fetch_voice_stream_byte:
     FD61: 6A          .byte $6A
     FD62: 13          .byte $13
     FD63: E8          .byte $E8
+
+voice_stream_12:
     FD64: 02          .byte $02
     FD65: DF          .byte $DF
     FD66: 7F          .byte $7F
@@ -11199,6 +11515,8 @@ fetch_voice_stream_byte:
     FD86: F9          .byte $F9
     FD87: 04          .byte $04
     FD88: E8          .byte $E8
+
+voice_stream_10:
     FD89: 02          .byte $02
     FD8A: CB          .byte $CB
     FD8B: 7F          .byte $7F
@@ -11221,6 +11539,8 @@ fetch_voice_stream_byte:
     FD9C: 33          .byte $33
     FD9D: 2B          .byte $2B
     FD9E: E8          .byte $E8
+
+voice_stream_0e:
     FD9F: 02          .byte $02
     FDA0: 89          .byte $89
     FDA1: 7F          .byte $7F
@@ -11228,6 +11548,8 @@ fetch_voice_stream_byte:
     FDA3: 72          .byte $72
     FDA4: 13          .byte $13
     FDA5: E8          .byte $E8
+
+voice_stream_0c:
     FDA6: 02          .byte $02
     FDA7: 7F          .byte $7F
     FDA8: 7F          .byte $7F
@@ -11248,6 +11570,8 @@ fetch_voice_stream_byte:
     FDB7: 0F          .byte $0F
     FDB8: 23          .byte $23
     FDB9: E8          .byte $E8
+
+voice_stream_0a:
     FDBA: 01          .byte $01
     FDBB: 8F          .byte $8F
     FDBC: 7F          .byte $7F
@@ -11408,6 +11732,8 @@ fetch_voice_stream_byte:
     FE57: 8A          .byte $8A
     FE58: 52          .byte $52
     FE59: E8          .byte $E8
+
+voice_stream_22:
     FE5A: 01          .byte $01
     FE5B: 03          .byte $03
     FE5C: 7F          .byte $7F
@@ -11432,6 +11758,8 @@ fetch_voice_stream_byte:
     FE6F: 80          .byte $80
     FE70: 52          .byte $52
     FE71: E8          .byte $E8
+
+voice_stream_24:
     FE72: 02          .byte $02
     FE73: C4          .byte $C4
     FE74: 7F          .byte $7F
@@ -11464,6 +11792,8 @@ fetch_voice_stream_byte:
     FE8F: 72          .byte $72
     FE90: 3B          .byte $3B
     FE91: E8          .byte $E8
+
+voice_stream_02:
     FE92: 01          .byte $01
     FE93: 05          .byte $05
     FE94: 7F          .byte $7F
