@@ -1746,7 +1746,7 @@ update_round_frame:
     CB60: 20 FE E3    jsr tick_all_subcounters_stride8   ; $E3FE
     CB63: 20 D8 D8    jsr update_and_respawn_objects   ; $D8D8
     CB66: 20 4E ED    jsr tick_object_group_04a0   ; $ED4E
-    CB69: 20 3F EF    jsr update_object_pair_state_at_a0_a8   ; $EF3F
+    CB69: 20 3F EF    jsr update_dropped_objects   ; $EF3F
     CB6C: 20 34 E6    jsr update_items   ; $E634
     CB6F: 20 CC E8    jsr update_all_objects_anim_and_phase   ; $E8CC
     CB72: 20 4D F0    jsr dispatch_obj0_state_then_fall_to_obj8   ; $F04D
@@ -4815,30 +4815,30 @@ dispatch_object_state:
     DA3D: 85 1D       sta aux_ptr_hi   ; $1D
     DA3F: 6C 1C 00    jmp (aux_ptr)   ; $001C
     DA42:            .word handler_rts_noop
-    DA44:            .word update_object_proximity_collision_tick
-    DA46:            .word tick_object_timer_then_move_or_reset
-    DA48:            .word trigger_entity_state_reset_on_proximity_or_type_else_scan_next
-    DA4A:            .word inc_counter_set_flag_at_threshold
-    DA4C:            .word obj_state7_update_anim_and_snap_position
-    DA4E:            .word resolve_entity_collision_movement
-    DA50:            .word update_object_move_timer_then_advance
-    DA52:            .word tick_obj_proximity_hit_and_countdown
-    DA54:            .word dec_obj_timer_reload_state
-    DA56:            .word tick_obj_timer_field7_else_reset_obj
+    DA44:            .word state02_walk
+    DA46:            .word state04_hop_off_ledge
+    DA48:            .word state06_fall
+    DA4A:            .word state08_player_caught
+    DA4C:            .word state0A_trampoline_bounce
+    DA4E:            .word state0C_rise
+    DA50:            .word state0E_step_onto_floor
+    DA52:            .word state10_door_knockback
+    DA54:            .word state12_stunned
+    DA56:            .word state14_recover
     DA58:            .word handler_rts_noop
     DA5A:            .word handler_rts_noop
-    DA5C:            .word dec_timer_field7_if_nonzero
-    DA5E:            .word handle_entity_object_pickup_or_special_setup
-    DA60:            .word tick_bonus_item_collect_or_timeout
-    DA62:            .word tick_timer_0427_reset_obj_when_idle
-    DA64:            .word tick_obj_timer_field7_else_reset_to_state2
-    DA66:            .word countdown_timer_then_reset_obj_and_arm_field
-    DA68:            .word dec_obj_timer_reload_on_zero
-    DA6A:            .word obj_tick_timer7_then_reset_fields_8_F
-    DA6C:            .word init_objects_if_inactive
-    DA6E:            .word delay_then_zero_struct_fields
+    DA5C:            .word state1A_respawn_wait
+    DA5E:            .word state1C_respawn_drop
+    DA60:            .word state1E_slot2_on_item
+    DA62:            .word state20_slot2_scored
+    DA64:            .word state22_knocked_out
+    DA66:            .word state24_slot2_landing_pause
+    DA68:            .word state26_stunned_by_drop
+    DA6A:            .word state28_drop_stun_recover
+    DA6C:            .word state2A_wait_then_start_tune
+    DA6E:            .word state2C_wait_tune
 
-update_object_proximity_collision_tick:
+state02_walk:
     DA70: A5 1E       lda obj_record_ptr   ; $1E
     DA72: C9 20       cmp #$20
     DA74: D0 08       bne @DA7E   ; $DA7E
@@ -4846,24 +4846,24 @@ update_object_proximity_collision_tick:
     DA79: F0 03       beq @DA7E   ; $DA7E
     DA7B: CE 2A 04    dec bonus_item_timer   ; $042A
 @DA7E:
-    DA7E: 20 B7 E0    jsr find_adjacent_entity_to_ref_copy_attr   ; $E0B7
-    DA81: F0 55       beq player_caught   ; $DAD8
-    DA83: 20 90 EA    jsr scan_objects_for_adjacent_contact_and_trigger   ; $EA90
+    DA7E: 20 B7 E0    jsr walking_cat_touches_player   ; $E0B7
+    DA81: F0 55       beq catch_player_or_knock_out   ; $DAD8
+    DA83: 20 90 EA    jsr walker_meets_closed_door   ; $EA90
     DA86: 20 B1 F0    jsr advance_obj_pair_on_proximity   ; $F0B1
     DA89: 20 E7 F0    jsr check_two_obj_slots_for_hit   ; $F0E7
     DA8C: D0 03       bne @DA91   ; $DA91
-    DA8E: 4C 83 DB    jmp obj_reset_fields_8_F   ; $DB83
+    DA8E: 4C 83 DB    jmp enter_fall   ; $DB83
 @DA91:
     DA91: A0 08       ldy #$08
     DA93: B1 1E       lda (obj_record_ptr),y   ; $1E
     DA95: 38          sec
     DA96: E9 49       sbc #$49
     DA98: C9 09       cmp #$09
-    DA9A: B0 06       bcs set_obj_state_0b_after_align   ; $DAA2
+    DA9A: B0 06       bcs start_hop_off_ledge   ; $DAA2
     DA9C: 20 E9 DE    jsr advance_object_state_counter   ; $DEE9
-    DA9F: 4C 72 E9    jmp select_overlapping_target_object   ; $E972
+    DA9F: 4C 72 E9    jmp player_opens_nearest_door   ; $E972
 
-set_obj_state_0b_after_align:
+start_hop_off_ledge:
     DAA2: A5 1E       lda obj_record_ptr   ; $1E
     DAA4: C9 20       cmp #$20
     DAA6: F0 03       beq @DAAB   ; $DAAB
@@ -4874,7 +4874,7 @@ set_obj_state_0b_after_align:
     DAAF: 91 1E       sta (obj_record_ptr),y   ; $1E
     DAB1: A9 D0       lda #$d0
 
-set_obj_fields_via_ptr:
+start_hop:
     DAB3: A0 0B       ldy #$0b
     DAB5: 91 1E       sta (obj_record_ptr),y   ; $1E
     DAB7: A9 09       lda #$09
@@ -4887,18 +4887,18 @@ set_obj_fields_via_ptr:
     DAC4: 91 1E       sta (obj_record_ptr),y   ; $1E
     DAC6: 60          rts
 
-tick_object_timer_then_move_or_reset:
+state04_hop_off_ledge:
     DAC7: A0 07       ldy #$07
     DAC9: B1 1E       lda (obj_record_ptr),y   ; $1E
     DACB: 38          sec
     DACC: E9 01       sbc #$01
     DACE: 91 1E       sta (obj_record_ptr),y   ; $1E
     DAD0: D0 03       bne @DAD5   ; $DAD5
-    DAD2: 4C 83 DB    jmp obj_reset_fields_8_F   ; $DB83
+    DAD2: 4C 83 DB    jmp enter_fall   ; $DB83
 @DAD5:
     DAD5: 4C 3D E0    jmp advance_object_subpixel_position_then_clamp   ; $E03D
 
-player_caught:
+catch_player_or_knock_out:
     DAD8: A5 1E       lda obj_record_ptr   ; $1E
     DADA: D0 35       bne @DB11   ; $DB11
     DADC: A9 1E       lda #$1e
@@ -4953,16 +4953,16 @@ reset_objects_except_persistent_types:
     DB35: 44          .byte $44
     DB36: 08          .byte $08
 
-tick_obj_timer_field7_else_reset_to_state2:
+state22_knocked_out:
     DB37: A0 07       ldy #$07
     DB39: B1 1E       lda (obj_record_ptr),y   ; $1E
     DB3B: 38          sec
     DB3C: E9 01       sbc #$01
     DB3E: 91 1E       sta (obj_record_ptr),y   ; $1E
     DB40: D0 12       bne @DB54   ; $DB54
-    DB42: 4C 17 DD    jmp reset_obj_to_state2_and_arm_field   ; $DD17
+    DB42: 4C 17 DD    jmp land_on_floor   ; $DD17
 
-inc_counter_set_flag_at_threshold:
+state08_player_caught:
     DB45: EE 07 04    inc $0407
     DB48: AD 07 04    lda $0407
     DB4B: C9 20       cmp #$20
@@ -4972,7 +4972,7 @@ inc_counter_set_flag_at_threshold:
 @DB54:
     DB54: 60          rts
 
-init_objects_if_inactive:
+state2A_wait_then_start_tune:
     DB55: AD A5 04    lda obj_state   ; $04A5
     DB58: 0D AD 04    ora $04ad
     DB5B: D0 1D       bne @DB7A   ; $DB7A
@@ -4990,12 +4990,12 @@ init_objects_if_inactive:
 @DB7A:
     DB7A: 60          rts
 
-delay_then_zero_struct_fields:
+state2C_wait_tune:
     DB7B: EE 07 04    inc $0407
     DB7E: 10 FA       bpl @DB7A   ; $DB7A
     DB80: 4C 6F DE    jmp zero_struct_fields_4_and_15   ; $DE6F
 
-obj_reset_fields_8_F:
+enter_fall:
     DB83: A9 00       lda #$00
     DB85: A0 08       ldy #$08
     DB87: 91 1E       sta (obj_record_ptr),y   ; $1E
@@ -5007,8 +5007,8 @@ obj_reset_fields_8_F:
 @DB93:
     DB93: 60          rts
 
-trigger_entity_state_reset_on_proximity_or_type_else_scan_next:
-    DB94: 20 02 E1    jsr check_two_coords_adjacent   ; $E102
+state06_fall:
+    DB94: 20 02 E1    jsr slot1_touches_player   ; $E102
     DB97: F0 0B       beq @DBA4   ; $DBA4
     DB99: A0 08       ldy #$08
     DB9B: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -5017,19 +5017,19 @@ trigger_entity_state_reset_on_proximity_or_type_else_scan_next:
     DBA0: C9 07       cmp #$07
     DBA2: B0 03       bcs @DBA7   ; $DBA7
 @DBA4:
-    DBA4: 4C D8 DA    jmp player_caught   ; $DAD8
+    DBA4: 4C D8 DA    jmp catch_player_or_knock_out   ; $DAD8
 @DBA7:
     DBA7: A0 03       ldy #$03
     DBA9: B1 1E       lda (obj_record_ptr),y   ; $1E
     DBAB: C9 1C       cmp #$1c
     DBAD: 90 03       bcc @DBB2   ; $DBB2
-    DBAF: 4C D8 DA    jmp player_caught   ; $DAD8
+    DBAF: 4C D8 DA    jmp catch_player_or_knock_out   ; $DAD8
 @DBB2:
     DBB2: 20 6A E0    jsr advance_pointer_by_flagged_offset_then_append_entry   ; $E06A
     DBB5: 20 69 E4    jsr find_object_at_coords   ; $E469
     DBB8: B0 D9       bcs @DB93   ; $DB93
 
-collect_object_award_score_and_spawn_popup:
+land_on_trampoline:
     DBBA: A0 05       ldy #$05
     DBBC: B1 1E       lda (obj_record_ptr),y   ; $1E
     DBBE: D0 23       bne @DBE3   ; $DBE3
@@ -5067,14 +5067,14 @@ collect_object_award_score_and_spawn_popup:
     DBFE: A0 0F       ldy #$0f
     DC00: 91 1E       sta (obj_record_ptr),y   ; $1E
 
-obj_state7_update_anim_and_snap_position:
+state0A_trampoline_bounce:
     DC02: A0 0B       ldy #$0b
     DC04: B1 1E       lda (obj_record_ptr),y   ; $1E
     DC06: AA          tax
     DC07: 20 A4 E4    jsr set_obj_state_and_load_next_ptr   ; $E4A4
     DC0A: BD 02 02    lda obj_timer,x   ; $0202
     DC0D: 10 03       bpl @DC12   ; $DC12
-    DC0F: 4C 83 DB    jmp obj_reset_fields_8_F   ; $DB83
+    DC0F: 4C 83 DB    jmp enter_fall   ; $DB83
 @DC12:
     DC12: BD 01 02    lda obj_anim_timer,x   ; $0201
     DC15: C9 07       cmp #$07
@@ -5116,10 +5116,10 @@ obj_state7_update_anim_and_snap_position:
 @DC59:
     DC59: 4C F0 D9    jmp clear_flag_if_value_below_threshold   ; $D9F0
 
-resolve_entity_collision_movement:
-    DC5C: 20 02 E1    jsr check_two_coords_adjacent   ; $E102
+state0C_rise:
+    DC5C: 20 02 E1    jsr slot1_touches_player   ; $E102
     DC5F: D0 03       bne @DC64   ; $DC64
-    DC61: 4C D8 DA    jmp player_caught   ; $DAD8
+    DC61: 4C D8 DA    jmp catch_player_or_knock_out   ; $DAD8
 @DC64:
     DC64: A0 03       ldy #$03
     DC66: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -5162,12 +5162,12 @@ resolve_entity_collision_movement:
     DCAB: 29 03       and #$03
     DCAD: 05 10       ora src_ptr   ; $10
     DCAF: 91 1E       sta (obj_record_ptr),y   ; $1E
-    DCB1: 4C 83 DB    jmp obj_reset_fields_8_F   ; $DB83
+    DCB1: 4C 83 DB    jmp enter_fall   ; $DB83
 @DCB4:
     DCB4: B1 1E       lda (obj_record_ptr),y   ; $1E
     DCB6: 49 01       eor #$01
     DCB8: 91 1E       sta (obj_record_ptr),y   ; $1E
-    DCBA: 4C 83 DB    jmp obj_reset_fields_8_F   ; $DB83
+    DCBA: 4C 83 DB    jmp enter_fall   ; $DB83
 @DCBD:
     DCBD: A5 10       lda src_ptr   ; $10
     DCBF: 09 01       ora #$01
@@ -5176,7 +5176,7 @@ resolve_entity_collision_movement:
     DCC4: 85 36       sta obj_record_ptr   ; $36
     DCC6: A9 01       lda #$01
     DCC8: 85 35       sta obj_collision_state   ; $35
-    DCCA: 4C 83 DB    jmp obj_reset_fields_8_F   ; $DB83
+    DCCA: 4C 83 DB    jmp enter_fall   ; $DB83
 @DCCD:
     DCCD: A0 06       ldy #$06
     DCCF: 91 1E       sta (obj_record_ptr),y   ; $1E
@@ -5205,7 +5205,7 @@ resolve_entity_collision_movement:
     DCFB: 91 1E       sta (obj_record_ptr),y   ; $1E
     DCFD: 60          rts
 
-update_object_move_timer_then_advance:
+state0E_step_onto_floor:
     DCFE: A0 08       ldy #$08
     DD00: B1 1E       lda (obj_record_ptr),y   ; $1E
     DD02: 38          sec
@@ -5217,10 +5217,10 @@ update_object_move_timer_then_advance:
     DD0D: 38          sec
     DD0E: E9 01       sbc #$01
     DD10: 91 1E       sta (obj_record_ptr),y   ; $1E
-    DD12: F0 03       beq reset_obj_to_state2_and_arm_field   ; $DD17
+    DD12: F0 03       beq land_on_floor   ; $DD17
     DD14: 4C 3D E0    jmp advance_object_subpixel_position_then_clamp   ; $E03D
 
-reset_obj_to_state2_and_arm_field:
+land_on_floor:
     DD17: A9 00       lda #$00
     DD19: A0 02       ldy #$02
     DD1B: 91 1E       sta (obj_record_ptr),y   ; $1E
@@ -5248,11 +5248,11 @@ reset_obj_to_state2_and_arm_field:
     DD42: C9 20       cmp #$20
     DD44: F0 06       beq @DD4C   ; $DD4C
     DD46: 20 A6 DE    jsr align_obj_coord_to_target   ; $DEA6
-    DD49: 4C 4F DD    jmp reverse_obj_velocity_and_set_state   ; $DD4F
+    DD49: 4C 4F DD    jmp bounce_back_into_shaft   ; $DD4F
 @DD4C:
     DD4C: 20 02 DA    jsr set_field36_step_at_bounds_then_accumulate_dispatch   ; $DA02
 
-reverse_obj_velocity_and_set_state:
+bounce_back_into_shaft:
     DD4F: A9 00       lda #$00
     DD51: 38          sec
     DD52: A0 06       ldy #$06
@@ -5262,9 +5262,9 @@ reverse_obj_velocity_and_set_state:
     DD5A: C8          iny
     DD5B: 91 1E       sta (obj_record_ptr),y   ; $1E
     DD5D: A9 00       lda #$00
-    DD5F: 4C B3 DA    jmp set_obj_fields_via_ptr   ; $DAB3
+    DD5F: 4C B3 DA    jmp start_hop   ; $DAB3
 
-tick_obj_proximity_hit_and_countdown:
+state10_door_knockback:
     DD62: 20 B1 F0    jsr advance_obj_pair_on_proximity   ; $F0B1
     DD65: 20 E7 F0    jsr check_two_obj_slots_for_hit   ; $F0E7
     DD68: F0 38       beq @DDA2   ; $DDA2
@@ -5276,7 +5276,7 @@ tick_obj_proximity_hit_and_countdown:
     DD73: B0 30       bcs @DDA5   ; $DDA5
     DD75: A5 1E       lda obj_record_ptr   ; $1E
     DD77: D0 03       bne @DD7C   ; $DD7C
-    DD79: 20 34 E1    jsr trigger_state_change_on_proximity   ; $E134
+    DD79: 20 34 E1    jsr player_knockback_pushes_cats   ; $E134
 @DD7C:
     DD7C: A9 80       lda #$80
     DD7E: 20 09 DF    jsr data_or_unclear_df09   ; $DF09
@@ -5289,7 +5289,7 @@ tick_obj_proximity_hit_and_countdown:
     DD8C: A0 05       ldy #$05
     DD8E: B1 1E       lda (obj_record_ptr),y   ; $1E
     DD90: D0 03       bne @DD95   ; $DD95
-    DD92: 4C 17 DD    jmp reset_obj_to_state2_and_arm_field   ; $DD17
+    DD92: 4C 17 DD    jmp land_on_floor   ; $DD17
 @DD95:
     DD95: A5 65       lda active_object_count   ; $65
     DD97: A0 07       ldy #$07
@@ -5300,11 +5300,11 @@ tick_obj_proximity_hit_and_countdown:
 @DDA1:
     DDA1: 60          rts
 @DDA2:
-    DDA2: 4C 83 DB    jmp obj_reset_fields_8_F   ; $DB83
+    DDA2: 4C 83 DB    jmp enter_fall   ; $DB83
 @DDA5:
-    DDA5: 4C A2 DA    jmp set_obj_state_0b_after_align   ; $DAA2
+    DDA5: 4C A2 DA    jmp start_hop_off_ledge   ; $DAA2
 
-dec_obj_timer_reload_state:
+state12_stunned:
     DDA8: A0 07       ldy #$07
     DDAA: B1 1E       lda (obj_record_ptr),y   ; $1E
     DDAC: 38          sec
@@ -5323,16 +5323,16 @@ dec_obj_timer_reload_state:
 @DDC5:
     DDC5: 60          rts
 
-tick_obj_timer_field7_else_reset_obj:
+state14_recover:
     DDC6: A0 07       ldy #$07
     DDC8: B1 1E       lda (obj_record_ptr),y   ; $1E
     DDCA: 38          sec
     DDCB: E9 01       sbc #$01
     DDCD: 91 1E       sta (obj_record_ptr),y   ; $1E
     DDCF: D0 F4       bne @DDC5   ; $DDC5
-    DDD1: 4C 17 DD    jmp reset_obj_to_state2_and_arm_field   ; $DD17
+    DDD1: 4C 17 DD    jmp land_on_floor   ; $DD17
 
-dec_timer_field7_if_nonzero:
+state1A_respawn_wait:
     DDD4: A0 07       ldy #$07
     DDD6: B1 1E       lda (obj_record_ptr),y   ; $1E
     DDD8: F0 05       beq @DDDF   ; $DDDF
@@ -5342,7 +5342,7 @@ dec_timer_field7_if_nonzero:
 @DDDF:
     DDDF: 60          rts
 
-handle_entity_object_pickup_or_special_setup:
+state1C_respawn_drop:
     DDE0: A5 4B       lda player_down   ; $4B
     DDE2: 05 4F       ora round_cleared   ; $4F
     DDE4: D0 3E       bne @DE24   ; $DE24
@@ -5359,9 +5359,9 @@ handle_entity_object_pickup_or_special_setup:
     DDF9: 20 6A E0    jsr advance_pointer_by_flagged_offset_then_append_entry   ; $E06A
     DDFC: 20 69 E4    jsr find_object_at_coords   ; $E469
     DDFF: B0 23       bcs @DE24   ; $DE24
-    DE01: 4C BA DB    jmp collect_object_award_score_and_spawn_popup   ; $DBBA
+    DE01: 4C BA DB    jmp land_on_trampoline   ; $DBBA
 @DE04:
-    DE04: 4C D8 DA    jmp player_caught   ; $DAD8
+    DE04: 4C D8 DA    jmp catch_player_or_knock_out   ; $DAD8
 @DE07:
     DE07: A5 1E       lda obj_record_ptr   ; $1E
     DE09: C9 20       cmp #$20
@@ -5379,13 +5379,13 @@ handle_entity_object_pickup_or_special_setup:
 @DE24:
     DE24: 60          rts
 
-countdown_timer_then_reset_obj_and_arm_field:
+state24_slot2_landing_pause:
     DE25: CE 27 04    dec bonus_item_timer   ; $0427
     DE28: D0 FA       bne @DE24   ; $DE24
 @DE2A:
-    DE2A: 4C 17 DD    jmp reset_obj_to_state2_and_arm_field   ; $DD17
+    DE2A: 4C 17 DD    jmp land_on_floor   ; $DD17
 
-tick_bonus_item_collect_or_timeout:
+state1E_slot2_on_item:
     DE2D: CE 27 04    dec bonus_item_timer   ; $0427
     DE30: F0 27       beq @DE59   ; $DE59
     DE32: AD 23 04    lda obj_state   ; $0423
@@ -5407,15 +5407,15 @@ tick_bonus_item_collect_or_timeout:
 @DE59:
     DE59: A9 10       lda #$10
     DE5B: 8D 2A 04    sta bonus_item_timer   ; $042A
-    DE5E: 4C 17 DD    jmp reset_obj_to_state2_and_arm_field   ; $DD17
+    DE5E: 4C 17 DD    jmp land_on_floor   ; $DD17
 
-tick_timer_0427_reset_obj_when_idle:
+state20_slot2_scored:
     DE61: CE 27 04    dec bonus_item_timer   ; $0427
     DE64: D0 13       bne @DE79   ; $DE79
     DE66: A5 4B       lda player_down   ; $4B
     DE68: 05 4F       ora round_cleared   ; $4F
     DE6A: D0 03       bne zero_struct_fields_4_and_15   ; $DE6F
-    DE6C: 4C 17 DD    jmp reset_obj_to_state2_and_arm_field   ; $DD17
+    DE6C: 4C 17 DD    jmp land_on_floor   ; $DD17
 
 zero_struct_fields_4_and_15:
     DE6F: A9 00       lda #$00
@@ -5426,7 +5426,7 @@ zero_struct_fields_4_and_15:
 @DE79:
     DE79: 60          rts
 
-dec_obj_timer_reload_on_zero:
+state26_stunned_by_drop:
     DE7A: A0 07       ldy #$07
     DE7C: B1 1E       lda (obj_record_ptr),y   ; $1E
     DE7E: 38          sec
@@ -5445,14 +5445,14 @@ dec_obj_timer_reload_on_zero:
 @DE97:
     DE97: 60          rts
 
-obj_tick_timer7_then_reset_fields_8_F:
+state28_drop_stun_recover:
     DE98: A0 07       ldy #$07
     DE9A: B1 1E       lda (obj_record_ptr),y   ; $1E
     DE9C: 38          sec
     DE9D: E9 01       sbc #$01
     DE9F: 91 1E       sta (obj_record_ptr),y   ; $1E
     DEA1: D0 F4       bne @DE97   ; $DE97
-    DEA3: 4C 83 DB    jmp obj_reset_fields_8_F   ; $DB83
+    DEA3: 4C 83 DB    jmp enter_fall   ; $DB83
 
 align_obj_coord_to_target:
     DEA6: A0 06       ldy #$06
@@ -5785,7 +5785,7 @@ append_entry_then_advance_state_and_tick:
     E0B4: 91 1E       sta (obj_record_ptr),y   ; $1E
     E0B6: 60          rts
 
-find_adjacent_entity_to_ref_copy_attr:
+walking_cat_touches_player:
     E0B7: A5 1E       lda obj_record_ptr   ; $1E
     E0B9: D0 44       bne @E0FF   ; $E0FF
     E0BB: A5 2E       lda $2e
@@ -5827,7 +5827,7 @@ find_adjacent_entity_to_ref_copy_attr:
     E0FF: A9 FF       lda #$ff
     E101: 60          rts
 
-check_two_coords_adjacent:
+slot1_touches_player:
     E102: A5 1E       lda obj_record_ptr   ; $1E
     E104: D0 2B       bne @E131   ; $E131
     E106: AD 12 04    lda $0412
@@ -5854,7 +5854,7 @@ check_two_coords_adjacent:
     E131: A9 FF       lda #$ff
     E133: 60          rts
 
-trigger_state_change_on_proximity:
+player_knockback_pushes_cats:
     E134: A2 20       ldx #$20
 @E136:
     E136: BD 0F 04    lda $040f,x
@@ -6713,7 +6713,7 @@ dispatch_item_state:
     E65E:            .word draw_object_and_tick_state_timer
 
 resolve_object_position_capture_and_score:
-    E660: 20 57 E7    jsr trigger_state_transition_on_position_match   ; $E757
+    E660: 20 57 E7    jsr slot2_sits_on_item   ; $E757
     E663: BD 63 02    lda obj_type,x   ; $0263
     E666: F0 05       beq @E66D   ; $E66D
     E668: 20 1E E7    jsr branch_on_state21_bits   ; $E71E
@@ -6845,7 +6845,7 @@ load_string_ptr_by_state_and_scan:
     E752: 85 11       sta zp_ptr_hi   ; $11
     E754: 4C FB C6    jmp draw_rle_text   ; $C6FB
 
-trigger_state_transition_on_position_match:
+slot2_sits_on_item:
     E757: AD 2F 04    lda stage_phase_state   ; $042F
     E75A: C9 02       cmp #$02
     E75C: D0 29       bne @E787   ; $E787
@@ -7199,7 +7199,7 @@ dispatch_on_masked_state_field:
 @E971:
     E971: 60          rts
 
-select_overlapping_target_object:
+player_opens_nearest_door:
     E972: A5 83       lda object_count   ; $83
     E974: F0 FB       beq @E971   ; $E971
     E976: A0 0E       ldy #$0e
@@ -7210,7 +7210,7 @@ select_overlapping_target_object:
     E980: A0 00       ldy #$00
     E982: A2 00       ldx #$00
 @E984:
-    E984: 20 B8 E9    jsr object_overlap_check   ; $E9B8
+    E984: 20 B8 E9    jsr add_door_if_in_reach   ; $E9B8
     E987: 8A          txa
     E988: 18          clc
     E989: 69 08       adc #$08
@@ -7225,23 +7225,23 @@ select_overlapping_target_object:
     E997: B6 12       ldx gfx_src_ptr,y   ; $12
 @E999:
     E999: 88          dey
-    E99A: 30 08       bmi activate_object_check_collision_maybe_spawn   ; $E9A4
+    E99A: 30 08       bmi open_door   ; $E9A4
     E99C: D9 12 00    cmp gfx_src_ptr,y   ; $0012
     E99F: B0 F2       bcs @E993   ; $E993
     E9A1: 88          dey
     E9A2: 90 F5       bcc @E999   ; $E999
 
-activate_object_check_collision_maybe_spawn:
+open_door:
     E9A4: A9 01       lda #$01
     E9A6: 9D B0 02    sta obj_anim_timer,x   ; $02B0
-    E9A9: 20 05 EA    jsr check_subject_vs_object_list_collision   ; $EA05
+    E9A9: 20 05 EA    jsr door_knock_back_objects   ; $EA05
     E9AC: BD B1 02    lda obj_state,x   ; $02B1
     E9AF: 29 0A       and #$0a
     E9B1: 49 08       eor #$08
     E9B3: D0 BC       bne @E971   ; $E971
     E9B5: 4C 04 EE    jmp find_first_empty_slot   ; $EE04
 
-object_overlap_check:
+add_door_if_in_reach:
     E9B8: 84 11       sty zp_ptr_hi   ; $11
     E9BA: A5 1E       lda obj_record_ptr   ; $1E
     E9BC: 9D B7 02    sta obj_contact_state,x   ; $02B7
@@ -7288,7 +7288,7 @@ object_overlap_check:
     EA03: C8          iny
     EA04: 60          rts
 
-check_subject_vs_object_list_collision:
+door_knock_back_objects:
     EA05: BD B1 02    lda obj_state,x   ; $02B1
     EA08: 29 06       and #$06
     EA0A: A8          tay
@@ -7325,24 +7325,33 @@ check_subject_vs_object_list_collision:
 
 jmp_indirect_zp_vector:
     EA46: 6C 1C 00    jmp (aux_ptr)   ; $001C
-    EA49:            .word L_EA5E
-    EA4B:            .word L_EA51
-    EA4D:            .word L_EA69
-    EA4F:            .word L_EA59
+    EA49:            .word door_kind0_knock_back
+    EA4B:            .word door_kind1_knock_back
+    EA4D:            .word door_kind2_knock_back
+    EA4F:            .word door_kind3_knock_back
+
+door_kind1_knock_back:
     EA51: 18          clc
     EA52: 69 01       adc #$01
     EA54: C9 04       cmp #$04
     EA56: 90 18       bcc @EA70   ; $EA70
     EA58: 60          rts
+
+door_kind3_knock_back:
     EA59: C9 04       cmp #$04
-    EA5B: 4C 63 EA    jmp $ea63
+    EA5B: 4C 63 EA    jmp knock_back_right_if_in_range   ; $EA63
+
+door_kind0_knock_back:
     EA5E: 18          clc
     EA5F: 69 02       adc #$02
     EA61: C9 03       cmp #$03
-@EA63:
+
+knock_back_right_if_in_range:
     EA63: B0 2A       bcs @EA8F   ; $EA8F
     EA65: A9 01       lda #$01
     EA67: 90 09       bcc @EA72   ; $EA72
+
+door_kind2_knock_back:
     EA69: 38          sec
     EA6A: E9 02       sbc #$02
     EA6C: C9 03       cmp #$03
@@ -7365,7 +7374,7 @@ jmp_indirect_zp_vector:
 @EA8F:
     EA8F: 60          rts
 
-scan_objects_for_adjacent_contact_and_trigger:
+walker_meets_closed_door:
     EA90: A9 00       lda #$00
     EA92: A0 09       ldy #$09
     EA94: 91 1E       sta (obj_record_ptr),y   ; $1E
@@ -7401,7 +7410,7 @@ scan_objects_for_adjacent_contact_and_trigger:
     EAD0: 29 08       and #$08
     EAD2: D0 1E       bne @EAF2   ; $EAF2
 @EAD4:
-    EAD4: 20 A4 E9    jsr activate_object_check_collision_maybe_spawn   ; $E9A4
+    EAD4: 20 A4 E9    jsr open_door   ; $E9A4
 @EAD7:
     EAD7: A9 01       lda #$01
     EAD9: A0 09       ldy #$09
@@ -7968,7 +7977,7 @@ scan_objects_for_adjacent_contact_and_trigger:
     ED17: 20 05 C3    jsr draw_object   ; $C305
     ED1A: D0 31       bne @ED4D   ; $ED4D
 
-update_matching_object_state:
+end_door_wave:
     ED1C: A9 30       lda #$30
     ED1E: 85 4C       sta respawn_slot   ; $4C
     ED20: A9 00       lda #$00
@@ -8021,7 +8030,7 @@ tick_object_state_collision_score:
     ED6D: B0 A3       bcs @ED12   ; $ED12
     ED6F: A5 42       lda game_phase   ; $42
     ED71: 8D 09 06    sta $0609
-    ED74: 20 77 EE    jsr check_object_player_collision   ; $EE77
+    ED74: 20 77 EE    jsr door_wave_catches_cats   ; $EE77
     ED77: 20 C9 EE    jsr accumulate_for_matching_objects   ; $EEC9
     ED7A: A9 08       lda #$08
     ED7C: A0 04       ldy #$04
@@ -8035,7 +8044,7 @@ tick_object_state_collision_score:
     ED8D: A0 00       ldy #$00
     ED8F: A2 20       ldx #$20
 @ED91:
-    ED91: 20 E2 ED    jsr advance_obj_state_if_matched   ; $EDE2
+    ED91: 20 E2 ED    jsr hide_wave_cats   ; $EDE2
     ED94: 8A          txa
     ED95: 18          clc
     ED96: 69 10       adc #$10
@@ -8044,7 +8053,7 @@ tick_object_state_collision_score:
     ED9B: D0 F4       bne @ED91   ; $ED91
     ED9D: 98          tya
     ED9E: D0 03       bne @EDA3   ; $EDA3
-    EDA0: 4C 1C ED    jmp update_matching_object_state   ; $ED1C
+    EDA0: 4C 1C ED    jmp end_door_wave   ; $ED1C
 @EDA3:
     EDA3: A2 FD       ldx #$fd
     EDA5: 0A          asl a
@@ -8085,7 +8094,7 @@ tick_object_state_collision_score:
     EDDD: 69 14       adc #$14
     EDDF: 4C BE D4    jmp add_score_n_times   ; $D4BE
 
-advance_obj_state_if_matched:
+hide_wave_cats:
     EDE2: BD 0B 04    lda $040b,x
     EDE5: C5 1E       cmp obj_record_ptr   ; $1E
     EDE7: D0 1A       bne @EE03   ; $EE03
@@ -8171,7 +8180,7 @@ add_byte_to_obj_word_if_active:
     EE74: 91 1E       sta (obj_record_ptr),y   ; $1E
     EE76: 60          rts
 
-check_object_player_collision:
+door_wave_catches_cats:
     EE77: A2 20       ldx #$20
 @EE79:
     EE79: BD 04 04    lda $0404,x
@@ -8298,22 +8307,22 @@ copy_16b_table_if_var_in_range:
     EF3D: 00          .byte $00
     EF3E: 00          .byte $00
 
-update_object_pair_state_at_a0_a8:
+update_dropped_objects:
     EF3F: A9 A0       lda #$a0
     EF41: 85 1E       sta obj_record_ptr   ; $1E
     EF43: A9 00       lda #$00
     EF45: 85 1F       sta obj_record_ptr_hi   ; $1F
-    EF47: 20 4E EF    jsr update_active_object_state_machine   ; $EF4E
+    EF47: 20 4E EF    jsr update_dropped_object   ; $EF4E
     EF4A: A9 A8       lda #$a8
     EF4C: 85 1E       sta obj_record_ptr   ; $1E
 
-update_active_object_state_machine:
+update_dropped_object:
     EF4E: A0 05       ldy #$05
     EF50: B1 1E       lda (obj_record_ptr),y   ; $1E
     EF52: F0 DA       beq @EF2E   ; $EF2E
     EF54: C9 02       cmp #$02
     EF56: 90 20       bcc @EF78   ; $EF78
-    EF58: 20 9B EF    jsr check_object_collision_and_award_score   ; $EF9B
+    EF58: 20 9B EF    jsr dropped_object_stuns_cats   ; $EF9B
     EF5B: A0 02       ldy #$02
     EF5D: B1 1E       lda (obj_record_ptr),y   ; $1E
     EF5F: 18          clc
@@ -8349,7 +8358,7 @@ update_active_object_state_machine:
 @EF98:
     EF98: 4C 05 C3    jmp draw_object   ; $C305
 
-check_object_collision_and_award_score:
+dropped_object_stuns_cats:
     EF9B: A2 20       ldx #$20
 @EF9D:
     EF9D: BD 0F 04    lda $040f,x

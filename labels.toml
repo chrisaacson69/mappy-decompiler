@@ -52,9 +52,8 @@ why = "Naming 2026-10-26: sta $0170,x / inx / dey: A into Y bytes of the attribu
 addr = "C3B4"; name = "load_type_sprite_palette"; kind = "leaf"; conf = "HIGH"; callers = 4
 why = "Top-down 2026-10-26 (game thread, draw): record +5 (obj_type) indexes $C47C (values 0-3) into $13, which write_sprite_to_oam uses as the attribute byte: the type's sprite palette. Returns the type in A. Was 'lookup_obj_type_ptr_hi'. Earlier note: Naming 2026-10-26: record +5 (obj_type) indexes the table $C47C; the byte goes to $13, the high half of a draw pointer. Was 'obj_field5_lookup_C47C'. Earlier note: X = obj[$05] (via ptr $1E); $13 = tbl_$C47C[X]; returns A=X ; field-5 indexes a $C47C parameter table"
 [[label]]
-addr = "DB83"; name = "obj_reset_fields_8_F"; kind = "leaf"; conf = "MED"; callers = 6
-why = "writes obj[$08]=$00, obj[$0F]=$06 via ptr $1E ; resets two object record fields (state/anim?)"
-
+addr = "DB83"; name = "enter_fall"; kind = "leaf"; conf = "HIGH"; callers = 6
+why = "Shared entry of state 06: +8 = 0, state 06, anim 6. Reached from hop timeout, broken trampoline, the top of a rise, lost floor. Was 'obj_reset_fields_8_F'. Earlier note: writes obj[$08]=$00, obj[$0F]=$06 via ptr $1E ; resets two object record fields (state/anim?)"
 # --- boundary artifacts found while labeling (NOT real routines) ---
 # $C141 "entry" (callers=9) is the off-by-one tail of the 1-entry indirect jump at $C13B:
 #   read_table over-read the $C13E 'table' by one word, fabricating handler $BA3F and clipping
@@ -263,31 +262,28 @@ why = "Reads $0421, sbc #$06 then cmp #$2e (46); when (val-6) < 46 and flag $35 
 
 [[label]]
 addr = "DAB3"
-name = "set_obj_fields_via_ptr"
-kind = "leaf"
-conf = "MED"
-why = "stores incoming A at ($1e)+11, then constants $09 at +12, and $04 at both +15 and +4 via sta ($1e),y — populating fixed fields of a record through a ZP pointer; no loop, leaf."
-
-[[label]]
-addr = "DAD8"
-name = "player_caught"
+name = "start_hop"
 kind = "leaf"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread): sets the player record to the death state (+F = 8, +4 draw index $1E, +7 = 0) and player_down ($4B) = 1, then falls into reset_objects_except_persistent_types (silences the sound first). Was 'init_entity_state_if_flag_clear'. Earlier note: Guarded on `lda $1e / bne` early-exit, then stores immediates $1E/$00/$08 into RAM $0404/$0407/$040F and sets flag $4B=$01 — conditional one-time init of a RAM state block, no hardware regs."
+why = "Shared entry of state 04: +B = A, +C = 9, state 04, anim 4. Was 'set_obj_fields_via_ptr'. Earlier note: stores incoming A at ($1e)+11, then constants $09 at +12, and $04 at both +15 and +4 via sta ($1e),y — populating fixed fields of a record through a ZP pointer; no loop, leaf."
+[[label]]
+addr = "DAD8"
+name = "catch_player_or_knock_out"
+kind = "leaf"
+conf = "HIGH"
+why = "Slot 0: anim $1E, state 08, player_down = 1, then reset_objects_except_persistent_types. Any other slot: anim $20, state 22, timer 120 ($65 for type 3), score by type ($DB33). 5 callers: caught by a walking cat or slot 1, a fall to a floor tile or below row $1C. Was 'player_caught'. Earlier note: Top-down 2026-10-26 (game thread): sets the player record to the death state (+F = 8, +4 draw index $1E, +7 = 0) and player_down ($4B) = 1, then falls into reset_objects_except_persistent_types (silences the sound first). Was 'init_entity_state_if_flag_clear'. Earlier note: Guarded on `lda $1e / bne` early-exit, then stores immediates $1E/$00/$08 into RAM $0404/$0407/$040F and sets flag $4B=$01 — conditional one-time init of a RAM state block, no hardware regs."
 [[label]]
 addr = "DB45"
-name = "inc_counter_set_flag_at_threshold"
+name = "state08_player_caught"
 kind = "leaf"
-conf = "MED"
-why = "inc $0407; lda $0407; cmp #$20; bcc skip; lda #$2A; sta $040F — increments a RAM counter and once it reaches 0x20 stores constant 0x2A into another RAM byte; no hardware regs touched."
-
+conf = "HIGH"
+why = "State 08, player only (absolute $0407/$040F): counts +7 up to $20, then state 2A. Entered from catch_player_or_knock_out with anim $1E. Trace (state_census.py, 3 play logs): 32 frames, -> 2A. Was 'inc_counter_set_flag_at_threshold'. Earlier note: inc $0407; lda $0407; cmp #$20; bcc skip; lda #$2A; sta $040F — increments a RAM counter and once it reaches 0x20 stores constant 0x2A into another RAM byte; no hardware regs touched."
 [[label]]
 addr = "DDA8"
-name = "dec_obj_timer_reload_state"
+name = "state12_stunned"
 kind = "leaf"
-conf = "MED"
-why = "dec [($1e)+7]; bne exits early; on zero reloads +7=$40 and writes state fields +4=$0e, +15=$14 via indirect struct pointer $1e — a per-object countdown that resets state on expiry."
-
+conf = "HIGH"
+why = "State 12, cat stunned after a door knockback: counts +7 (from $65) down, then anim $0E, timer $40, state 14. Trace (state_census.py, 3 play logs): 180 frames in these logs, -> 14. Was 'dec_obj_timer_reload_state'. Earlier note: dec [($1e)+7]; bne exits early; on zero reloads +7=$40 and writes state fields +4=$0e, +15=$14 via indirect struct pointer $1e — a per-object countdown that resets state on expiry."
 [[label]]
 addr = "DE6F"
 name = "zero_struct_fields_4_and_15"
@@ -311,18 +307,16 @@ why = "Only 2 bytes / 1 instruction (`ldx #$04`) with no RTS, no memory or hardw
 
 [[label]]
 addr = "E134"
-name = "trigger_state_change_on_proximity"
+name = "player_knockback_pushes_cats"
 kind = "leaf"
-conf = "MED"
-why = "Loops objects x=$20..$90; gates on state field $040F,x==2 and matching position $0403,x/$0400-$0401 vs object 0 (16-bit sbc proximity within 1), then writes new state #$10 to $040F,x, timer #$0C to $0404,x, #$08 to $0407,x and inc flag $30."
-
+conf = "HIGH"
+why = "While the player is in state 10: a cat in state 02 on its row within +/-1 x takes the player's direction, anim $0C, state 10, timer 8, and pending_score_count += 1. NB: the loop steps X by 1, not $10, so it also tests non-state bytes at $040F+X. Was 'trigger_state_change_on_proximity'. Earlier note: Loops objects x=$20..$90; gates on state field $040F,x==2 and matching position $0403,x/$0400-$0401 vs object 0 (16-bit sbc proximity within 1), then writes new state #$10 to $040F,x, timer #$0C to $0404,x, #$08 to $0407,x and inc flag $30."
 [[label]]
 addr = "EDE2"
-name = "advance_obj_state_if_matched"
+name = "hide_wave_cats"
 kind = "leaf"
-conf = "MED"
-why = "Indexed obj array: if $040B,x==$1E and $040F,x==#$16, sets $040F,x=#$18 and $0404,x=0, then iny / (cpx #$20 → ora #$40 into Y); pure RAM state transition, no PPU/APU."
-
+conf = "HIGH"
+why = "Cats carried by this wave (+B = wave, state 16) -> state 18, anim 0 (not drawn). Was 'advance_obj_state_if_matched'. Earlier note: Indexed obj array: if $040B,x==$1E and $040F,x==#$16, sets $040F,x=#$18 and $0404,x=0, then iny / (cpx #$20 → ora #$40 into Y); pure RAM state transition, no PPU/APU."
 [[label]]
 addr = "F3C1"
 name = "load_record_by_index"
@@ -360,18 +354,16 @@ why = "Naming 2026-10-26 (bytes read whole after the discover fixes): the regist
 
 [[label]]
 addr = "DDD4"
-name = "dec_timer_field7_if_nonzero"
+name = "state1A_respawn_wait"
 kind = "leaf"
 conf = "HIGH"
-why = "ldy #$07; lda ($1e),y; beq exit; sec/sbc #$01; sta ($1e),y — reads offset-7 field of struct via ZP pointer $1e and decrements it only if non-zero (floored countdown timer)."
-
+why = "State 1A: counts +7 down to 0 and holds; update_and_respawn_objects ($D8F8) then drops one such cat in at x $1D, y 6 as state 1C. Entered from end_door_wave with timer $3C. Trace (state_census.py, 3 play logs): 131-151 frames, -> 1C. Was 'dec_timer_field7_if_nonzero'. Earlier note: ldy #$07; lda ($1e),y; beq exit; sec/sbc #$01; sta ($1e),y — reads offset-7 field of struct via ZP pointer $1e and decrements it only if non-zero (floored countdown timer)."
 [[label]]
 addr = "DE7A"
-name = "dec_obj_timer_reload_on_zero"
+name = "state26_stunned_by_drop"
 kind = "leaf"
-conf = "MED"
-why = "Decrements struct field ($1e)+7 (sec/sbc #1, sta); bne skips the reload, so on expiry it rewrites +$0f=$28, +4=$24, +7=$40 — a countdown timer that resets state on zero."
-
+conf = "HIGH"
+why = "State 26, a cat hit by a dropped object (dropped_object_stuns_cats: anim $22, timer $65, y clamped to $19): counts +7 down, then anim $24, timer $40, state 28. Not reached in the 3 play logs. Was 'dec_obj_timer_reload_on_zero'. Earlier note: Decrements struct field ($1e)+7 (sec/sbc #1, sta); bne skips the reload, so on expiry it rewrites +$0f=$28, +4=$24, +7=$40 — a countdown timer that resets state on zero."
 [[label]]
 addr = "DF8A"
 name = "advance_pos_if_in_bounds"
@@ -402,18 +394,16 @@ why = "sec/sbc $10 on ($1e),y at offset+2 then iny/sbc #$00 on offset+3 with bcs
 
 [[label]]
 addr = "E0B7"
-name = "find_adjacent_entity_to_ref_copy_attr"
+name = "walking_cat_touches_player"
 kind = "leaf"
-conf = "MED"
-why = "Gates on $1E/$2E flags; loops X from #$10 over slot fields, requires $040F,x==2 (state), same $0403 field as slot0, and 16-bit pos ($0400/$0401,x − $0400/$0401)+1 < 2 (within-1 adjacency), then copies $0406,x→$0406 — adjacency/collision scan propagating an attribute to the reference object."
-
+conf = "HIGH"
+why = "Player only, while $2E = 0: a slot 1-8 object in state 02 (slot 2 not cooling down, $042A = 0) on the player's row within +/-1 x. Copies its direction to the player; A = 0 when touched, else $FF. Was 'find_adjacent_entity_to_ref_copy_attr'. Earlier note: Gates on $1E/$2E flags; loops X from #$10 over slot fields, requires $040F,x==2 (state), same $0403 field as slot0, and 16-bit pos ($0400/$0401,x − $0400/$0401)+1 < 2 (within-1 adjacency), then copies $0406,x→$0406 — adjacency/collision scan propagating an attribute to the reference object."
 [[label]]
 addr = "E102"
-name = "check_two_coords_adjacent"
+name = "slot1_touches_player"
 kind = "leaf"
-conf = "MED"
-why = "Gated by flag $1E, computes 16-bit deltas of two coord pairs ($0410/11 vs $0400/01, $0412/13 vs $0402/03), each +1 then cmp #$02/bcs to test |delta|<=1 on both axes; returns A=0 in-range via lda #$00/rts."
-
+conf = "HIGH"
+why = "Player only: slot 1 ($0410-$0413) within +/-1 in x and y; A = 0 when touched, else $FF. Slot 1 is never active in the 3 play logs. Was 'check_two_coords_adjacent'. Earlier note: Gated by flag $1E, computes 16-bit deltas of two coord pairs ($0410/11 vs $0400/01, $0412/13 vs $0402/03), each +1 then cmp #$02/bcs to test |delta|<=1 on both axes; returns A=0 in-range via lda #$00/rts."
 [[label]]
 addr = "E18E"
 name = "init_state_vars"
@@ -486,11 +476,10 @@ why = "Reads $0261,x, lsr+and #$fe makes an even index y, loads 16-bit pointer f
 
 [[label]]
 addr = "E757"
-name = "trigger_state_transition_on_position_match"
+name = "slot2_sits_on_item"
 kind = "leaf"
 conf = "MED"
-why = "Gated on state $042F==2 and flag $042A==0, compares indexed coord pair ($0264/$0265,x) against target ($0421/$0423); on full match writes new state $042F=#$1E, $0424=#$13, timer $0427=#$78, clears $0420 — a guarded position-match state transition."
-
+why = "Slot 2 walking with no cooldown ($042A = 0) at an item's x/y ($0264/$0265,x): $0420 = 0, anim $13, state 1E, $0427 = 120. Was 'trigger_state_transition_on_position_match'. Earlier note: Gated on state $042F==2 and flag $042A==0, compares indexed coord pair ($0264/$0265,x) against target ($0421/$0423); on full match writes new state $042F=#$1E, $0424=#$13, timer $0427=#$78, clears $0420 — a guarded position-match state transition."
 [[label]]
 addr = "E8FF"
 name = "load_y_from_table_x"
@@ -507,11 +496,10 @@ why = "lda $02b1,x; and #$06 isolates 2-bit field then cmp #$04 with beq/bcc bra
 
 [[label]]
 addr = "E9B8"
-name = "object_overlap_check"
+name = "add_door_if_in_reach"
 kind = "leaf"
 conf = "MED"
-why = "Subtracts object coords ($02B4,x/$02B5,x) from a pointer-object's fields (($1E)+1/+3) and gates with cmp #$21 (X-range) and cmp #$02 (tight Y-range), bcs skipping out — a hitbox/proximity box test computing a horizontal delta into $10."
-
+why = "Door X near the object (its row or the one above; on screen for the player): appends X and the x distance to the list at $12 for player_opens_nearest_door to pick the nearest. Was 'object_overlap_check'. Earlier note: Subtracts object coords ($02B4,x/$02B5,x) from a pointer-object's fields (($1E)+1/+3) and gates with cmp #$21 (X-range) and cmp #$02 (tight Y-range), bcs skipping out — a hitbox/proximity box test computing a horizontal delta into $10."
 [[label]]
 addr = "EA46"
 name = "jmp_indirect_zp_vector"
@@ -521,11 +509,10 @@ why = "Single instruction `jmp ($001c)` — an indirect jump through the zero-pa
 
 [[label]]
 addr = "ED1C"
-name = "update_matching_object_state"
+name = "end_door_wave"
 kind = "leaf"
-conf = "MED"
-why = "Sets $4C=#$30, zeros ($1e),y offsets 4/5, then loops x=$20..$90 step $10 over a 16-byte-stride object table: where $040B,x==$1E and $040F,x==#$18 it writes $040F,x=#$1A and $0407,x=#$3C (conditional per-record field mutation)."
-
+conf = "HIGH"
+why = "Clears the wave record (+5, +4); its cats in state 18 -> state 1A with timer $3C; respawn_slot = $30. Was 'update_matching_object_state'. Earlier note: Sets $4C=#$30, zeros ($1e),y offsets 4/5, then loops x=$20..$90 step $10 over a 16-byte-stride object table: where $040B,x==$1E and $040F,x==#$18 it writes $040F,x=#$1A and $0407,x=#$3C (conditional per-record field mutation)."
 [[label]]
 addr = "EE04"
 name = "find_first_empty_slot"
@@ -542,11 +529,10 @@ why = "Stores A to $10, checks ($1e)+6 sign via BMI to skip; else 16-bit adds $1
 
 [[label]]
 addr = "EE77"
-name = "check_object_player_collision"
+name = "door_wave_catches_cats"
 kind = "leaf"
-conf = "MED"
-why = "For object slot x=$20: bails if active flag $0404,x==0, then bounds-tests coords $040F/$0403/$0401,x against the $1E-pointed actor (player) via sbc ($1e),y with small ranges (cmp #$06/#$04 → bcc/bcs exit) plus a facing sign-check at ($1e),6 — an axis-aligned proximity/hit test."
-
+conf = "HIGH"
+why = "For the current $04A0 wave: each visible cat not already in states 16-1B, on its row within 2 tiles (direction-adjusted): +B = wave id, +7 = 0, state 16. Resolves the $EEA9 tail revisit: those bytes are these writes. Trace (state_census.py, 3 play logs): cats then ride +10..+14 x in state 16. Was 'check_object_player_collision'. Earlier note: For object slot x=$20: bails if active flag $0404,x==0, then bounds-tests coords $040F/$0403/$0401,x against the $1E-pointed actor (player) via sbc ($1e),y with small ranges (cmp #$06/#$04 → bcc/bcs exit) plus a facing sign-check at ($1e),6 — an axis-aligned proximity/hit test."
 [[label]]
 addr = "EEEB"
 name = "add_byte_to_word_if_active"
@@ -813,46 +799,40 @@ why = "Walks an entity record via ($1E),y reading type/state at off 0,1,3,a,d,f,
 
 [[label]]
 addr = "DAA2"
-name = "set_obj_state_0b_after_align"
-kind = "routine"
-conf = "MED"
-why = "Reads obj ptr $1E, if state!=$20 calls align_obj_coord_to_target, then sta #$0B to obj[+7] (state/type field) and loads #$D0 (Y-coord) for the next field write"
-
-[[label]]
-addr = "DB55"
-name = "init_objects_if_inactive"
-kind = "routine"
-conf = "MED"
-why = "Guards on (lda $04a5 ora $04ad bne rts) so it runs only when both flags are zero, then jsr init_object_tables and seeds state: writes #$01 to $060B/$060C/$060D and constants #$16/#$00/#$2C to $0404/$0407/$040F — a one-time object/level setup."
-
-[[label]]
-addr = "DB7B"
-name = "delay_then_zero_struct_fields"
-kind = "routine"
-conf = "MED"
-why = "inc $0407 + bpl backward-loop spins the counter up until bit7 set (busy-wait/delay), then jmp tail-calls zero_struct_fields_4_and_15 to reset state"
-
-[[label]]
-addr = "DC02"
-name = "obj_state7_update_anim_and_snap_position"
-kind = "routine"
-conf = "MED"
-why = "Operates on obj via ($1e); calls set_obj_state_and_load_next_ptr, branches to obj_reset_fields_8_F when $0202,x is negative, gates remaining work on $0201,x==7, decrements timer $0202,x, writes anim constants (0→+8,$0c→+$0f,6→+4), then masks/aligns field +$0a against +3 to snap a position/direction; dispatches clear_flag_if_value_below_threshold when ptr==$20."
-
-[[label]]
-addr = "DD4F"
-name = "reverse_obj_velocity_and_set_state"
-kind = "routine"
-conf = "MED"
-why = "Negates obj field +6 via lda #0;sec;sbc ($1e),y / sta ($1e),y (two's-complement flip of a signed velocity/direction), writes #$06 to field +7, then tail-jmps set_obj_fields_via_ptr with A=0."
-
-[[label]]
-addr = "DE98"
-name = "obj_tick_timer7_then_reset_fields_8_F"
+name = "start_hop_off_ledge"
 kind = "routine"
 conf = "HIGH"
-why = "ldy #$07 / lda ($1e),y / sbc #$01 / sta ($1e),y decrements per-object timer field[7] via the $1e object pointer; bne keeps counting, on zero-expiry jmp obj_reset_fields_8_F resets the object's state fields."
-
+why = "Cats align to the player's floor ($DEA6, not slot 2); timer +7 = 11, then start_hop with +B = $D0. Entered when the tile under foot leaves the floor range. Was 'set_obj_state_0b_after_align'. Earlier note: Reads obj ptr $1E, if state!=$20 calls align_obj_coord_to_target, then sta #$0B to obj[+7] (state/type field) and loads #$D0 (Y-coord) for the next field write"
+[[label]]
+addr = "DB55"
+name = "state2A_wait_then_start_tune"
+kind = "routine"
+conf = "MED"
+why = "State 2A, player only, after state08_player_caught: waits until the first two $04A0-bank records are idle ($04A5|$04AD = 0), restarts the sound voices and sets $060B-$060D (a tune), anim $16, state 2C. Trace (state_census.py, 3 play logs): 1 frame, -> 2C. Was 'init_objects_if_inactive'. Earlier note: Guards on (lda $04a5 ora $04ad bne rts) so it runs only when both flags are zero, then jsr init_object_tables and seeds state: writes #$01 to $060B/$060C/$060D and constants #$16/#$00/#$2C to $0404/$0407/$040F — a one-time object/level setup."
+[[label]]
+addr = "DB7B"
+name = "state2C_wait_tune"
+kind = "routine"
+conf = "MED"
+why = "State 2C, player only: counts $0407 up to $80, then zero_struct_fields_4_and_15 (state 00). Trace (state_census.py, 3 play logs): 128 frames, -> 00. Was 'delay_then_zero_struct_fields'. Earlier note: inc $0407 + bpl backward-loop spins the counter up until bit7 set (busy-wait/delay), then jmp tail-calls zero_struct_fields_4_and_15 to reset state"
+[[label]]
+addr = "DC02"
+name = "state0A_trampoline_bounce"
+kind = "routine"
+conf = "HIGH"
+why = "State 0A, on a trampoline (index in +B, records at $0200). Trampoline $0202 bit 7 -> enter_fall (through it); its anim $0201 reaching 7 launches state 0C (anim 6). Only the player (type 0) decrements $0202, so cats do not wear trampolines. Trace (state_census.py, 3 play logs): 7 frames, -> 0C. Was 'obj_state7_update_anim_and_snap_position'. Earlier note: Operates on obj via ($1e); calls set_obj_state_and_load_next_ptr, branches to obj_reset_fields_8_F when $0202,x is negative, gates remaining work on $0201,x==7, decrements timer $0202,x, writes anim constants (0→+8,$0c→+$0f,6→+4), then masks/aligns field +$0a against +3 to snap a position/direction; dispatches clear_flag_if_value_below_threshold when ptr==$20."
+[[label]]
+addr = "DD4F"
+name = "bounce_back_into_shaft"
+kind = "routine"
+conf = "HIGH"
+why = "Negates the direction +6, timer +7 = 6, start_hop with +B = 0: a step-off blocked by the floor tile returns into the shaft. Was 'reverse_obj_velocity_and_set_state'. Earlier note: Negates obj field +6 via lda #0;sec;sbc ($1e),y / sta ($1e),y (two's-complement flip of a signed velocity/direction), writes #$06 to field +7, then tail-jmps set_obj_fields_via_ptr with A=0."
+[[label]]
+addr = "DE98"
+name = "state28_drop_stun_recover"
+kind = "routine"
+conf = "HIGH"
+why = "State 28: counts +7 ($40) down, then enter_fall. Not reached in the 3 play logs. Was 'obj_tick_timer7_then_reset_fields_8_F'. Earlier note: ldy #$07 / lda ($1e),y / sbc #$01 / sta ($1e),y decrements per-object timer field[7] via the $1e object pointer; bne keeps counting, on zero-expiry jmp obj_reset_fields_8_F resets the object's state fields."
 [[label]]
 addr = "DEE9"
 name = "advance_object_state_counter"
@@ -932,18 +912,16 @@ why = "Loads X-indexed pointer $02B2/$02B3 into $10/$11 and Y-indexed ROM-table 
 
 [[label]]
 addr = "E972"
-name = "select_overlapping_target_object"
+name = "player_opens_nearest_door"
 kind = "routine"
-conf = "MED"
-why = "Gated on $83 and a type filter (($1e)+14 &3 ==1), it scans object slots in stride-8 steps calling object_overlap_check, fills a per-slot result buffer at $0012, then a backward cmp/bcs loop picks the max value, selecting the best overlapping object."
-
+conf = "HIGH"
+why = "On a fresh press (record +E & 3 = 1), collects doors in reach (add_door_if_in_reach) and opens the nearest (open_door). Was 'select_overlapping_target_object'. Earlier note: Gated on $83 and a type filter (($1e)+14 &3 ==1), it scans object slots in stride-8 steps calling object_overlap_check, fills a per-slot result buffer at $0012, then a backward cmp/bcs loop picks the max value, selecting the best overlapping object."
 [[label]]
 addr = "EA05"
-name = "check_subject_vs_object_list_collision"
+name = "door_knock_back_objects"
 kind = "routine"
-conf = "MED"
-why = "Loops object table (y=0,$10..$80) testing active flag $0404,y, type filter $040F,y!=$16, Y-axis proximity |$0403,y-$02B5,x|<2, computes X delta $02B4,x-$0401,y, then dispatches via state-selected vector $1C/$1D (from $EA49[($02B1,x&6)]) through jmp_indirect_zp_vector — per-object proximity/collision check with state-driven response."
-
+conf = "HIGH"
+why = "For each active object (slot 1 excluded, not in state 16) on the door's row: X delta to the door, dispatched by door kind ($02B1 & 6) through the $EA49 table and the $EA46 stub to door_kindN_knock_back. Was 'check_subject_vs_object_list_collision'. Earlier note: Loops object table (y=0,$10..$80) testing active flag $0404,y, type filter $040F,y!=$16, Y-axis proximity |$0403,y-$02B5,x|<2, computes X delta $02B4,x-$0401,y, then dispatches via state-selected vector $1C/$1D (from $EA49[($02B1,x&6)]) through jmp_indirect_zp_vector — per-object proximity/collision check with state-driven response."
 [[label]]
 addr = "F04D"
 name = "dispatch_obj0_state_then_fall_to_obj8"
@@ -1111,18 +1089,16 @@ why = "Calls init_object_tables, then loops X=$10..$80 step $10 over object slot
 
 [[label]]
 addr = "DBBA"
-name = "collect_object_award_score_and_spawn_popup"
+name = "land_on_trampoline"
 kind = "routine"
-conf = "MED"
-why = "Reads object field ($1e)+5; if 0, awards BCD points (#$3c via add_bcd_table_amount_to_buffer, $060A) and inits popup slot $0200/$0201/$0202,x to (1,9,$80); else advances popup phase ($0201 vs #8) and resets object fields +B/+7/+F."
-
+conf = "HIGH"
+why = "Falling object meets a trampoline record (X, $0200 table). The player scores (table $3C) and, on a trampoline with $0202 = 0, arms it ($0200 = 1, $0201 = 9, $0202 = $80) and keeps falling that frame. Otherwise +B = index, +7 = 0, state 0A, falling into state0A_trampoline_bounce. Was 'collect_object_award_score_and_spawn_popup'. Earlier note: Reads object field ($1e)+5; if 0, awards BCD points (#$3c via add_bcd_table_amount_to_buffer, $060A) and inits popup slot $0200/$0201/$0202,x to (1,9,$80); else advances popup phase ($0201 vs #8) and resets object fields +B/+7/+F."
 [[label]]
 addr = "DC5C"
-name = "resolve_entity_collision_movement"
+name = "state0C_rise"
 kind = "routine"
-conf = "MED"
-why = "Calls check_two_coords_adjacent then branches: if not adjacent jmp init_entity_state_if_flag_clear; else inspects ($1e),y entity fields ($03 dir/type, $08 tile vs #$59/#$30 range) to either toggle/align the direction field $0a + obj_reset_fields_8_F, compute a $37-relative delta into $36/$35, or fully reinit the entity record (sets fields $06,$03=mode2,$02=0,$07,$0b,$0c,$0f,$04) on collision."
-
+conf = "HIGH"
+why = "State 0C, rising up a shaft. Player touching slot 1 -> caught. At a floor row (y&3 in 1..2) with +D set (pad direction or the cat's choice): step off, timer 16, state 0E. Top reached (tile +8 in $30-$4F or $59, or y < 6): note the floor in +A, enter_fall; otherwise keep rising ($E084). Trace (state_census.py, 3 play logs): -> 0E x85, 06 x3 (rose to the top and fell). Was 'resolve_entity_collision_movement'. Earlier note: Calls check_two_coords_adjacent then branches: if not adjacent jmp init_entity_state_if_flag_clear; else inspects ($1e),y entity fields ($03 dir/type, $08 tile vs #$59/#$30 range) to either toggle/align the direction field $0a + obj_reset_fields_8_F, compute a $37-relative delta into $36/$35, or fully reinit the entity record (sets fields $06,$03=mode2,$02=0,$07,$0b,$0c,$0f,$04) on collision."
 [[label]]
 addr = "E03D"
 name = "advance_object_subpixel_position_then_clamp"
@@ -1181,18 +1157,16 @@ why = "Per-X object: gates on active flag $02b0,x; increments counter $02b6,x to
 
 [[label]]
 addr = "E9A4"
-name = "activate_object_check_collision_maybe_spawn"
+name = "open_door"
 kind = "routine"
-conf = "MED"
-why = "Sets state flag $02B0,x=1, calls check_subject_vs_object_list_collision, tests $02B1,x flags (and #$0a/eor #$08 = bit3 set & bit1 clear) then tail-jmps find_first_empty_slot to spawn, else branches to $e971."
-
+conf = "HIGH"
+why = "$02B0,x = 1 (open), knock back the objects at it (door_knock_back_objects); a door with $02B1 bit 3 set and bit 1 clear launches a door wave (find_first_empty_slot). Was 'activate_object_check_collision_maybe_spawn'. Earlier note: Sets state flag $02B0,x=1, calls check_subject_vs_object_list_collision, tests $02B1,x flags (and #$0a/eor #$08 = bit3 set & bit1 clear) then tail-jmps find_first_empty_slot to spawn, else branches to $e971."
 [[label]]
 addr = "EF9B"
-name = "check_object_collision_and_award_score"
+name = "dropped_object_stuns_cats"
 kind = "routine"
-conf = "MED"
-why = "Loops X=$20..$80 step $10 over 16-byte object records; for each active one ($040F,x<$16) does a ±1 16-bit X then Y overlap test of pointer ($1e) position vs record X/Y at $0400-$0403,x, and on a hit sets caught-state $040F,x=$26, $0404,x=$22, stores $65, clamps Y, and calls add_bcd_table_amount_to_buffer to award points."
-
+conf = "HIGH"
+why = "Cats (states < 16) within 1 in x and y of the falling object: +7 = $65, state 26, anim $22, y clamped to $19, score $08 ($44 for slot 2). Was 'check_object_collision_and_award_score'. Earlier note: Loops X=$20..$80 step $10 over 16-byte object records; for each active one ($040F,x<$16) does a ±1 16-bit X then Y overlap test of pointer ($1e) position vs record X/Y at $0400-$0403,x, and on a hit sets caught-state $040F,x=$26, $0404,x=$22, stores $65, clamps Y, and calls add_bcd_table_amount_to_buffer to award points."
 [[label]]
 addr = "F013"
 name = "spawn_object_from_table_entry"
@@ -1258,32 +1232,28 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread): the frame's score step: adds pending points ($30, amount #$40, n times), then over the following frames updates the high score, awards an extra life, and queues the score digits for the HUD (score_update_phase $43). Was 'pump_pending_amount_then_step_entry_state'. Earlier note: If $30 set, copies it to param $18 and calls add_bcd_table_amount_n_times (#$40), clears $30 and arms $43; then $43 acts as a 0/1/2 phase machine — phase 2 clears $43, calls clamp_var32_to_min + advance_record_index_and_refresh_entry and tail-jumps build_buffer_entry_unpack_nibbles (ldy #$08), phase 1 just inc's $43."
 [[label]]
 addr = "DAC7"
-name = "tick_object_timer_then_move_or_reset"
+name = "state04_hop_off_ledge"
 kind = "routine"
 conf = "HIGH"
-why = "Decrements object field +7 via ($1e),y (y=7); on zero jmps obj_reset_fields_8_F, else jmps advance_object_subpixel_position_then_clamp — a per-object countdown timer driving reset-on-expiry vs continue-moving."
-
+why = "State 04: timer +7 (11) counts down while advance_object_subpixel_position moves x; at 0 -> enter_fall. Trace (state_census.py, 3 play logs): 11 frames, x +/-1, always -> 06. Was 'tick_object_timer_then_move_or_reset'. Earlier note: Decrements object field +7 via ($1e),y (y=7); on zero jmps obj_reset_fields_8_F, else jmps advance_object_subpixel_position_then_clamp — a per-object countdown timer driving reset-on-expiry vs continue-moving."
 [[label]]
 addr = "DB94"
-name = "trigger_entity_state_reset_on_proximity_or_type_else_scan_next"
+name = "state06_fall"
 kind = "routine"
-conf = "MED"
-why = "Calls check_two_coords_adjacent then tests ($1e)+8 in range $49-$4F and ($1e)+3 < $1c; any match falls to jmp init_entity_state_if_flag_clear, else advance_pointer..append + find_object_at_coords with bcs backward-loop to scan next."
-
+conf = "HIGH"
+why = "State 06, falling a shaft. Player touching slot 1, a floor tile under foot (+8 in $49-$4F) or y >= $1C -> catch_player_or_knock_out; a trampoline at the coords ($E469) -> land_on_trampoline (state 0A). Trace (state_census.py, 3 play logs): y only, -> 0A x89. Was 'trigger_entity_state_reset_on_proximity_or_type_else_scan_next'. Earlier note: Calls check_two_coords_adjacent then tests ($1e)+8 in range $49-$4F and ($1e)+3 < $1c; any match falls to jmp init_entity_state_if_flag_clear, else advance_pointer..append + find_object_at_coords with bcs backward-loop to scan next."
 [[label]]
 addr = "DCFE"
-name = "update_object_move_timer_then_advance"
+name = "state0E_step_onto_floor"
 kind = "routine"
-conf = "MED"
-why = "Reads ($1e)+8 coord, range-checks vs window [$49,$59) (bcc $dd40); else decrements timer at ($1e)+7, stores it, returns if zero, else tail-jumps advance_object_subpixel_position_then_clamp."
-
+conf = "HIGH"
+why = "State 0E: timer 16 moving off the shaft onto the floor; at 0 -> land_on_floor (state 02). Tile +8 in $49-$58 (blocked) -> bounce_back_into_shaft (state 04). Trace (state_census.py, 3 play logs): 16 frames, -> 02 x76, 04 x4. Was 'update_object_move_timer_then_advance'. Earlier note: Reads ($1e)+8 coord, range-checks vs window [$49,$59) (bcc $dd40); else decrements timer at ($1e)+7, stores it, returns if zero, else tail-jumps advance_object_subpixel_position_then_clamp."
 [[label]]
 addr = "DDE0"
-name = "handle_entity_object_pickup_or_special_setup"
+name = "state1C_respawn_drop"
 kind = "routine"
-conf = "MED"
-why = "Bails on freeze flags ($4B|$4F); range-tests entity record[8]-$49<7 and record[3] vs $1C to dispatch: jsr find_object_at_coords then jmp collect_object_award_score_and_spawn_popup (pickup), else jmp init_entity_state_if_flag_clear; for slot $1E==$20 writes fixed sprite/pos/state consts ($042F=$24,$0424=$12,$0427=$78,$36=$09,$37=$04)."
-
+conf = "HIGH"
+why = "State 1C, a cat dropping in from the top (frozen while player_down or round_cleared). Lands on a floor tile: slot 2 -> state 24 (anim $12, $0427 = 120); others -> land_on_floor. y >= $1C -> knocked out; a trampoline -> land_on_trampoline. Trace (state_census.py, 3 play logs): 19 frames, y +4, -> 02. Was 'handle_entity_object_pickup_or_special_setup'. Earlier note: Bails on freeze flags ($4B|$4F); range-tests entity record[8]-$49<7 and record[3] vs $1C to dispatch: jsr find_object_at_coords then jmp collect_object_award_score_and_spawn_popup (pickup), else jmp init_entity_state_if_flag_clear; for slot $1E==$20 writes fixed sprite/pos/state consts ($042F=$24,$0424=$12,$0427=$78,$36=$09,$37=$04)."
 [[label]]
 addr = "E19D"
 name = "collect_item_award_score_and_spawn_reward_object"
@@ -1342,11 +1312,10 @@ why = "Loops X 0..$83 stride 8 (object-table count), stores slot index in $1B an
 
 [[label]]
 addr = "EA90"
-name = "scan_objects_for_adjacent_contact_and_trigger"
+name = "walker_meets_closed_door"
 kind = "routine"
-conf = "MED"
-why = "Backward loop over object table (X+=8 until cpx $83) skips inactive ($02b0/$02b1 flags), tests Y(off3 vs $02b5) and X(off1/off6 vs $02b4) for difference<2/==2 adjacency, records pointer $1e into $02b7,x and calls activate_object_check_collision_maybe_spawn ($e9a4), setting contact flag (($1e)+9=1)."
-
+conf = "HIGH"
+why = "Walking object at a closed door ($02B0 = 0, $02B1 bit 1 clear) on its row, in its facing direction: marks +9 (blocked) and the door's $02B7. A cat opens it, unless the door has bit 3 set: then it turns around. The player is only blocked (it opens doors by button). Was 'scan_objects_for_adjacent_contact_and_trigger'. Earlier note: Backward loop over object table (X+=8 until cpx $83) skips inactive ($02b0/$02b1 flags), tests Y(off3 vs $02b5) and X(off1/off6 vs $02b4) for difference<2/==2 adjacency, records pointer $1e into $02b7,x and calls activate_object_check_collision_maybe_spawn ($e9a4), setting contact flag (($1e)+9=1)."
 [[label]]
 addr = "ED65"
 name = "tick_object_state_collision_score"
@@ -1356,11 +1325,10 @@ why = "Reads obj state field ( y=5) at ($1e), dispatches on 0/1/>=2; in state 1 
 
 [[label]]
 addr = "EF4E"
-name = "update_active_object_state_machine"
+name = "update_dropped_object"
 kind = "routine"
 conf = "MED"
-why = "Reads object state byte ($1e),y at +5 and branches: state>=2 calls check_object_collision_and_award_score then advances pos (+2/+3 by $80) wrapping at $1c and re-renders via transform_object_coords_to_pixel_space; state<2 tests proximity to reference ($0403/$0401 within 2) and promotes state to 2 — a per-object motion/collision state-machine tick."
-
+why = "+5 = 0 idle; 1: hangs until the player is on its row within 2 x, then +5 = 2 and sound $0607; >= 2: y fraction += $80 per frame (falls half a row) and dropped_object_stuns_cats. Was 'update_active_object_state_machine'. Earlier note: Reads object state byte ($1e),y at +5 and branches: state>=2 calls check_object_collision_and_award_score then advances pos (+2/+3 by $80) wrapping at $1c and re-renders via transform_object_coords_to_pixel_space; state<2 tests proximity to reference ($0403/$0401 within 2) and promotes state to 2 — a per-object motion/collision state-machine tick."
 [[label]]
 addr = "F001"
 name = "spawn_object_pair_for_state"
@@ -1427,11 +1395,10 @@ why = "$DA17 does $36 += $37; rts (8-bit accumulate helper); the adjacent dispat
 
 [[label]]
 addr = "DA70"
-name = "update_object_proximity_collision_tick"
+name = "state02_walk"
 kind = "routine"
-conf = "MED"
-why = "Per-object ($1E ptr) tick: decrements timer $042A in mode $20, calls find_adjacent_entity (early-out beq), scan_objects_for_adjacent_contact_and_trigger + advance_obj_pair_on_proximity + check_two_obj_slots_for_hit; no-hit -> obj_reset_fields_8_F, hit + field+8 in range -> advance_object_state_counter then select_overlapping_target_object."
-
+conf = "HIGH"
+why = "State 02, walking a floor (player, cats). Player: caught by a walking cat ($E0B7); a closed door in the path blocks it or is opened by a cat ($EA90); the door wave and bonus checks run. Tile under foot +8 outside $49-$51 -> start_hop_off_ledge (state 04). Trace (state_census.py, 3 play logs): -> 04 x83, 10 x17, 1E (slot 2), 08. Was 'update_object_proximity_collision_tick'. Earlier note: Per-object ($1E ptr) tick: decrements timer $042A in mode $20, calls find_adjacent_entity (early-out beq), scan_objects_for_adjacent_contact_and_trigger + advance_obj_pair_on_proximity + check_two_obj_slots_for_hit; no-hit -> obj_reset_fields_8_F, hit + field+8 in range -> advance_object_state_counter then select_overlapping_target_object."
 [[label]]
 addr = "E6FA"
 name = "draw_object_and_tick_state_timer"
@@ -1448,11 +1415,10 @@ why = "Sets pointer $1E/$1F=$04A0, calls tick_object_state_collision_score per e
 
 [[label]]
 addr = "EF3F"
-name = "update_object_pair_state_at_a0_a8"
+name = "update_dropped_objects"
 kind = "routine"
 conf = "MED"
-why = "Sets 16-bit pointer $1E/$1F=$00A0, calls update_active_object_state_machine, then reloads $1E=$A8 to update the next object — drives the state machine over two fixed object pointers."
-
+why = "Runs update_dropped_object on the two zero-page records $A0 and $A8. Was 'update_object_pair_state_at_a0_a8'. Earlier note: Sets 16-bit pointer $1E/$1F=$00A0, calls update_active_object_state_machine, then reloads $1E=$A8 to update the next object — drives the state machine over two fixed object pointers."
 [[label]]
 addr = "F1B9"
 name = "check_object_reached_target_then_advance_phase"
@@ -1521,11 +1487,10 @@ why = "Reads state var $1E, three-way branches (<$20/==$20/>$20), loads $12/$13 
 
 [[label]]
 addr = "DD17"
-name = "reset_obj_to_state2_and_arm_field"
+name = "land_on_floor"
 kind = "routine"
-conf = "MED"
-why = "Writes via ($1e),y object pointer: clears +2, sets +3=(field&$fc)|$02, +8=$4b, +0f=2, +4=2 (state-2 across fields); if counter +5==0 calls force_active_objects_to_state3 — initializes one object to a fixed state."
-
+conf = "HIGH"
+why = "Shared entry of state 02: y fraction 0, y row aligned (&$FC|2), +8 = $4B (a floor tile), state 02, anim 2; the player landing also runs force_active_objects_to_state3. 7 callers (every timed state's end). Was 'reset_obj_to_state2_and_arm_field'. Earlier note: Writes via ($1e),y object pointer: clears +2, sets +3=(field&$fc)|$02, +8=$4b, +0f=2, +4=2 (state-2 across fields); if counter +5==0 calls force_active_objects_to_state3 — initializes one object to a fixed state."
 [[label]]
 addr = "E634"
 name = "update_items"
@@ -1577,46 +1542,40 @@ why = "Loads $0F=#$78(120) as loop counter, then loops calling extract_x_top2_bi
 
 [[label]]
 addr = "DB37"
-name = "tick_obj_timer_field7_else_reset_to_state2"
+name = "state22_knocked_out"
 kind = "routine"
 conf = "HIGH"
-why = "Decrements obj byte at ($1e),y=7 (sec/sbc #$01/sta); bne skips, on zero jmp reset_obj_to_state2_and_arm_field — a per-object countdown that triggers a state reset on expiry"
-
+why = "State 22, a cat knocked out by a fall (catch_player_or_knock_out, non-player path: anim $20, timer 120 or $65 for type 3, score by type from $DB33). Counts +7 down, then land_on_floor. Not reached in the 3 play logs. Was 'tick_obj_timer_field7_else_reset_to_state2'. Earlier note: Decrements obj byte at ($1e),y=7 (sec/sbc #$01/sta); bne skips, on zero jmp reset_obj_to_state2_and_arm_field — a per-object countdown that triggers a state reset on expiry"
 [[label]]
 addr = "DD62"
-name = "tick_obj_proximity_hit_and_countdown"
-kind = "routine"
-conf = "MED"
-why = "Per-object ($1E) state tick: runs advance_obj_pair_on_proximity + check_two_obj_slots_for_hit (beq->obj_reset_fields_8_F), range-checks field+8 ($49..$51 else set_obj_state_0b_after_align), calls trigger_state_change_on_proximity, then decrements timer field+7; on expiry either reset_obj_to_state2_and_arm_field or reloads timer from $65 and sets state field+$0F=#$12."
-
-[[label]]
-addr = "DDC6"
-name = "tick_obj_timer_field7_else_reset_obj"
+name = "state10_door_knockback"
 kind = "routine"
 conf = "HIGH"
-why = "ldy #$07 / lda ($1e),y / sbc #1 / sta ($1e),y decrements object field+7 timer via the $1e pointer; bne keeps it active, on zero falls to jmp reset_obj_to_state2_and_arm_field — a countdown that resets the object when it expires."
-
+why = "State 10, knocked back by an opening door (set by the door_kindN handlers, anim $0C, timer 8). Player in 10 pushes cats ($E134). Timer out: player -> land_on_floor; cat -> stunned, timer $65, state 12. Loses the floor -> fall/hop. Trace (state_census.py, 3 play logs): 7-9 frames, x +/-4 per frame; player -> 02, cats -> 12. Was 'tick_obj_proximity_hit_and_countdown'. Earlier note: Per-object ($1E) state tick: runs advance_obj_pair_on_proximity + check_two_obj_slots_for_hit (beq->obj_reset_fields_8_F), range-checks field+8 ($49..$51 else set_obj_state_0b_after_align), calls trigger_state_change_on_proximity, then decrements timer field+7; on expiry either reset_obj_to_state2_and_arm_field or reloads timer from $65 and sets state field+$0F=#$12."
+[[label]]
+addr = "DDC6"
+name = "state14_recover"
+kind = "routine"
+conf = "HIGH"
+why = "State 14: counts +7 ($40) down, then land_on_floor (walk). Trace (state_census.py, 3 play logs): 64 frames, -> 02. Was 'tick_obj_timer_field7_else_reset_obj'. Earlier note: ldy #$07 / lda ($1e),y / sbc #1 / sta ($1e),y decrements object field+7 timer via the $1e pointer; bne keeps it active, on zero falls to jmp reset_obj_to_state2_and_arm_field — a countdown that resets the object when it expires."
 [[label]]
 addr = "DE25"
-name = "countdown_timer_then_reset_obj_and_arm_field"
+name = "state24_slot2_landing_pause"
 kind = "routine"
 conf = "MED"
-why = "dec $0427 + bne backward loop counts down a RAM timer, then jmp (tail-call) $DD17=reset_obj_to_state2_and_arm_field on expiry"
-
+why = "State 24, slot 2 only: after its respawn drop lands (state1C_respawn_drop, anim $12), counts $0427 (120) down, then land_on_floor. Not reached in the 3 play logs. Was 'countdown_timer_then_reset_obj_and_arm_field'. Earlier note: dec $0427 + bne backward loop counts down a RAM timer, then jmp (tail-call) $DD17=reset_obj_to_state2_and_arm_field on expiry"
 [[label]]
 addr = "DE2D"
-name = "tick_bonus_item_collect_or_timeout"
+name = "state1E_slot2_on_item"
 kind = "routine"
 conf = "MED"
-why = "dec $0427 lifetime timer → on expiry sets state $042a=#$10 and jmp reset_obj_to_state2_and_arm_field (despawn); else proximity test (row $0423==$0403, |$0421-$0401|<2) → on player contact sets flag $042f=#$20, substate $0424=#$15, reloads timer #$78, and jmp add_bcd_table_amount_to_buffer with table idx #$44 (award score)."
-
+why = "State 1E, slot 2 only (absolute $042x): entered by slot2_sits_on_item when its position matches an item. Counts $0427 (120) down; the player reaching it (same row, x within 2) -> state 20, anim $15, score table $44. Timeout: cooldown $042A = 16, land_on_floor. Trace (state_census.py, 3 play logs): 20 runs, 18 of them 120 frames; -> 02 x18, 20 x1, 00 x1. Was 'tick_bonus_item_collect_or_timeout'. Earlier note: dec $0427 lifetime timer → on expiry sets state $042a=#$10 and jmp reset_obj_to_state2_and_arm_field (despawn); else proximity test (row $0423==$0403, |$0421-$0401|<2) → on player contact sets flag $042f=#$20, substate $0424=#$15, reloads timer #$78, and jmp add_bcd_table_amount_to_buffer with table idx #$44 (award score)."
 [[label]]
 addr = "DE61"
-name = "tick_timer_0427_reset_obj_when_idle"
+name = "state20_slot2_scored"
 kind = "routine"
 conf = "MED"
-why = "dec $0427 + bne returns until counter expires; on zero, ora-tests flags $4B/$4F and only when both clear jmps reset_obj_to_state2_and_arm_field — a countdown gating the obj reset"
-
+why = "State 20, slot 2 after the player reached it on an item (score $44 already added): counts $0427 (120) down, then walk, or clear the slot if player_down / round_cleared. Survives catch_player_or_knock_out's reset. Trace (state_census.py, 3 play logs): 120 frames, -> 02. Was 'tick_timer_0427_reset_obj_when_idle'. Earlier note: dec $0427 + bne returns until counter expires; on zero, ora-tests flags $4B/$4F and only when both clear jmps reset_obj_to_state2_and_arm_field — a countdown gating the obj reset"
 # --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
 
 [[label]]
@@ -2052,3 +2011,38 @@ name = "dead_clear_zp_00_03"
 kind = "dead"
 conf = "HIGH"
 why = "Naming 2026-10-26 (bytes read whole after the discover fixes): unreferenced, like dead_clear_zp_04_07: zeroes $00-$03."
+
+[[label]]
+addr = "EA5E"
+name = "door_kind0_knock_back"
+kind = "routine"
+conf = "HIGH"
+why = "Delta in -2..0: knocked right (direction 1). Code missed by discover until 2026-10-26."
+
+[[label]]
+addr = "EA51"
+name = "door_kind1_knock_back"
+kind = "routine"
+conf = "HIGH"
+why = "Delta in -1..2: knocked left (direction $FF), via the shared tail."
+
+[[label]]
+addr = "EA69"
+name = "door_kind2_knock_back"
+kind = "routine"
+conf = "HIGH"
+why = "Delta in 2..4: knocked left (direction $FF)."
+
+[[label]]
+addr = "EA59"
+name = "door_kind3_knock_back"
+kind = "routine"
+conf = "HIGH"
+why = "Delta in 0..3: knocked right, via knock_back_right_if_in_range."
+
+[[label]]
+addr = "EA63"
+name = "knock_back_right_if_in_range"
+kind = "routine"
+conf = "HIGH"
+why = "Shared tail: carry clear -> direction 1, then +4 = $0C, state 10, +7 = 8; a cat knocked by a door the player opened ($02B7 = 0) adds pending_score_count."
