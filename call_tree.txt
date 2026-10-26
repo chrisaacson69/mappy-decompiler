@@ -16,7 +16,7 @@ reset_cold_boot_init  $C031
             init_zp14_zp15_to_8  [flows-into]  $C7E2
                 emit_records_for_set_bits_in_bitmap  [flows-into]  $C7EA
                     write_attribute_byte  $C818
-        queue_state_vram_packet  $D735
+        show_player_up_label  $D735
             queue_vram_packet  [jmp, flows-into]  $D77A
         update_sound_frame  $F4F1
             sound_registers_next_voice  [jmp, flows-into]  $F55A
@@ -95,99 +95,99 @@ reset_cold_boot_init  $C031
                 run_voice_stream  [flows-into]  (above)
                 load_voice_stream_ptr  (above)
     start_game_thread  $C128
-        init_stage_with_intro_animation_then_spawn  [task]  $C84F
+        title_screen  [task]  $C84F
             yield_to_render_loop  $C141
                 swap_stack_pointer  [flows-into]  (above)
             ppu_enable_render  (above)
             ppu_disable_render  (above)
-            play_intro_cutscene_sequence  [flows-into]  $C902
+            play_round  [flows-into]  $C902
                 yield_to_render_loop  (above)
-                stage_setup_and_play_loop  [flows-into]  $C99F
+                next_round  [flows-into]  $C99F
                     yield_to_render_loop  (above)
                     ppu_enable_render  (above)
                     ppu_disable_render  (above)
-                    play_intro_cutscene_sequence  [jmp, flows-into]  (above)
+                    play_round  [jmp, flows-into]  (above)
                     clear_object_tables  $CAA7
-                    run_frame_game_logic_tick  $CB7B
-                        pump_pending_amount_then_step_entry_state  [jmp, flows-into]  $D5AB
-                            add_bcd_table_amount_n_times  $D4BE
-                                add_bcd_table_amount_to_buffer  $D4CA
+                    update_bonus_round_frame  $CB7B
+                        update_score  [jmp, flows-into]  $D5AB
+                            add_score_n_times  $D4BE
+                                add_score_from_table  $D4CA
                                     bcd_add_packed_buffer  [jmp, flows-into]  $D502
                             build_buffer_entry_unpack_nibbles  [jmp, flows-into]  $D5D9
                                 append_byte_to_0500_if_counter  $D629
-                            clamp_var32_to_min  $D694
-                            advance_record_index_and_refresh_entry  $D6AA
-                                load_record_via_ptr_table  $D4E5
+                            update_high_score  $D694
+                            award_extra_life  $D6AA
+                                bcd_add_from_table  $D4E5
                                     bcd_add_packed_buffer  [flows-into]  (above)
                                 build_buffer_entry_unpack_nibbles  [jmp, flows-into]  (above)
-                        copy_active_var_record_when_phase_aligned  $D71C
-                            queue_state_vram_packet  [flows-into]  (above)
+                        blink_player_up_label  $D71C
+                            show_player_up_label  [flows-into]  (above)
                             queue_vram_packet  [jmp, flows-into]  (above)
                         update_and_respawn_objects  $D8D8
-                            transform_object_coords_to_pixel_space  $C305
+                            draw_object  $C305
                                 dispatch_object_draw_from_record  $C342
                                     dispatch_object_draw_routine_by_index  [flows-into]  $C344
                                         handler_rts_noop  [dispatch]  (above)
                                         draw_two_tile_object  [dispatch]  $C37C
-                                            write_object_to_shadow_oam  [jmp, flows-into]  $C415
-                                                compute_obj_visibility_flag  $C465
+                                            write_sprite_to_oam  [jmp, flows-into]  $C415
+                                                sprite_attr_with_priority  $C465
                                         dispatch_on_obj_flag_bit3  [dispatch]  $C3A7
                                             dispatch_object_draw_routine_by_index  [jmp, flows-into]  (above)
                                         compose_obj_field5_field7_index  [dispatch]  $C3C0
-                                            lookup_obj_type_ptr_hi  $C3B4
-                                            lookup_table_c480_to_zp12  [flows-into]  $C3D1
-                                                toggle_flag_if_field_positive  [flows-into]  $C3D7
-                                                    extract_top2_bits  [flows-into]  $C3E3
-                                                        emit_object_oam_step_pointers_8  [flows-into]  $C3EC
-                                                            write_object_oam_and_advance_pointer_8  [flows-into]  $C401
-                                                                write_object_to_oam_and_bump_count  [flows-into]  $C40F
-                                                                    write_object_to_shadow_oam  (above)
-                                        obj_field5_or10_lookup_c480_to_zp12  [dispatch]  $C4A8
-                                            lookup_obj_type_ptr_hi  (above)
-                                            lookup_table_c480_to_zp12  [jmp, flows-into]  (above)
+                                            load_type_sprite_palette  $C3B4
+                                            load_metasprite_tile_base  [flows-into]  $C3D1
+                                                apply_facing_flip  [flows-into]  $C3D7
+                                                    flip_bits_to_tile_xor  [flows-into]  $C3E3
+                                                        draw_metasprite_2x2  [flows-into]  $C3EC
+                                                            draw_sprite_pair  [flows-into]  $C401
+                                                                write_sprite_next_tile  [flows-into]  $C40F
+                                                                    write_sprite_to_oam  (above)
+                                        draw_type_pose_10  [dispatch]  $C4A8
+                                            load_type_sprite_palette  (above)
+                                            load_metasprite_tile_base  [jmp, flows-into]  (above)
                                         compose_obj_anim_index_and_lookup  [dispatch]  $C4B0
-                                            lookup_obj_type_ptr_hi  (above)
-                                            lookup_table_c480_to_zp12  [jmp, flows-into]  (above)
+                                            load_type_sprite_palette  (above)
+                                            load_metasprite_tile_base  [jmp, flows-into]  (above)
                                         build_sprite_attr_and_step_coords  [dispatch]  $C4C6
-                                            extract_top2_bits  [jmp, flows-into]  (above)
+                                            flip_bits_to_tile_xor  [jmp, flows-into]  (above)
                                         select_object_tile_param_by_type_flag  [dispatch]  $C4F5
-                                            extract_top2_bits  [jmp, flows-into]  (above)
+                                            flip_bits_to_tile_xor  [jmp, flows-into]  (above)
                                         test_bit3_of_record_field7  [dispatch]  $C510
                                             lookup_field5_set_bits24_to_zp12  [flows-into]  $C518
-                                                lookup_obj_type_ptr_hi  (above)
-                                                lookup_table_c480_to_zp12  [jmp, flows-into]  (above)
+                                                load_type_sprite_palette  (above)
+                                                load_metasprite_tile_base  [jmp, flows-into]  (above)
                                         lookup_field5_set_bits24_to_zp12  [dispatch]  (above)
                                         draw_object_animated_sprite  [dispatch]  $C521
                                             draw_object_pair_once  [flows-into]  $C540
                                                 draw_object_pair_advance_slot  [flows-into]  $C543
                                                     draw_indexed_object_if_present  $C563
-                                                        write_object_to_shadow_oam  (above)
+                                                        write_sprite_to_oam  (above)
                                         emit_object_oam_at_70_variant2  [dispatch]  $C5A3
-                                            emit_object_oam_step_pointers_8  [jmp, flows-into]  (above)
+                                            draw_metasprite_2x2  [jmp, flows-into]  (above)
                                         draw_2x2_metasprite_tile_69  [dispatch]  $C5B2
-                                            emit_object_oam_step_pointers_8  [jmp, flows-into]  (above)
-                                            write_object_oam_and_advance_pointer_8  (above)
-                                            write_object_to_oam_and_bump_count  (above)
+                                            draw_metasprite_2x2  [jmp, flows-into]  (above)
+                                            draw_sprite_pair  (above)
+                                            write_sprite_next_tile  (above)
                                         build_object_sprite_attributes  [dispatch]  $C5F6
-                                            toggle_flag_if_field_positive  [jmp, flows-into]  (above)
+                                            apply_facing_flip  [jmp, flows-into]  (above)
                                         draw_flagged_object_to_oam  [dispatch]  $C61E
-                                            write_object_to_shadow_oam  [jmp, flows-into]  (above)
+                                            write_sprite_to_oam  [jmp, flows-into]  (above)
                                             ptr16_sub6_set_const  [flows-into]  $C63D
                                                 draw_object_tile_rows  [flows-into]  $C64C
                                                     load_const_3  $C65C
                                                         draw_object_tile_row  [flows-into]  $C65E
-                                                            write_object_to_shadow_oam  (above)
+                                                            write_sprite_to_oam  (above)
                                                     draw_object_tile_row  [jmp, flows-into]  (above)
                                             draw_object_tile_rows  (above)
                                         draw_8_sprite_row_to_oam  [dispatch]  $C687
-                                            write_object_to_shadow_oam  (above)
+                                            write_sprite_to_oam  (above)
                                         select_threshold_ptr_then_toggle_flag  [dispatch]  $C6AC
-                                            toggle_flag_if_field_positive  [jmp, flows-into]  (above)
+                                            apply_facing_flip  [jmp, flows-into]  (above)
                                         draw_object_by_animation_state  [dispatch]  $C6C1
-                                            toggle_flag_if_field_positive  [jmp, flows-into]  (above)
+                                            apply_facing_flip  [jmp, flows-into]  (above)
                                             draw_2x2_metasprite_tile_69  [jmp, flows-into]  (above)
                                             draw_object_and_advance_x8  [jmp, flows-into]  $E84D
-                                                write_object_to_shadow_oam  (above)
+                                                write_sprite_to_oam  (above)
                             update_object_state_vs_reference  $D939
                                 store_one_via_ptr  [jmp, flows-into]  $D9BC
                             dispatch_object_state  $DA2C
@@ -196,8 +196,8 @@ reset_cold_boot_init  $C031
                                     set_obj_state_0b_after_align  [flows-into]  $DAA2
                                         set_obj_fields_via_ptr  [flows-into]  $DAB3
                                         align_obj_coord_to_target  $DEA6
-                                    init_entity_state_if_flag_clear  [flows-into]  $DAD8
-                                        add_bcd_table_amount_to_buffer  [jmp, flows-into]  (above)
+                                    player_caught  [flows-into]  $DAD8
+                                        add_score_from_table  [jmp, flows-into]  (above)
                                         reset_objects_except_persistent_types  [flows-into]  $DAEF
                                             init_sound_voices  $F4BF
                                     obj_reset_fields_8_F  [jmp, flows-into]  $DB83
@@ -245,9 +245,9 @@ reset_cold_boot_init  $C031
                                 delay_then_zero_struct_fields  [dispatch]  $DB7B
                                     zero_struct_fields_4_and_15  [jmp, flows-into]  $DE6F
                                 trigger_entity_state_reset_on_proximity_or_type_else_scan_next  [dispatch]  $DB94
-                                    init_entity_state_if_flag_clear  [jmp, flows-into]  (above)
+                                    player_caught  [jmp, flows-into]  (above)
                                     collect_object_award_score_and_spawn_popup  [flows-into]  $DBBA
-                                        add_bcd_table_amount_to_buffer  (above)
+                                        add_score_from_table  (above)
                                         obj_state7_update_anim_and_snap_position  [flows-into]  $DC02
                                             clear_flag_if_value_below_threshold  [jmp, flows-into]  (above)
                                             obj_reset_fields_8_F  [jmp, flows-into]  (above)
@@ -260,7 +260,7 @@ reset_cold_boot_init  $C031
                                     find_object_at_coords  $E469
                                 obj_state7_update_anim_and_snap_position  [dispatch]  (above)
                                 resolve_entity_collision_movement  [dispatch]  $DC5C
-                                    init_entity_state_if_flag_clear  [jmp, flows-into]  (above)
+                                    player_caught  [jmp, flows-into]  (above)
                                     obj_reset_fields_8_F  [jmp, flows-into]  (above)
                                     flag_offset_plus_0x20  [jmp, flows-into]  $E084
                                         add_flag_conditioned_offset  (above)
@@ -287,7 +287,7 @@ reset_cold_boot_init  $C031
                                     reset_obj_to_state2_and_arm_field  [jmp, flows-into]  (above)
                                 dec_timer_field7_if_nonzero  [dispatch]  $DDD4
                                 handle_entity_object_pickup_or_special_setup  [dispatch]  $DDE0
-                                    init_entity_state_if_flag_clear  [jmp, flows-into]  (above)
+                                    player_caught  [jmp, flows-into]  (above)
                                     collect_object_award_score_and_spawn_popup  [jmp, flows-into]  (above)
                                     reset_obj_to_state2_and_arm_field  [jmp, flows-into]  (above)
                                     advance_pointer_by_flagged_offset_then_append_entry  (above)
@@ -295,7 +295,7 @@ reset_cold_boot_init  $C031
                                 countdown_timer_then_reset_obj_and_arm_field  [dispatch]  $DE25
                                     reset_obj_to_state2_and_arm_field  [jmp, flows-into]  (above)
                                 tick_bonus_item_collect_or_timeout  [dispatch]  $DE2D
-                                    add_bcd_table_amount_to_buffer  [jmp, flows-into]  (above)
+                                    add_score_from_table  [jmp, flows-into]  (above)
                                     reset_obj_to_state2_and_arm_field  [jmp, flows-into]  (above)
                                 tick_timer_0427_reset_obj_when_idle  [dispatch]  $DE61
                                     reset_obj_to_state2_and_arm_field  [jmp, flows-into]  (above)
@@ -305,7 +305,7 @@ reset_cold_boot_init  $C031
                                     obj_reset_fields_8_F  [jmp, flows-into]  (above)
                                 bare_return_stub  [dispatch]  $E19C
                                 collect_item_award_score_and_spawn_reward_object  [dispatch]  $E19D
-                                    add_bcd_table_amount_to_buffer  (above)
+                                    add_score_from_table  (above)
                                     advance_pointer_by_flagged_offset_then_append_entry  (above)
                                     init_state_vars  [flows-into]  $E18E
                                         bare_return_stub  [flows-into]  (above)
@@ -335,7 +335,7 @@ reset_cold_boot_init  $C031
                                 handler_rts_noop  [dispatch]  (above)
                                 check_object_reached_target_then_advance_phase  [dispatch]  $F1B9
                                     init_object_record_load_data_and_scan  [flows-into]  $F1F1
-                                        load_record_via_ptr_table  (above)
+                                        bcd_add_from_table  (above)
                                         load_indexed_ptr_then_scan_for_terminator  [jmp, flows-into]  $F250
                                             draw_rle_text  [jmp, flows-into]  (above)
                                     on_object_reaching_target_reset_and_rescan  $F215
@@ -350,7 +350,7 @@ reset_cold_boot_init  $C031
                         ppu_run_draw_blocks  $CC15
                         fill_attr_map_run  [flows-into]  $CDB7
                         setup_oam_params_and_emit_object_7c  $CDFF
-                            emit_object_oam_step_pointers_8  [jmp, flows-into]  (above)
+                            draw_metasprite_2x2  [jmp, flows-into]  (above)
                         ppu_draw_blocks_b  $CF69
                         ppu_draw_mansion_stamps  $D126
                         draw_blocks_then_rebuild_buffer_entries  $D703
@@ -363,20 +363,20 @@ reset_cold_boot_init  $C031
                         run_entry_state_sequence_120_frames  $CE94
                             yield_to_render_loop  (above)
                             ptr16_sub6_set_const  (above)
-                            pump_pending_amount_then_step_entry_state  (above)
-                            copy_active_var_record_when_phase_aligned  (above)
+                            update_score  (above)
+                            blink_player_up_label  (above)
                         run_entry_state_pump_120_iterations  $CEBB
                             yield_to_render_loop  (above)
-                            pump_pending_amount_then_step_entry_state  (above)
-                            copy_active_var_record_when_phase_aligned  (above)
+                            update_score  (above)
+                            blink_player_up_label  (above)
                         draw_indexed_text_line  $CECD
                             draw_rle_text  [jmp, flows-into]  (above)
-                        load_record_via_ptr_table  [jmp, flows-into]  (above)
+                        bcd_add_from_table  [jmp, flows-into]  (above)
                         build_buffer_entry_unpack_nibbles  (above)
                         draw_blocks_then_rebuild_buffer_entries  (above)
                     load_record_and_advance_anim_counters  $D6E8
-                        load_record_via_ptr_table  (above)
-                    copy_active_var_record_when_phase_aligned  (above)
+                        bcd_add_from_table  (above)
+                    blink_player_up_label  (above)
                     init_struct_from_rom_template  $D80B
                         set_two_zp_pointers  $D825
                     init_ram_block_from_table  $D8C0
@@ -404,12 +404,12 @@ reset_cold_boot_init  $C031
                         shl3_pack_zp_ptr16  (above)
                     load_record_by_index  $F3C1
                     init_sound_voices  (above)
-                dispatch_stage_state_and_rebuild_screen  [jmp, flows-into]  $CA28
+                handle_player_caught  [jmp, flows-into]  $CA28
                     yield_to_render_loop  (above)
                     ppu_enable_render  (above)
                     ppu_disable_render  (above)
-                    init_stage_with_intro_animation_then_spawn  [jmp, flows-into]  (above)
-                    play_intro_cutscene_sequence  [jmp, flows-into]  (above)
+                    title_screen  [jmp, flows-into]  (above)
+                    play_round  [jmp, flows-into]  (above)
                     swap_player_state  $CA81
                     clear_object_tables  (above)
                     redraw_var_records_at_7800_if_flag_set  $CAB4
@@ -418,25 +418,25 @@ reset_cold_boot_init  $C031
                                 yield_to_render_loop  (above)
                                 draw_fixed_glyph_string  $CB02
                                     draw_glyph_and_advance_cursor  [flows-into]  $CB14
-                                        write_object_to_shadow_oam  (above)
+                                        write_sprite_to_oam  (above)
                                     draw_glyph_string_from_param_block  $CB3B
                                         draw_glyph_and_advance_cursor  (above)
                                 init_ptr_1e_from_const  $CB31
                                     draw_glyph_string_from_param_block  [flows-into]  (above)
-                                copy_active_var_record_when_phase_aligned  (above)
+                                blink_player_up_label  (above)
                         redraw_var_records_loop_until_count_or_phase  [jmp, flows-into]  (above)
                     init_state_vars_and_pointer  (above)
                     init_ptr_1e_from_const  (above)
-                    run_frame_game_logic_update  $CB60
-                        pump_pending_amount_then_step_entry_state  [jmp, flows-into]  (above)
-                        copy_active_var_record_when_phase_aligned  (above)
+                    update_round_frame  $CB60
+                        update_score  [jmp, flows-into]  (above)
+                        blink_player_up_label  (above)
                         update_and_respawn_objects  (above)
                         tick_all_subcounters_stride8  (above)
-                        update_all_active_objects  $E634
+                        update_items  $E634
                             dispatch_item_state  $E64A
                                 handler_rts_noop  [dispatch]  (above)
                                 resolve_object_position_capture_and_score  [dispatch]  $E660
-                                    add_bcd_table_amount_n_times  (above)
+                                    add_score_n_times  (above)
                                     reset_objects_except_persistent_types  (above)
                                     load_string_entry10_with_flag80  $E70A
                                         load_string_ptr_by_state_and_scan  [jmp, flows-into]  (above)
@@ -457,8 +457,8 @@ reset_cold_boot_init  $C031
                                 dispatch_on_masked_state_field  $E94D
                         tick_object_group_04a0  $ED4E
                             tick_object_state_collision_score  $ED65
-                                transform_object_coords_to_pixel_space  (above)
-                                add_bcd_table_amount_n_times  [jmp, flows-into]  (above)
+                                draw_object  (above)
+                                add_score_n_times  [jmp, flows-into]  (above)
                                 update_matching_object_state  [jmp, flows-into]  $ED1C
                                 advance_obj_state_if_matched  $EDE2
                                 add_byte_to_obj_word_if_active  $EE4D
@@ -467,21 +467,21 @@ reset_cold_boot_init  $C031
                                     add_byte_to_word_if_active  $EEEB
                         update_object_pair_state_at_a0_a8  $EF3F
                             update_active_object_state_machine  [flows-into]  $EF4E
-                                transform_object_coords_to_pixel_space  [jmp, flows-into]  (above)
+                                draw_object  [jmp, flows-into]  (above)
                                 check_object_collision_and_award_score  $EF9B
-                                    add_bcd_table_amount_to_buffer  (above)
+                                    add_score_from_table  (above)
                         dispatch_obj0_state_then_fall_to_obj8  $F04D
                             dispatch_obj_state  [flows-into]  $F054
                                 obj_proximity_trigger_with_timer  [jmp, flows-into]  (above)
                                 check_obj_near_point  (above)
                     build_stage_screen_layout  (above)
-                    copy_active_var_record_when_phase_aligned  (above)
+                    blink_player_up_label  (above)
                     build_object_record_block_and_dispatch  (above)
                     process_objects_in_state_two  (above)
                     clear_low2_bits_per_object_record  (above)
                 draw_fixed_glyph_string  (above)
                 draw_glyph_string_from_param_block  (above)
-                run_frame_game_logic_update  (above)
+                update_round_frame  (above)
                 init_object_from_rom_template  $D7F1
                     set_two_zp_pointers  (above)
                 init_object_record_row  $D846
@@ -490,7 +490,7 @@ reset_cold_boot_init  $C031
                     init_object_sequence_state  [jmp, flows-into]  $F323
                         init_sound_voices  (above)
                     draw_vertical_sprite_column  $F383
-                        write_object_to_shadow_oam  (above)
+                        write_sprite_to_oam  (above)
                     sub2_from_u16_counter  $F3B2
                 load_record_by_index  (above)
                 init_sound_voices  (above)
@@ -502,7 +502,7 @@ reset_cold_boot_init  $C031
                 build_buffer_entry_unpack_nibbles  (above)
             copy_5_bytes_table_to_ram_0490  $CD2B
             transform_fixed_coord_90_04  $CD3E
-                transform_object_coords_to_pixel_space  [jmp, flows-into]  (above)
+                draw_object  [jmp, flows-into]  (above)
             build_stage_screen_layout  (above)
             animate_two_sprite_walkcycles_into_buffer  $D73E
                 queue_vram_packet  [jmp, flows-into]  (above)
@@ -511,13 +511,13 @@ reset_cold_boot_init  $C031
             load_object_table_to_ram  (above)
             spawn_object_pair_for_state  (above)
             init_sound_voices  (above)
-            setup_stage_then_run_intro_frames  [jmp, flows-into]  $FF65
+            attract_demo  [jmp, flows-into]  $FF65
                 yield_to_render_loop  (above)
                 ppu_enable_render  (above)
                 ppu_disable_render  (above)
-                init_stage_with_intro_animation_then_spawn  [jmp, flows-into]  (above)
+                title_screen  [jmp, flows-into]  (above)
                 clear_object_tables  (above)
-                run_frame_game_logic_update  (above)
+                update_round_frame  (above)
                 build_stage_screen_layout  (above)
                 init_object_from_rom_template  (above)
                 init_object_record_row  (above)
