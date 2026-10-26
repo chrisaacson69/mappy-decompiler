@@ -209,6 +209,11 @@ digraph mappy {
   "E9B8"[label="object_overlap_check\n$E9B8"];
   "EA05"[label="check_subject_vs_object_list_collision\n$EA05"];
   "EA46"[label="jmp_indirect_zp_vector\n$EA46"];
+  "EA51"[label="sub_EA51\n$EA51"];
+  "EA59"[label="sub_EA59\n$EA59"];
+  "EA5E"[label="sub_EA5E\n$EA5E"];
+  "EA63"[label="sub_EA63\n$EA63"];
+  "EA69"[label="sub_EA69\n$EA69"];
   "EA90"[label="scan_objects_for_adjacent_contact_and_trigger\n$EA90"];
   "ED1C"[label="update_matching_object_state\n$ED1C"];
   "ED4E"[label="tick_object_group_04a0\n$ED4E"];
@@ -677,6 +682,13 @@ digraph mappy {
   "E9A4" -> "EA05";
   "E9A4" -> "EE04" [style=dotted];
   "EA05" -> "EA46";
+  "EA05" -> "EA51" [color=red];
+  "EA05" -> "EA59" [color=red];
+  "EA05" -> "EA5E" [color=red];
+  "EA05" -> "EA69" [color=red];
+  "EA59" -> "EA63" [style=dotted];
+  "EA5E" -> "EA63" [style=dotted];
+  "EA63" -> "EA69" [style=dotted];
   "EA90" -> "E9A4";
   "ED4E" -> "ED65";
   "ED65" -> "C305";

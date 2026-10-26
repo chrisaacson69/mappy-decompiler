@@ -223,6 +223,11 @@
 "E9B8": "object_overlap_check",
 "EA05": "check_subject_vs_object_list_collision",
 "EA46": "jmp_indirect_zp_vector",
+"EA51": "sub_EA51",
+"EA59": "sub_EA59",
+"EA5E": "sub_EA5E",
+"EA63": "sub_EA63",
+"EA69": "sub_EA69",
 "EA90": "scan_objects_for_adjacent_contact_and_trigger",
 "ED1C": "update_matching_object_state",
 "ED4E": "tick_object_group_04a0",
@@ -3200,6 +3205,56 @@
 "EA46",
 [
 "call"
+]
+],
+[
+"EA05",
+"EA51",
+[
+"dispatch"
+]
+],
+[
+"EA05",
+"EA59",
+[
+"dispatch"
+]
+],
+[
+"EA05",
+"EA5E",
+[
+"dispatch"
+]
+],
+[
+"EA05",
+"EA69",
+[
+"dispatch"
+]
+],
+[
+"EA59",
+"EA63",
+[
+"jmp",
+"flows-into"
+]
+],
+[
+"EA5E",
+"EA63",
+[
+"flows-into"
+]
+],
+[
+"EA63",
+"EA69",
+[
+"flows-into"
 ]
 ],
 [

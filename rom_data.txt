@@ -65,7 +65,7 @@ attract demo (4,000 frames from RESET): 1,017 data bytes read, 470 of them by no
   voice 23 ($0617)    85 B  $F6AC-$F6AD $F83B-$F83C $F841-$F842 $F845-$F846 $F84F-$F850 $F881-$F882 $F885-$F89D $FE2A-$FE59
   voice 24 ($0618)   145 B  $F6AC-$F6AD $F6B0-$F6B1 $F6BA-$F6BB $F6BE-$F6BF $F6C4-$F6C5 $F6CA-$F6CB $F6CE-$F6CF $F83B-$F83E $F841-$F842 $F845-$F84C $F84F-$F850 $F883-$F89D $FF0D-$FF64
 
-non-code PRG 5,541 B; claimed by a run or a known table 3,996 B; unclaimed 1,545 B in 60 ranges: 602 B where code reads into the range (abs / abs,X / abs,Y), 943 B that no operand reaches
+non-code PRG 5,478 B; claimed by a run or a known table 4,004 B; unclaimed 1,474 B in 59 ranges: 531 B where code reads into the range (abs / abs,X / abs,Y), 943 B that no operand reaches
   $C000-$C030     49 B  read at $DED2
   $C123-$C127      5 B  read at $C0F6
   $C259-$C25B      3 B  read at -
@@ -106,7 +106,6 @@ non-code PRG 5,541 B; claimed by a run or a known table 3,996 B; unclaimed 1,545
   $E57D-$E57E      2 B  read at -
   $E5B5-$E5C4     16 B  read at -
   $E788-$E797     16 B  read at -
-  $EA49-$EA8F     71 B  read at $EA0B $EA10
   $EAFE-$EB1B     30 B  read at -
   $EB3B-$EC4E    276 B  read at -
   $EC51-$EC52      2 B  read at -

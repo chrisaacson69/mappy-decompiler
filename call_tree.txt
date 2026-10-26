@@ -1,4 +1,4 @@
-# Mappy call tree (call_graph.py): 275 routines, 535 edges (call 290, jmp 113, flows-into 195, dispatch 53, inline 18, task 1); reached from the vectors: 275/275. [kinds] mark every edge that is not a plain JSR.
+# Mappy call tree (call_graph.py): 280 routines, 542 edges (call 290, jmp 114, flows-into 198, dispatch 57, inline 18, task 1); reached from the vectors: 280/280. [kinds] mark every edge that is not a plain JSR.
 
 # RESET vector
 reset_cold_boot_init  $C031
@@ -215,6 +215,13 @@ reset_cold_boot_init  $C031
                                         activate_object_check_collision_maybe_spawn  [flows-into]  $E9A4
                                             check_subject_vs_object_list_collision  $EA05
                                                 jmp_indirect_zp_vector  $EA46
+                                                sub_EA51  [dispatch]  $EA51
+                                                sub_EA59  [dispatch]  $EA59
+                                                    sub_EA63  [jmp, flows-into]  $EA63
+                                                        sub_EA69  [flows-into]  $EA69
+                                                sub_EA5E  [dispatch]  $EA5E
+                                                    sub_EA63  [flows-into]  (above)
+                                                sub_EA69  [dispatch]  (above)
                                             find_first_empty_slot  [jmp, flows-into]  $EE04
                                         object_overlap_check  $E9B8
                                     scan_objects_for_adjacent_contact_and_trigger  $EA90

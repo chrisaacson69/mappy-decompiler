@@ -9,7 +9,8 @@ read from its own instructions only, never from a span sweep (which decoded data
   call       JSR to another routine
   jmp        JMP abs to another routine (a tail call, or a jump back into a loop head)
   flows-into a path runs into another routine's entry: falls through, or branches into it
-  dispatch   JMP (ind) through a jump table (jump_tables.txt): one edge per handler
+  dispatch   JMP (ind) through a jump table (jump_tables.txt), or a JSR to a shared JMP (ind)
+             stub with the table loaded before it ($EA39): one edge per handler
   inline     JSR to an inline dispatcher (code_map.INLINE_DISPATCH): its word table's handlers
   task       the reset-time task switch ($C13B: switch_stack_and_jump_to_indexed_handler saves SP
              and jumps to the game task $C84F; swap_stack_pointer later trades stacks back, which
@@ -60,9 +61,9 @@ for e in entries:
         t = WIN.canon(t) if t in WIN else t
         if t in ent and t != e:
             G.add((0, e), (0, t), "call")
-        if t in INLINE_DISPATCH and site in tables:
+        if site in tables:                                  # inline table, or JSR to a JMP (ind) stub
             for h in tables[site]:
-                G.add((0, e), (0, h), "inline")
+                G.add((0, e), (0, h), "inline" if t in INLINE_DISPATCH else "dispatch")
     for site, t in f.jumps.items():
         t = WIN.canon(t) if t in WIN else t
         if t in ent and t != e:

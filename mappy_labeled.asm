@@ -7325,77 +7325,45 @@ check_subject_vs_object_list_collision:
 
 jmp_indirect_zp_vector:
     EA46: 6C 1C 00    jmp (aux_ptr)   ; $001C
-    EA49: 5E          .byte $5E
-    EA4A: EA          .byte $EA
-    EA4B: 51          .byte $51
-    EA4C: EA          .byte $EA
-    EA4D: 69          .byte $69
-    EA4E: EA          .byte $EA
-    EA4F: 59          .byte $59
-    EA50: EA          .byte $EA
-    EA51: 18          .byte $18
-    EA52: 69          .byte $69
-    EA53: 01          .byte $01
-    EA54: C9          .byte $C9
-    EA55: 04          .byte $04
-    EA56: 90          .byte $90
-    EA57: 18          .byte $18
-    EA58: 60          .byte $60
-    EA59: C9          .byte $C9
-    EA5A: 04          .byte $04
-    EA5B: 4C          .byte $4C
-    EA5C: 63          .byte $63
-    EA5D: EA          .byte $EA
-    EA5E: 18          .byte $18
-    EA5F: 69          .byte $69
-    EA60: 02          .byte $02
-    EA61: C9          .byte $C9
-    EA62: 03          .byte $03
-    EA63: B0          .byte $B0
-    EA64: 2A          .byte $2A
-    EA65: A9          .byte $A9
-    EA66: 01          .byte $01
-    EA67: 90          .byte $90
-    EA68: 09          .byte $09
-    EA69: 38          .byte $38
-    EA6A: E9          .byte $E9
-    EA6B: 02          .byte $02
-    EA6C: C9          .byte $C9
-    EA6D: 03          .byte $03
-    EA6E: B0          .byte $B0
-    EA6F: 1F          .byte $1F
-    EA70: A9          .byte $A9
-    EA71: FF          .byte $FF
-    EA72: 99          .byte $99
-    EA73: 06          .byte $06
-    EA74: 04          .byte $04
-    EA75: A9          .byte $A9
-    EA76: 0C          .byte $0C
-    EA77: 99          .byte $99
-    EA78: 04          .byte $04
-    EA79: 04          .byte $04
-    EA7A: A9          .byte $A9
-    EA7B: 10          .byte $10
-    EA7C: 99          .byte $99
-    EA7D: 0F          .byte $0F
-    EA7E: 04          .byte $04
-    EA7F: A9          .byte $A9
-    EA80: 08          .byte $08
-    EA81: 99          .byte $99
-    EA82: 07          .byte $07
-    EA83: 04          .byte $04
-    EA84: C0          .byte $C0
-    EA85: 00          .byte $00
-    EA86: F0          .byte $F0
-    EA87: 07          .byte $07
-    EA88: BD          .byte $BD
-    EA89: B7          .byte $B7
-    EA8A: 02          .byte $02
-    EA8B: D0          .byte $D0
-    EA8C: 02          .byte $02
-    EA8D: E6          .byte $E6
-    EA8E: 30          .byte $30
-    EA8F: 60          .byte $60
+    EA49:            .word L_EA5E
+    EA4B:            .word L_EA51
+    EA4D:            .word L_EA69
+    EA4F:            .word L_EA59
+    EA51: 18          clc
+    EA52: 69 01       adc #$01
+    EA54: C9 04       cmp #$04
+    EA56: 90 18       bcc @EA70   ; $EA70
+    EA58: 60          rts
+    EA59: C9 04       cmp #$04
+    EA5B: 4C 63 EA    jmp $ea63
+    EA5E: 18          clc
+    EA5F: 69 02       adc #$02
+    EA61: C9 03       cmp #$03
+@EA63:
+    EA63: B0 2A       bcs @EA8F   ; $EA8F
+    EA65: A9 01       lda #$01
+    EA67: 90 09       bcc @EA72   ; $EA72
+    EA69: 38          sec
+    EA6A: E9 02       sbc #$02
+    EA6C: C9 03       cmp #$03
+    EA6E: B0 1F       bcs @EA8F   ; $EA8F
+@EA70:
+    EA70: A9 FF       lda #$ff
+@EA72:
+    EA72: 99 06 04    sta $0406,y
+    EA75: A9 0C       lda #$0c
+    EA77: 99 04 04    sta $0404,y
+    EA7A: A9 10       lda #$10
+    EA7C: 99 0F 04    sta $040f,y
+    EA7F: A9 08       lda #$08
+    EA81: 99 07 04    sta $0407,y
+    EA84: C0 00       cpy #$00
+    EA86: F0 07       beq @EA8F   ; $EA8F
+    EA88: BD B7 02    lda obj_contact_state,x   ; $02B7
+    EA8B: D0 02       bne @EA8F   ; $EA8F
+    EA8D: E6 30       inc pending_score_count   ; $30
+@EA8F:
+    EA8F: 60          rts
 
 scan_objects_for_adjacent_contact_and_trigger:
     EA90: A9 00       lda #$00

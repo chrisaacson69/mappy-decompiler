@@ -25,23 +25,23 @@ evidence = ["01-reset-and-frame-structure.md", "repo_header.bin", "repo_CHR_ROM.
 
 [phase.discover]
 status   = "done"
-gate     = "Trace 5,024 B (30.7%) -> descent 60.2% -> 7 dispatch tables incl. the $F6A9 inline table (18 handlers, new) -> 275 routines, 10,843 B (66.2%); code recall vs the published disassembly 99.4% (was 96.9%; graded after, never an input). Walker conflicts 4, unexplained 0 (3 bit-skip $F746/$F761/$F77C, 1 dead-path $CC41). Tables end at evidence ($C356 x19, $C13E x1: the old 20th/2nd words were the next routine's bytes). Stored-pointer installs 0 (the 4 old ones were data pointers, counters, a mis-pair). Phantoms $EEA9, $FA3F dropped."
+gate     = "Trace 5,024 B (30.7%) -> descent 60.2% -> 8 dispatch tables incl. the $F6A9 inline table (18 handlers) and the $EA39 stub table (4 door handlers, behind the shared JMP ($001C) at $EA46) -> 280 routines, 10,906 B (66.6%); code recall vs the published disassembly 100.0% (10,754/10,754; was 99.4%, the missing 0.6% was the stub table's handlers; graded after, never an input). Hole check: a Mesen CDL over three play logs (cdl_gap.py, ~15,000 frames) finds 0 executed bytes the listing does not decode (was 63, $EA51-$EA8F). Walker conflicts 4, unexplained 0 (3 bit-skip $F746/$F761/$F77C, 1 dead-path $CC41). Tables end at evidence ($C356 x19, $C13E x1: the old 20th/2nd words were the next routine's bytes). Stored-pointer installs 0 (the 4 old ones were data pointers, counters, a mis-pair). Phantoms $EEA9, $FA3F dropped."
 checked  = "2026-10-26"
-toolset  = "2f252ef"
-evidence = ["conflicts.txt", "jump_tables.txt", "data_ptr_tables.txt", "routines_full.txt", "coverage_full2.bin", "stored_pointers.py"]
+toolset  = "39da66b"
+evidence = ["conflicts.txt", "jump_tables.txt", "data_ptr_tables.txt", "routines_full.txt", "coverage_full2.bin", "stored_pointers.py", "cdl_gap.py"]
 
 [phase.data]
 status   = "done"
-gate     = "Oracle lanes, all by running or reading the game's own code: strings = the 4 text writers run headless over every table index (rom_data.py; FONT checked twice: CHR atlas + ALL RIGHTS RESERVED in PRG); manual: none exists for this title; ROM data map: 3,996 of 5,541 non-code PRG bytes claimed by walker runs, the attract demo, the sound engine per voice (25 voices) and known tables; hot globals: var_xref now decodes discover's instruction starts only (570 of 1,715 old var-routine links were data read as code). Record schema: one template, offsets proven by code + the demo (x/y 8.8 pairs: carry test 693/693 and the draw code; +4 draw index, +F state, by their dispatch loads), the rest field+N; the 9 per-address duplicates dropped, .mlb has no conflicts."
+gate     = "Oracle lanes, all by running or reading the game's own code: strings = the 4 text writers run headless over every table index (rom_data.py; FONT checked twice: CHR atlas + ALL RIGHTS RESERVED in PRG); manual: none exists for this title; ROM data map: 4,004 of 5,478 non-code PRG bytes claimed (re-run after the $EA39 table: was 3,996 of 5,541) by walker runs, the attract demo, the sound engine per voice (25 voices) and known tables; hot globals: var_xref now decodes discover's instruction starts only (570 of 1,715 old var-routine links were data read as code). Record schema: one template, offsets proven by code + the demo (x/y 8.8 pairs: carry test 693/693 and the draw code; +4 draw index, +F state, by their dispatch loads), the rest field+N; the 9 per-address duplicates dropped, .mlb has no conflicts."
 checked  = "2026-10-26"
-toolset  = "2f252ef"
+toolset  = "39da66b"
 evidence = ["rom_data.py", "rom_data.txt", "vars.toml", "var_xref.py", "obj_record.py"]
 
 [phase.structure]
 status   = "done"
-gate     = "One typed call graph on discover's routines (call_graph.py on passes.callgraph.Graph): each routine walked by descent.flow with every other entry as a stop, never a span sweep. 275 routines, 535 edges: call 290, jmp 113, flows-into 195 (falls or branches into another entry; dead paths past an always-taken branch excluded by passes.native.dead_path), dispatch 53, inline 18, task 1. Reached from the vectors 275/275 (was 64%). 3 SCCs, all loops: the sound interpreter (21 entries, handlers jump back to $F636), draw dispatch, the game task's stage loop. Graded against Chris's hand tree from RESET/NMI/IRQ (31 parent-child pairs): 27 direct edges, 4 through one flows-into or loop head; two edge bugs it exposed were fixed in the library."
+gate     = "One typed call graph on discover's routines (call_graph.py on passes.callgraph.Graph): each routine walked by descent.flow with every other entry as a stop, never a span sweep. 280 routines, 542 edges: call 290, jmp 114, flows-into 198 (falls or branches into another entry; dead paths past an always-taken branch excluded by passes.native.dead_path), dispatch 57 (4 from a JSR to the $EA46 stub), inline 18, task 1. Reached from the vectors 280/280 (was 64%). 3 SCCs, all loops: the sound interpreter (21 entries, handlers jump back to $F636), draw dispatch, the game task's stage loop. Graded against Chris's hand tree from RESET/NMI/IRQ (31 parent-child pairs): 27 direct edges, 4 through one flows-into or loop head; two edge bugs it exposed were fixed in the library."
 checked  = "2026-10-26"
-toolset  = "2f252ef"
+toolset  = "39da66b"
 evidence = ["call_graph.py", "call_tree.txt", "call_graph.json", "bottom_up_order.txt", "call_tree_page.py"]
 
 [phase.naming]
@@ -53,9 +53,9 @@ evidence = ["labels.toml", "apply_names.py", "mappy_labeled.asm", "call_tree.txt
 
 [phase.presentation]
 status   = "done"
-gate     = "Native ladder: mappy_labeled.asm (asm_gen on passes.listing) and Mappy (Japan).mlb (backends.mesen.labels), regenerated from the 2026-10-26 discover: 280 routines, 94 table words (78 before: -2 overrun words, +18 inline), the inline table rendered as .word."
+gate     = "Native ladder: mappy_labeled.asm (asm_gen on passes.listing) and Mappy (Japan).mlb (backends.mesen.labels), regenerated from the 2026-10-26 discover: 280 routines, 94 table words (78 before: -2 overrun words, +18 inline), the inline table rendered as .word. Regenerated again after the $EA39 stub table: 301 labelled routines (asm_gen's count, labels included), 98 table words (+4 at $EA49), $EA51-$EA8F decoded."
 checked  = "2026-10-26"
-toolset  = "4eb3022"
+toolset  = "39da66b"
 evidence = ["mappy_labeled.asm", "Mappy (Japan).mlb", "asm_gen.py", "mappy_mlb.py"]
 
 [phase.assets]
@@ -231,3 +231,10 @@ closed = "2026-10-26: vblank_flag, frame_counter, paused (its sprites at $C123 s
 
 [next]
 session = "naming, game thread: top-down from start_game_thread through the stage loop with call_tree.html beside the listing; name the 18 remaining shared variables with the routines that use them (apply_names.py / apply_vars.py, both guarded)."
+
+[[revisit]]
+item   = "$EA51-$EA8F (63 B) is live code shown as data: the player's state-10 write (Mesen write-watch, PC $EA7C) runs there. $EA05 loads $EA49[($02B1,x & 6)] into $1C/$1D and JSRs a shared JMP ($001C) stub at $EA46; the load sits 46 B before the JSR, out of dispatch_tables' back-scan."
+phase  = "discover"
+source = "naming, object state machine (2026-10-26)"
+status = "closed"
+closed = "2026-10-26: emu-harness df306f6 (a stub reached by JSR resolves at each caller's full pointer-pair load) + call_graph.py (a JSR site with a table is a dispatch edge). 8 tables, 280/280 reached, recall 100.0%, cdl_gap.py 0 B. Only this table changed."
