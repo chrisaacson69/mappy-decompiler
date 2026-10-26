@@ -1,0 +1,130 @@
+# re-roadmap.toml: where Mappy stands, read by `py -3.14 -m emu_harness status game-annotation/mappy`.
+# Phases and gates: emu-harness PHASES.md. First filled 2026-10-26 from the chapters, the open-threads
+# notes and emu-harness MIGRATION.md (the build tool's first trial project).
+
+[project]
+name    = "Mappy (Japan)"
+track   = "native"
+machine = "nes"
+profile = ""
+entry   = ["README.md", "09-from-scratch-rederivation.md", "NOTES-open-threads.md"]
+
+[phase.classify]
+status   = "done"
+gate     = "Native, real-time: a vblank-synced frame loop ($C06D) driving word-table JMP (ind) dispatch (object states $DA42 x23, game mode $C356 x20). NROM-128 (mapper 0), so the static-runtime join is free."
+checked  = "2026-10-26"
+toolset  = "aba120d"
+evidence = ["01-reset-and-frame-structure.md", "09-from-scratch-rederivation.md"]
+
+[phase.recon]
+status   = "done"
+gate     = "machines.nes.memory.Cart: mapper 0, PRG 16 KiB, no battery, vertical mirroring; vectors NMI $C2EF, RESET $C031, IRQ $C304 (same as ch1/ch9). One fixed PRG bank, so no windows to vote."
+checked  = "2026-10-26"
+toolset  = "aba120d"
+evidence = ["01-reset-and-frame-structure.md"]
+
+[phase.discover]
+status   = "partial"
+gate     = "Trace 30% -> descent 60% -> idiom jump-table sweep 96.7% code recall, all 6 dispatch tables (incl. bonus $E17A, never executed). Row R re-ran the pipeline on the library: every output identical. Not met: walker conflicts never counted; 3 phantoms carry routine labels."
+checked  = "2026-10-26"
+toolset  = "aba120d"
+evidence = ["coverage_full2.bin", "routines_full.txt", "jump_tables.txt", "09-from-scratch-rederivation.md"]
+
+[phase.data]
+status   = "partial"
+gate     = "152 variables (var_xref) and the 16-byte object record at $0400 (obj_record = passes.native.field_census; row R identical). Not met: the record and vars.toml disagree on 9 bytes; known mislabels open."
+checked  = "2026-10-26"
+toolset  = "aba120d"
+evidence = ["vars.toml", "obj_record.py", "var_xref.py"]
+
+[phase.structure]
+status   = "done"
+gate     = "One call graph (call_graph.py on passes.callgraph, Tarjan SCC leaves-first; row H2). No VM, so no primitive table or round-trip to check."
+checked  = "2026-10-23"
+toolset  = "8d3f881"
+evidence = ["callgraph.dot", "bottom_up_order.txt", "call_graph.py"]
+
+[phase.naming]
+status   = "partial"
+gate     = "258 routines named bottom-up in 8 levels, then a top-down adversarial verify (95% confirmed); the published disassembly read only at the end (it matched every overlap, anonymous on 188). Not met: 9 names carry an address key, 3 phantoms are named."
+checked  = "2026-06-25"
+toolset  = ""
+evidence = ["labels.toml", "vars.toml", "09-from-scratch-rederivation.md"]
+
+[phase.presentation]
+status   = "done"
+gate     = "Native ladder: mappy_labeled.asm (asm_gen on passes.listing, row A3: regenerated unchanged) and Mappy (Japan).mlb (backends.mesen.labels, row A)."
+checked  = "2026-10-23"
+toolset  = "350f686"
+evidence = ["mappy_labeled.asm", "Mappy (Japan).mlb", "asm_gen.py", "mappy_mlb.py"]
+
+[phase.assets]
+status   = "partial"
+gate     = "16 round renders and the CHR atlas exist. Not met: render_level.py runs on the old nes-render and na1's 6502 core via sys.path, not the library; no check against the live PPU."
+checked  = "2026-06-26"
+toolset  = ""
+evidence = ["render_level.py", "mappy_levels_contact.png"]
+
+[phase.live]
+status   = "partial"
+gate     = "demo_in_real_game replays the attract script frame-exact through the pad on Mesen (read_trace, row P2: 34 lines identical); seed_test measured the frame-counter phase. Not met: no routine run over live RAM for every input with a planted fault."
+checked  = "2026-10-26"
+toolset  = "ce382a9"
+evidence = ["demo_in_real_game.py", "seed_test.py"]
+
+[[revisit]]
+item   = "Committed coverage.bin / codegraph.txt come from an older tracer (4,940 bytes, 158 edges; today's gives 5,024 / 162), and the static pipeline is seeded from that stale pair. Regenerate."
+phase  = "discover"
+source = "emu-harness MIGRATION.md row C"
+status = "open"
+
+[[revisit]]
+item   = "jump_tables.py overwrites the curated jump_tables.txt (3 hand-added tables: $CC15, $CF69, $D126, from 673a53d). Make it merge or write beside."
+phase  = "discover"
+source = "emu-harness MIGRATION.md rows B, R"
+status = "open"
+
+[[revisit]]
+item   = "3 phantoms are labelled as routines: data_or_unclear_c342 ($C342, a 2-byte fragment), data_or_unclear_df09 ($DF09), data_or_unclear ($FA3F, a data blob). Mark them DATA or drop them."
+phase  = "discover"
+source = "build-tool trial 2026-10-26 (labels.toml)"
+status = "open"
+
+[[revisit]]
+item   = "The $0400 object record contradicts vars.toml: vars.toml says $0401 = obj_y, the record says +1 = obj_x_hi (9 bytes disagree; the source of the 9 .mlb conflicts)."
+phase  = "data"
+source = "emu-harness MIGRATION.md row A"
+status = "open"
+
+[[revisit]]
+item   = "$7B is named draw_data_ptr but is the per-stage enemy counter (set $E5D8, dec $E660, tested $E682); then sweep the other role = pointer vars touched only by inc/dec/#imm."
+phase  = "data"
+source = "NOTES-open-threads.md (symbol-table cleanups)"
+status = "open"
+
+[[revisit]]
+item   = "Polymorphic record fields (+4, +8..+E, +B = player velocity | cat door ref) need context-tagged names; one name per offset cannot hold them."
+phase  = "data"
+source = "09-from-scratch-rederivation.md (cross-cutting finding 1)"
+status = "open"
+
+[[revisit]]
+item   = "9 names carry an address key: fill_attr_source_0170, obj_field5_lookup_C47C, clear_buffer_192_at_0400, copy_5_bytes_table_to_ram_0490, copy_var_record_index_flag2_to_0500, scan_table_at_e537, tick_object_group_04a0, dispatch_object_state_handler_e65a / _da42. Rename by role (a RAM address that IS the role may stay)."
+phase  = "naming"
+source = "build-tool trial 2026-10-26 (labels.toml)"
+status = "open"
+
+[[revisit]]
+item   = "render_level.py sys.path-inserts nes-render and na1's na1dream.cpu6502: move it onto machines.nes.ppu and cpu.m6502, then check a round against the live PPU."
+phase  = "assets"
+source = "build-tool trial 2026-10-26"
+status = "open"
+
+[[revisit]]
+item   = "README gives CRC32 3F0E8E0A; our dump is 7354615C (whole file), 5D1301C5 (headerless), 25482CEB (PRG). Find which dump the chapters and the published disassembly describe."
+phase  = "recon"
+source = "build-tool trial 2026-10-26"
+status = "open"
+
+[next]
+session = "discover: regenerate coverage/codegraph on today's tracer without clobbering the curated jump_tables.txt, count walker conflicts, mark the 3 phantoms DATA; then data's record/vars conflict."
