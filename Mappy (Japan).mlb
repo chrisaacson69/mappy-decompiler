@@ -471,25 +471,25 @@ NesPrgRom:3E72:voice_stream_24:[HIGH] Data walk 2026-10-26 (pointer level): the 
 NesPrgRom:3E92:voice_stream_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $02 (load_voice_stream_ptr by voice*2, voice 0 skipped (
 NesPrgRom:1B34:knockout_score_offsets:[HIGH] Data walk 2026-10-26: catch_player_or_knock_out does ldy $DB33,x with X = the type (1-3; the player never gets there), so its table starts a
 NesPrgRom:2788:unreferenced_e788:[MED] Data walk 2026-10-26: 16 bytes, 02 02 00 02 four times, that no operand, pointer table or play run reaches (data_frontier.py, rom_data.txt '
-NesInternalRam:0000:indirect_ptr:[pointer] .
-NesInternalRam:0001:ptr_hi:[pointer] Flagged P (16-bit pointer). It is the HIGH byte of the general-purpose indirect pointer pair $0000/$0001: writers set it via `sty $01` (ppu_
+NesInternalRam:0000:zero_page_base:[array] Variables round 2 (2026-10-26): indexed by X holding a zero-page address (bcd_add, queue_bcd_number, the save / restore copies: lda $00,x re
+NesInternalRam:0001:zero_page_base_hi:[pointer] Variables round 2 (2026-10-26): the high byte of the RAM-clear pointer in reset_cold_boot_init (its only user). Was 'ptr_hi'. Earlier note: 
 NesInternalRam:0002:src_ptr_hi:[pointer] Repeatedly dereferenced as a 16-bit pointer paired with $01: routines use ($01,x), ($02),y, and ($02,x). load_ptr_descriptor_and_scan (ora (
 NesInternalRam:0003:scan_ptr_hi:[pointer] $0003 is the high byte of the $0002/$0003 16-bit pointer pair. Multiple routines dereference it as a pointer: check_obj_adjacency_set_hit_fl
 NesInternalRam:0004:obj_descriptor_ptr:[pointer] Marked [P] = 16-bit pointer low byte; dereferenced via indirect-indexed/indirect-X addressing in several named routines: compute_obj_visibil
 NesInternalRam:0006:ppu_attr_bits:[scratch] Writers are not address stores but bit-manipulation: fill_attr_source_0170 does `asl $06` twice ($CDEC/$CDF1); ppu_draw_blocks_b does `ror $
 NesInternalRam:000E:countdown_hi:[counter] Variables 2026-10-26 (fixed var_xref: real instructions only): high byte of the 16-bit countdown $0E:$0F: the wait loop at $CAF0 borrows int
 NesInternalRam:000F:countdown_lo:[counter] Variables 2026-10-26 (fixed var_xref: real instructions only): low byte of the countdown $0E:$0F; 11 routines load it and loop on yield_to_r
-NesInternalRam:0010:src_ptr:[pointer] Flagged P and dereferenced as 16-bit pointer in many routines via `lda ($10),y`: ppu_run_draw_blocks ($CC21), ppu_draw_blocks_b ($CF75), ppu
-NesInternalRam:0011:zp_ptr_hi:[pointer] $0011 is the high byte of the general-purpose 16-bit indirect pointer at $10/$11. Many routines write it then immediately dereference ($10),
-NesInternalRam:0012:gfx_src_ptr:[pointer] $12 is flagged P and is dereferenced as a 16-bit pointer via (zp),y: ppu_draw_mansion_stamps does `lda ($12),y` at $D15B after `sta $12`, an
-NesInternalRam:0013:data_ptr_hi:[pointer] var_xref flags $0013 as a 16-bit pointer (P). ppu_draw_mansion_stamps writes `sta $13` ($D141) then dereferences `lda ($12),y` ($D15B), prov
-NesInternalRam:0014:scan_src_ptr:[pointer] Header flags it as a 16-bit POINTER low byte (P), touched by 31 routines. Many writers are explicitly pointer-loaders that set $14 then walk
-NesInternalRam:0015:scratch_counter:[scratch] 14 routines touch $15 but none share its value across calls — every user writes it fresh at entry (sta $15 in dispatch_object_draw_routine_b
+NesInternalRam:0010:draw_pos:[scratch] Variables round 2 (2026-10-26): low byte of the 16-bit position a draw call takes: screen x for sprites (write_sprite_to_oam), the PPU addre
+NesInternalRam:0011:draw_pos_hi:[scratch] Variables round 2 (2026-10-26): high byte of draw_pos. Was 'zp_ptr_hi'. Earlier note: $0011 is the high byte of the general-purpose 16-bit i
+NesInternalRam:0012:draw_tile_or_src:[scratch] Variables round 2 (2026-10-26): the sprite tile (write_sprite_to_oam), or the low byte of the RLE / data stream pointer (draw_rle_text, queu
+NesInternalRam:0013:draw_attr_or_src_hi:[scratch] Variables round 2 (2026-10-26): the sprite attribute (palette, flips: load_type_sprite_palette, apply_facing_flip), or the stream pointer's 
+NesInternalRam:0014:draw_palette:[scratch] Variables round 2 (2026-10-26): draw_rle_text_step writes it into the attribute shadow for the cells it draws; bit 7 = leave attributes alon
+NesInternalRam:0015:draw_count:[scratch] Variables round 2 (2026-10-26): the run length draw_rle_text_step and ppu_buffer_enqueue copy; the anim variant bit in dispatch_object_draw_
 NesInternalRam:0016:sprite_y:[scratch] Top-down 2026-10-26 (game thread, draw): the screen Y of the sprite being drawn (draw_object: record +2/+3 * 8; the 2x2 draw adds 8). Was 'o
 NesInternalRam:0017:draw_row_counter:[scratch] $17 is set fresh (sta/sty/stx) and then counted down (dec $17) inside many independent drawing routines: draw_object_tile_row ($C65E sta / $
 NesInternalRam:0018:scratch_loop_counter:[scratch] Touched by 12 unrelated routines, each independently setting it with sta/stx then decrementing/incrementing it (draw_object_tile_rows: sta $
-NesInternalRam:0019:draw_data_ptr_hi:[pointer] Tool flags $0019 as a 16-bit POINTER. ppu_draw_mansion_stamps dereferences the $18/$19 pair via `and ($18,x)` (indexed-indirect), making $18
-NesInternalRam:001A:data_src_ptr:[pointer] $001A is dereferenced as a 16-bit pointer via indexed-indirect ($1a,x): fetch_seq_byte_and_advance_index does `adc ($1a,x)` twice ($F966/$F9
+NesInternalRam:0019:score_offset_save:[scratch] Variables round 2 (2026-10-26): add_score_n_times keeps the tbl_score_amounts offset here across its loop. Was 'draw_data_ptr_hi'. Earlier n
+NesInternalRam:001A:item_loop_index:[index] Variables round 2 (2026-10-26): player_collects_item's index while it clears the other items' marks. Was 'data_src_ptr'. Earlier note: $001A
 NesInternalRam:001B:cur_obj_index:[obj_field] 17 of 21 routines are object loops that save the current object's index/offset here via stx/sty $1b and reload it with ldx/ldy $1b across th
 NesInternalRam:001C:aux_ptr:[pointer] Variables 2026-10-26 (fixed var_xref: real instructions only): a second pointer pair with $1D: the jump vector of every dispatch (jmp ($001C
 NesInternalRam:001D:aux_ptr_hi:[pointer] Variables 2026-10-26 (fixed var_xref: real instructions only): high byte of aux_ptr. Was 'obj_record_ptr'. Earlier note: $001D is the HIGH b
@@ -497,9 +497,9 @@ NesInternalRam:001E:obj_record_ptr:[pointer] $001E is flagged P and is dereferen
 NesInternalRam:001F:obj_record_ptr_hi:[pointer] obj record pointer high byte
 NesInternalRam:0020:vblank_flag:[flag] Variables 2026-10-26 (fixed var_xref: real instructions only): nmi_count_vblank increments it; render_loop waits while it is 0 ($C06D) and c
 NesInternalRam:0021:frame_counter:[counter] Variables 2026-10-26 (fixed var_xref: real instructions only): render_loop increments it once per frame ($C0C7); five sprite routines read i
-NesInternalRam:0022:scan_ptr:[pointer] Dereferenced as a 16-bit (zp) pointer in multiple routines: load_indexed_ptr_then_scan_for_terminator does `cmp ($22),y` ($F2DE) and fetch_s
+NesInternalRam:0022:button_history:[input] Variables round 2 (2026-10-26): set_object_intent copies it into the player's +E; title code and the dead switch test & 3 = 1 (a fresh press
 NesInternalRam:0023:paused:[flag] Variables 2026-10-26 (fixed var_xref: real instructions only): read_and_decode_input toggles it on a new button press during play ($C228 eor
-NesInternalRam:0024:draw_data_ptr:[pointer] Tool flags it as a 16-bit pointer low byte, and the dereference instructions confirm a pointer pair. ppu_draw_mansion_stamps does `lda ($24,
+NesInternalRam:0024:select_history:[input] Variables round 2 (2026-10-26): title_menu_cursor toggles the 1 / 2 player choice on & 3 = 1 (a fresh press). Was 'draw_data_ptr'. Earlier n
 NesInternalRam:0025:joypad_state:[flag] read_and_decode_input builds the value with `rol $25` (C1FA) then reads `lda $25` (C220) — the canonical NES controller read shifts one butt
 NesInternalRam:0026:pad_dir:[input] Variables 2026-10-26 (fixed var_xref: real instructions only): read_and_decode_input stores the pad direction from the table $C258 (00, FF, 
 NesInternalRam:0027:pad_dir_changed:[flag] Variables 2026-10-26 (fixed var_xref: real instructions only): 1 when pad_dir differs from last frame's ($C206-$C20F). Was 'obj_record_ptr_h
@@ -510,59 +510,59 @@ NesInternalRam:002B:vram_queue_cursor:[buffer_cursor] Writers treat $2B as a byt
 NesInternalRam:002C:oam_cursor:[index] Top-down 2026-10-26 (game thread, draw): the next free shadow-OAM slot ($0700 + X): write_sprite_to_oam writes there and adds 4. Was 'seq_da
 NesInternalRam:002D:ppu_mask_shadow:[state] Written only by ppu_enable_render ($C23E stx $2d) and ppu_disable_render ($C246 stx $2d) — the two routines that toggle rendering on/off, i.
 NesInternalRam:0030:pending_score_count:[counter] Top-down 2026-10-26 (game thread): update_score adds amount #$40 this many times and clears it; trigger_state_change_on_proximity and pump c
-NesInternalRam:0031:obj_record_ptr:[pointer] Flagged P and dereferenced as a 16-bit pointer via `eor ($31,x)` at $FF36, so $0031 is the low byte of a pointer ($0032 = high). The reading
-NesInternalRam:0035:obj_collision_state:[obj_field] No P (pointer-deref) or i (indexed) flag and no (zp),y usage — an 8-bit scalar, not a pointer. All writers are object/entity routines: init_
-NesInternalRam:0036:obj_record_ptr:[pointer] Dereferenced as a 16-bit pointer with (zp),y in two routines: ppu_run_draw_blocks ($CD0B: ora ($36),y) and check_obj_adjacency_set_hit_flag 
-NesInternalRam:0037:obj_record_ptr_hi:[pointer] $0036/$0037 form a 16-bit pointer dereferenced via (zp),y: ppu_run_draw_blocks does `ora ($36),y` ($CD0B) and check_obj_adjacency_set_hit_fl
-NesInternalRam:003C:seq_data_ptr_hi:[pointer] Dereferenced as a 16-bit pointer: fetch_seq_byte_and_advance_index does `adc ($3b,x)` ($F9CD/$F9D3) and data_or_unclear does `adc ($3b,x)` (
+NesInternalRam:0031:item_streak:[counter] Variables round 2 (2026-10-26): collecting a marked item (the partner of the last one) scores (streak + 2) times and adds 1 (player_collects
+NesInternalRam:0035:slot2_step_now:[flag] Variables round 2 (2026-10-26): set by state0C_rise for slot 2; slot2_maybe_step_target_floor clears it and steps the target. Was 'obj_colli
+NesInternalRam:0036:slot2_target_row:[position] Variables round 2 (2026-10-26): slot 2's patrol target, row 9 to $19 (slot2_step_target_floor); set_object_intent compares slot 2's y with i
+NesInternalRam:0037:slot2_row_step:[position] Variables round 2 (2026-10-26): +4 or -4, flipped at rows 9 and $19 (slot2_step_target_floor). Was 'obj_record_ptr_hi'. Earlier note: $0036/
+NesInternalRam:003C:demo_hold_frames:[demo] Variables round 2 (2026-10-26): frames left on the current attract-script entry (set_object_intent's demo path). Was 'seq_data_ptr_hi'. Earl
 NesInternalRam:003D:demo_script_cursor:[demo] Byte index into tbl_demo_input_script ($FFE1). The attract-mode input playback (@D9C7) reads it (ldx $3d $D9D1), decodes one RLE command, th
 NesInternalRam:0040:two_player_game:[mode] Top-down 2026-10-26 (game thread): set from $4A when Start is pressed ($C8B1); handle_player_caught reads it to choose the one- or two-playe
 NesInternalRam:0041:game_state_flags:[state] Read/written across core state routines: validate_magic_and_restore_state_vars (lda/sta $41) and pack_state_vars_into_zp_buffer (lda $41) tr
 NesInternalRam:0042:game_phase:[state] Written only by setup routines (init_stage_with_intro_animation_then_spawn sta $42 at $C851/$C8AD, init_state_vars_and_pointer sta $42 at $C
 NesInternalRam:0043:score_update_phase:[state] Top-down 2026-10-26 (game thread): set by add_score_from_table; update_score steps it: 1 -> queue the digits, 2 -> high score, extra life, d
-NesInternalRam:0048:indirect_ptr:[pointer] Xref flags it "used as 16-bit POINTER low byte" and three separate routines dereference it via indexed-indirect addressing: setup_screen_lay
-NesInternalRam:0049:indirect_ptr_hi:[pointer] $49 is the high byte of the zero-page pointer pair whose low byte is $48: it is dereferenced via ($48,x) in trigger_state_transition_on_posi
-NesInternalRam:004A:seq_data_ptr:[pointer] Marked [P] as a 16-bit pointer low byte. fetch_seq_byte_and_advance_index dereferences it with indexed-indirect `adc ($4a,x)` at $F930/$F940
+NesInternalRam:0048:extra_life_cap:[counter] Variables round 2 (2026-10-26): award_extra_life stops awarding when extra_lives_awarded reaches it (title_screen sets $FF). Was 'indirect_p
+NesInternalRam:0049:extra_life_step:[bcd] Variables round 2 (2026-10-26): the BCD amount bcd_add_record 00 adds to next_extra_life after each award (set by title_screen). Was 'indire
+NesInternalRam:004A:two_player_choice:[flag] Variables round 2 (2026-10-26): the title menu's 1 / 2 player choice, toggled by title_menu_cursor. Was 'seq_data_ptr'. Earlier note: Marked
 NesInternalRam:004B:player_down:[flag] Top-down 2026-10-26 (game thread): set by player_caught ($DAED) and by the bonus-round end ($E195); play_round leaves for handle_player_caug
 NesInternalRam:004C:respawn_slot:[index] Top-down 2026-10-26 (game thread): update_and_respawn_objects checks one object slot per interval ($10..$80 step $10, wrapping) and respawns
 NesInternalRam:004D:respawn_tick:[counter] Top-down 2026-10-26 (game thread): counts up each frame in update_and_respawn_objects until respawn_interval, then resets. Was 'object_recor
 NesInternalRam:004E:respawn_interval:[count] Top-down 2026-10-26 (game thread): the frame count between respawn checks (update_and_respawn_objects cmp $4E). Was 'block_data_ptr_hi'. Ear
 NesInternalRam:004F:round_cleared:[flag] Top-down 2026-10-26 (game thread): set only by the item pickup when round_items_remaining reaches 0 ($E686); play_round and next_round leave
-NesInternalRam:0050:obj_table_ptr:[pointer] data_or_unclear dereferences it as a 16-bit pointer via `eor ($50),y` (so $50=low byte, $51=high byte). The writer that sets it is load_obje
-NesInternalRam:0051:obj_def_ptr_hi:[pointer] Dereferenced as a 16-bit pointer in multiple routines: check_obj_adjacency_set_hit_flag ($F12F: eor ($51),y), fetch_seq_byte_and_advance_ind
-NesInternalRam:0052:object_def_ptr:[pointer] $52 is repeatedly dereferenced as a 16-bit pointer: ora ($52,x) in scan_objects_for_adjacent_contact_and_trigger, adc ($52,x) in fetch_seq_b
-NesInternalRam:0053:object_def_ptr:[pointer] $0053 is dereferenced as a 16-bit pointer (flagged P): trigger_state_transition_on_position_match does `and ($53,x)` ($E7B6) and scan_object
-NesInternalRam:0054:object_table_ptr:[pointer] Tool flags $0054 as a 16-bit pointer byte. It is set up by load_object_table_from_def ($F15A: sta $54,x) from an object definition, then der
-NesInternalRam:005A:ppu_block_src_ptr:[pointer] Flagged P and dereferenced as a 16-bit indexed-indirect pointer in ppu_draw_blocks_b ($CFBB/$CFC1: `ora ($5a,x)`), so $005A is a pointer low
-NesInternalRam:0060:sequence_state:[state] 8-bit value (no P/deref, no index flag), written directly by several state-management routines and read by sequencing logic. init_object_seq
-NesInternalRam:0061:seq_data_ptr:[pointer] Dereferenced as a 16-bit pointer in fetch_seq_byte_and_advance_index ($F955: eor ($61),y), so $0061 is the low byte of a pointer (with $0062
-NesInternalRam:0062:seq_data_ptr:[pointer] $0062 is dereferenced as a 16-bit pointer (zp),y / (zp,x): ppu_draw_mansion_stamps does `cmp ($62),y` and `adc ($62,x)`, and its high byte $
-NesInternalRam:0063:record_ptr:[pointer] Dereferenced as a 16-bit pointer in multiple routines: bcd_add_packed_buffer `ora ($63,x)`, data_or_unclear `eor ($63,x)` / `and ($63),y` — 
-NesInternalRam:0064:data_ptr_hi:[pointer] $0064 is the HIGH byte of a 16-bit zero-page pointer whose low byte is $0063: bcd_add_packed_buffer dereferences it as ($63,x) at $D560, and
-NesInternalRam:0065:active_object_count:[state] All three xrefs are READS (no writer shown), all in object-management routines: reset_objects_except_persistent_types ($DB28 lda $65), tick_
-NesInternalRam:0067:screen_layout_ptr:[pointer] var_xref flags $0067 with [p] = dereferenced as a 16-bit pointer low byte. setup_screen_layout uses `and ($67,x)` — an indirect read through
-NesInternalRam:0068:ptr_hi:[pointer] The lone dereference is setup_screen_layout $CBF2 `and ($67,x)`, which uses the zp pointer at $67/$68 — so $68 is the HIGH byte of a 16-bit 
+NesInternalRam:0050:bonus_targets_popped:[bcd] Variables round 2 (2026-10-26): +1 per pop (bcd_add_record 06); shown at $2190 by show_bonus_results. Was 'obj_table_ptr'. Earlier note: dat
+NesInternalRam:0051:bonus_goals_reached:[bcd] Variables round 2 (2026-10-26): +1 when the goal is reached (bonus_state0E_goal_object); shown at $2210. Was 'obj_def_ptr_hi'. Earlier note:
+NesInternalRam:0052:bonus_targets_left:[counter] Variables round 2 (2026-10-26): targets not yet popped; 0 with the goal reached gives PERFECT (show_bonus_results). Was 'object_def_ptr'. Ea
+NesInternalRam:0053:bonus_target_table_len:[count] Variables round 2 (2026-10-26): 8 x the number of targets (load_bonus_targets, update_bonus_targets). Was 'object_def_ptr'. Earlier note: $0
+NesInternalRam:0054:bonus_tallies:[array] Variables round 2 (2026-10-26): $54-$5F, cleared by load_bonus_targets: the bonus results' numbers. Was 'object_table_ptr'. Earlier note: To
+NesInternalRam:005A:bonus_goal_points:[bcd] Variables round 2 (2026-10-26): 2 BCD bytes shown at $2217; the goal sets $20 (bonus_state0E_goal_object). Was 'ppu_block_src_ptr'. Earlier 
+NesInternalRam:0060:round_timer_phase:[state] Variables round 2 (2026-10-26): 0 counting, 1 HURRY, 2 counting again, 3 slot 1 released (tick_round_timer); past 0 cats run faster (object_
+NesInternalRam:0061:round_timer_frames:[counter] Variables round 2 (2026-10-26): frames to 60 (tick_round_timer). Was 'seq_data_ptr'. Earlier note: Dereferenced as a 16-bit pointer in fetch
+NesInternalRam:0062:round_timer_seconds:[counter] Variables round 2 (2026-10-26): seconds against the stage's two limits (tick_round_timer). Was 'seq_data_ptr'. Earlier note: $0062 is derefe
+NesInternalRam:0063:player_speed:[obj_field] Variables round 2 (2026-10-26): stage param byte 0: the player's x speed (object_speed); the door wave runs at it + 8. Was 'record_ptr'. Ear
+NesInternalRam:0064:cat_speed:[obj_field] Variables round 2 (2026-10-26): stage param byte 1: the cats' x speed (object_speed). Was 'data_ptr_hi'. Earlier note: $0064 is the HIGH byt
+NesInternalRam:0065:stun_time:[counter] Variables round 2 (2026-10-26): stage param byte 2: frames a door-knocked cat stays stunned, also the knockout and drop-stun timers ($B4 in 
+NesInternalRam:0067:chaser_seconds:[counter] Variables round 2 (2026-10-26): stage param byte 4: seconds after HURRY until slot 1 is released. Was 'screen_layout_ptr'. Earlier note: var
+NesInternalRam:0068:cat_slots_end:[count] Variables round 2 (2026-10-26): stage param byte 5: the record offset after the last cat ($60, $70, $80: 4-6 cats); the extra cat after HURR
 NesInternalRam:0070:p1_lives:[counter] Player-1 lives (also the base of the P1 state block $70-$AF). Set to #$03 at stage init ($C86D); decremented 3->2 when a real game starts ($
 NesInternalRam:0071:score:[bcd] Top-down 2026-10-26 (game thread): the current player's score, 4 BCD bytes $71-$74 (8 digits): add_score_from_table adds into it, update_hig
-NesInternalRam:0072:draw_src_ptr:[pointer] Dereferenced as a 16-bit zp pointer via `adc ($72),y` inside ppu_draw_mansion_stamps ($D35E), so $0072 is the low byte of a 16-bit pointer (
-NesInternalRam:0074:decode_src_ptr:[pointer] x
-NesInternalRam:0075:current_record_index:[state] Set at stage init (init_stage_with_intro_animation_then_spawn: sta $75), then read-modify-written by advance_record_index_and_refresh_entry 
-NesInternalRam:0076:record_index:[counter] init_stage_with_intro_animation_then_spawn sets it at stage start ($C861 sta $76). advance_record_index_and_refresh_entry reads-then-writes 
-NesInternalRam:0077:ppu_block_src_ptr:[pointer] Dereferenced as a 16-bit pointer in ppu_draw_blocks_b via `ora ($77,x)` (x-indexed indirect at $CFEA and $D01D), confirming $0077 is the low
+NesInternalRam:0072:score_byte1:[bcd] Variables round 2 (2026-10-26): the second byte of the 4-byte BCD score at $71; award_extra_life compares it with next_extra_life. Was 'draw
+NesInternalRam:0074:score_byte3:[bcd] Variables round 2 (2026-10-26): the last byte of the score (add_score_from_table adds at X = $74 downwards). Was 'decode_src_ptr'. Earlier n
+NesInternalRam:0075:extra_lives_awarded:[counter] Variables round 2 (2026-10-26): award_extra_life counts up to extra_life_cap. Was 'current_record_index'. Earlier note: Set at stage init (i
+NesInternalRam:0076:next_extra_life:[bcd] Variables round 2 (2026-10-26): the score byte the next extra life needs (award_extra_life; + extra_life_step after each). Was 'record_index
+NesInternalRam:0077:round_bcd:[bcd] Variables round 2 (2026-10-26): the round number shown at $207A (bcd_number_entry 0C); +1 per round (bcd_add_record 04). Was 'ppu_block_src_
 NesInternalRam:007A:stage_number:[counter] Set during stage setup (init_stage_with_intro_animation_then_spawn `sta $7a`; setup_stage_then_run_intro_frames `sta $7a`), then INC'd along
 NesInternalRam:007B:round_items_remaining:[counter] Data phase 2026-10-26, from code only: $E5D1 reads the level descriptor's first byte (via $E798) into $81 and that >>3 into $7B, then marks 
 NesInternalRam:007C:is_bonus_round:[flag] Top-down 2026-10-26 (game thread): set only by build_stage_screen_layout ($CD59) from the round-attribute byte 0, nonzero for rounds 2, 6, 1
 NesInternalRam:007D:stage_index:[state] Not a pointer (no (zp),y deref, no P flag). Written by stage/level setup routines: init_stage_with_intro_animation_then_spawn ($C8C1 sta $7d
-NesInternalRam:0080:object_count:[counter] Three named object routines read it as a loop/upper bound via cpx: find_object_at_coords ($E49C cpx $80), force_active_objects_to_state3 ($E
+NesInternalRam:0080:trampoline_table_len:[count] Variables round 2 (2026-10-26): 8 x the number of trampolines (load_round_trampolines). Was 'object_count'. Earlier note: Three named object
 NesInternalRam:0081:item_table_len:[count] Top-down 2026-10-26 (game thread): the level descriptor's first byte (items * 8), stored by spawn_objects_from_level_descriptor ($E5D3); upd
-NesInternalRam:0083:object_count:[counter] Five object routines read it as a loop terminator over object records: clear_low2_bits_per_object_record ($E8C7: cpx $83), update_all_object
-NesInternalRam:0090:obj_state:[obj_field] Almost every access is `sta/lda $0090,y` — a Y-indexed object-table field, not a scalar. It's set by spawn_object_from_table_entry (initiali
-NesInternalRam:0092:obj_trigger_coord:[obj_field] Written and read via Y-indexing, not as a global pointer: spawn_object_from_table_entry does `sta $0092,y` (sets it per-object at spawn) and
-NesInternalRam:0093:ppu_block_data_ptr:[pointer] $0093 is dereferenced as a 16-bit pointer (flagged P): ppu_draw_blocks_b does `ora ($93,x)` and ppu_draw_mansion_stamps does `ora ($93,x)` (
-NesInternalRam:0094:obj_pos_field:[obj_field] Accessed as an indexed object-table field ($0094,y / $94,x) by object routines: spawn_object_from_table_entry WRITES it (sta $0094,y) when p
-NesInternalRam:0095:obj_x:[obj_field] Always accessed indexed into an object table ($95,x and $0095,y), never as a scalar — so it's a per-object record field, not scratch/flag/po
-NesInternalRam:0096:scratch_bitshift:[scratch] No 16-bit deref ((zp),y) anywhere, so not a pointer. Two routines use it as a bit-shift working byte: ppu_draw_mansion_stamps does `and $96`
-NesInternalRam:00A0:block_data_ptr:[pointer] Flagged as 16-bit pointer low byte (P) and dereferenced indirect-indexed by ppu_draw_blocks_b ($CFC6: ora ($a0,x)) and append_computed_entry
+NesInternalRam:0083:door_table_len:[count] Variables round 2 (2026-10-26): 8 x the number of doors (load_round_doors). Was 'object_count'. Earlier note: Five object routines read it a
+NesInternalRam:0090:floor_trap_state:[state] Variables round 2 (2026-10-26): the first trap's state ($98 the second): 2 armed, 3 pressed, 1 open, 0 gone. Was 'obj_state'. Earlier note: 
+NesInternalRam:0092:floor_trap_addr:[pointer] Variables round 2 (2026-10-26): the trap's nametable address (draw_floor_trap_frame). Was 'obj_trigger_coord'. Earlier note: Written and rea
+NesInternalRam:0093:floor_trap_addr_hi:[pointer] Variables round 2 (2026-10-26): high byte. Was 'ppu_block_data_ptr'. Earlier note: $0093 is dereferenced as a 16-bit pointer (flagged P): pp
+NesInternalRam:0094:floor_trap_x:[position] Variables round 2 (2026-10-26): tile x (player_on_floor_trap). Was 'obj_pos_field'. Earlier note: Accessed as an indexed object-table field 
+NesInternalRam:0095:floor_trap_y:[position] Variables round 2 (2026-10-26): tile row. Was 'obj_x'. Earlier note: Always accessed indexed into an object table ($95,x and $0095,y), never
+NesInternalRam:0096:floor_trap_timer:[counter] Variables round 2 (2026-10-26): 120 frames open (update_floor_trap). Was 'scratch_bitshift'. Earlier note: No 16-bit deref ((zp),y) anywhere
+NesInternalRam:00A0:dropped_objects:[array] Variables round 2 (2026-10-26): two 8-byte records, $A0 and $A8 (load_dropped_objects, update_dropped_object). Was 'block_data_ptr'. Earlier
 NesInternalRam:00B0:p2_lives:[counter] Player-2 lives (base of the P2 state block $B0-$EF) — the mirror of p1_lives ($70), exchanged with it in swap_double_buffers_toggle_flag. Ne
 NesInternalRam:00C1:thread_sp_slot:[array] Variables 2026-10-26 (fixed var_xref: real instructions only): start_game_thread stores the stack pointer at $00C1+$3F = $0100, the cell swa
 NesInternalRam:00F0:voice_rec_ptr:[pointer] Variables 2026-10-26 (fixed var_xref: real instructions only): points at the current voice's 8-byte record ($0619 + 8k); every sound routine
@@ -577,48 +577,123 @@ NesInternalRam:00F9:voice13_stream_ptr_hi:[pointer] Variables 2026-10-26 (fixed 
 NesInternalRam:00FA:voice14_stream_ptr:[pointer] Variables 2026-10-26 (fixed var_xref: real instructions only): voice $14's own 16-bit stream pointer, from $F87B; as voice13_stream_ptr. Was
 NesInternalRam:00FB:voice14_stream_ptr_hi:[pointer] Variables 2026-10-26 (fixed var_xref: real instructions only): high byte of voice14_stream_ptr. Was 'seq_data_ptr_hi'. Earlier note: $FB is 
 NesInternalRam:0170:attr_dirty_bitmap:[array] Variables 2026-10-26 (fixed var_xref: real instructions only): 16 bytes, one bit per attribute byte of the two nametables; flush_dirty_attri
-NesInternalRam:0200:obj_timer:[obj_field] $0200 is the base of an ,x-indexed object-record table touched only by object/spawn routines. build_object_record_block_and_dispatch ($E375 
-NesInternalRam:0201:obj_anim_timer:[obj_field] Always accessed as $0201,x by object routines — a per-object field at offset +1 in the object table (base $0200). It is INC'd as a subcounte
-NesInternalRam:0202:obj_timer:[obj_field] Always accessed as $0202,x by object routines (build_object_record_block_and_dispatch writes it on construction; force_active_objects_to_sta
-NesInternalRam:0205:obj_field_05:[obj_field] All 3 accesses are X-indexed into the $0200 object-record block ($0205,x): written by build_object_record_block_and_dispatch ($E39D: sta $02
+NesInternalRam:0200:tramp_bounce_anims:[obj_field] Variables round 2 (2026-10-26): trampoline +0 (8-byte records): bounce animations still to play (land_on_trampoline, animate_trampoline). Wa
+NesInternalRam:0201:tramp_frame:[obj_field] Variables round 2 (2026-10-26): trampoline +1: the 10-frame bounce frame. Was 'obj_anim_timer'. Earlier note: Always accessed as $0201,x by 
+NesInternalRam:0202:tramp_bounces_left:[obj_field] Variables round 2 (2026-10-26): trampoline +2: 3 at load, -1 per player bounce, $80 broken; restore_trampolines resets it. Was 'obj_timer'. 
+NesInternalRam:0205:tramp_y:[obj_field] Variables round 2 (2026-10-26): trampoline +5: tile row. Was 'obj_field_05'. Earlier note: All 3 accesses are X-indexed into the $0200 objec
 NesInternalRam:0260:item_state:[array] Variables 2026-10-26 (fixed var_xref: real instructions only): item record +0: spawn_objects_from_level_descriptor sets 2 per item ($E5E1); 
-NesInternalRam:0261:obj_type:[obj_field] Every access is indexed (sta/lda $0261,x), so $0261 is a per-object field in an object table. spawn_objects_from_level_descriptor WRITES it 
-NesInternalRam:0263:obj_type:[obj_field] Always accessed indexed as $0263,x (the object-slot index) and only by object routines. Written at spawn (spawn_objects_from_level_descripto
+NesInternalRam:0261:item_kind:[obj_field] Variables round 2 (2026-10-26): item +1: kind 00-12 (picture by pair, address, score). Was 'obj_type'. Earlier note: Every access is indexed
+NesInternalRam:0263:item_marked:[obj_field] Variables round 2 (2026-10-26): item +3: set on the partner of the last item collected (it blinks and pays the streak). Was 'obj_type'. Earl
 NesInternalRam:0264:item_x:[array] Variables 2026-10-26 (fixed var_xref: real instructions only): item record +4: compared with the player's obj_x_hi ($0401) at $E675 to detec
 NesInternalRam:0265:item_y:[array] Variables 2026-10-26 (fixed var_xref: real instructions only): item record +5: compared with the player's obj_y_hi ($0403) at $E66D. Was 'ob
-NesInternalRam:02B0:obj_anim_timer:[obj_field] All five accessors index it as $02b0,x — an object-table FIELD. The defining read-modify-write is in advance_object_anim_timer_and_dispatch_
-NesInternalRam:02B1:obj_state:[obj_field] Always accessed indexed by object slot (sta/lda/ldy $02b1,x across 10 routines) → it is a per-object-record field in a $04xx-style object ta
-NesInternalRam:02B4:obj_pos:[obj_field] Every access is base+,x indexed ([wi]/[ri]) => an entry in a parallel object-table array. Populated by load_object_table_to_ram ($E8A0: sta 
-NesInternalRam:02B5:obj_x:[obj_field] Every access is indexed ($02b5,x), so this is a field in an object table (base $02B5, stride = entry size). load_object_table_to_ram writes 
-NesInternalRam:02B7:obj_contact_state:[obj_field] All three references are indexed by X ($02b7,x), marking this as a per-object array field, not a scalar. The two writers are object_overlap_
-NesInternalRam:0300:obj_state:[obj_field] All three accessors touch it as an indexed array base ($0300,x) — never as a scalar — so it is field 0 of an object/sprite table at $0300. I
-NesInternalRam:041F:obj_state:[obj_field] $041F sits in the $04xx object-table page and is only ever written (no reads/derefs/indexing shown), by three object/state-init routines: in
-NesInternalRam:0420:stamp_position_table:[array] Always indexed ($0420,x / $0420,y), never deref'd as a pointer, so it's an array base. check_position_reached_and_reset_round writes per-ind
-NesInternalRam:0421:target_compare_value:[coord] Only reads visible (no writer in xref). It is compared against, not stored: trigger_state_transition_on_position_match does `cmp $0421` ($E7
-NesInternalRam:0423:obj_state:[obj_field] Indexed as $0423,x inside scan_objects_for_adjacent_contact_and_trigger (and $0423,x at $EB36/$EBB9), marking it as a per-object table field
-NesInternalRam:0424:obj_state:[obj_field] All 5 references are writes (no reads/derefs/indexing visible), each a plain `sta $0424` from object/entity lifecycle routines: handle_entit
-NesInternalRam:0427:bonus_item_timer:[counter] Set by sta in setup routines (handle_entity_object_pickup_or_special_setup $DE19, trigger_state_transition_on_position_match $E784), then co
-NesInternalRam:042A:bonus_item_timer:[counter] Set by tick_bonus_item_collect_or_timeout ($DE5B sta $042a), then ticked down each frame by update_object_proximity_collision_tick which doe
-NesInternalRam:042F:stage_phase_state:[state] No pointer-deref (P) or index (i) flags — plain byte written then read, so not a pointer/array. Multiple writers all sit in stage/round prog
-NesInternalRam:0490:obj_state_counter:[obj_field] $0490 is the base of an indexed array (sta/lda $0490,x in copy_5_bytes_table_to_ram_0490, advance_state_counter_to_60, draw_vertical_sprite_
-NesInternalRam:04A5:obj_state:[obj_field] Accessed indexed by Y (`lda $04a5,y` / `sta $04a5,y` at $EE06/$EE17) inside `find_first_empty_slot`, so it is a per-slot entry in an object 
+NesInternalRam:02B0:door_swinging:[obj_field] Variables round 2 (2026-10-26): door +0: 1 while the 5-frame swing runs (open_door, animate_door_swing). Was 'obj_anim_timer'. Earlier note:
+NesInternalRam:02B1:door_kind:[obj_field] Variables round 2 (2026-10-26): door +1: bit 1 open, bit 2 wave direction, bit 3 wave door; & 6 picks the knockback and picture. Was 'obj_st
+NesInternalRam:02B4:door_x:[obj_field] Variables round 2 (2026-10-26): door +4: tile x. Was 'obj_pos'. Earlier note: Every access is base+,x indexed ([wi]/[ri]) => an entry in a p
+NesInternalRam:02B5:door_y:[obj_field] Variables round 2 (2026-10-26): door +5: tile row. Was 'obj_x'. Earlier note: Every access is indexed ($02b5,x), so this is a field in an ob
+NesInternalRam:02B7:door_opener:[obj_field] Variables round 2 (2026-10-26): door +7: the record that opened it (0 = the player, who earns the knockback score). Was 'obj_contact_state'.
+NesInternalRam:0300:other_player_round_state:[array] Variables round 2 (2026-10-26): swap_player_state exchanges the $0200 page (trampolines, items, doors) with this one when the turn passes. W
+NesInternalRam:041F:slot1_state:[obj_field] Variables round 2 (2026-10-26): slot 1 +F. Was 'obj_state'. Earlier note: $041F sits in the $04xx object-table page and is only ever written
+NesInternalRam:0420:slot2_x_frac:[obj_field] Variables round 2 (2026-10-26): slot 2 +0. Was 'stamp_position_table'. Earlier note: Always indexed ($0420,x / $0420,y), never deref'd as a 
+NesInternalRam:0421:slot2_x:[obj_field] Variables round 2 (2026-10-26): slot 2 +1. Was 'target_compare_value'. Earlier note: Only reads visible (no writer in xref). It is compared 
+NesInternalRam:0423:slot2_y:[obj_field] Variables round 2 (2026-10-26): slot 2 +3. Was 'obj_state'. Earlier note: Indexed as $0423,x inside scan_objects_for_adjacent_contact_and_tr
+NesInternalRam:0424:slot2_anim:[obj_field] Variables round 2 (2026-10-26): slot 2 +4. Was 'obj_state'. Earlier note: All 5 references are writes (no reads/derefs/indexing visible), ea
+NesInternalRam:0427:slot2_timer:[obj_field] Variables round 2 (2026-10-26): slot 2 +7: 120 in its item, scored and landing states. Was 'bonus_item_timer'. Earlier note: Set by sta in s
+NesInternalRam:042A:slot2_cooldown:[obj_field] Variables round 2 (2026-10-26): slot 2 +A: 16 frames after it leaves an item; no item and no catching while set. Was 'bonus_item_timer'. Ear
+NesInternalRam:042F:slot2_state:[obj_field] Variables round 2 (2026-10-26): slot 2 +F. Was 'stage_phase_state'. Earlier note: No pointer-deref (P) or index (i) flags — plain byte writt
+NesInternalRam:0490:hurry_x:[obj_field] Variables round 2 (2026-10-26): the 8-byte sprite record at $0490: HURRY's x (and the title object's, the same record). Was 'obj_state_count
+NesInternalRam:04A5:wave_state:[obj_field] Variables round 2 (2026-10-26): door wave +5: 0 idle, 1 moving, 2 score display. Was 'obj_state'. Earlier note: Accessed indexed by Y (`lda 
 NesInternalRam:0500:vram_buffer:[buffer_cursor] All 6 routines touch $0500 indexed (,x/,y), never as a 16-bit pointer or flag — it is the base of an array, not a scalar. Writers are all en
 NesInternalRam:0600:sound_trigger:[array] Data phase 2026-10-26: 25 sound trigger slots $0600-$0618, one per voice. Game code stores #$01 (or game_phase) to a fixed slot per event ($
 NesInternalRam:00B1:p2_score:[bcd] Top-down 2026-10-26 (game thread): player 2's score while player 1 plays: swap_player_state exchanges $70-$AF with $B0-$EF, so $B1-$B4 is $7
 NesInternalRam:0044:hi_score:[bcd] Top-down 2026-10-26 (game thread): the high score, 4 BCD bytes $44-$47: update_high_score copies the score over it when the score is higher;
-NesInternalRam:0400:obj0_obj_x_lo:obj record +0 [HIGH] cited above Proven 2026-10-26: the draw code reads +0/+1 minus camera_scroll_x ($28/$29), then +2/+3
-NesInternalRam:0401:obj0_obj_x_hi:obj record +1 [HIGH] Across ~28 routines this field is overwhelmingly used as a coordinate in distance/adjacency math: it
-NesInternalRam:0402:obj0_obj_y_lo:obj record +2 [HIGH] Field +02 is advanced additively each frame: advance_object_subpixel_position_then_clamp does adc ($
-NesInternalRam:0403:obj0_obj_y_hi:obj record +3 [HIGH] Field +03 is differenced, never compared to small constants — across ~25 routines it is read/subtrac
-NesInternalRam:0404:obj0_obj_draw_index:obj record +4 [HIGH] Proven by code + data (2026-10-26 data phase): the object draw ($C30C..) reads +0..+3, then jsr $C34
-NesInternalRam:0405:obj0_obj_type:obj record +5 [HIGH] Touched by 16 routines that are overwhelmingly state-machine drivers: update_active_object_state_mac
-NesInternalRam:0406:obj0_obj_facing:obj record +6 [HIGH] Top-down 2026-10-26: the facing direction, -1 / 0 / +1 (the only values in the attract demo): apply_
-NesInternalRam:0407:obj0_obj_timer:obj record +7 [HIGH] HIGH
-NesInternalRam:0408:obj0_obj_bg_tile:obj record +8 [HIGH] Variables 2026-10-26: the nametable tile under the object, read back from VRAM: flush_vram_readback_
+NesInternalRam:002E:cats_cant_catch:[flag] Variables round 2 (2026-10-26): walking_cat_touches_player does nothing while it is set; only the dead routine at $D762 toggles it (an unrea
+NesInternalRam:003E:warm_boot_magic:[flag] Variables round 2 (2026-10-26): written by reset_cold_boot_init, checked by validate_magic_and_restore_state_vars.
+NesInternalRam:003F:warm_boot_magic_2:[flag] Variables round 2 (2026-10-26): the second magic byte.
+NesInternalRam:0056:bonus_target_points:[bcd] Variables round 2 (2026-10-26): 2 BCD bytes shown at $2197 (bcd_number_entry 12).
+NesInternalRam:005D:bonus_total:[bcd] Variables round 2 (2026-10-26): 3 BCD bytes shown at $2315 (bcd_number_entry 16), added to the score by show_bonus_results.
+NesInternalRam:005E:bonus_total_mid:[bcd] Variables round 2 (2026-10-26): the middle byte of bonus_total: show_bonus_results copies the goal points in and adds $50 for PERFECT.
+NesInternalRam:0066:hurry_seconds:[counter] Variables round 2 (2026-10-26): stage param byte 3: seconds until HURRY (tick_round_timer).
+NesInternalRam:0073:score_byte2:[bcd] Variables round 2 (2026-10-26): the third byte of the score.
+NesInternalRam:00F7:sound_scratch_hi:[pointer] Variables round 2 (2026-10-26): high byte of the sound_scratch pointer pair (jump_table_dispatch_via_index).
+NesInternalRam:0100:thread_saved_sp:[array] Variables round 2 (2026-10-26): the stack page's saved stack pointers, swapped by swap_stack_pointer (the two threads).
+NesInternalRam:0180:attr_shadow:[array] Variables round 2 (2026-10-26): the attribute table shadow draw_rle_text_step writes (palette $14) and write_attribute_byte flushes.
+NesInternalRam:0203:tramp_pos_index:[obj_field] Variables round 2 (2026-10-26): trampoline +3: index into tbl_trampoline_addrs.
+NesInternalRam:0204:tramp_x:[obj_field] Variables round 2 (2026-10-26): trampoline +4: tile x.
+NesInternalRam:0262:item_timer:[obj_field] Variables round 2 (2026-10-26): item +2: 60 frames of points after collection (show_item_points).
+NesInternalRam:0266:target_addr:[obj_field] Variables round 2 (2026-10-26): bonus target +6: its nametable address (load_bonus_targets, draw_bonus_target).
+NesInternalRam:0267:target_addr_hi:[obj_field] Variables round 2 (2026-10-26): bonus target +7: high byte.
+NesInternalRam:02B2:door_addr:[obj_field] Variables round 2 (2026-10-26): door +2: nametable address (draw_door_kind_y).
+NesInternalRam:02B3:door_addr_hi:[obj_field] Variables round 2 (2026-10-26): door +3: high byte.
+NesInternalRam:02B6:door_swing_frame:[obj_field] Variables round 2 (2026-10-26): door +6: 0-4 during the swing.
+NesInternalRam:0400:obj_x_frac:[obj_field] Variables round 2 (2026-10-26): record +0 (16-byte records, slots 0-8; absolute = slot 0, the player).
+NesInternalRam:0401:obj_x:[obj_field] Variables round 2 (2026-10-26): record +1: tile x.
+NesInternalRam:0402:obj_y_frac:[obj_field] Variables round 2 (2026-10-26): record +2.
+NesInternalRam:0403:obj_y:[obj_field] Variables round 2 (2026-10-26): record +3: tile row.
+NesInternalRam:0404:obj_anim:[obj_field] Variables round 2 (2026-10-26): record +4: the draw handler index (dispatch_object_draw_by_anim); 0 = not drawn.
+NesInternalRam:0405:obj_type:[obj_field] Variables round 2 (2026-10-26): record +5: 0 player, 1 the late chaser, 2 slot 2's cat, 3 cats.
+NesInternalRam:0406:obj_dir:[obj_field] Variables round 2 (2026-10-26): record +6: 1 right, $FF left.
+NesInternalRam:0407:obj_timer:[obj_field] Variables round 2 (2026-10-26): record +7: the state's frame counter / timer.
+NesInternalRam:0408:obj_tile:[obj_field] Variables round 2 (2026-10-26): record +8: the tile the render thread read back (queue_tile_read).
+NesInternalRam:040B:obj_vy_or_link:[obj_field] Variables round 2 (2026-10-26): record +B: vertical velocity in a hop (move_hop_arc), the trampoline index in a bounce, the carrying wave in
+NesInternalRam:040E:obj_buttons:[obj_field] Variables round 2 (2026-10-26): record +E: the player's button history (set_object_intent; the demo shifts it).
+NesInternalRam:040F:obj_state:[obj_field] Variables round 2 (2026-10-26): record +F: the state ($DA42 / $E17A by is_bonus_round).
+NesInternalRam:0410:slot1_x_frac:[obj_field] Variables round 2 (2026-10-26): slot 1 +0 (the bonus goal; the chaser after HURRY).
+NesInternalRam:0411:slot1_x:[obj_field] Variables round 2 (2026-10-26): slot 1 +1.
+NesInternalRam:0412:slot1_y_frac:[obj_field] Variables round 2 (2026-10-26): slot 1 +2.
+NesInternalRam:0413:slot1_y:[obj_field] Variables round 2 (2026-10-26): slot 1 +3.
+NesInternalRam:0414:slot1_anim:[obj_field] Variables round 2 (2026-10-26): slot 1 +4.
+NesInternalRam:0415:slot1_type:[obj_field] Variables round 2 (2026-10-26): slot 1 +5: 1 when released as the chaser.
+NesInternalRam:0417:slot1_timer:[obj_field] Variables round 2 (2026-10-26): slot 1 +7.
+NesInternalRam:0426:slot2_dir:[obj_field] Variables round 2 (2026-10-26): slot 2 +6.
+NesInternalRam:0428:slot2_tile:[obj_field] Variables round 2 (2026-10-26): slot 2 +8.
+NesInternalRam:042B:slot2_vy:[obj_field] Variables round 2 (2026-10-26): slot 2 +B (cleared when released by the bonus goal).
+NesInternalRam:0434:slot3_anim:[obj_field] Variables round 2 (2026-10-26): slot 3 +4 (bonus_state10_slot3_timeout).
+NesInternalRam:0437:slot3_timer:[obj_field] Variables round 2 (2026-10-26): slot 3 +7.
+NesInternalRam:043F:slot3_state:[obj_field] Variables round 2 (2026-10-26): slot 3 +F.
+NesInternalRam:0491:hurry_x_hi:[obj_field] Variables round 2 (2026-10-26): high byte; negative ends HURRY's crossing.
+NesInternalRam:04A0:wave_x_frac:[obj_field] Variables round 2 (2026-10-26): door wave +0 (4 records of 8 at $04A0).
+NesInternalRam:04A1:wave_x:[obj_field] Variables round 2 (2026-10-26): door wave +1.
+NesInternalRam:04A2:wave_y_frac:[obj_field] Variables round 2 (2026-10-26): door wave +2.
+NesInternalRam:04A3:wave_y:[obj_field] Variables round 2 (2026-10-26): door wave +3.
+NesInternalRam:04A6:wave_dir:[obj_field] Variables round 2 (2026-10-26): door wave +6.
+NesInternalRam:04AD:wave1_state:[obj_field] Variables round 2 (2026-10-26): the second wave's +5 (play_round and state 2A wait on waves 0 and 1).
+NesInternalRam:04C0:tile_read_queue:[array] Variables round 2 (2026-10-26): [address][record pointer] entries; the render thread reads each tile into the record's +8.
+NesInternalRam:06E2:voice_param:[array] Variables round 2 (2026-10-26): one byte per voice, from init_sound_voices_data_f89e; start_timer_phase_tune sets voices 19-20 to 3.
+NesInternalRam:0700:oam_shadow:[array] Variables round 2 (2026-10-26): the sprite page write_sprite_to_oam fills.
+NesInternalRam:0601:snd_bonus_results:[flag] Variables round 2 (2026-10-26): fired by show_bonus_results (with $0618).
+NesInternalRam:0602:snd_extra_life:[flag] Variables round 2 (2026-10-26): fired by award_extra_life (with $0603, $0604).
+NesInternalRam:0605:snd_hurry:[flag] Variables round 2 (2026-10-26): fired every HURRY frame (tick_round_timer).
+NesInternalRam:0606:snd_bonus_goal:[flag] Variables round 2 (2026-10-26): the bonus goal reached.
+NesInternalRam:0607:snd_drop:[flag] Variables round 2 (2026-10-26): a dropped object starts falling; a walker falls through a floor trap.
+NesInternalRam:0608:snd_collect:[flag] Variables round 2 (2026-10-26): an item collected; a bonus target popped.
+NesInternalRam:0609:snd_door_wave:[flag] Variables round 2 (2026-10-26): a door wave moving.
+NesInternalRam:060A:snd_trampoline:[flag] Variables round 2 (2026-10-26): a landing on a trampoline.
+NesInternalRam:060B:snd_death:[flag] Variables round 2 (2026-10-26): state2A_wait_then_start_tune (with $060C, $060D).
+NesInternalRam:060E:snd_bonus_intro:[flag] Variables round 2 (2026-10-26): the bonus round's intro (with $060F, $0610).
+NesInternalRam:0611:snd_round_clear:[flag] Variables round 2 (2026-10-26): play_round after the last item (with $0612).
+NesInternalRam:0613:snd_round_music:[flag] Variables round 2 (2026-10-26): play_round's background music (with $0614), restarted unless HURRY plays.
+NesInternalRam:0615:snd_game_over:[flag] Variables round 2 (2026-10-26): game_over (with $0616, $0617).
+NesInternalRam:00FC:channel_claimed:[array] Variables round 2 (2026-10-26): 4 flags, one per APU channel ($FC-$FF): cleared each frame by update_sound_frame, set when a voice takes the
+NesInternalRam:0161:voice_repeat_counts:[array] Variables round 2 (2026-10-26): 3 counters for the repeat opcodes (voice_op_repeat_0-2); $0161-$0169 are all cleared by voice_op_clear_loop_
+NesInternalRam:0164:voice_jump_counts:[array] Variables round 2 (2026-10-26): 3 counters for voice_op_jump_on_count_0-2.
+NesInternalRam:0167:voice_jump_counts_2:[array] Variables round 2 (2026-10-26): 3 counters for voice_op_jump_on_count_3-5.
+NesInternalRam:0603:snd_extra_life_b:[flag] Variables round 2 (2026-10-26): award_extra_life's second voice.
+NesInternalRam:0604:snd_extra_life_c:[flag] Variables round 2 (2026-10-26): award_extra_life's third voice.
+NesInternalRam:060C:snd_death_b:[flag] Variables round 2 (2026-10-26): the death tune's second voice.
+NesInternalRam:060D:snd_death_c:[flag] Variables round 2 (2026-10-26): the death tune's third voice.
+NesInternalRam:060F:snd_bonus_intro_b:[flag] Variables round 2 (2026-10-26): the bonus intro's second voice.
+NesInternalRam:0610:snd_bonus_intro_c:[flag] Variables round 2 (2026-10-26): the bonus intro's third voice.
+NesInternalRam:0612:snd_round_clear_b:[flag] Variables round 2 (2026-10-26): the round-clear tune's second voice.
+NesInternalRam:0614:snd_round_music_b:[flag] Variables round 2 (2026-10-26): the round music's second voice.
+NesInternalRam:0616:snd_game_over_b:[flag] Variables round 2 (2026-10-26): the game-over tune's second voice.
+NesInternalRam:0617:snd_game_over_c:[flag] Variables round 2 (2026-10-26): the game-over tune's third voice.
+NesInternalRam:0618:snd_bonus_results_b:[flag] Variables round 2 (2026-10-26): the bonus results' second voice.
+NesInternalRam:06F5:voice_param_19:[array] Variables round 2 (2026-10-26): voice_param for voice 19: 3 from start_timer_phase_tune.
+NesInternalRam:06F6:voice_param_20:[array] Variables round 2 (2026-10-26): voice_param for voice 20.
+NesInternalRam:0701:oam_tile:[array] Variables round 2 (2026-10-26): OAM shadow +1 of each 4-byte sprite (write_sprite_to_oam).
+NesInternalRam:0702:oam_attr:[array] Variables round 2 (2026-10-26): OAM shadow +2.
+NesInternalRam:0703:oam_x:[array] Variables round 2 (2026-10-26): OAM shadow +3.
 NesInternalRam:0409:obj0_field_9:obj record +9 [LOW] field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven
 NesInternalRam:040A:obj0_field_A:obj record +A [LOW] field+N (data gate): was 'obj_timer', a name other offsets share or a LOW guess; no code role proven
-NesInternalRam:040B:obj0_field_B:obj record +B [LOW] field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven
 NesInternalRam:040C:obj0_field_C:obj record +C [LOW] field+N (data gate): was 'obj_x_sub', a name other offsets share or a LOW guess; no code role proven
 NesInternalRam:040D:obj0_field_D:obj record +D [LOW] field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven
-NesInternalRam:040E:obj0_obj_flags:obj record +E [MED] Only 3 routines touch +0E and the access pattern is bit-manipulation, not arithmetic or position mat
-NesInternalRam:040F:obj0_obj_state:obj record +F [HIGH] Proven by code + data (2026-10-26 data phase): $DA2C ldy #$0F / lda ($1E),y / tax / lda $DA42,x -> j

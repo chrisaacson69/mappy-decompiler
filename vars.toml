@@ -3,17 +3,17 @@
 
 [[var]]
 addr = "0000"
-name = "indirect_ptr"
-role = "pointer"
+name = "zero_page_base"
+role = "array"
 conf = "HIGH"
-why = "."
+why = "Variables round 2 (2026-10-26): indexed by X holding a zero-page address (bcd_add, queue_bcd_number, the save / restore copies: lda $00,x reads the variable at X); reset_cold_boot_init also uses $00/$01 as the pointer it clears RAM through. Was 'indirect_ptr'. Earlier note: ."
 
 [[var]]
 addr = "0001"
-name = "ptr_hi"
+name = "zero_page_base_hi"
 role = "pointer"
 conf = "HIGH"
-why = "Flagged P (16-bit pointer). It is the HIGH byte of the general-purpose indirect pointer pair $0000/$0001: writers set it via `sty $01` (ppu_draw_blocks_b $CFCA/$CFD6) and `sta $01` (reset_cold_boot_init $C045), and many routines dereference the pair with ($00),y / ($00,x) / ($01,x) — load_ptr_descri"
+why = "Variables round 2 (2026-10-26): the high byte of the RAM-clear pointer in reset_cold_boot_init (its only user). Was 'ptr_hi'. Earlier note: Flagged P (16-bit pointer). It is the HIGH byte of the general-purpose indirect pointer pair $0000/$0001: writers set it via `sty $01` (ppu_draw_blocks_b $CFCA/$CFD6) and `sta $01` (reset_cold_boot_init $C045), and many routines dereference the pair with ($00),y / ($00,x) / ($01,x) — load_ptr_descri"
 
 [[var]]
 addr = "0002"
@@ -59,45 +59,45 @@ why = "Variables 2026-10-26 (fixed var_xref: real instructions only): low byte o
 
 [[var]]
 addr = "0010"
-name = "src_ptr"
-role = "pointer"
+name = "draw_pos"
+role = "scratch"
 conf = "MED"
-why = "Flagged P and dereferenced as 16-bit pointer in many routines via `lda ($10),y`: ppu_run_draw_blocks ($CC21), ppu_draw_blocks_b ($CF75), ppu_draw_mansion_stamps ($D132), load_record_via_ptr_table ($D4F1), build_buffer_entry_unpack_nibbles ($D5E5), copy_var_record_to_0500_buffer ($D788). $10 is the l"
+why = "Variables round 2 (2026-10-26): low byte of the 16-bit position a draw call takes: screen x for sprites (write_sprite_to_oam), the PPU address for VRAM (draw_rle_text, ppu_buffer_enqueue); also a scratch word for bcd_add_from_table and choose_cat_target_floor. Was 'src_ptr'. Earlier note: Flagged P and dereferenced as 16-bit pointer in many routines via `lda ($10),y`: ppu_run_draw_blocks ($CC21), ppu_draw_blocks_b ($CF75), ppu_draw_mansion_stamps ($D132), load_record_via_ptr_table ($D4F1), build_buffer_entry_unpack_nibbles ($D5E5), copy_var_record_to_0500_buffer ($D788). $10 is the l"
 
 [[var]]
 addr = "0011"
-name = "zp_ptr_hi"
-role = "pointer"
-conf = "HIGH"
-why = "$0011 is the high byte of the general-purpose 16-bit indirect pointer at $10/$11. Many routines write it then immediately dereference ($10),y: ppu_run_draw_blocks ($CC1D sta $11 → $CC21 lda ($10),y), ppu_draw_blocks_b ($CF71/$CF75), ppu_draw_mansion_stamps ($D12E/$D132), load_record_via_ptr_table ($"
+name = "draw_pos_hi"
+role = "scratch"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): high byte of draw_pos. Was 'zp_ptr_hi'. Earlier note: $0011 is the high byte of the general-purpose 16-bit indirect pointer at $10/$11. Many routines write it then immediately dereference ($10),y: ppu_run_draw_blocks ($CC1D sta $11 → $CC21 lda ($10),y), ppu_draw_blocks_b ($CF71/$CF75), ppu_draw_mansion_stamps ($D12E/$D132), load_record_via_ptr_table ($"
 
 [[var]]
 addr = "0012"
-name = "gfx_src_ptr"
-role = "pointer"
+name = "draw_tile_or_src"
+role = "scratch"
 conf = "MED"
-why = "$12 is flagged P and is dereferenced as a 16-bit pointer via (zp),y: ppu_draw_mansion_stamps does `lda ($12),y` at $D15B after `sta $12`, and ppu_run_draw_blocks marks it m,p,w. It is set then read by a swarm of object/sprite/PPU drawing routines (draw_two_tile_object, build_object_sprite_attributes"
+why = "Variables round 2 (2026-10-26): the sprite tile (write_sprite_to_oam), or the low byte of the RLE / data stream pointer (draw_rle_text, queue_vram_packet). Was 'gfx_src_ptr'. Earlier note: $12 is flagged P and is dereferenced as a 16-bit pointer via (zp),y: ppu_draw_mansion_stamps does `lda ($12),y` at $D15B after `sta $12`, and ppu_run_draw_blocks marks it m,p,w. It is set then read by a swarm of object/sprite/PPU drawing routines (draw_two_tile_object, build_object_sprite_attributes"
 
 [[var]]
 addr = "0013"
-name = "data_ptr_hi"
-role = "pointer"
-conf = "HIGH"
-why = "var_xref flags $0013 as a 16-bit pointer (P). ppu_draw_mansion_stamps writes `sta $13` ($D141) then dereferences `lda ($12),y` ($D15B), proving $12/$13 are a pointer pair with $13 as the HIGH byte (low byte $12). It is the source/descriptor pointer pair loaded all over the codebase: load_ptr_descrip"
+name = "draw_attr_or_src_hi"
+role = "scratch"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): the sprite attribute (palette, flips: load_type_sprite_palette, apply_facing_flip), or the stream pointer's high byte. Was 'data_ptr_hi'. Earlier note: var_xref flags $0013 as a 16-bit pointer (P). ppu_draw_mansion_stamps writes `sta $13` ($D141) then dereferences `lda ($12),y` ($D15B), proving $12/$13 are a pointer pair with $13 as the HIGH byte (low byte $12). It is the source/descriptor pointer pair loaded all over the codebase: load_ptr_descrip"
 
 [[var]]
 addr = "0014"
-name = "scan_src_ptr"
-role = "pointer"
+name = "draw_palette"
+role = "scratch"
 conf = "HIGH"
-why = "Header flags it as a 16-bit POINTER low byte (P), touched by 31 routines. Many writers are explicitly pointer-loaders that set $14 then walk through it: load_ptr_descriptor_and_scan ($CEE3), load_ptr_from_state_index ($E73B), load_indexed_ptr_then_scan_for_terminator ($F25E), setup_ptrs_and_scan_zer"
+why = "Variables round 2 (2026-10-26): draw_rle_text_step writes it into the attribute shadow for the cells it draws; bit 7 = leave attributes alone. Sprites pass 0; bcd_add uses it as a nibble temp. Was 'scan_src_ptr'. Earlier note: Header flags it as a 16-bit POINTER low byte (P), touched by 31 routines. Many writers are explicitly pointer-loaders that set $14 then walk through it: load_ptr_descriptor_and_scan ($CEE3), load_ptr_from_state_index ($E73B), load_indexed_ptr_then_scan_for_terminator ($F25E), setup_ptrs_and_scan_zer"
 
 [[var]]
 addr = "0015"
-name = "scratch_counter"
+name = "draw_count"
 role = "scratch"
 conf = "MED"
-why = "14 routines touch $15 but none share its value across calls — every user writes it fresh at entry (sta $15 in dispatch_object_draw_routine_by_index $C344, decode_position_stream_to_collision_bitmaps $C718, draw_glyph_and_advance_cursor $CB20, setup_oam_params_and_emit_object_7c $CE09, build_buffer_e"
+why = "Variables round 2 (2026-10-26): the run length draw_rle_text_step and ppu_buffer_enqueue copy; the anim variant bit in dispatch_object_draw_by_anim; the digit-blanking count in queue_digit_blank_leading_zero. Was 'scratch_counter'. Earlier note: 14 routines touch $15 but none share its value across calls — every user writes it fresh at entry (sta $15 in dispatch_object_draw_routine_by_index $C344, decode_position_stream_to_collision_bitmaps $C718, draw_glyph_and_advance_cursor $CB20, setup_oam_params_and_emit_object_7c $CE09, build_buffer_e"
 
 [[var]]
 addr = "0016"
@@ -122,17 +122,17 @@ why = "Touched by 12 unrelated routines, each independently setting it with sta/
 
 [[var]]
 addr = "0019"
-name = "draw_data_ptr_hi"
-role = "pointer"
-conf = "MED"
-why = "Tool flags $0019 as a 16-bit POINTER. ppu_draw_mansion_stamps dereferences the $18/$19 pair via `and ($18,x)` (indexed-indirect), making $18=low and $19=high byte of the pointer. The dereferencing/consuming routines are all PPU draw code (ppu_draw_mansion_stamps, ppu_run_draw_blocks, ppu_draw_blocks"
+name = "score_offset_save"
+role = "scratch"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): add_score_n_times keeps the tbl_score_amounts offset here across its loop. Was 'draw_data_ptr_hi'. Earlier note: Tool flags $0019 as a 16-bit POINTER. ppu_draw_mansion_stamps dereferences the $18/$19 pair via `and ($18,x)` (indexed-indirect), making $18=low and $19=high byte of the pointer. The dereferencing/consuming routines are all PPU draw code (ppu_draw_mansion_stamps, ppu_run_draw_blocks, ppu_draw_blocks"
 
 [[var]]
 addr = "001A"
-name = "data_src_ptr"
-role = "pointer"
-conf = "MED"
-why = "$001A is dereferenced as a 16-bit pointer via indexed-indirect ($1a,x): fetch_seq_byte_and_advance_index does `adc ($1a,x)` twice ($F966/$F972) to pull sequential data bytes, and ppu_draw_mansion_stamps does `and ($1a,x)` ($D42F) to read graphics/stamp source data. resolve_object_position_capture_an"
+name = "item_loop_index"
+role = "index"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): player_collects_item's index while it clears the other items' marks. Was 'data_src_ptr'. Earlier note: $001A is dereferenced as a 16-bit pointer via indexed-indirect ($1a,x): fetch_seq_byte_and_advance_index does `adc ($1a,x)` twice ($F966/$F972) to pull sequential data bytes, and ppu_draw_mansion_stamps does `and ($1a,x)` ($D42F) to read graphics/stamp source data. resolve_object_position_capture_an"
 
 [[var]]
 addr = "001B"
@@ -185,10 +185,10 @@ why = "Variables 2026-10-26 (fixed var_xref: real instructions only): render_loo
 
 [[var]]
 addr = "0022"
-name = "scan_ptr"
-role = "pointer"
+name = "button_history"
+role = "input"
 conf = "MED"
-why = "Dereferenced as a 16-bit (zp) pointer in multiple routines: load_indexed_ptr_then_scan_for_terminator does `cmp ($22),y` ($F2DE) and fetch_seq_byte_and_advance_index does `adc ($22,x)` ($F908/$F94C) — both indirect ($22 is the low byte, $23 the high byte). Setters establish it as a descriptor/sequen"
+why = "Variables round 2 (2026-10-26): set_object_intent copies it into the player's +E; title code and the dead switch test & 3 = 1 (a fresh press). Was 'scan_ptr'. Earlier note: Dereferenced as a 16-bit (zp) pointer in multiple routines: load_indexed_ptr_then_scan_for_terminator does `cmp ($22),y` ($F2DE) and fetch_seq_byte_and_advance_index does `adc ($22,x)` ($F908/$F94C) — both indirect ($22 is the low byte, $23 the high byte). Setters establish it as a descriptor/sequen"
 
 [[var]]
 addr = "0023"
@@ -199,10 +199,10 @@ why = "Variables 2026-10-26 (fixed var_xref: real instructions only): read_and_d
 
 [[var]]
 addr = "0024"
-name = "draw_data_ptr"
-role = "pointer"
+name = "select_history"
+role = "input"
 conf = "MED"
-why = "Tool flags it as a 16-bit pointer low byte, and the dereference instructions confirm a pointer pair. ppu_draw_mansion_stamps does `lda ($24,x)` — dereferencing $24 directly as a pointer. The partner byte $23 is dereferenced via `cmp ($23),y` (ppu_run_draw_blocks), `and ($23),y` (scan_objects_for_adj"
+why = "Variables round 2 (2026-10-26): title_menu_cursor toggles the 1 / 2 player choice on & 3 = 1 (a fresh press). Was 'draw_data_ptr'. Earlier note: Tool flags it as a 16-bit pointer low byte, and the dereference instructions confirm a pointer pair. ppu_draw_mansion_stamps does `lda ($24,x)` — dereferencing $24 directly as a pointer. The partner byte $23 is dereferenced via `cmp ($23),y` (ppu_run_draw_blocks), `and ($23),y` (scan_objects_for_adj"
 
 [[var]]
 addr = "0025"
@@ -276,38 +276,38 @@ why = "Top-down 2026-10-26 (game thread): update_score adds amount #$40 this man
 
 [[var]]
 addr = "0031"
-name = "obj_record_ptr"
-role = "pointer"
-conf = "MED"
-why = "Flagged P and dereferenced as a 16-bit pointer via `eor ($31,x)` at $FF36, so $0031 is the low byte of a pointer ($0032 = high). The reading/modifying routines are all object-centric: resolve_object_position_capture_and_score reads then `inc $31` ($E6AF/$E6F7) to walk a record, draw_composite_object"
+name = "item_streak"
+role = "counter"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): collecting a marked item (the partner of the last one) scores (streak + 2) times and adds 1 (player_collects_item); draw_item_points_sprites shows it as a digit. Was 'obj_record_ptr'. Earlier note: Flagged P and dereferenced as a 16-bit pointer via `eor ($31,x)` at $FF36, so $0031 is the low byte of a pointer ($0032 = high). The reading/modifying routines are all object-centric: resolve_object_position_capture_and_score reads then `inc $31` ($E6AF/$E6F7) to walk a record, draw_composite_object"
 
 [[var]]
 addr = "0035"
-name = "obj_collision_state"
-role = "obj_field"
-conf = "MED"
-why = "No P (pointer-deref) or i (indexed) flag and no (zp),y usage — an 8-bit scalar, not a pointer. All writers are object/entity routines: init_object_record_row ($D879 sta $35) sets it when an object record row is initialized, and resolve_entity_collision_movement ($DCC8 sta $35) writes it during colli"
+name = "slot2_step_now"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): set by state0C_rise for slot 2; slot2_maybe_step_target_floor clears it and steps the target. Was 'obj_collision_state'. Earlier note: No P (pointer-deref) or i (indexed) flag and no (zp),y usage — an 8-bit scalar, not a pointer. All writers are object/entity routines: init_object_record_row ($D879 sta $35) sets it when an object record row is initialized, and resolve_entity_collision_movement ($DCC8 sta $35) writes it during colli"
 
 [[var]]
 addr = "0036"
-name = "obj_record_ptr"
-role = "pointer"
+name = "slot2_target_row"
+role = "position"
 conf = "HIGH"
-why = "Dereferenced as a 16-bit pointer with (zp),y in two routines: ppu_run_draw_blocks ($CD0B: ora ($36),y) and check_obj_adjacency_set_hit_flag ($F12B: sbc ($36),y) — the 'p' flag confirms $36 is a pointer low byte (and $37 its high byte). Writers are all object/entity-record routines that set it before"
+why = "Variables round 2 (2026-10-26): slot 2's patrol target, row 9 to $19 (slot2_step_target_floor); set_object_intent compares slot 2's y with it. Was 'obj_record_ptr'. Earlier note: Dereferenced as a 16-bit pointer with (zp),y in two routines: ppu_run_draw_blocks ($CD0B: ora ($36),y) and check_obj_adjacency_set_hit_flag ($F12B: sbc ($36),y) — the 'p' flag confirms $36 is a pointer low byte (and $37 its high byte). Writers are all object/entity-record routines that set it before"
 
 [[var]]
 addr = "0037"
-name = "obj_record_ptr_hi"
-role = "pointer"
-conf = "MED"
-why = "$0036/$0037 form a 16-bit pointer dereferenced via (zp),y: ppu_run_draw_blocks does `ora ($36),y` ($CD0B) and check_obj_adjacency_set_hit_flag does `sbc ($36),y` ($F12B), so $37 is the HIGH byte of the $36 pointer. Writers set it as a plain byte (init_object_record_row `sta $37`, load_record_by_inde"
+name = "slot2_row_step"
+role = "position"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): +4 or -4, flipped at rows 9 and $19 (slot2_step_target_floor). Was 'obj_record_ptr_hi'. Earlier note: $0036/$0037 form a 16-bit pointer dereferenced via (zp),y: ppu_run_draw_blocks does `ora ($36),y` ($CD0B) and check_obj_adjacency_set_hit_flag does `sbc ($36),y` ($F12B), so $37 is the HIGH byte of the $36 pointer. Writers set it as a plain byte (init_object_record_row `sta $37`, load_record_by_inde"
 
 [[var]]
 addr = "003C"
-name = "seq_data_ptr_hi"
-role = "pointer"
-conf = "MED"
-why = "Dereferenced as a 16-bit pointer: fetch_seq_byte_and_advance_index does `adc ($3b,x)` ($F9CD/$F9D3) and data_or_unclear does `adc ($3b,x)` ($FAC0) — the indirect base is $3B, so $003C is the HIGH byte of the ($3b) pointer pair (low=$003B). The dereferencing routine name (fetch_seq_byte_and_advance_i"
+name = "demo_hold_frames"
+role = "demo"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): frames left on the current attract-script entry (set_object_intent's demo path). Was 'seq_data_ptr_hi'. Earlier note: Dereferenced as a 16-bit pointer: fetch_seq_byte_and_advance_index does `adc ($3b,x)` ($F9CD/$F9D3) and data_or_unclear does `adc ($3b,x)` ($FAC0) — the indirect base is $3B, so $003C is the HIGH byte of the ($3b) pointer pair (low=$003B). The dereferencing routine name (fetch_seq_byte_and_advance_i"
 
 [[var]]
 addr = "003D"
@@ -346,24 +346,24 @@ why = "Top-down 2026-10-26 (game thread): set by add_score_from_table; update_sc
 
 [[var]]
 addr = "0048"
-name = "indirect_ptr"
-role = "pointer"
-conf = "MED"
-why = "Xref flags it \"used as 16-bit POINTER low byte\" and three separate routines dereference it via indexed-indirect addressing: setup_screen_layout ($CBF0 and ($47,x)), trigger_state_transition_on_position_match ($E7B2 and ($48,x)), and init_object_slots_strided ($EEA9 ora ($48,x)). init_stage_with_in"
+name = "extra_life_cap"
+role = "counter"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): award_extra_life stops awarding when extra_lives_awarded reaches it (title_screen sets $FF). Was 'indirect_ptr'. Earlier note: Xref flags it \"used as 16-bit POINTER low byte\" and three separate routines dereference it via indexed-indirect addressing: setup_screen_layout ($CBF0 and ($47,x)), trigger_state_transition_on_position_match ($E7B2 and ($48,x)), and init_object_slots_strided ($EEA9 ora ($48,x)). init_stage_with_in"
 
 [[var]]
 addr = "0049"
-name = "indirect_ptr_hi"
-role = "pointer"
+name = "extra_life_step"
+role = "bcd"
 conf = "MED"
-why = "$49 is the high byte of the zero-page pointer pair whose low byte is $48: it is dereferenced via ($48,x) in trigger_state_transition_on_position_match ($E7B2 and ($48,x)) and init_object_slots_strided ($EEA9 ora ($48,x)), and load_indexed_ptr_then_scan_for_terminator does rol $49 ($F2B0) to load/shi"
+why = "Variables round 2 (2026-10-26): the BCD amount bcd_add_record 00 adds to next_extra_life after each award (set by title_screen). Was 'indirect_ptr_hi'. Earlier note: $49 is the high byte of the zero-page pointer pair whose low byte is $48: it is dereferenced via ($48,x) in trigger_state_transition_on_position_match ($E7B2 and ($48,x)) and init_object_slots_strided ($EEA9 ora ($48,x)), and load_indexed_ptr_then_scan_for_terminator does rol $49 ($F2B0) to load/shi"
 
 [[var]]
 addr = "004A"
-name = "seq_data_ptr"
-role = "pointer"
-conf = "MED"
-why = "Marked [P] as a 16-bit pointer low byte. fetch_seq_byte_and_advance_index dereferences it with indexed-indirect `adc ($4a,x)` at $F930/$F940 to read sequence bytes — the classic (zp,x) pointer-table fetch. It is set up by validate_magic_and_restore_state_vars (`sta $4a`) and saved/restored by pack_s"
+name = "two_player_choice"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the title menu's 1 / 2 player choice, toggled by title_menu_cursor. Was 'seq_data_ptr'. Earlier note: Marked [P] as a 16-bit pointer low byte. fetch_seq_byte_and_advance_index dereferences it with indexed-indirect `adc ($4a,x)` at $F930/$F940 to read sequence bytes — the classic (zp,x) pointer-table fetch. It is set up by validate_magic_and_restore_state_vars (`sta $4a`) and saved/restored by pack_s"
 
 [[var]]
 addr = "004B"
@@ -402,101 +402,101 @@ why = "Top-down 2026-10-26 (game thread): set only by the item pickup when round
 
 [[var]]
 addr = "0050"
-name = "obj_table_ptr"
-role = "pointer"
-conf = "MED"
-why = "data_or_unclear dereferences it as a 16-bit pointer via `eor ($50),y` (so $50=low byte, $51=high byte). The writer that sets it is load_object_table_from_def (`sta $50`), which loads an object-table definition, and load_record_by_index reads $50 as a table/record base (`ldy $50,x`). Together: a 16-b"
+name = "bonus_targets_popped"
+role = "bcd"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): +1 per pop (bcd_add_record 06); shown at $2190 by show_bonus_results. Was 'obj_table_ptr'. Earlier note: data_or_unclear dereferences it as a 16-bit pointer via `eor ($50),y` (so $50=low byte, $51=high byte). The writer that sets it is load_object_table_from_def (`sta $50`), which loads an object-table definition, and load_record_by_index reads $50 as a table/record base (`ldy $50,x`). Together: a 16-b"
 
 [[var]]
 addr = "0051"
-name = "obj_def_ptr_hi"
-role = "pointer"
-conf = "MED"
-why = "Dereferenced as a 16-bit pointer in multiple routines: check_obj_adjacency_set_hit_flag ($F12F: eor ($51),y), fetch_seq_byte_and_advance_index ($F95A: adc ($51,x)), data_or_unclear ($FC56: eor ($51),y). Paired with $50: append_byte_to_0500_if_counter does ($50,x) and data_or_unclear also touches ($5"
+name = "bonus_goals_reached"
+role = "bcd"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): +1 when the goal is reached (bonus_state0E_goal_object); shown at $2210. Was 'obj_def_ptr_hi'. Earlier note: Dereferenced as a 16-bit pointer in multiple routines: check_obj_adjacency_set_hit_flag ($F12F: eor ($51),y), fetch_seq_byte_and_advance_index ($F95A: adc ($51,x)), data_or_unclear ($FC56: eor ($51),y). Paired with $50: append_byte_to_0500_if_counter does ($50,x) and data_or_unclear also touches ($5"
 
 [[var]]
 addr = "0052"
-name = "object_def_ptr"
-role = "pointer"
-conf = "MED"
-why = "$52 is repeatedly dereferenced as a 16-bit pointer: ora ($52,x) in scan_objects_for_adjacent_contact_and_trigger, adc ($52,x) in fetch_seq_byte_and_advance_index, eor ($52),y in data_or_unclear; its +1 high byte $51 is also deref'd (eor ($51),y in check_obj_adjacency_set_hit_flag) — confirming $52 i"
+name = "bonus_targets_left"
+role = "counter"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): targets not yet popped; 0 with the goal reached gives PERFECT (show_bonus_results). Was 'object_def_ptr'. Earlier note: $52 is repeatedly dereferenced as a 16-bit pointer: ora ($52,x) in scan_objects_for_adjacent_contact_and_trigger, adc ($52,x) in fetch_seq_byte_and_advance_index, eor ($52),y in data_or_unclear; its +1 high byte $51 is also deref'd (eor ($51),y in check_obj_adjacency_set_hit_flag) — confirming $52 i"
 
 [[var]]
 addr = "0053"
-name = "object_def_ptr"
-role = "pointer"
-conf = "MED"
-why = "$0053 is dereferenced as a 16-bit pointer (flagged P): trigger_state_transition_on_position_match does `and ($53,x)` ($E7B6) and scan_objects_for_adjacent_contact_and_trigger does `ora ($53,x)` ($EC83/$EC89) — indirect loads through the $53/$54 pair. The writer load_object_table_from_def sets it (`s"
+name = "bonus_target_table_len"
+role = "count"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): 8 x the number of targets (load_bonus_targets, update_bonus_targets). Was 'object_def_ptr'. Earlier note: $0053 is dereferenced as a 16-bit pointer (flagged P): trigger_state_transition_on_position_match does `and ($53,x)` ($E7B6) and scan_objects_for_adjacent_contact_and_trigger does `ora ($53,x)` ($EC83/$EC89) — indirect loads through the $53/$54 pair. The writer load_object_table_from_def sets it (`s"
 
 [[var]]
 addr = "0054"
-name = "object_table_ptr"
-role = "pointer"
+name = "bonus_tallies"
+role = "array"
 conf = "MED"
-why = "Tool flags $0054 as a 16-bit pointer byte. It is set up by load_object_table_from_def ($F15A: sta $54,x) from an object definition, then dereferenced as a pointer by two object-scanning routines: trigger_state_transition_on_position_match ($E7B6: and ($53,x)) and scan_objects_for_adjacent_contact_an"
+why = "Variables round 2 (2026-10-26): $54-$5F, cleared by load_bonus_targets: the bonus results' numbers. Was 'object_table_ptr'. Earlier note: Tool flags $0054 as a 16-bit pointer byte. It is set up by load_object_table_from_def ($F15A: sta $54,x) from an object definition, then dereferenced as a pointer by two object-scanning routines: trigger_state_transition_on_position_match ($E7B6: and ($53,x)) and scan_objects_for_adjacent_contact_an"
 
 [[var]]
 addr = "005A"
-name = "ppu_block_src_ptr"
-role = "pointer"
+name = "bonus_goal_points"
+role = "bcd"
 conf = "MED"
-why = "Flagged P and dereferenced as a 16-bit indexed-indirect pointer in ppu_draw_blocks_b ($CFBB/$CFC1: `ora ($5a,x)`), so $005A is a pointer low byte (its +1 is the high byte). The consumer is a PPU block-drawing routine, so it points at block/tile source data. It is set by check_position_reached_and_re"
+why = "Variables round 2 (2026-10-26): 2 BCD bytes shown at $2217; the goal sets $20 (bonus_state0E_goal_object). Was 'ppu_block_src_ptr'. Earlier note: Flagged P and dereferenced as a 16-bit indexed-indirect pointer in ppu_draw_blocks_b ($CFBB/$CFC1: `ora ($5a,x)`), so $005A is a pointer low byte (its +1 is the high byte). The consumer is a PPU block-drawing routine, so it points at block/tile source data. It is set by check_position_reached_and_re"
 
 [[var]]
 addr = "0060"
-name = "sequence_state"
+name = "round_timer_phase"
 role = "state"
-conf = "MED"
-why = "8-bit value (no P/deref, no index flag), written directly by several state-management routines and read by sequencing logic. init_object_sequence_state writes it twice (sta $60 at $F341/$F371) to set up a sequence; advance_state_counter_to_60 reads-then-writes it (lda/sta $60) i.e. advances the coun"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): 0 counting, 1 HURRY, 2 counting again, 3 slot 1 released (tick_round_timer); past 0 cats run faster (object_speed). Was 'sequence_state'. Earlier note: 8-bit value (no P/deref, no index flag), written directly by several state-management routines and read by sequencing logic. init_object_sequence_state writes it twice (sta $60 at $F341/$F371) to set up a sequence; advance_state_counter_to_60 reads-then-writes it (lda/sta $60) i.e. advances the coun"
 
 [[var]]
 addr = "0061"
-name = "seq_data_ptr"
-role = "pointer"
-conf = "MED"
-why = "Dereferenced as a 16-bit pointer in fetch_seq_byte_and_advance_index ($F955: eor ($61),y), so $0061 is the low byte of a pointer (with $0062 as its high byte). Writers set it up: init_object_sequence_state (sta $61) and load_record_by_index (sta $61) initialize it, and it is advanced by INC in advan"
+name = "round_timer_frames"
+role = "counter"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): frames to 60 (tick_round_timer). Was 'seq_data_ptr'. Earlier note: Dereferenced as a 16-bit pointer in fetch_seq_byte_and_advance_index ($F955: eor ($61),y), so $0061 is the low byte of a pointer (with $0062 as its high byte). Writers set it up: init_object_sequence_state (sta $61) and load_record_by_index (sta $61) initialize it, and it is advanced by INC in advan"
 
 [[var]]
 addr = "0062"
-name = "seq_data_ptr"
-role = "pointer"
-conf = "MED"
-why = "$0062 is dereferenced as a 16-bit pointer (zp),y / (zp,x): ppu_draw_mansion_stamps does `cmp ($62),y` and `adc ($62,x)`, and its high byte $0061 is dereferenced in fetch_seq_byte_and_advance_index via `eor ($61),y` — confirming $61/$62 form a pointer pair. It's set as a pointer by load_record_by_ind"
+name = "round_timer_seconds"
+role = "counter"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): seconds against the stage's two limits (tick_round_timer). Was 'seq_data_ptr'. Earlier note: $0062 is dereferenced as a 16-bit pointer (zp),y / (zp,x): ppu_draw_mansion_stamps does `cmp ($62),y` and `adc ($62,x)`, and its high byte $0061 is dereferenced in fetch_seq_byte_and_advance_index via `eor ($61),y` — confirming $61/$62 form a pointer pair. It's set as a pointer by load_record_by_ind"
 
 [[var]]
 addr = "0063"
-name = "record_ptr"
-role = "pointer"
-conf = "MED"
-why = "Dereferenced as a 16-bit pointer in multiple routines: bcd_add_packed_buffer `ora ($63,x)`, data_or_unclear `eor ($63,x)` / `and ($63),y` — the (zp,x)/(zp),y indirect modes prove $0063 is a pointer low byte. The sole writer is load_record_by_index `sta $0063,y` (indexed store), which sets up the poi"
+name = "player_speed"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): stage param byte 0: the player's x speed (object_speed); the door wave runs at it + 8. Was 'record_ptr'. Earlier note: Dereferenced as a 16-bit pointer in multiple routines: bcd_add_packed_buffer `ora ($63,x)`, data_or_unclear `eor ($63,x)` / `and ($63),y` — the (zp,x)/(zp),y indirect modes prove $0063 is a pointer low byte. The sole writer is load_record_by_index `sta $0063,y` (indexed store), which sets up the poi"
 
 [[var]]
 addr = "0064"
-name = "data_ptr_hi"
-role = "pointer"
-conf = "MED"
-why = "$0064 is the HIGH byte of a 16-bit zero-page pointer whose low byte is $0063: bcd_add_packed_buffer dereferences it as ($63,x) at $D560, and data_or_unclear dereferences it both ways — ($63,x) at $FF48 (eor) and ($63),y at $FF51 (and). The (zp,x)/(zp),y indirect addressing modes mark $63/$64 as a po"
+name = "cat_speed"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): stage param byte 1: the cats' x speed (object_speed). Was 'data_ptr_hi'. Earlier note: $0064 is the HIGH byte of a 16-bit zero-page pointer whose low byte is $0063: bcd_add_packed_buffer dereferences it as ($63,x) at $D560, and data_or_unclear dereferences it both ways — ($63,x) at $FF48 (eor) and ($63),y at $FF51 (and). The (zp,x)/(zp),y indirect addressing modes mark $63/$64 as a po"
 
 [[var]]
 addr = "0065"
-name = "active_object_count"
-role = "state"
-conf = "MED"
-why = "All three xrefs are READS (no writer shown), all in object-management routines: reset_objects_except_persistent_types ($DB28 lda $65), tick_obj_proximity_hit_and_countdown ($DD95 lda $65), and check_object_collision_and_award_score ($EFCD lda $65). A value read (not modified) by object reset, per-fr"
+name = "stun_time"
+role = "counter"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): stage param byte 2: frames a door-knocked cat stays stunned, also the knockout and drop-stun timers ($B4 in round 1, falling with the stage). Was 'active_object_count'. Earlier note: All three xrefs are READS (no writer shown), all in object-management routines: reset_objects_except_persistent_types ($DB28 lda $65), tick_obj_proximity_hit_and_countdown ($DD95 lda $65), and check_object_collision_and_award_score ($EFCD lda $65). A value read (not modified) by object reset, per-fr"
 
 [[var]]
 addr = "0067"
-name = "screen_layout_ptr"
-role = "pointer"
-conf = "MED"
-why = "var_xref flags $0067 with [p] = dereferenced as a 16-bit pointer low byte. setup_screen_layout uses `and ($67,x)` — an indirect read through the zero-page pointer at $67. The other consumers are screen/PPU drawing routines: ppu_draw_mansion_stamps reads it (`ora $67`) and init_object_sequence_state "
+name = "chaser_seconds"
+role = "counter"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): stage param byte 4: seconds after HURRY until slot 1 is released. Was 'screen_layout_ptr'. Earlier note: var_xref flags $0067 with [p] = dereferenced as a 16-bit pointer low byte. setup_screen_layout uses `and ($67,x)` — an indirect read through the zero-page pointer at $67. The other consumers are screen/PPU drawing routines: ppu_draw_mansion_stamps reads it (`ora $67`) and init_object_sequence_state "
 
 [[var]]
 addr = "0068"
-name = "ptr_hi"
-role = "pointer"
-conf = "LOW"
-why = "The lone dereference is setup_screen_layout $CBF2 `and ($67,x)`, which uses the zp pointer at $67/$68 — so $68 is the HIGH byte of a 16-bit pointer whose low byte is $67. The dereferencing routine sets up screen layout, so the pointer targets layout/PPU data. Remaining refs (play_intro_cutscene_sequ"
+name = "cat_slots_end"
+role = "count"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): stage param byte 5: the record offset after the last cat ($60, $70, $80: 4-6 cats); the extra cat after HURRY goes there. Was 'ptr_hi'. Earlier note: The lone dereference is setup_screen_layout $CBF2 `and ($67,x)`, which uses the zp pointer at $67/$68 — so $68 is the HIGH byte of a 16-bit pointer whose low byte is $67. The dereferencing routine sets up screen layout, so the pointer targets layout/PPU data. Remaining refs (play_intro_cutscene_sequ"
 
 [[var]]
 addr = "0070"
@@ -514,38 +514,38 @@ why = "Top-down 2026-10-26 (game thread): the current player's score, 4 BCD byte
 
 [[var]]
 addr = "0072"
-name = "draw_src_ptr"
-role = "pointer"
+name = "score_byte1"
+role = "bcd"
 conf = "HIGH"
-why = "Dereferenced as a 16-bit zp pointer via `adc ($72),y` inside ppu_draw_mansion_stamps ($D35E), so $0072 is the low byte of a 16-bit pointer (and $0073 the high byte). It is set up by init_stage_with_intro_animation_then_spawn (`sta $72` @ $C8B9) before drawing, and read by advance_record_index_and_re"
+why = "Variables round 2 (2026-10-26): the second byte of the 4-byte BCD score at $71; award_extra_life compares it with next_extra_life. Was 'draw_src_ptr'. Earlier note: Dereferenced as a 16-bit zp pointer via `adc ($72),y` inside ppu_draw_mansion_stamps ($D35E), so $0072 is the low byte of a 16-bit pointer (and $0073 the high byte). It is set up by init_stage_with_intro_animation_then_spawn (`sta $72` @ $C8B9) before drawing, and read by advance_record_index_and_re"
 
 [[var]]
 addr = "0074"
-name = "decode_src_ptr"
-role = "pointer"
-conf = "MED"
-why = "x"
+name = "score_byte3"
+role = "bcd"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the last byte of the score (add_score_from_table adds at X = $74 downwards). Was 'decode_src_ptr'. Earlier note: x"
 
 [[var]]
 addr = "0075"
-name = "current_record_index"
-role = "state"
-conf = "MED"
-why = "Set at stage init (init_stage_with_intro_animation_then_spawn: sta $75), then read-modify-written by advance_record_index_and_refresh_entry (lda $75 twice, advances+refreshes the entry), and read as an index/offset by ppu_draw_mansion_stamps (adc $75,x). This is a selected-entry/record index that dr"
+name = "extra_lives_awarded"
+role = "counter"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): award_extra_life counts up to extra_life_cap. Was 'current_record_index'. Earlier note: Set at stage init (init_stage_with_intro_animation_then_spawn: sta $75), then read-modify-written by advance_record_index_and_refresh_entry (lda $75 twice, advances+refreshes the entry), and read as an index/offset by ppu_draw_mansion_stamps (adc $75,x). This is a selected-entry/record index that dr"
 
 [[var]]
 addr = "0076"
-name = "record_index"
-role = "counter"
-conf = "MED"
-why = "init_stage_with_intro_animation_then_spawn sets it at stage start ($C861 sta $76). advance_record_index_and_refresh_entry reads-then-writes it as an index (cmp $76 / sta $76 at $D6B2/$D6BA) — a bounds-checked advance that refreshes the displayed entry. It is also touched indexed in bcd_add_packed_bu"
+name = "next_extra_life"
+role = "bcd"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the score byte the next extra life needs (award_extra_life; + extra_life_step after each). Was 'record_index'. Earlier note: init_stage_with_intro_animation_then_spawn sets it at stage start ($C861 sta $76). advance_record_index_and_refresh_entry reads-then-writes it as an index (cmp $76 / sta $76 at $D6B2/$D6BA) — a bounds-checked advance that refreshes the displayed entry. It is also touched indexed in bcd_add_packed_bu"
 
 [[var]]
 addr = "0077"
-name = "ppu_block_src_ptr"
-role = "pointer"
-conf = "MED"
-why = "Dereferenced as a 16-bit pointer in ppu_draw_blocks_b via `ora ($77,x)` (x-indexed indirect at $CFEA and $D01D), confirming $0077 is the low byte of a pointer (its +1 is the high byte). The dereferencing routine draws blocks/tiles to the PPU, so the pointer targets the source block/tile data being r"
+name = "round_bcd"
+role = "bcd"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the round number shown at $207A (bcd_number_entry 0C); +1 per round (bcd_add_record 04). Was 'ppu_block_src_ptr'. Earlier note: Dereferenced as a 16-bit pointer in ppu_draw_blocks_b via `ora ($77,x)` (x-indexed indirect at $CFEA and $D01D), confirming $0077 is the low byte of a pointer (its +1 is the high byte). The dereferencing routine draws blocks/tiles to the PPU, so the pointer targets the source block/tile data being r"
 
 [[var]]
 addr = "007A"
@@ -577,10 +577,10 @@ why = "Not a pointer (no (zp),y deref, no P flag). Written by stage/level setup 
 
 [[var]]
 addr = "0080"
-name = "object_count"
-role = "counter"
-conf = "MED"
-why = "Three named object routines read it as a loop/upper bound via cpx: find_object_at_coords ($E49C cpx $80), force_active_objects_to_state3 ($E3F9 cpx $80), and build_object_record_block_and_dispatch ($E3A7 cpx $80, which also writes it sta $80) — the classic \"set a count, then iterate X up to it over"
+name = "trampoline_table_len"
+role = "count"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): 8 x the number of trampolines (load_round_trampolines). Was 'object_count'. Earlier note: Three named object routines read it as a loop/upper bound via cpx: find_object_at_coords ($E49C cpx $80), force_active_objects_to_state3 ($E3F9 cpx $80), and build_object_record_block_and_dispatch ($E3A7 cpx $80, which also writes it sta $80) — the classic \"set a count, then iterate X up to it over"
 
 [[var]]
 addr = "0081"
@@ -591,59 +591,59 @@ why = "Top-down 2026-10-26 (game thread): the level descriptor's first byte (ite
 
 [[var]]
 addr = "0083"
-name = "object_count"
-role = "counter"
-conf = "MED"
-why = "Five object routines read it as a loop terminator over object records: clear_low2_bits_per_object_record ($E8C7: cpx $83), update_all_objects_anim_and_phase ($E8CC lda $83, $E8DD cpx $83), select_overlapping_target_object ($E972 lda $83, $E98C cpx $83), and scan_objects_for_adjacent_contact_and_trig"
+name = "door_table_len"
+role = "count"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): 8 x the number of doors (load_round_doors). Was 'object_count'. Earlier note: Five object routines read it as a loop terminator over object records: clear_low2_bits_per_object_record ($E8C7: cpx $83), update_all_objects_anim_and_phase ($E8CC lda $83, $E8DD cpx $83), select_overlapping_target_object ($E972 lda $83, $E98C cpx $83), and scan_objects_for_adjacent_contact_and_trig"
 
 [[var]]
 addr = "0090"
-name = "obj_state"
-role = "obj_field"
+name = "floor_trap_state"
+role = "state"
 conf = "MED"
-why = "Almost every access is `sta/lda $0090,y` — a Y-indexed object-table field, not a scalar. It's set by spawn_object_from_table_entry (initialized at spawn), written by obj_proximity_trigger_with_timer and obj_state2_advance_on_proximity (state transitions on proximity), and crucially READ by dispatch_"
+why = "Variables round 2 (2026-10-26): the first trap's state ($98 the second): 2 armed, 3 pressed, 1 open, 0 gone. Was 'obj_state'. Earlier note: Almost every access is `sta/lda $0090,y` — a Y-indexed object-table field, not a scalar. It's set by spawn_object_from_table_entry (initialized at spawn), written by obj_proximity_trigger_with_timer and obj_state2_advance_on_proximity (state transitions on proximity), and crucially READ by dispatch_"
 
 [[var]]
 addr = "0092"
-name = "obj_trigger_coord"
-role = "obj_field"
+name = "floor_trap_addr"
+role = "pointer"
 conf = "MED"
-why = "Written and read via Y-indexing, not as a global pointer: spawn_object_from_table_entry does `sta $0092,y` (sets it per-object at spawn) and obj_proximity_trigger_with_timer does `lda $0092,y` (reads it back per-object for a proximity/trigger check). That write-on-spawn / read-in-proximity-check pat"
+why = "Variables round 2 (2026-10-26): the trap's nametable address (draw_floor_trap_frame). Was 'obj_trigger_coord'. Earlier note: Written and read via Y-indexing, not as a global pointer: spawn_object_from_table_entry does `sta $0092,y` (sets it per-object at spawn) and obj_proximity_trigger_with_timer does `lda $0092,y` (reads it back per-object for a proximity/trigger check). That write-on-spawn / read-in-proximity-check pat"
 
 [[var]]
 addr = "0093"
-name = "ppu_block_data_ptr"
+name = "floor_trap_addr_hi"
 role = "pointer"
 conf = "MED"
-why = "$0093 is dereferenced as a 16-bit pointer (flagged P): ppu_draw_blocks_b does `ora ($93,x)` and ppu_draw_mansion_stamps does `ora ($93,x)` (with `and ($92,x)` showing $92/$93 is the low/high pointer pair). Both deref'ing routines are PPU block/stamp drawers, so the pointer targets the tile/block sou"
+why = "Variables round 2 (2026-10-26): high byte. Was 'ppu_block_data_ptr'. Earlier note: $0093 is dereferenced as a 16-bit pointer (flagged P): ppu_draw_blocks_b does `ora ($93,x)` and ppu_draw_mansion_stamps does `ora ($93,x)` (with `and ($92,x)` showing $92/$93 is the low/high pointer pair). Both deref'ing routines are PPU block/stamp drawers, so the pointer targets the tile/block sou"
 
 [[var]]
 addr = "0094"
-name = "obj_pos_field"
-role = "obj_field"
+name = "floor_trap_x"
+role = "position"
 conf = "MED"
-why = "Accessed as an indexed object-table field ($0094,y / $94,x) by object routines: spawn_object_from_table_entry WRITES it (sta $0094,y) when populating a new object's record, and check_obj_near_point (lda $0094,y) and check_obj_adjacency_set_hit_flag (lda $94,x) READ it during proximity/adjacency test"
+why = "Variables round 2 (2026-10-26): tile x (player_on_floor_trap). Was 'obj_pos_field'. Earlier note: Accessed as an indexed object-table field ($0094,y / $94,x) by object routines: spawn_object_from_table_entry WRITES it (sta $0094,y) when populating a new object's record, and check_obj_near_point (lda $0094,y) and check_obj_adjacency_set_hit_flag (lda $94,x) READ it during proximity/adjacency test"
 
 [[var]]
 addr = "0095"
-name = "obj_x"
-role = "obj_field"
+name = "floor_trap_y"
+role = "position"
 conf = "MED"
-why = "Always accessed indexed into an object table ($95,x and $0095,y), never as a scalar — so it's a per-object record field, not scratch/flag/pointer. Set by spawn_object_from_table_entry ($F036 sta $0095,y) when an object is created and by trigger_state_transition_on_position_match ($E7D6 sty $95,x). R"
+why = "Variables round 2 (2026-10-26): tile row. Was 'obj_x'. Earlier note: Always accessed indexed into an object table ($95,x and $0095,y), never as a scalar — so it's a per-object record field, not scratch/flag/pointer. Set by spawn_object_from_table_entry ($F036 sta $0095,y) when an object is created and by trigger_state_transition_on_position_match ($E7D6 sty $95,x). R"
 
 [[var]]
 addr = "0096"
-name = "scratch_bitshift"
-role = "scratch"
-conf = "LOW"
-why = "No 16-bit deref ((zp),y) anywhere, so not a pointer. Two routines use it as a bit-shift working byte: ppu_draw_mansion_stamps does `and $96` then `rol $96` ($D256/$D25A), and load_record_by_index does `rol $96` ($F3FE) — classic rotate-through-carry scratch (bitmask/serialized-bit accumulator). obj_"
+name = "floor_trap_timer"
+role = "counter"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): 120 frames open (update_floor_trap). Was 'scratch_bitshift'. Earlier note: No 16-bit deref ((zp),y) anywhere, so not a pointer. Two routines use it as a bit-shift working byte: ppu_draw_mansion_stamps does `and $96` then `rol $96` ($D256/$D25A), and load_record_by_index does `rol $96` ($F3FE) — classic rotate-through-carry scratch (bitmask/serialized-bit accumulator). obj_"
 
 [[var]]
 addr = "00A0"
-name = "block_data_ptr"
-role = "pointer"
-conf = "MED"
-why = "Flagged as 16-bit pointer low byte (P) and dereferenced indirect-indexed by ppu_draw_blocks_b ($CFC6: ora ($a0,x)) and append_computed_entry_to_buffer ($E017: ora ($a0,x)) — both consume it as the source address of block/table data. It is set indexed by copy_16b_table_if_var_in_range ($EF27: sta $a0"
+name = "dropped_objects"
+role = "array"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): two 8-byte records, $A0 and $A8 (load_dropped_objects, update_dropped_object). Was 'block_data_ptr'. Earlier note: Flagged as 16-bit pointer low byte (P) and dereferenced indirect-indexed by ppu_draw_blocks_b ($CFC6: ora ($a0,x)) and append_computed_entry_to_buffer ($E017: ora ($a0,x)) — both consume it as the source address of block/table data. It is set indexed by copy_16b_table_if_var_in_range ($EF27: sta $a0"
 
 [[var]]
 addr = "00B0"
@@ -745,31 +745,31 @@ why = "Variables 2026-10-26 (fixed var_xref: real instructions only): 16 bytes, 
 
 [[var]]
 addr = "0200"
-name = "obj_timer"
+name = "tramp_bounce_anims"
 role = "obj_field"
-conf = "MED"
-why = "$0200 is the base of an ,x-indexed object-record table touched only by object/spawn routines. build_object_record_block_and_dispatch ($E375 sta $0200,x), collect_object_award_score_and_spawn_popup and collect_item_award_score_and_spawn_reward_object all WRITE it when building/spawning an object reco"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): trampoline +0 (8-byte records): bounce animations still to play (land_on_trampoline, animate_trampoline). Was 'obj_timer'. Earlier note: $0200 is the base of an ,x-indexed object-record table touched only by object/spawn routines. build_object_record_block_and_dispatch ($E375 sta $0200,x), collect_object_award_score_and_spawn_popup and collect_item_award_score_and_spawn_reward_object all WRITE it when building/spawning an object reco"
 
 [[var]]
 addr = "0201"
-name = "obj_anim_timer"
+name = "tramp_frame"
 role = "obj_field"
-conf = "MED"
-why = "Always accessed as $0201,x by object routines — a per-object field at offset +1 in the object table (base $0200). It is INC'd as a subcounter in tick_subcounter_decrement_on_rollover ($E415 inc $0201,x; $E418 lda) and read by animation/phase routines obj_state7_update_anim_and_snap_position ($DC12 l"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): trampoline +1: the 10-frame bounce frame. Was 'obj_anim_timer'. Earlier note: Always accessed as $0201,x by object routines — a per-object field at offset +1 in the object table (base $0200). It is INC'd as a subcounter in tick_subcounter_decrement_on_rollover ($E415 inc $0201,x; $E418 lda) and read by animation/phase routines obj_state7_update_anim_and_snap_position ($DC12 l"
 
 [[var]]
 addr = "0202"
-name = "obj_timer"
+name = "tramp_bounces_left"
 role = "obj_field"
 conf = "HIGH"
-why = "Always accessed as $0202,x by object routines (build_object_record_block_and_dispatch writes it on construction; force_active_objects_to_state3 sets it on state change). Two state-update routines decrement it each frame (obj_state7_update_anim_and_snap_position $DC1F: dec $0202,x; update_obj_phase7_"
+why = "Variables round 2 (2026-10-26): trampoline +2: 3 at load, -1 per player bounce, $80 broken; restore_trampolines resets it. Was 'obj_timer'. Earlier note: Always accessed as $0202,x by object routines (build_object_record_block_and_dispatch writes it on construction; force_active_objects_to_state3 sets it on state change). Two state-update routines decrement it each frame (obj_state7_update_anim_and_snap_position $DC1F: dec $0202,x; update_obj_phase7_"
 
 [[var]]
 addr = "0205"
-name = "obj_field_05"
+name = "tramp_y"
 role = "obj_field"
-conf = "MED"
-why = "All 3 accesses are X-indexed into the $0200 object-record block ($0205,x): written by build_object_record_block_and_dispatch ($E39D: sta $0205,x) when populating a record, and read by find_object_at_coords ($E47F: lda $0205,x) and set_obj_state_and_load_next_ptr ($E4BE: adc $0205,x). The indexed pat"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): trampoline +5: tile row. Was 'obj_field_05'. Earlier note: All 3 accesses are X-indexed into the $0200 object-record block ($0205,x): written by build_object_record_block_and_dispatch ($E39D: sta $0205,x) when populating a record, and read by find_object_at_coords ($E47F: lda $0205,x) and set_obj_state_and_load_next_ptr ($E4BE: adc $0205,x). The indexed pat"
 
 [[var]]
 addr = "0260"
@@ -780,17 +780,17 @@ why = "Variables 2026-10-26 (fixed var_xref: real instructions only): item recor
 
 [[var]]
 addr = "0261"
-name = "obj_type"
+name = "item_kind"
 role = "obj_field"
-conf = "MED"
-why = "Every access is indexed (sta/lda $0261,x), so $0261 is a per-object field in an object table. spawn_objects_from_level_descriptor WRITES it ($E5EE sta $0261,x) at spawn time from the level descriptor. It is then read by load_ptr_from_state_index ($E72C) and load_string_ptr_by_state_and_scan ($E747) "
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): item +1: kind 00-12 (picture by pair, address, score). Was 'obj_type'. Earlier note: Every access is indexed (sta/lda $0261,x), so $0261 is a per-object field in an object table. spawn_objects_from_level_descriptor WRITES it ($E5EE sta $0261,x) at spawn time from the level descriptor. It is then read by load_ptr_from_state_index ($E72C) and load_string_ptr_by_state_and_scan ($E747) "
 
 [[var]]
 addr = "0263"
-name = "obj_type"
+name = "item_marked"
 role = "obj_field"
-conf = "MED"
-why = "Always accessed indexed as $0263,x (the object-slot index) and only by object routines. Written at spawn (spawn_objects_from_level_descriptor $E5E6 sta $0263,x) and during per-state processing (process_objects_in_state_two $E623 sta $0263,x), then read by resolve_object_position_capture_and_score ($"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): item +3: set on the partner of the last item collected (it blinks and pays the streak). Was 'obj_type'. Earlier note: Always accessed indexed as $0263,x (the object-slot index) and only by object routines. Written at spawn (spawn_objects_from_level_descriptor $E5E6 sta $0263,x) and during per-state processing (process_objects_in_state_two $E623 sta $0263,x), then read by resolve_object_position_capture_and_score ($"
 
 [[var]]
 addr = "0264"
@@ -808,115 +808,115 @@ why = "Variables 2026-10-26 (fixed var_xref: real instructions only): item recor
 
 [[var]]
 addr = "02B0"
-name = "obj_anim_timer"
+name = "door_swinging"
 role = "obj_field"
-conf = "MED"
-why = "All five accessors index it as $02b0,x — an object-table FIELD. The defining read-modify-write is in advance_object_anim_timer_and_dispatch_phase (lda $02b0,x @E91D then sta $02b0,x @E92E), the classic per-frame timer tick that drives phase dispatch; update_all_objects_anim_and_phase also reads it ("
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): door +0: 1 while the 5-frame swing runs (open_door, animate_door_swing). Was 'obj_anim_timer'. Earlier note: All five accessors index it as $02b0,x — an object-table FIELD. The defining read-modify-write is in advance_object_anim_timer_and_dispatch_phase (lda $02b0,x @E91D then sta $02b0,x @E92E), the classic per-frame timer tick that drives phase dispatch; update_all_objects_anim_and_phase also reads it ("
 
 [[var]]
 addr = "02B1"
-name = "obj_state"
+name = "door_kind"
 role = "obj_field"
-conf = "MED"
-why = "Always accessed indexed by object slot (sta/lda/ldy $02b1,x across 10 routines) → it is a per-object-record field in a $04xx-style object table (loaded by load_object_table_to_ram, scanned by find_first_empty_slot). Its specific role is the object's state/animation-phase byte: clear_low2_bits_per_ob"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): door +1: bit 1 open, bit 2 wave direction, bit 3 wave door; & 6 picks the knockback and picture. Was 'obj_state'. Earlier note: Always accessed indexed by object slot (sta/lda/ldy $02b1,x across 10 routines) → it is a per-object-record field in a $04xx-style object table (loaded by load_object_table_to_ram, scanned by find_first_empty_slot). Its specific role is the object's state/animation-phase byte: clear_low2_bits_per_ob"
 
 [[var]]
 addr = "02B4"
-name = "obj_pos"
+name = "door_x"
 role = "obj_field"
-conf = "MED"
-why = "Every access is base+,x indexed ([wi]/[ri]) => an entry in a parallel object-table array. Populated by load_object_table_to_ram ($E8A0: sta $02b4,x). Read by collision/overlap routines: object_overlap_check does lda then sbc $02b4,x ($E9C1/$E9DC) i.e. subtracts one object's value from another's (an "
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): door +4: tile x. Was 'obj_pos'. Earlier note: Every access is base+,x indexed ([wi]/[ri]) => an entry in a parallel object-table array. Populated by load_object_table_to_ram ($E8A0: sta $02b4,x). Read by collision/overlap routines: object_overlap_check does lda then sbc $02b4,x ($E9C1/$E9DC) i.e. subtracts one object's value from another's (an "
 
 [[var]]
 addr = "02B5"
-name = "obj_x"
+name = "door_y"
 role = "obj_field"
-conf = "MED"
-why = "Every access is indexed ($02b5,x), so this is a field in an object table (base $02B5, stride = entry size). load_object_table_to_ram writes it (sta $02b5,x) when populating the table. Three collision/proximity routines READ it via subtraction — object_overlap_check ($E9D0 sbc), check_subject_vs_obje"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): door +5: tile row. Was 'obj_x'. Earlier note: Every access is indexed ($02b5,x), so this is a field in an object table (base $02B5, stride = entry size). load_object_table_to_ram writes it (sta $02b5,x) when populating the table. Three collision/proximity routines READ it via subtraction — object_overlap_check ($E9D0 sbc), check_subject_vs_obje"
 
 [[var]]
 addr = "02B7"
-name = "obj_contact_state"
+name = "door_opener"
 role = "obj_field"
-conf = "MED"
-why = "All three references are indexed by X ($02b7,x), marking this as a per-object array field, not a scalar. The two writers are object_overlap_check (sta $02b7,x at $E9BC) and scan_objects_for_adjacent_contact_and_trigger (sta $02b7,x at $EAC4) — both collision/adjacency routines that store a result pe"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): door +7: the record that opened it (0 = the player, who earns the knockback score). Was 'obj_contact_state'. Earlier note: All three references are indexed by X ($02b7,x), marking this as a per-object array field, not a scalar. The two writers are object_overlap_check (sta $02b7,x at $E9BC) and scan_objects_for_adjacent_contact_and_trigger (sta $02b7,x at $EAC4) — both collision/adjacency routines that store a result pe"
 
 [[var]]
 addr = "0300"
-name = "obj_state"
-role = "obj_field"
-conf = "MED"
-why = "All three accessors touch it as an indexed array base ($0300,x) — never as a scalar — so it is field 0 of an object/sprite table at $0300. It is written by spawn/stage-setup routines (init_stage_with_intro_animation_then_spawn $C8F1 sta $0300,x; setup_stage_then_run_intro_frames $FF8C sta $0300,x), "
+name = "other_player_round_state"
+role = "array"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): swap_player_state exchanges the $0200 page (trampolines, items, doors) with this one when the turn passes. Was 'obj_state'. Earlier note: All three accessors touch it as an indexed array base ($0300,x) — never as a scalar — so it is field 0 of an object/sprite table at $0300. It is written by spawn/stage-setup routines (init_stage_with_intro_animation_then_spawn $C8F1 sta $0300,x; setup_stage_then_run_intro_frames $FF8C sta $0300,x), "
 
 [[var]]
 addr = "041F"
-name = "obj_state"
+name = "slot1_state"
 role = "obj_field"
-conf = "MED"
-why = "$041F sits in the $04xx object-table page and is only ever written (no reads/derefs/indexing shown), by three object/state-init routines: init_object_sequence_state ($F375: sta $041f) and init_ram_block_from_table ($D8CF) both seed it at object setup, and check_position_reached_and_reset_round ($E31"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): slot 1 +F. Was 'obj_state'. Earlier note: $041F sits in the $04xx object-table page and is only ever written (no reads/derefs/indexing shown), by three object/state-init routines: init_object_sequence_state ($F375: sta $041f) and init_ram_block_from_table ($D8CF) both seed it at object setup, and check_position_reached_and_reset_round ($E31"
 
 [[var]]
 addr = "0420"
-name = "stamp_position_table"
-role = "array"
-conf = "MED"
-why = "Always indexed ($0420,x / $0420,y), never deref'd as a pointer, so it's an array base. check_position_reached_and_reset_round writes per-index (sta $0420,x [wi]) and trigger_state_transition_on_position_match writes the base (sta $0420). ppu_draw_mansion_stamps reads it indexed to drive drawing (ldy"
+name = "slot2_x_frac"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): slot 2 +0. Was 'stamp_position_table'. Earlier note: Always indexed ($0420,x / $0420,y), never deref'd as a pointer, so it's an array base. check_position_reached_and_reset_round writes per-index (sta $0420,x [wi]) and trigger_state_transition_on_position_match writes the base (sta $0420). ppu_draw_mansion_stamps reads it indexed to drive drawing (ldy"
 
 [[var]]
 addr = "0421"
-name = "target_compare_value"
-role = "coord"
-conf = "MED"
-why = "Only reads visible (no writer in xref). It is compared against, not stored: trigger_state_transition_on_position_match does `cmp $0421` ($E76E), on_object_reaching_target_reset_and_rescan does `sbc $0421` ($F221), and update_object_state_vs_reference / clear_flag_if_value_below_threshold / tick_bonu"
+name = "slot2_x"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): slot 2 +1. Was 'target_compare_value'. Earlier note: Only reads visible (no writer in xref). It is compared against, not stored: trigger_state_transition_on_position_match does `cmp $0421` ($E76E), on_object_reaching_target_reset_and_rescan does `sbc $0421` ($F221), and update_object_state_vs_reference / clear_flag_if_value_below_threshold / tick_bonu"
 
 [[var]]
 addr = "0423"
-name = "obj_state"
+name = "slot2_y"
 role = "obj_field"
-conf = "MED"
-why = "Indexed as $0423,x inside scan_objects_for_adjacent_contact_and_trigger (and $0423,x at $EB36/$EBB9), marking it as a per-object table field ($04xx) walked by object index. Read (cmp/lda) by object-oriented routines: update_object_state_vs_reference ($D9A5 cmp $0423), on_object_reaching_target_reset"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): slot 2 +3. Was 'obj_state'. Earlier note: Indexed as $0423,x inside scan_objects_for_adjacent_contact_and_trigger (and $0423,x at $EB36/$EBB9), marking it as a per-object table field ($04xx) walked by object index. Read (cmp/lda) by object-oriented routines: update_object_state_vs_reference ($D9A5 cmp $0423), on_object_reaching_target_reset"
 
 [[var]]
 addr = "0424"
-name = "obj_state"
+name = "slot2_anim"
 role = "obj_field"
-conf = "MED"
-why = "All 5 references are writes (no reads/derefs/indexing visible), each a plain `sta $0424` from object/entity lifecycle routines: handle_entity_object_pickup_or_special_setup ($DE14), tick_bonus_item_collect_or_timeout ($DE4C), trigger_state_transition_on_position_match ($E77A), on_object_reaching_tar"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): slot 2 +4. Was 'obj_state'. Earlier note: All 5 references are writes (no reads/derefs/indexing visible), each a plain `sta $0424` from object/entity lifecycle routines: handle_entity_object_pickup_or_special_setup ($DE14), tick_bonus_item_collect_or_timeout ($DE4C), trigger_state_transition_on_position_match ($E77A), on_object_reaching_tar"
 
 [[var]]
 addr = "0427"
-name = "bonus_item_timer"
-role = "counter"
+name = "slot2_timer"
+role = "obj_field"
 conf = "HIGH"
-why = "Set by sta in setup routines (handle_entity_object_pickup_or_special_setup $DE19, trigger_state_transition_on_position_match $E784), then counted DOWN by multiple per-tick routines: tick_bonus_item_collect_or_timeout (dec $0427 at $DE2D), countdown_timer_then_reset_obj_and_arm_field (dec at $DE25), "
+why = "Variables round 2 (2026-10-26): slot 2 +7: 120 in its item, scored and landing states. Was 'bonus_item_timer'. Earlier note: Set by sta in setup routines (handle_entity_object_pickup_or_special_setup $DE19, trigger_state_transition_on_position_match $E784), then counted DOWN by multiple per-tick routines: tick_bonus_item_collect_or_timeout (dec $0427 at $DE2D), countdown_timer_then_reset_obj_and_arm_field (dec at $DE25), "
 
 [[var]]
 addr = "042A"
-name = "bonus_item_timer"
-role = "counter"
-conf = "MED"
-why = "Set by tick_bonus_item_collect_or_timeout ($DE5B sta $042a), then ticked down each frame by update_object_proximity_collision_tick which does lda $042a / dec $042a ($DA76/$DA7B). It is only read (not re-indexed) by find_adjacent_entity_to_ref_copy_attr and trigger_state_transition_on_position_match."
+name = "slot2_cooldown"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): slot 2 +A: 16 frames after it leaves an item; no item and no catching while set. Was 'bonus_item_timer'. Earlier note: Set by tick_bonus_item_collect_or_timeout ($DE5B sta $042a), then ticked down each frame by update_object_proximity_collision_tick which does lda $042a / dec $042a ($DA76/$DA7B). It is only read (not re-indexed) by find_adjacent_entity_to_ref_copy_attr and trigger_state_transition_on_position_match."
 
 [[var]]
 addr = "042F"
-name = "stage_phase_state"
-role = "state"
-conf = "MED"
-why = "No pointer-deref (P) or index (i) flags — plain byte written then read, so not a pointer/array. Multiple writers all sit in stage/round progression logic: check_position_reached_and_reset_round, trigger_state_transition_on_position_match (r,w at $E757/$E77F), on_object_reaching_target_reset_and_resc"
+name = "slot2_state"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): slot 2 +F. Was 'stage_phase_state'. Earlier note: No pointer-deref (P) or index (i) flags — plain byte written then read, so not a pointer/array. Multiple writers all sit in stage/round progression logic: check_position_reached_and_reset_round, trigger_state_transition_on_position_match (r,w at $E757/$E77F), on_object_reaching_target_reset_and_resc"
 
 [[var]]
 addr = "0490"
-name = "obj_state_counter"
+name = "hurry_x"
 role = "obj_field"
-conf = "MED"
-why = "$0490 is the base of an indexed array (sta/lda $0490,x in copy_5_bytes_table_to_ram_0490, advance_state_counter_to_60, draw_vertical_sprite_column) — a 5-byte-per-slot record copied as a block. The base byte is treated as a counter: advance_state_counter_to_60 stores into it (sta $0490,x), and sub2_"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the 8-byte sprite record at $0490: HURRY's x (and the title object's, the same record). Was 'obj_state_counter'. Earlier note: $0490 is the base of an indexed array (sta/lda $0490,x in copy_5_bytes_table_to_ram_0490, advance_state_counter_to_60, draw_vertical_sprite_column) — a 5-byte-per-slot record copied as a block. The base byte is treated as a counter: advance_state_counter_to_60 stores into it (sta $0490,x), and sub2_"
 
 [[var]]
 addr = "04A5"
-name = "obj_state"
+name = "wave_state"
 role = "obj_field"
-conf = "MED"
-why = "Accessed indexed by Y (`lda $04a5,y` / `sta $04a5,y` at $EE06/$EE17) inside `find_first_empty_slot`, so it is a per-slot entry in an object table (base $04A5). The routine names that touch it — `find_first_empty_slot` (scans slots for an empty/inactive one and writes) and `init_objects_if_inactive` "
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): door wave +5: 0 idle, 1 moving, 2 score display. Was 'obj_state'. Earlier note: Accessed indexed by Y (`lda $04a5,y` / `sta $04a5,y` at $EE06/$EE17) inside `find_first_empty_slot`, so it is a per-slot entry in an object table (base $04A5). The routine names that touch it — `find_first_empty_slot` (scans slots for an empty/inactive one and writes) and `init_objects_if_inactive` "
 
 [[var]]
 addr = "0500"
@@ -949,6 +949,615 @@ name = "hi_score"
 role = "bcd"
 conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread): the high score, 4 BCD bytes $44-$47: update_high_score copies the score over it when the score is higher; soft reset preserves it."
+
+[[var]]
+addr = "002E"
+name = "cats_cant_catch"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): walking_cat_touches_player does nothing while it is set; only the dead routine at $D762 toggles it (an unreachable invincibility switch)."
+
+[[var]]
+addr = "003E"
+name = "warm_boot_magic"
+role = "flag"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): written by reset_cold_boot_init, checked by validate_magic_and_restore_state_vars."
+
+[[var]]
+addr = "003F"
+name = "warm_boot_magic_2"
+role = "flag"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): the second magic byte."
+
+[[var]]
+addr = "0056"
+name = "bonus_target_points"
+role = "bcd"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): 2 BCD bytes shown at $2197 (bcd_number_entry 12)."
+
+[[var]]
+addr = "005D"
+name = "bonus_total"
+role = "bcd"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): 3 BCD bytes shown at $2315 (bcd_number_entry 16), added to the score by show_bonus_results."
+
+[[var]]
+addr = "005E"
+name = "bonus_total_mid"
+role = "bcd"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): the middle byte of bonus_total: show_bonus_results copies the goal points in and adds $50 for PERFECT."
+
+[[var]]
+addr = "0066"
+name = "hurry_seconds"
+role = "counter"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): stage param byte 3: seconds until HURRY (tick_round_timer)."
+
+[[var]]
+addr = "0073"
+name = "score_byte2"
+role = "bcd"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the third byte of the score."
+
+[[var]]
+addr = "00F7"
+name = "sound_scratch_hi"
+role = "pointer"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): high byte of the sound_scratch pointer pair (jump_table_dispatch_via_index)."
+
+[[var]]
+addr = "0100"
+name = "thread_saved_sp"
+role = "array"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the stack page's saved stack pointers, swapped by swap_stack_pointer (the two threads)."
+
+[[var]]
+addr = "0180"
+name = "attr_shadow"
+role = "array"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the attribute table shadow draw_rle_text_step writes (palette $14) and write_attribute_byte flushes."
+
+[[var]]
+addr = "0203"
+name = "tramp_pos_index"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): trampoline +3: index into tbl_trampoline_addrs."
+
+[[var]]
+addr = "0204"
+name = "tramp_x"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): trampoline +4: tile x."
+
+[[var]]
+addr = "0262"
+name = "item_timer"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): item +2: 60 frames of points after collection (show_item_points)."
+
+[[var]]
+addr = "0266"
+name = "target_addr"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): bonus target +6: its nametable address (load_bonus_targets, draw_bonus_target)."
+
+[[var]]
+addr = "0267"
+name = "target_addr_hi"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): bonus target +7: high byte."
+
+[[var]]
+addr = "02B2"
+name = "door_addr"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): door +2: nametable address (draw_door_kind_y)."
+
+[[var]]
+addr = "02B3"
+name = "door_addr_hi"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): door +3: high byte."
+
+[[var]]
+addr = "02B6"
+name = "door_swing_frame"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): door +6: 0-4 during the swing."
+
+[[var]]
+addr = "0400"
+name = "obj_x_frac"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): record +0 (16-byte records, slots 0-8; absolute = slot 0, the player)."
+
+[[var]]
+addr = "0401"
+name = "obj_x"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): record +1: tile x."
+
+[[var]]
+addr = "0402"
+name = "obj_y_frac"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): record +2."
+
+[[var]]
+addr = "0403"
+name = "obj_y"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): record +3: tile row."
+
+[[var]]
+addr = "0404"
+name = "obj_anim"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): record +4: the draw handler index (dispatch_object_draw_by_anim); 0 = not drawn."
+
+[[var]]
+addr = "0405"
+name = "obj_type"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): record +5: 0 player, 1 the late chaser, 2 slot 2's cat, 3 cats."
+
+[[var]]
+addr = "0406"
+name = "obj_dir"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): record +6: 1 right, $FF left."
+
+[[var]]
+addr = "0407"
+name = "obj_timer"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): record +7: the state's frame counter / timer."
+
+[[var]]
+addr = "0408"
+name = "obj_tile"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): record +8: the tile the render thread read back (queue_tile_read)."
+
+[[var]]
+addr = "040B"
+name = "obj_vy_or_link"
+role = "obj_field"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): record +B: vertical velocity in a hop (move_hop_arc), the trampoline index in a bounce, the carrying wave in state 16 (the absolute ,x users are the wave's)."
+
+[[var]]
+addr = "040E"
+name = "obj_buttons"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): record +E: the player's button history (set_object_intent; the demo shifts it)."
+
+[[var]]
+addr = "040F"
+name = "obj_state"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): record +F: the state ($DA42 / $E17A by is_bonus_round)."
+
+[[var]]
+addr = "0410"
+name = "slot1_x_frac"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): slot 1 +0 (the bonus goal; the chaser after HURRY)."
+
+[[var]]
+addr = "0411"
+name = "slot1_x"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): slot 1 +1."
+
+[[var]]
+addr = "0412"
+name = "slot1_y_frac"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): slot 1 +2."
+
+[[var]]
+addr = "0413"
+name = "slot1_y"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): slot 1 +3."
+
+[[var]]
+addr = "0414"
+name = "slot1_anim"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): slot 1 +4."
+
+[[var]]
+addr = "0415"
+name = "slot1_type"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): slot 1 +5: 1 when released as the chaser."
+
+[[var]]
+addr = "0417"
+name = "slot1_timer"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): slot 1 +7."
+
+[[var]]
+addr = "0426"
+name = "slot2_dir"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): slot 2 +6."
+
+[[var]]
+addr = "0428"
+name = "slot2_tile"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): slot 2 +8."
+
+[[var]]
+addr = "042B"
+name = "slot2_vy"
+role = "obj_field"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): slot 2 +B (cleared when released by the bonus goal)."
+
+[[var]]
+addr = "0434"
+name = "slot3_anim"
+role = "obj_field"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): slot 3 +4 (bonus_state10_slot3_timeout)."
+
+[[var]]
+addr = "0437"
+name = "slot3_timer"
+role = "obj_field"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): slot 3 +7."
+
+[[var]]
+addr = "043F"
+name = "slot3_state"
+role = "obj_field"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): slot 3 +F."
+
+[[var]]
+addr = "0491"
+name = "hurry_x_hi"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): high byte; negative ends HURRY's crossing."
+
+[[var]]
+addr = "04A0"
+name = "wave_x_frac"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): door wave +0 (4 records of 8 at $04A0)."
+
+[[var]]
+addr = "04A1"
+name = "wave_x"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): door wave +1."
+
+[[var]]
+addr = "04A2"
+name = "wave_y_frac"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): door wave +2."
+
+[[var]]
+addr = "04A3"
+name = "wave_y"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): door wave +3."
+
+[[var]]
+addr = "04A6"
+name = "wave_dir"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): door wave +6."
+
+[[var]]
+addr = "04AD"
+name = "wave1_state"
+role = "obj_field"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the second wave's +5 (play_round and state 2A wait on waves 0 and 1)."
+
+[[var]]
+addr = "04C0"
+name = "tile_read_queue"
+role = "array"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): [address][record pointer] entries; the render thread reads each tile into the record's +8."
+
+[[var]]
+addr = "06E2"
+name = "voice_param"
+role = "array"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): one byte per voice, from init_sound_voices_data_f89e; start_timer_phase_tune sets voices 19-20 to 3."
+
+[[var]]
+addr = "0700"
+name = "oam_shadow"
+role = "array"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the sprite page write_sprite_to_oam fills."
+
+[[var]]
+addr = "0601"
+name = "snd_bonus_results"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): fired by show_bonus_results (with $0618)."
+
+[[var]]
+addr = "0602"
+name = "snd_extra_life"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): fired by award_extra_life (with $0603, $0604)."
+
+[[var]]
+addr = "0605"
+name = "snd_hurry"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): fired every HURRY frame (tick_round_timer)."
+
+[[var]]
+addr = "0606"
+name = "snd_bonus_goal"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the bonus goal reached."
+
+[[var]]
+addr = "0607"
+name = "snd_drop"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): a dropped object starts falling; a walker falls through a floor trap."
+
+[[var]]
+addr = "0608"
+name = "snd_collect"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): an item collected; a bonus target popped."
+
+[[var]]
+addr = "0609"
+name = "snd_door_wave"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): a door wave moving."
+
+[[var]]
+addr = "060A"
+name = "snd_trampoline"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): a landing on a trampoline."
+
+[[var]]
+addr = "060B"
+name = "snd_death"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): state2A_wait_then_start_tune (with $060C, $060D)."
+
+[[var]]
+addr = "060E"
+name = "snd_bonus_intro"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the bonus round's intro (with $060F, $0610)."
+
+[[var]]
+addr = "0611"
+name = "snd_round_clear"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): play_round after the last item (with $0612)."
+
+[[var]]
+addr = "0613"
+name = "snd_round_music"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): play_round's background music (with $0614), restarted unless HURRY plays."
+
+[[var]]
+addr = "0615"
+name = "snd_game_over"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): game_over (with $0616, $0617)."
+
+[[var]]
+addr = "00FC"
+name = "channel_claimed"
+role = "array"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): 4 flags, one per APU channel ($FC-$FF): cleared each frame by update_sound_frame, set when a voice takes the channel, read by sound_registers_next_voice."
+
+[[var]]
+addr = "0161"
+name = "voice_repeat_counts"
+role = "array"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): 3 counters for the repeat opcodes (voice_op_repeat_0-2); $0161-$0169 are all cleared by voice_op_clear_loop_counters."
+
+[[var]]
+addr = "0164"
+name = "voice_jump_counts"
+role = "array"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): 3 counters for voice_op_jump_on_count_0-2."
+
+[[var]]
+addr = "0167"
+name = "voice_jump_counts_2"
+role = "array"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): 3 counters for voice_op_jump_on_count_3-5."
+
+[[var]]
+addr = "0603"
+name = "snd_extra_life_b"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): award_extra_life's second voice."
+
+[[var]]
+addr = "0604"
+name = "snd_extra_life_c"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): award_extra_life's third voice."
+
+[[var]]
+addr = "060C"
+name = "snd_death_b"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the death tune's second voice."
+
+[[var]]
+addr = "060D"
+name = "snd_death_c"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the death tune's third voice."
+
+[[var]]
+addr = "060F"
+name = "snd_bonus_intro_b"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the bonus intro's second voice."
+
+[[var]]
+addr = "0610"
+name = "snd_bonus_intro_c"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the bonus intro's third voice."
+
+[[var]]
+addr = "0612"
+name = "snd_round_clear_b"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the round-clear tune's second voice."
+
+[[var]]
+addr = "0614"
+name = "snd_round_music_b"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the round music's second voice."
+
+[[var]]
+addr = "0616"
+name = "snd_game_over_b"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the game-over tune's second voice."
+
+[[var]]
+addr = "0617"
+name = "snd_game_over_c"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the game-over tune's third voice."
+
+[[var]]
+addr = "0618"
+name = "snd_bonus_results_b"
+role = "flag"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): the bonus results' second voice."
+
+[[var]]
+addr = "06F5"
+name = "voice_param_19"
+role = "array"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): voice_param for voice 19: 3 from start_timer_phase_tune."
+
+[[var]]
+addr = "06F6"
+name = "voice_param_20"
+role = "array"
+conf = "MED"
+why = "Variables round 2 (2026-10-26): voice_param for voice 20."
+
+[[var]]
+addr = "0701"
+name = "oam_tile"
+role = "array"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): OAM shadow +1 of each 4-byte sprite (write_sprite_to_oam)."
+
+[[var]]
+addr = "0702"
+name = "oam_attr"
+role = "array"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): OAM shadow +2."
+
+[[var]]
+addr = "0703"
+name = "oam_x"
+role = "array"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): OAM shadow +3."
 
 [[obj_field]]
 offset = "00"

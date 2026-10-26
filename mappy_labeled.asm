@@ -65,21 +65,21 @@ reset_cold_boot_init:
     C03E: AD 02 20    lda PPUSTATUS   ; $2002
     C041: 10 FB       bpl @C03E   ; $C03E
     C043: A9 07       lda #$07
-    C045: 85 01       sta ptr_hi   ; $01
+    C045: 85 01       sta zero_page_base_hi   ; $01
     C047: A9 00       lda #$00
-    C049: 85 00       sta indirect_ptr   ; $00
+    C049: 85 00       sta zero_page_base   ; $00
     C04B: A8          tay
 @C04C:
-    C04C: 91 00       sta (indirect_ptr),y   ; $00
+    C04C: 91 00       sta (zero_page_base),y   ; $00
     C04E: C8          iny
     C04F: D0 FB       bne @C04C   ; $C04C
-    C051: C6 01       dec ptr_hi   ; $01
+    C051: C6 01       dec zero_page_base_hi   ; $01
     C053: D0 F7       bne @C04C   ; $C04C
     C055: 20 5C C2    jsr validate_magic_and_restore_state_vars   ; $C25C
     C058: A9 5A       lda #$5a
-    C05A: 85 3E       sta $3e
+    C05A: 85 3E       sta warm_boot_magic   ; $3E
     C05C: A9 A5       lda #$a5
-    C05E: 85 3F       sta $3f
+    C05E: 85 3F       sta warm_boot_magic_2   ; $3F
     C060: A0 00       ldy #$00
     C062: 20 28 C1    jsr start_game_thread   ; $C128
     C065: 20 B5 F4    jsr init_apu_channels_and_frame_counter   ; $F4B5
@@ -97,13 +97,13 @@ render_loop:
     C07F: A2 14       ldx #$14
     C081: 86 2C       stx oam_cursor   ; $2C
     C083: A5 28       lda camera_x_lo   ; $28
-    C085: 85 10       sta src_ptr   ; $10
+    C085: 85 10       sta draw_pos   ; $10
     C087: A5 29       lda camera_x   ; $29
-    C089: 06 10       asl src_ptr   ; $10
+    C089: 06 10       asl draw_pos   ; $10
     C08B: 2A          rol a
-    C08C: 06 10       asl src_ptr   ; $10
+    C08C: 06 10       asl draw_pos   ; $10
     C08E: 2A          rol a
-    C08F: 06 10       asl src_ptr   ; $10
+    C08F: 06 10       asl draw_pos   ; $10
     C091: 2A          rol a
     C092: 8D 05 20    sta PPUSCROLL   ; $2005
     C095: A9 00       lda #$00
@@ -115,13 +115,13 @@ render_loop:
     C0A4: A5 23       lda paused   ; $23
     C0A6: F0 0D       beq @C0B5   ; $C0B5
     C0A8: 20 35 D7    jsr show_player_up_label   ; $D735
-    C0AB: A5 24       lda draw_data_ptr   ; $24
+    C0AB: A5 24       lda select_history   ; $24
     C0AD: 29 03       and #$03
     C0AF: C9 01       cmp #$01
     C0B1: D0 14       bne @C0C7   ; $C0C7
     C0B3: F0 12       beq @C0C7   ; $C0C7
 @C0B5:
-    C0B5: A5 24       lda draw_data_ptr   ; $24
+    C0B5: A5 24       lda select_history   ; $24
     C0B7: 29 03       and #$03
     C0B9: C9 01       cmp #$01
     C0BB: D0 02       bne @C0BF   ; $C0BF
@@ -141,37 +141,37 @@ build_sprite_row_oam_shadow:
     C0D0: A2 00       ldx #$00
     C0D2: A5 23       lda paused   ; $23
     C0D4: F0 41       beq @C117   ; $C117
-    C0D6: A5 24       lda draw_data_ptr   ; $24
+    C0D6: A5 24       lda select_history   ; $24
     C0D8: 29 03       and #$03
     C0DA: C9 01       cmp #$01
     C0DC: EA          nop
     C0DD: EA          nop
     C0DE: A9 68       lda #$68
-    C0E0: 85 10       sta src_ptr   ; $10
+    C0E0: 85 10       sta draw_pos   ; $10
     C0E2: A0 67       ldy #$67
     C0E4: A5 21       lda frame_counter   ; $21
     C0E6: 29 10       and #$10
     C0E8: D0 02       bne @C0EC   ; $C0EC
     C0EA: A0 F7       ldy #$f7
 @C0EC:
-    C0EC: 84 11       sty zp_ptr_hi   ; $11
+    C0EC: 84 11       sty draw_pos_hi   ; $11
     C0EE: A0 00       ldy #$00
 @C0F0:
-    C0F0: A5 11       lda zp_ptr_hi   ; $11
-    C0F2: 9D 00 07    sta $0700,x
+    C0F0: A5 11       lda draw_pos_hi   ; $11
+    C0F2: 9D 00 07    sta oam_shadow,x   ; $0700
     C0F5: E8          inx
     C0F6: B9 23 C1    lda txt_pause_sprites,y   ; $C123
     C0F9: C8          iny
-    C0FA: 9D 00 07    sta $0700,x
+    C0FA: 9D 00 07    sta oam_shadow,x   ; $0700
     C0FD: E8          inx
     C0FE: A9 02       lda #$02
-    C100: 9D 00 07    sta $0700,x
+    C100: 9D 00 07    sta oam_shadow,x   ; $0700
     C103: E8          inx
-    C104: A5 10       lda src_ptr   ; $10
-    C106: 9D 00 07    sta $0700,x
+    C104: A5 10       lda draw_pos   ; $10
+    C106: 9D 00 07    sta oam_shadow,x   ; $0700
     C109: 18          clc
     C10A: 69 08       adc #$08
-    C10C: 85 10       sta src_ptr   ; $10
+    C10C: 85 10       sta draw_pos   ; $10
     C10E: E8          inx
     C10F: E0 14       cpx #$14
     C111: D0 DD       bne @C0F0   ; $C0F0
@@ -182,7 +182,7 @@ build_sprite_row_oam_shadow:
 @C117:
     C117: A9 F7       lda #$f7
 @C119:
-    C119: 9D 00 07    sta $0700,x
+    C119: 9D 00 07    sta oam_shadow,x   ; $0700
     C11C: E8          inx
     C11D: E8          inx
     C11E: E8          inx
@@ -222,8 +222,8 @@ yield_to_render_loop:
 swap_stack_pointer:
     C146: BA          tsx
     C147: 8A          txa
-    C148: BE 00 01    ldx $0100,y
-    C14B: 99 00 01    sta $0100,y
+    C148: BE 00 01    ldx thread_saved_sp,y   ; $0100
+    C14B: 99 00 01    sta thread_saved_sp,y   ; $0100
     C14E: 9A          txs
 
 handler_rts_noop:
@@ -255,16 +255,16 @@ flush_vram_write_queue:
 flush_vram_readback_queue_and_restore_render:
     C177: E4 2B       cpx vram_queue_cursor   ; $2B
     C179: F0 27       beq @C1A2   ; $C1A2
-    C17B: BC C0 04    ldy $04c0,x
+    C17B: BC C0 04    ldy tile_read_queue,x   ; $04C0
     C17E: E8          inx
-    C17F: BD C0 04    lda $04c0,x
+    C17F: BD C0 04    lda tile_read_queue,x   ; $04C0
     C182: E8          inx
     C183: 8D 06 20    sta PPUADDR   ; $2006
     C186: 8C 06 20    sty PPUADDR   ; $2006
-    C189: BD C0 04    lda $04c0,x
+    C189: BD C0 04    lda tile_read_queue,x   ; $04C0
     C18C: E8          inx
     C18D: 85 1E       sta obj_record_ptr   ; $1E
-    C18F: BD C0 04    lda $04c0,x
+    C18F: BD C0 04    lda tile_read_queue,x   ; $04C0
     C192: E8          inx
     C193: 85 1F       sta obj_record_ptr_hi   ; $1F
     C195: AD 07 20    lda PPUDATA   ; $2007
@@ -309,23 +309,23 @@ read_and_decode_input:
     C1D9: A5 41       lda game_state_flags   ; $41
     C1DB: 49 01       eor #$01
     C1DD: AA          tax
-    C1DE: 76 10       ror src_ptr,x   ; $10
-    C1E0: 76 10       ror src_ptr,x   ; $10
+    C1DE: 76 10       ror draw_pos,x   ; $10
+    C1E0: 76 10       ror draw_pos,x   ; $10
     C1E2: A6 41       ldx game_state_flags   ; $41
-    C1E4: 76 10       ror src_ptr,x   ; $10
+    C1E4: 76 10       ror draw_pos,x   ; $10
     C1E6: 2A          rol a
-    C1E7: 76 10       ror src_ptr,x   ; $10
+    C1E7: 76 10       ror draw_pos,x   ; $10
     C1E9: 2A          rol a
     C1EA: 29 03       and #$03
     C1EC: C9 01       cmp #$01
-    C1EE: 26 22       rol scan_ptr   ; $22
-    C1F0: 66 11       ror zp_ptr_hi   ; $11
-    C1F2: 66 10       ror src_ptr   ; $10
-    C1F4: 26 24       rol draw_data_ptr   ; $24
-    C1F6: 66 11       ror zp_ptr_hi   ; $11
-    C1F8: 66 10       ror src_ptr   ; $10
+    C1EE: 26 22       rol button_history   ; $22
+    C1F0: 66 11       ror draw_pos_hi   ; $11
+    C1F2: 66 10       ror draw_pos   ; $10
+    C1F4: 26 24       rol select_history   ; $24
+    C1F6: 66 11       ror draw_pos_hi   ; $11
+    C1F8: 66 10       ror draw_pos   ; $10
     C1FA: 26 25       rol joypad_state   ; $25
-    C1FC: B5 10       lda src_ptr,x   ; $10
+    C1FC: B5 10       lda draw_pos,x   ; $10
     C1FE: 29 0F       and #$0f
     C200: 4A          lsr a
     C201: 4A          lsr a
@@ -343,7 +343,7 @@ read_and_decode_input:
     C215: A5 4F       lda round_cleared   ; $4F
     C217: 05 4B       ora player_down   ; $4B
     C219: D0 19       bne @C234   ; $C234
-    C21B: AD 0F 04    lda $040f
+    C21B: AD 0F 04    lda obj_state   ; $040F
     C21E: F0 14       beq @C234   ; $C234
     C220: A5 25       lda joypad_state   ; $25
     C222: 29 03       and #$03
@@ -379,7 +379,7 @@ read_joypad:
     C24B: BD 16 40    lda JOY1,x   ; $4016
     C24E: 29 03       and #$03
     C250: C9 01       cmp #$01
-    C252: 76 10       ror src_ptr,x   ; $10
+    C252: 76 10       ror draw_pos,x   ; $10
     C254: 88          dey
     C255: D0 F4       bne @C24B   ; $C24B
     C257: 60          rts
@@ -391,10 +391,10 @@ pad_lr_to_direction:
     C25B: 00          .byte $00
 
 validate_magic_and_restore_state_vars:
-    C25C: A5 3E       lda $3e
+    C25C: A5 3E       lda warm_boot_magic   ; $3E
     C25E: C9 5A       cmp #$5a
     C260: D0 45       bne @C2A7   ; $C2A7
-    C262: A5 3F       lda $3f
+    C262: A5 3F       lda warm_boot_magic_2   ; $3F
     C264: C9 A5       cmp #$a5
     C266: D0 3F       bne @C2A7   ; $C2A7
     C268: A5 41       lda game_state_flags   ; $41
@@ -404,18 +404,18 @@ validate_magic_and_restore_state_vars:
     C26F: 20 B3 C2    jsr pack_state_vars_into_zp_buffer   ; $C2B3
     C272: 20 E5 C2    jsr clear_zeropage_from_20   ; $C2E5
     C275: A2 01       ldx #$01
-    C277: B5 00       lda indirect_ptr,x   ; $00
+    C277: B5 00       lda zero_page_base,x   ; $00
     C279: E8          inx
     C27A: 85 40       sta two_player_game   ; $40
-    C27C: B5 00       lda indirect_ptr,x   ; $00
+    C27C: B5 00       lda zero_page_base,x   ; $00
     C27E: E8          inx
     C27F: 85 41       sta game_state_flags   ; $41
-    C281: B5 00       lda indirect_ptr,x   ; $00
+    C281: B5 00       lda zero_page_base,x   ; $00
     C283: E8          inx
-    C284: 85 4A       sta seq_data_ptr   ; $4A
-    C286: B5 00       lda indirect_ptr,x   ; $00
+    C284: 85 4A       sta two_player_choice   ; $4A
+    C286: B5 00       lda zero_page_base,x   ; $00
     C288: E8          inx
-    C289: 85 77       sta ppu_block_src_ptr   ; $77
+    C289: 85 77       sta round_bcd   ; $77
     C28B: A0 71       ldy #$71
     C28D: 20 97 C2    jsr copy_4_bytes_zp_to_ram   ; $C297
     C290: A0 B1       ldy #$b1
@@ -424,13 +424,13 @@ validate_magic_and_restore_state_vars:
 
 copy_4_bytes_zp_to_ram:
     C297: A9 04       lda #$04
-    C299: 85 00       sta indirect_ptr   ; $00
+    C299: 85 00       sta zero_page_base   ; $00
 @C29B:
-    C29B: B5 00       lda indirect_ptr,x   ; $00
+    C29B: B5 00       lda zero_page_base,x   ; $00
     C29D: E8          inx
-    C29E: 99 00 00    sta indirect_ptr,y   ; $0000
+    C29E: 99 00 00    sta zero_page_base,y   ; $0000
     C2A1: C8          iny
-    C2A2: C6 00       dec indirect_ptr   ; $00
+    C2A2: C6 00       dec zero_page_base   ; $00
     C2A4: D0 F5       bne @C29B   ; $C29B
     C2A6: 60          rts
 @C2A7:
@@ -438,22 +438,22 @@ copy_4_bytes_zp_to_ram:
     C2AA: A9 02       lda #$02
     C2AC: 85 45       sta $45
     C2AE: A9 01       lda #$01
-    C2B0: 85 77       sta ppu_block_src_ptr   ; $77
+    C2B0: 85 77       sta round_bcd   ; $77
     C2B2: 60          rts
 
 pack_state_vars_into_zp_buffer:
     C2B3: A2 01       ldx #$01
     C2B5: A5 40       lda two_player_game   ; $40
-    C2B7: 95 00       sta indirect_ptr,x   ; $00
+    C2B7: 95 00       sta zero_page_base,x   ; $00
     C2B9: E8          inx
     C2BA: A5 41       lda game_state_flags   ; $41
-    C2BC: 95 00       sta indirect_ptr,x   ; $00
+    C2BC: 95 00       sta zero_page_base,x   ; $00
     C2BE: E8          inx
-    C2BF: A5 4A       lda seq_data_ptr   ; $4A
-    C2C1: 95 00       sta indirect_ptr,x   ; $00
+    C2BF: A5 4A       lda two_player_choice   ; $4A
+    C2C1: 95 00       sta zero_page_base,x   ; $00
     C2C3: E8          inx
-    C2C4: A5 77       lda ppu_block_src_ptr   ; $77
-    C2C6: 95 00       sta indirect_ptr,x   ; $00
+    C2C4: A5 77       lda round_bcd   ; $77
+    C2C6: 95 00       sta zero_page_base,x   ; $00
     C2C8: E8          inx
     C2C9: A0 71       ldy #$71
     C2CB: 20 D5 C2    jsr copy_4_bytes_absy_to_zpx   ; $C2D5
@@ -463,13 +463,13 @@ pack_state_vars_into_zp_buffer:
 
 copy_4_bytes_absy_to_zpx:
     C2D5: A9 04       lda #$04
-    C2D7: 85 00       sta indirect_ptr   ; $00
+    C2D7: 85 00       sta zero_page_base   ; $00
 @C2D9:
-    C2D9: B9 00 00    lda indirect_ptr,y   ; $0000
+    C2D9: B9 00 00    lda zero_page_base,y   ; $0000
     C2DC: C8          iny
-    C2DD: 95 00       sta indirect_ptr,x   ; $00
+    C2DD: 95 00       sta zero_page_base,x   ; $00
     C2DF: E8          inx
-    C2E0: C6 00       dec indirect_ptr   ; $00
+    C2E0: C6 00       dec zero_page_base   ; $00
     C2E2: D0 F5       bne @C2D9   ; $C2D9
     C2E4: 60          rts
 
@@ -477,7 +477,7 @@ clear_zeropage_from_20:
     C2E5: A2 20       ldx #$20
     C2E7: A9 00       lda #$00
 @C2E9:
-    C2E9: 95 00       sta indirect_ptr,x   ; $00
+    C2E9: 95 00       sta zero_page_base,x   ; $00
     C2EB: E8          inx
     C2EC: D0 FB       bne @C2E9   ; $C2E9
     C2EE: 60          rts
@@ -508,25 +508,25 @@ draw_object:
     C305: A5 2C       lda oam_cursor   ; $2C
     C307: 48          pha
     C308: A0 00       ldy #$00
-    C30A: 84 11       sty zp_ptr_hi   ; $11
+    C30A: 84 11       sty draw_pos_hi   ; $11
     C30C: B1 1E       lda (obj_record_ptr),y   ; $1E
     C30E: C8          iny
     C30F: 38          sec
     C310: E5 28       sbc camera_x_lo   ; $28
-    C312: 85 10       sta src_ptr   ; $10
+    C312: 85 10       sta draw_pos   ; $10
     C314: B1 1E       lda (obj_record_ptr),y   ; $1E
     C316: C8          iny
     C317: E5 29       sbc camera_x   ; $29
-    C319: 06 10       asl src_ptr   ; $10
+    C319: 06 10       asl draw_pos   ; $10
     C31B: 2A          rol a
-    C31C: 06 10       asl src_ptr   ; $10
+    C31C: 06 10       asl draw_pos   ; $10
     C31E: 2A          rol a
-    C31F: 06 10       asl src_ptr   ; $10
+    C31F: 06 10       asl draw_pos   ; $10
     C321: 2A          rol a
     C322: 90 02       bcc @C326   ; $C326
-    C324: C6 11       dec zp_ptr_hi   ; $11
+    C324: C6 11       dec draw_pos_hi   ; $11
 @C326:
-    C326: 85 10       sta src_ptr   ; $10
+    C326: 85 10       sta draw_pos   ; $10
     C328: B1 1E       lda (obj_record_ptr),y   ; $1E
     C32A: C8          iny
     C32B: 85 16       sta sprite_y   ; $16
@@ -548,7 +548,7 @@ dispatch_object_draw_from_record:
     C342: B1 1E       lda (obj_record_ptr),y   ; $1E
 
 dispatch_object_draw_by_anim:
-    C344: 85 15       sta scratch_counter   ; $15
+    C344: 85 15       sta draw_count   ; $15
     C346: 29 FE       and #$fe
     C348: AA          tax
     C349: BD 56 C3    lda tbl_draw_by_anim,x   ; $C356
@@ -580,26 +580,26 @@ tbl_draw_by_anim:
 
 draw_drop_stun_points:
     C37C: A9 AE       lda #$ae
-    C37E: 85 12       sta gfx_src_ptr   ; $12
+    C37E: 85 12       sta draw_tile_or_src   ; $12
     C380: A9 00       lda #$00
-    C382: 85 14       sta scan_src_ptr   ; $14
+    C382: 85 14       sta draw_palette   ; $14
     C384: A9 03       lda #$03
-    C386: 85 13       sta data_ptr_hi   ; $13
+    C386: 85 13       sta draw_attr_or_src_hi   ; $13
     C388: A5 1E       lda obj_record_ptr   ; $1E
     C38A: C9 20       cmp #$20
     C38C: D0 04       bne @C392   ; $C392
     C38E: A9 66       lda #$66
-    C390: 85 12       sta gfx_src_ptr   ; $12
+    C390: 85 12       sta draw_tile_or_src   ; $12
 @C392:
     C392: 20 15 C4    jsr write_sprite_to_oam   ; $C415
     C395: A9 67       lda #$67
-    C397: 85 12       sta gfx_src_ptr   ; $12
-    C399: A5 10       lda src_ptr   ; $10
+    C397: 85 12       sta draw_tile_or_src   ; $12
+    C399: A5 10       lda draw_pos   ; $10
     C39B: 18          clc
     C39C: 69 08       adc #$08
-    C39E: 85 10       sta src_ptr   ; $10
+    C39E: 85 10       sta draw_pos   ; $10
     C3A0: 90 02       bcc @C3A4   ; $C3A4
-    C3A2: E6 11       inc zp_ptr_hi   ; $11
+    C3A2: E6 11       inc draw_pos_hi   ; $11
 @C3A4:
     C3A4: 4C 15 C4    jmp write_sprite_to_oam   ; $C415
 
@@ -616,7 +616,7 @@ load_type_sprite_palette:
     C3B6: B1 1E       lda (obj_record_ptr),y   ; $1E
     C3B8: AA          tax
     C3B9: BD 7C C4    lda tbl_type_sprite_palette,x   ; $C47C
-    C3BC: 85 13       sta data_ptr_hi   ; $13
+    C3BC: 85 13       sta draw_attr_or_src_hi   ; $13
     C3BE: 8A          txa
 @C3BF:
     C3BF: 60          rts
@@ -625,43 +625,43 @@ draw_walk_cycle:
     C3C0: 20 B4 C3    jsr load_type_sprite_palette   ; $C3B4
     C3C3: 0A          asl a
     C3C4: 0A          asl a
-    C3C5: 85 12       sta gfx_src_ptr   ; $12
+    C3C5: 85 12       sta draw_tile_or_src   ; $12
     C3C7: A0 07       ldy #$07
     C3C9: B1 1E       lda (obj_record_ptr),y   ; $1E
     C3CB: 4A          lsr a
     C3CC: 4A          lsr a
     C3CD: 29 03       and #$03
-    C3CF: 05 12       ora gfx_src_ptr   ; $12
+    C3CF: 05 12       ora draw_tile_or_src   ; $12
 
 load_metasprite_tile_base:
     C3D1: AA          tax
     C3D2: BD 80 C4    lda tbl_pose_tile_base,x   ; $C480
-    C3D5: 85 12       sta gfx_src_ptr   ; $12
+    C3D5: 85 12       sta draw_tile_or_src   ; $12
 
 apply_facing_flip:
     C3D7: A0 06       ldy #$06
     C3D9: B1 1E       lda (obj_record_ptr),y   ; $1E
     C3DB: 30 06       bmi flip_bits_to_tile_xor   ; $C3E3
-    C3DD: A5 13       lda data_ptr_hi   ; $13
+    C3DD: A5 13       lda draw_attr_or_src_hi   ; $13
     C3DF: 49 40       eor #$40
-    C3E1: 85 13       sta data_ptr_hi   ; $13
+    C3E1: 85 13       sta draw_attr_or_src_hi   ; $13
 
 flip_bits_to_tile_xor:
-    C3E3: A5 13       lda data_ptr_hi   ; $13
+    C3E3: A5 13       lda draw_attr_or_src_hi   ; $13
     C3E5: 2A          rol a
     C3E6: 2A          rol a
     C3E7: 2A          rol a
     C3E8: 29 03       and #$03
-    C3EA: 85 14       sta scan_src_ptr   ; $14
+    C3EA: 85 14       sta draw_palette   ; $14
 
 draw_metasprite_2x2:
     C3EC: 20 01 C4    jsr draw_sprite_pair   ; $C401
-    C3EF: A5 10       lda src_ptr   ; $10
+    C3EF: A5 10       lda draw_pos   ; $10
     C3F1: 38          sec
     C3F2: E9 08       sbc #$08
-    C3F4: 85 10       sta src_ptr   ; $10
+    C3F4: 85 10       sta draw_pos   ; $10
     C3F6: B0 02       bcs @C3FA   ; $C3FA
-    C3F8: C6 11       dec zp_ptr_hi   ; $11
+    C3F8: C6 11       dec draw_pos_hi   ; $11
 @C3FA:
     C3FA: A5 16       lda sprite_y   ; $16
     C3FC: 18          clc
@@ -670,22 +670,22 @@ draw_metasprite_2x2:
 
 draw_sprite_pair:
     C401: 20 0F C4    jsr write_sprite_next_tile   ; $C40F
-    C404: A5 10       lda src_ptr   ; $10
+    C404: A5 10       lda draw_pos   ; $10
     C406: 18          clc
     C407: 69 08       adc #$08
-    C409: 85 10       sta src_ptr   ; $10
+    C409: 85 10       sta draw_pos   ; $10
     C40B: 90 02       bcc write_sprite_next_tile   ; $C40F
-    C40D: E6 11       inc zp_ptr_hi   ; $11
+    C40D: E6 11       inc draw_pos_hi   ; $11
 
 write_sprite_next_tile:
     C40F: 20 15 C4    jsr write_sprite_to_oam   ; $C415
-    C412: E6 12       inc gfx_src_ptr   ; $12
+    C412: E6 12       inc draw_tile_or_src   ; $12
     C414: 60          rts
 
 write_sprite_to_oam:
-    C415: A5 11       lda zp_ptr_hi   ; $11
+    C415: A5 11       lda draw_pos_hi   ; $11
     C417: D0 3B       bne @C454   ; $C454
-    C419: A5 10       lda src_ptr   ; $10
+    C419: A5 10       lda draw_pos   ; $10
     C41B: C9 F9       cmp #$f9
     C41D: B0 35       bcs @C454   ; $C454
     C41F: A6 2C       ldx oam_cursor   ; $2C
@@ -703,14 +703,14 @@ write_sprite_to_oam:
     C433: A5 16       lda sprite_y   ; $16
     C435: 38          sec
     C436: E9 01       sbc #$01
-    C438: 9D 00 07    sta $0700,x
-    C43B: A5 12       lda gfx_src_ptr   ; $12
-    C43D: 45 14       eor scan_src_ptr   ; $14
-    C43F: 9D 01 07    sta $0701,x
+    C438: 9D 00 07    sta oam_shadow,x   ; $0700
+    C43B: A5 12       lda draw_tile_or_src   ; $12
+    C43D: 45 14       eor draw_palette   ; $14
+    C43F: 9D 01 07    sta oam_tile,x   ; $0701
     C442: 20 65 C4    jsr sprite_attr_with_priority   ; $C465
-    C445: 9D 02 07    sta $0702,x
-    C448: A5 10       lda src_ptr   ; $10
-    C44A: 9D 03 07    sta $0703,x
+    C445: 9D 02 07    sta oam_attr,x   ; $0702
+    C448: A5 10       lda draw_pos   ; $10
+    C44A: 9D 03 07    sta oam_x,x   ; $0703
     C44D: A5 2C       lda oam_cursor   ; $2C
     C44F: 18          clc
     C450: 69 04       adc #$04
@@ -739,18 +739,18 @@ write_sprite_to_oam_data_c455:
 sprite_attr_with_priority:
     C465: A5 7C       lda is_bonus_round   ; $7C
     C467: D0 10       bne @C479   ; $C479
-    C469: A5 15       lda scratch_counter   ; $15
+    C469: A5 15       lda draw_count   ; $15
     C46B: 4A          lsr a
     C46C: B0 06       bcs @C474   ; $C474
     C46E: A5 16       lda sprite_y   ; $16
     C470: C9 40       cmp #$40
     C472: B0 05       bcs @C479   ; $C479
 @C474:
-    C474: A5 13       lda data_ptr_hi   ; $13
+    C474: A5 13       lda draw_attr_or_src_hi   ; $13
     C476: 09 20       ora #$20
     C478: 60          rts
 @C479:
-    C479: A5 13       lda data_ptr_hi   ; $13
+    C479: A5 13       lda draw_attr_or_src_hi   ; $13
     C47B: 60          rts
 
 tbl_type_sprite_palette:
@@ -811,36 +811,36 @@ draw_fall_bounce_pose:
     C4B3: 0A          asl a
     C4B4: 0A          asl a
     C4B5: 69 14       adc #$14
-    C4B7: 85 12       sta gfx_src_ptr   ; $12
+    C4B7: 85 12       sta draw_tile_or_src   ; $12
     C4B9: A0 07       ldy #$07
     C4BB: B1 1E       lda (obj_record_ptr),y   ; $1E
     C4BD: 29 0C       and #$0c
     C4BF: 4A          lsr a
     C4C0: 4A          lsr a
-    C4C1: 05 12       ora gfx_src_ptr   ; $12
+    C4C1: 05 12       ora draw_tile_or_src   ; $12
     C4C3: 4C D1 C3    jmp load_metasprite_tile_base   ; $C3D1
 
 draw_door_wave:
     C4C6: A5 21       lda frame_counter   ; $21
     C4C8: 4A          lsr a
     C4C9: 29 03       and #$03
-    C4CB: 85 13       sta data_ptr_hi   ; $13
+    C4CB: 85 13       sta draw_attr_or_src_hi   ; $13
     C4CD: A9 50       lda #$50
-    C4CF: 85 12       sta gfx_src_ptr   ; $12
+    C4CF: 85 12       sta draw_tile_or_src   ; $12
     C4D1: A0 06       ldy #$06
     C4D3: B1 1E       lda (obj_record_ptr),y   ; $1E
     C4D5: 30 06       bmi @C4DD   ; $C4DD
-    C4D7: A5 13       lda data_ptr_hi   ; $13
+    C4D7: A5 13       lda draw_attr_or_src_hi   ; $13
     C4D9: 09 40       ora #$40
-    C4DB: 85 13       sta data_ptr_hi   ; $13
+    C4DB: 85 13       sta draw_attr_or_src_hi   ; $13
 @C4DD:
     C4DD: 20 E3 C3    jsr flip_bits_to_tile_xor   ; $C3E3
-    C4E0: A5 10       lda src_ptr   ; $10
+    C4E0: A5 10       lda draw_pos   ; $10
     C4E2: 38          sec
     C4E3: E9 08       sbc #$08
-    C4E5: 85 10       sta src_ptr   ; $10
+    C4E5: 85 10       sta draw_pos   ; $10
     C4E7: B0 02       bcs @C4EB   ; $C4EB
-    C4E9: C6 11       dec zp_ptr_hi   ; $11
+    C4E9: C6 11       dec draw_pos_hi   ; $11
 @C4EB:
     C4EB: A5 16       lda sprite_y   ; $16
     C4ED: 18          clc
@@ -850,7 +850,7 @@ draw_door_wave:
 
 draw_tile_3c_type1_flicker:
     C4F5: A9 3C       lda #$3c
-    C4F7: 85 12       sta gfx_src_ptr   ; $12
+    C4F7: 85 12       sta draw_tile_or_src   ; $12
     C4F9: A0 05       ldy #$05
     C4FB: B1 1E       lda (obj_record_ptr),y   ; $1E
     C4FD: C9 01       cmp #$01
@@ -862,7 +862,7 @@ draw_tile_3c_type1_flicker:
 @C509:
     C509: A0 01       ldy #$01
 @C50B:
-    C50B: 84 13       sty data_ptr_hi   ; $13
+    C50B: 84 13       sty draw_attr_or_src_hi   ; $13
     C50D: 4C E3 C3    jmp flip_bits_to_tile_xor   ; $C3E3
 
 draw_stunned_blinking:
@@ -882,9 +882,9 @@ draw_wave_score:
     C521: A5 21       lda frame_counter   ; $21
     C523: 4A          lsr a
     C524: 29 03       and #$03
-    C526: 85 13       sta data_ptr_hi   ; $13
+    C526: 85 13       sta draw_attr_or_src_hi   ; $13
     C528: A9 00       lda #$00
-    C52A: 85 14       sta scan_src_ptr   ; $14
+    C52A: 85 14       sta draw_palette   ; $14
     C52C: A0 07       ldy #$07
     C52E: B1 1E       lda (obj_record_ptr),y   ; $1E
     C530: 08          php
@@ -911,19 +911,19 @@ draw_score_column:
     C552: 38          sec
     C553: E9 08       sbc #$08
     C555: 85 16       sta sprite_y   ; $16
-    C557: A5 10       lda src_ptr   ; $10
+    C557: A5 10       lda draw_pos   ; $10
     C559: 18          clc
     C55A: 69 08       adc #$08
-    C55C: 85 10       sta src_ptr   ; $10
+    C55C: 85 10       sta draw_pos   ; $10
     C55E: 90 02       bcc @C562   ; $C562
-    C560: E6 11       inc zp_ptr_hi   ; $11
+    C560: E6 11       inc draw_pos_hi   ; $11
 @C562:
     C562: 60          rts
 
 draw_score_tile_if_any:
     C563: BD 73 C5    lda tbl_wave_score_tiles,x   ; $C573
     C566: F0 09       beq @C571   ; $C571
-    C568: 85 12       sta gfx_src_ptr   ; $12
+    C568: 85 12       sta draw_tile_or_src   ; $12
     C56A: 86 17       stx draw_row_counter   ; $17
     C56C: 20 15 C4    jsr write_sprite_to_oam   ; $C415
     C56F: A6 17       ldx draw_row_counter   ; $17
@@ -983,87 +983,87 @@ tbl_wave_score_tiles:
 
 draw_slot2_still_pose:
     C5A3: A9 02       lda #$02
-    C5A5: 85 13       sta data_ptr_hi   ; $13
+    C5A5: 85 13       sta draw_attr_or_src_hi   ; $13
     C5A7: A9 70       lda #$70
-    C5A9: 85 12       sta gfx_src_ptr   ; $12
+    C5A9: 85 12       sta draw_tile_or_src   ; $12
     C5AB: A9 00       lda #$00
-    C5AD: 85 14       sta scan_src_ptr   ; $14
+    C5AD: 85 14       sta draw_palette   ; $14
     C5AF: 4C EC C3    jmp draw_metasprite_2x2   ; $C3EC
 
 draw_slot2_large_pose:
     C5B2: A9 02       lda #$02
-    C5B4: 85 13       sta data_ptr_hi   ; $13
+    C5B4: 85 13       sta draw_attr_or_src_hi   ; $13
     C5B6: A9 00       lda #$00
-    C5B8: 85 14       sta scan_src_ptr   ; $14
+    C5B8: 85 14       sta draw_palette   ; $14
     C5BA: A9 69       lda #$69
-    C5BC: 85 12       sta gfx_src_ptr   ; $12
-    C5BE: A5 10       lda src_ptr   ; $10
+    C5BC: 85 12       sta draw_tile_or_src   ; $12
+    C5BE: A5 10       lda draw_pos   ; $10
     C5C0: 38          sec
     C5C1: E9 08       sbc #$08
-    C5C3: 85 10       sta src_ptr   ; $10
+    C5C3: 85 10       sta draw_pos   ; $10
     C5C5: B0 02       bcs @C5C9   ; $C5C9
-    C5C7: C6 11       dec zp_ptr_hi   ; $11
+    C5C7: C6 11       dec draw_pos_hi   ; $11
 @C5C9:
     C5C9: A5 16       lda sprite_y   ; $16
     C5CB: 38          sec
     C5CC: E9 08       sbc #$08
     C5CE: 85 16       sta sprite_y   ; $16
     C5D0: 20 01 C4    jsr draw_sprite_pair   ; $C401
-    C5D3: A5 10       lda src_ptr   ; $10
+    C5D3: A5 10       lda draw_pos   ; $10
     C5D5: 38          sec
     C5D6: E9 08       sbc #$08
-    C5D8: 85 10       sta src_ptr   ; $10
+    C5D8: 85 10       sta draw_pos   ; $10
     C5DA: B0 02       bcs @C5DE   ; $C5DE
-    C5DC: C6 11       dec zp_ptr_hi   ; $11
+    C5DC: C6 11       dec draw_pos_hi   ; $11
 @C5DE:
     C5DE: A5 16       lda sprite_y   ; $16
     C5E0: 18          clc
     C5E1: 69 08       adc #$08
     C5E3: 85 16       sta sprite_y   ; $16
     C5E5: 20 0F C4    jsr write_sprite_next_tile   ; $C40F
-    C5E8: A5 10       lda src_ptr   ; $10
+    C5E8: A5 10       lda draw_pos   ; $10
     C5EA: 18          clc
     C5EB: 69 08       adc #$08
-    C5ED: 85 10       sta src_ptr   ; $10
+    C5ED: 85 10       sta draw_pos   ; $10
     C5EF: 90 02       bcc @C5F3   ; $C5F3
-    C5F1: E6 11       inc zp_ptr_hi   ; $11
+    C5F1: E6 11       inc draw_pos_hi   ; $11
 @C5F3:
     C5F3: 4C EC C3    jmp draw_metasprite_2x2   ; $C3EC
 
 draw_player_death_animation:
     C5F6: A9 00       lda #$00
-    C5F8: 85 13       sta data_ptr_hi   ; $13
+    C5F8: 85 13       sta draw_attr_or_src_hi   ; $13
     C5FA: A0 07       ldy #$07
     C5FC: B1 1E       lda (obj_record_ptr),y   ; $1E
     C5FE: 0A          asl a
     C5FF: 30 13       bmi @C614   ; $C614
     C601: 29 0C       and #$0c
     C603: 09 80       ora #$80
-    C605: 85 12       sta gfx_src_ptr   ; $12
+    C605: 85 12       sta draw_tile_or_src   ; $12
     C607: B1 1E       lda (obj_record_ptr),y   ; $1E
     C609: 29 08       and #$08
     C60B: F0 04       beq @C611   ; $C611
     C60D: A9 C0       lda #$c0
-    C60F: 85 13       sta data_ptr_hi   ; $13
+    C60F: 85 13       sta draw_attr_or_src_hi   ; $13
 @C611:
     C611: 4C D7 C3    jmp apply_facing_flip   ; $C3D7
 @C614:
     C614: 4A          lsr a
     C615: 29 04       and #$04
     C617: 09 90       ora #$90
-    C619: 85 12       sta gfx_src_ptr   ; $12
+    C619: 85 12       sta draw_tile_or_src   ; $12
     C61B: 4C D7 C3    jmp apply_facing_flip   ; $C3D7
 
 draw_bonus_goal_object:
     C61E: A9 02       lda #$02
-    C620: 85 13       sta data_ptr_hi   ; $13
+    C620: 85 13       sta draw_attr_or_src_hi   ; $13
     C622: A9 00       lda #$00
-    C624: 85 14       sta scan_src_ptr   ; $14
+    C624: 85 14       sta draw_palette   ; $14
     C626: A5 21       lda frame_counter   ; $21
     C628: 29 20       and #$20
     C62A: F0 11       beq draw_goal_block_dd   ; $C63D
     C62C: A9 E8       lda #$e8
-    C62E: 85 12       sta gfx_src_ptr   ; $12
+    C62E: 85 12       sta draw_tile_or_src   ; $12
     C630: 20 4C C6    jsr draw_tile_block_3x4   ; $C64C
     C633: A5 16       lda sprite_y   ; $16
     C635: 38          sec
@@ -1073,13 +1073,13 @@ draw_bonus_goal_object:
 
 draw_goal_block_dd:
     C63D: A9 DD       lda #$dd
-    C63F: 85 12       sta gfx_src_ptr   ; $12
-    C641: A5 10       lda src_ptr   ; $10
+    C63F: 85 12       sta draw_tile_or_src   ; $12
+    C641: A5 10       lda draw_pos   ; $10
     C643: 38          sec
     C644: E9 06       sbc #$06
-    C646: 85 10       sta src_ptr   ; $10
+    C646: 85 10       sta draw_pos   ; $10
     C648: B0 02       bcs draw_tile_block_3x4   ; $C64C
-    C64A: C6 11       dec zp_ptr_hi   ; $11
+    C64A: C6 11       dec draw_pos_hi   ; $11
 
 draw_tile_block_3x4:
     C64C: A9 03       lda #$03
@@ -1098,22 +1098,22 @@ draw_tile_row:
     C65E: 85 17       sta draw_row_counter   ; $17
 @C660:
     C660: 20 15 C4    jsr write_sprite_to_oam   ; $C415
-    C663: A5 10       lda src_ptr   ; $10
+    C663: A5 10       lda draw_pos   ; $10
     C665: 18          clc
     C666: 69 08       adc #$08
-    C668: 85 10       sta src_ptr   ; $10
+    C668: 85 10       sta draw_pos   ; $10
     C66A: 90 02       bcc @C66E   ; $C66E
-    C66C: E6 11       inc zp_ptr_hi   ; $11
+    C66C: E6 11       inc draw_pos_hi   ; $11
 @C66E:
-    C66E: E6 12       inc gfx_src_ptr   ; $12
+    C66E: E6 12       inc draw_tile_or_src   ; $12
     C670: C6 17       dec draw_row_counter   ; $17
     C672: D0 EC       bne @C660   ; $C660
-    C674: A5 10       lda src_ptr   ; $10
+    C674: A5 10       lda draw_pos   ; $10
     C676: 38          sec
     C677: E9 18       sbc #$18
-    C679: 85 10       sta src_ptr   ; $10
+    C679: 85 10       sta draw_pos   ; $10
     C67B: B0 02       bcs @C67F   ; $C67F
-    C67D: C6 11       dec zp_ptr_hi   ; $11
+    C67D: C6 11       dec draw_pos_hi   ; $11
 @C67F:
     C67F: A5 16       lda sprite_y   ; $16
     C681: 18          clc
@@ -1123,23 +1123,23 @@ draw_tile_row:
 
 draw_8_sprite_row_to_oam:
     C687: A9 02       lda #$02
-    C689: 85 13       sta data_ptr_hi   ; $13
+    C689: 85 13       sta draw_attr_or_src_hi   ; $13
     C68B: A9 00       lda #$00
-    C68D: 85 14       sta scan_src_ptr   ; $14
+    C68D: 85 14       sta draw_palette   ; $14
     C68F: A9 F4       lda #$f4
-    C691: 85 12       sta gfx_src_ptr   ; $12
+    C691: 85 12       sta draw_tile_or_src   ; $12
     C693: A9 08       lda #$08
     C695: 85 17       sta draw_row_counter   ; $17
 @C697:
     C697: 20 15 C4    jsr write_sprite_to_oam   ; $C415
-    C69A: A5 10       lda src_ptr   ; $10
+    C69A: A5 10       lda draw_pos   ; $10
     C69C: 18          clc
     C69D: 69 08       adc #$08
-    C69F: 85 10       sta src_ptr   ; $10
+    C69F: 85 10       sta draw_pos   ; $10
     C6A1: 90 02       bcc @C6A5   ; $C6A5
-    C6A3: E6 11       inc zp_ptr_hi   ; $11
+    C6A3: E6 11       inc draw_pos_hi   ; $11
 @C6A5:
-    C6A5: E6 12       inc gfx_src_ptr   ; $12
+    C6A5: E6 12       inc draw_tile_or_src   ; $12
     C6A7: C6 17       dec draw_row_counter   ; $17
     C6A9: D0 EC       bne @C697   ; $C697
     C6AB: 60          rts
@@ -1152,9 +1152,9 @@ draw_player_caught_pose:
     C6B4: 90 02       bcc @C6B8   ; $C6B8
     C6B6: A9 9C       lda #$9c
 @C6B8:
-    C6B8: 85 12       sta gfx_src_ptr   ; $12
+    C6B8: 85 12       sta draw_tile_or_src   ; $12
     C6BA: A9 00       lda #$00
-    C6BC: 85 13       sta data_ptr_hi   ; $13
+    C6BC: 85 13       sta draw_attr_or_src_hi   ; $13
     C6BE: 4C D7 C3    jmp apply_facing_flip   ; $C3D7
 
 draw_knocked_out:
@@ -1165,62 +1165,62 @@ draw_knocked_out:
     C6C9: 4C B2 C5    jmp draw_slot2_large_pose   ; $C5B2
 @C6CC:
     C6CC: A9 A8       lda #$a8
-    C6CE: 85 12       sta gfx_src_ptr   ; $12
+    C6CE: 85 12       sta draw_tile_or_src   ; $12
     C6D0: A9 02       lda #$02
-    C6D2: 85 13       sta data_ptr_hi   ; $13
+    C6D2: 85 13       sta draw_attr_or_src_hi   ; $13
     C6D4: 4C D7 C3    jmp apply_facing_flip   ; $C3D7
 @C6D7:
     C6D7: A9 2C       lda #$2c
-    C6D9: 85 12       sta gfx_src_ptr   ; $12
+    C6D9: 85 12       sta draw_tile_or_src   ; $12
     C6DB: A9 01       lda #$01
-    C6DD: 85 13       sta data_ptr_hi   ; $13
+    C6DD: 85 13       sta draw_attr_or_src_hi   ; $13
     C6DF: 20 D7 C3    jsr apply_facing_flip   ; $C3D7
     C6E2: A5 16       lda sprite_y   ; $16
     C6E4: 38          sec
     C6E5: E9 10       sbc #$10
     C6E7: 85 16       sta sprite_y   ; $16
     C6E9: A9 AE       lda #$ae
-    C6EB: 85 12       sta gfx_src_ptr   ; $12
+    C6EB: 85 12       sta draw_tile_or_src   ; $12
     C6ED: A9 03       lda #$03
-    C6EF: 85 13       sta data_ptr_hi   ; $13
+    C6EF: 85 13       sta draw_attr_or_src_hi   ; $13
     C6F1: 20 4D E8    jsr draw_sprite_advance_x   ; $E84D
     C6F4: A9 67       lda #$67
-    C6F6: 85 12       sta gfx_src_ptr   ; $12
+    C6F6: 85 12       sta draw_tile_or_src   ; $12
     C6F8: 4C 4D E8    jmp draw_sprite_advance_x   ; $E84D
 
 draw_rle_text:
     C6FB: A0 00       ldy #$00
 @C6FD:
-    C6FD: B1 12       lda (gfx_src_ptr),y   ; $12
+    C6FD: B1 12       lda (draw_tile_or_src),y   ; $12
     C6FF: D0 16       bne @C717   ; $C717
     C701: C8          iny
 
 draw_rle_text_step:
-    C702: B1 12       lda (gfx_src_ptr),y   ; $12
+    C702: B1 12       lda (draw_tile_or_src),y   ; $12
     C704: F0 10       beq @C716   ; $C716
     C706: 10 02       bpl @C70A   ; $C70A
-    C708: C6 11       dec zp_ptr_hi   ; $11
+    C708: C6 11       dec draw_pos_hi   ; $11
 @C70A:
     C70A: C8          iny
     C70B: 18          clc
-    C70C: 65 10       adc src_ptr   ; $10
-    C70E: 85 10       sta src_ptr   ; $10
+    C70C: 65 10       adc draw_pos   ; $10
+    C70E: 85 10       sta draw_pos   ; $10
     C710: 90 EB       bcc @C6FD   ; $C6FD
-    C712: E6 11       inc zp_ptr_hi   ; $11
+    C712: E6 11       inc draw_pos_hi   ; $11
     C714: B0 E7       bcs @C6FD   ; $C6FD
 @C716:
     C716: 60          rts
 @C717:
     C717: C8          iny
-    C718: 85 15       sta scratch_counter   ; $15
+    C718: 85 15       sta draw_count   ; $15
     C71A: 85 16       sta sprite_y   ; $16
     C71C: 20 8E C7    jsr ppu_buffer_enqueue   ; $C78E
 @C71F:
-    C71F: A5 14       lda scan_src_ptr   ; $14
+    C71F: A5 14       lda draw_palette   ; $14
     C721: 30 5E       bmi @C781   ; $C781
-    C723: A5 10       lda src_ptr   ; $10
+    C723: A5 10       lda draw_pos   ; $10
     C725: 85 17       sta draw_row_counter   ; $17
-    C727: A5 11       lda zp_ptr_hi   ; $11
+    C727: A5 11       lda draw_pos_hi   ; $11
     C729: 85 18       sta scratch_loop_counter   ; $18
     C72B: 06 17       asl draw_row_counter   ; $17
     C72D: 26 18       rol scratch_loop_counter   ; $18
@@ -1237,7 +1237,7 @@ draw_rle_text_step:
     C742: 2A          rol a
     C743: 29 03       and #$03
     C745: AA          tax
-    C746: A5 14       lda scan_src_ptr   ; $14
+    C746: A5 14       lda draw_palette   ; $14
     C748: 85 17       sta draw_row_counter   ; $17
     C74A: A9 03       lda #$03
     C74C: E8          inx
@@ -1253,9 +1253,9 @@ draw_rle_text_step:
 @C759:
     C759: A6 18       ldx scratch_loop_counter   ; $18
     C75B: 49 FF       eor #$ff
-    C75D: 3D 80 01    and $0180,x
+    C75D: 3D 80 01    and attr_shadow,x   ; $0180
     C760: 05 17       ora draw_row_counter   ; $17
-    C762: 9D 80 01    sta $0180,x
+    C762: 9D 80 01    sta attr_shadow,x   ; $0180
     C765: 46 18       lsr scratch_loop_counter   ; $18
     C767: 46 18       lsr scratch_loop_counter   ; $18
     C769: 46 18       lsr scratch_loop_counter   ; $18
@@ -1275,9 +1275,9 @@ draw_rle_text_step:
     C77B: 1D 70 01    ora attr_dirty_bitmap,x   ; $0170
     C77E: 9D 70 01    sta attr_dirty_bitmap,x   ; $0170
 @C781:
-    C781: E6 10       inc src_ptr   ; $10
+    C781: E6 10       inc draw_pos   ; $10
     C783: D0 02       bne @C787   ; $C787
-    C785: E6 11       inc zp_ptr_hi   ; $11
+    C785: E6 11       inc draw_pos_hi   ; $11
 @C787:
     C787: C6 16       dec sprite_y   ; $16
     C789: D0 94       bne @C71F   ; $C71F
@@ -1287,60 +1287,60 @@ ppu_buffer_enqueue:
     C78E: A5 2D       lda ppu_mask_shadow   ; $2D
     C790: F0 22       beq @C7B4   ; $C7B4
     C792: A6 2A       ldx ppu_buffer_cursor   ; $2A
-    C794: A5 10       lda src_ptr   ; $10
+    C794: A5 10       lda draw_pos   ; $10
     C796: 9D 00 05    sta vram_buffer,x   ; $0500
     C799: E8          inx
-    C79A: A5 11       lda zp_ptr_hi   ; $11
+    C79A: A5 11       lda draw_pos_hi   ; $11
     C79C: 9D 00 05    sta vram_buffer,x   ; $0500
     C79F: E8          inx
-    C7A0: A5 15       lda scratch_counter   ; $15
+    C7A0: A5 15       lda draw_count   ; $15
     C7A2: 9D 00 05    sta vram_buffer,x   ; $0500
     C7A5: E8          inx
 @C7A6:
-    C7A6: B1 12       lda (gfx_src_ptr),y   ; $12
+    C7A6: B1 12       lda (draw_tile_or_src),y   ; $12
     C7A8: C8          iny
     C7A9: 9D 00 05    sta vram_buffer,x   ; $0500
     C7AC: E8          inx
-    C7AD: C6 15       dec scratch_counter   ; $15
+    C7AD: C6 15       dec draw_count   ; $15
     C7AF: D0 F5       bne @C7A6   ; $C7A6
     C7B1: 86 2A       stx ppu_buffer_cursor   ; $2A
     C7B3: 60          rts
 @C7B4:
-    C7B4: A5 11       lda zp_ptr_hi   ; $11
+    C7B4: A5 11       lda draw_pos_hi   ; $11
     C7B6: 8D 06 20    sta PPUADDR   ; $2006
-    C7B9: A5 10       lda src_ptr   ; $10
+    C7B9: A5 10       lda draw_pos   ; $10
     C7BB: 8D 06 20    sta PPUADDR   ; $2006
 @C7BE:
-    C7BE: B1 12       lda (gfx_src_ptr),y   ; $12
+    C7BE: B1 12       lda (draw_tile_or_src),y   ; $12
     C7C0: C8          iny
     C7C1: 8D 07 20    sta PPUDATA   ; $2007
-    C7C4: C6 15       dec scratch_counter   ; $15
+    C7C4: C6 15       dec draw_count   ; $15
     C7C6: D0 F6       bne @C7BE   ; $C7BE
     C7C8: 60          rts
 
 flush_dirty_attribute_bytes:
     C7C9: A9 00       lda #$00
-    C7CB: 85 12       sta gfx_src_ptr   ; $12
-    C7CD: 85 13       sta data_ptr_hi   ; $13
+    C7CB: 85 12       sta draw_tile_or_src   ; $12
+    C7CD: 85 13       sta draw_attr_or_src_hi   ; $13
     C7CF: A9 C0       lda #$c0
-    C7D1: 85 10       sta src_ptr   ; $10
+    C7D1: 85 10       sta draw_pos   ; $10
     C7D3: A9 23       lda #$23
-    C7D5: 85 11       sta zp_ptr_hi   ; $11
+    C7D5: 85 11       sta draw_pos_hi   ; $11
     C7D7: 20 E2 C7    jsr init_zp14_zp15_to_8   ; $C7E2
     C7DA: A9 C0       lda #$c0
-    C7DC: 85 10       sta src_ptr   ; $10
+    C7DC: 85 10       sta draw_pos   ; $10
     C7DE: A9 27       lda #$27
-    C7E0: 85 11       sta zp_ptr_hi   ; $11
+    C7E0: 85 11       sta draw_pos_hi   ; $11
 
 init_zp14_zp15_to_8:
     C7E2: A9 08       lda #$08
-    C7E4: 85 14       sta scan_src_ptr   ; $14
+    C7E4: 85 14       sta draw_palette   ; $14
 @C7E6:
     C7E6: A9 08       lda #$08
-    C7E8: 85 15       sta scratch_counter   ; $15
+    C7E8: 85 15       sta draw_count   ; $15
 
 emit_records_for_set_bits_in_bitmap:
-    C7EA: A4 12       ldy gfx_src_ptr   ; $12
+    C7EA: A4 12       ldy draw_tile_or_src   ; $12
     C7EC: B9 70 01    lda attr_dirty_bitmap,y   ; $0170
     C7EF: F0 12       beq @C803   ; $C803
     C7F1: 4A          lsr a
@@ -1348,21 +1348,21 @@ emit_records_for_set_bits_in_bitmap:
     C7F5: 90 03       bcc @C7FA   ; $C7FA
     C7F7: 20 18 C8    jsr write_attribute_byte   ; $C818
 @C7FA:
-    C7FA: E6 10       inc src_ptr   ; $10
-    C7FC: E6 13       inc data_ptr_hi   ; $13
-    C7FE: C6 15       dec scratch_counter   ; $15
+    C7FA: E6 10       inc draw_pos   ; $10
+    C7FC: E6 13       inc draw_attr_or_src_hi   ; $13
+    C7FE: C6 15       dec draw_count   ; $15
     C800: 4C EA C7    jmp emit_records_for_set_bits_in_bitmap   ; $C7EA
 @C803:
-    C803: A5 10       lda src_ptr   ; $10
+    C803: A5 10       lda draw_pos   ; $10
     C805: 18          clc
-    C806: 65 15       adc scratch_counter   ; $15
-    C808: 85 10       sta src_ptr   ; $10
-    C80A: A5 13       lda data_ptr_hi   ; $13
+    C806: 65 15       adc draw_count   ; $15
+    C808: 85 10       sta draw_pos   ; $10
+    C80A: A5 13       lda draw_attr_or_src_hi   ; $13
     C80C: 18          clc
-    C80D: 65 15       adc scratch_counter   ; $15
-    C80F: 85 13       sta data_ptr_hi   ; $13
-    C811: E6 12       inc gfx_src_ptr   ; $12
-    C813: C6 14       dec scan_src_ptr   ; $14
+    C80D: 65 15       adc draw_count   ; $15
+    C80F: 85 13       sta draw_attr_or_src_hi   ; $13
+    C811: E6 12       inc draw_tile_or_src   ; $12
+    C813: C6 14       dec draw_palette   ; $14
     C815: D0 CF       bne @C7E6   ; $C7E6
     C817: 60          rts
 
@@ -1370,28 +1370,28 @@ write_attribute_byte:
     C818: A5 2D       lda ppu_mask_shadow   ; $2D
     C81A: F0 20       beq @C83C   ; $C83C
     C81C: A6 2A       ldx ppu_buffer_cursor   ; $2A
-    C81E: A5 10       lda src_ptr   ; $10
+    C81E: A5 10       lda draw_pos   ; $10
     C820: 9D 00 05    sta vram_buffer,x   ; $0500
     C823: E8          inx
-    C824: A5 11       lda zp_ptr_hi   ; $11
+    C824: A5 11       lda draw_pos_hi   ; $11
     C826: 9D 00 05    sta vram_buffer,x   ; $0500
     C829: E8          inx
     C82A: A9 01       lda #$01
     C82C: 9D 00 05    sta vram_buffer,x   ; $0500
     C82F: E8          inx
-    C830: A4 13       ldy data_ptr_hi   ; $13
-    C832: B9 80 01    lda $0180,y
+    C830: A4 13       ldy draw_attr_or_src_hi   ; $13
+    C832: B9 80 01    lda attr_shadow,y   ; $0180
     C835: 9D 00 05    sta vram_buffer,x   ; $0500
     C838: E8          inx
     C839: 86 2A       stx ppu_buffer_cursor   ; $2A
     C83B: 60          rts
 @C83C:
-    C83C: A5 11       lda zp_ptr_hi   ; $11
+    C83C: A5 11       lda draw_pos_hi   ; $11
     C83E: 8D 06 20    sta PPUADDR   ; $2006
-    C841: A5 10       lda src_ptr   ; $10
+    C841: A5 10       lda draw_pos   ; $10
     C843: 8D 06 20    sta PPUADDR   ; $2006
-    C846: A4 13       ldy data_ptr_hi   ; $13
-    C848: B9 80 01    lda $0180,y
+    C846: A4 13       ldy draw_attr_or_src_hi   ; $13
+    C848: B9 80 01    lda attr_shadow,y   ; $0180
     C84B: 8D 07 20    sta PPUDATA   ; $2007
     C84E: 60          rts
 
@@ -1403,13 +1403,13 @@ title_screen:
     C858: F0 03       beq @C85D   ; $C85D
     C85A: 20 81 CA    jsr swap_player_state   ; $CA81
 @C85D:
-    C85D: 85 75       sta current_record_index   ; $75
+    C85D: 85 75       sta extra_lives_awarded   ; $75
     C85F: A9 02       lda #$02
-    C861: 85 76       sta record_index   ; $76
+    C861: 85 76       sta next_extra_life   ; $76
     C863: A9 FF       lda #$ff
-    C865: 85 48       sta indirect_ptr   ; $48
+    C865: 85 48       sta extra_life_cap   ; $48
     C867: A9 07       lda #$07
-    C869: 85 49       sta indirect_ptr_hi   ; $49
+    C869: 85 49       sta extra_life_step   ; $49
     C86B: A9 03       lda #$03
     C86D: 85 70       sta p1_lives   ; $70
     C86F: A2 20       ldx #$20
@@ -1445,18 +1445,18 @@ title_screen:
 @C8AB:
     C8AB: A9 01       lda #$01
     C8AD: 85 42       sta game_phase   ; $42
-    C8AF: A5 4A       lda seq_data_ptr   ; $4A
+    C8AF: A5 4A       lda two_player_choice   ; $4A
     C8B1: 85 40       sta two_player_game   ; $40
     C8B3: A9 00       lda #$00
     C8B5: 85 41       sta game_state_flags   ; $41
     C8B7: 85 71       sta score   ; $71
-    C8B9: 85 72       sta draw_src_ptr   ; $72
-    C8BB: 85 73       sta $73
-    C8BD: 85 74       sta decode_src_ptr   ; $74
+    C8B9: 85 72       sta score_byte1   ; $72
+    C8BB: 85 73       sta score_byte2   ; $73
+    C8BD: 85 74       sta score_byte3   ; $74
     C8BF: 85 7A       sta stage_number   ; $7A
     C8C1: 85 7D       sta stage_index   ; $7D
     C8C3: A9 01       lda #$01
-    C8C5: 85 77       sta ppu_block_src_ptr   ; $77
+    C8C5: 85 77       sta round_bcd   ; $77
     C8C7: A2 00       ldx #$00
 @C8C9:
     C8C9: B5 70       lda p1_lives,x   ; $70
@@ -1475,8 +1475,8 @@ title_screen:
     C8E9: 20 39 C2    jsr ppu_enable_render   ; $C239
     C8EC: A2 00       ldx #$00
 @C8EE:
-    C8EE: BD 00 02    lda obj_timer,x   ; $0200
-    C8F1: 9D 00 03    sta obj_state,x   ; $0300
+    C8EE: BD 00 02    lda tramp_bounce_anims,x   ; $0200
+    C8F1: 9D 00 03    sta other_player_round_state,x   ; $0300
     C8F4: E8          inx
     C8F5: D0 F7       bne @C8EE   ; $C8EE
     C8F7: A2 01       ldx #$01
@@ -1494,7 +1494,7 @@ play_round:
     C90B: A9 00       lda #$00
     C90D: 85 4B       sta player_down   ; $4B
     C90F: 85 4F       sta round_cleared   ; $4F
-    C911: 85 31       sta obj_record_ptr   ; $31
+    C911: 85 31       sta item_streak   ; $31
     C913: A9 3C       lda #$3c
     C915: 85 0F       sta countdown_lo   ; $0F
 @C917:
@@ -1509,31 +1509,31 @@ play_round:
     C92D: C6 0F       dec countdown_lo   ; $0F
     C92F: D0 E6       bne @C917   ; $C917
     C931: A9 02       lda #$02
-    C933: 8D 0F 04    sta $040f
+    C933: 8D 0F 04    sta obj_state   ; $040F
     C936: A2 20       ldx #$20
 @C938:
     C938: A9 02       lda #$02
-    C93A: 9D 0F 04    sta $040f,x
+    C93A: 9D 0F 04    sta obj_state,x   ; $040F
     C93D: 8A          txa
     C93E: 18          clc
     C93F: 69 10       adc #$10
     C941: AA          tax
-    C942: E4 68       cpx ptr_hi   ; $68
+    C942: E4 68       cpx cat_slots_end   ; $68
     C944: D0 F2       bne @C938   ; $C938
 @C946:
     C946: 20 41 C1    jsr yield_to_render_loop   ; $C141
-    C949: A5 60       lda sequence_state   ; $60
+    C949: A5 60       lda round_timer_phase   ; $60
     C94B: C9 01       cmp #$01
     C94D: F0 12       beq @C961   ; $C961
     C94F: C9 03       cmp #$03
     C951: D0 06       bne @C959   ; $C959
-    C953: A5 61       lda seq_data_ptr   ; $61
+    C953: A5 61       lda round_timer_frames   ; $61
     C955: C9 3C       cmp #$3c
     C957: D0 08       bne @C961   ; $C961
 @C959:
     C959: A9 01       lda #$01
-    C95B: 8D 13 06    sta $0613
-    C95E: 8D 14 06    sta $0614
+    C95B: 8D 13 06    sta snd_round_music   ; $0613
+    C95E: 8D 14 06    sta snd_round_music_b   ; $0614
 @C961:
     C961: 20 60 CB    jsr update_round_frame   ; $CB60
     C964: 20 E6 F2    jsr tick_round_timer   ; $F2E6
@@ -1545,8 +1545,8 @@ play_round:
 @C972:
     C972: 20 41 C1    jsr yield_to_render_loop   ; $C141
     C975: 20 60 CB    jsr update_round_frame   ; $CB60
-    C978: AD A5 04    lda obj_state   ; $04A5
-    C97B: 0D AD 04    ora $04ad
+    C978: AD A5 04    lda wave_state   ; $04A5
+    C97B: 0D AD 04    ora wave1_state   ; $04AD
     C97E: D0 F2       bne @C972   ; $C972
     C980: A9 B4       lda #$b4
     C982: 85 0F       sta countdown_lo   ; $0F
@@ -1556,8 +1556,8 @@ play_round:
     C989: C9 78       cmp #$78
     C98B: D0 08       bne @C995   ; $C995
     C98D: A9 01       lda #$01
-    C98F: 8D 11 06    sta $0611
-    C992: 8D 12 06    sta $0612
+    C98F: 8D 11 06    sta snd_round_clear   ; $0611
+    C992: 8D 12 06    sta snd_round_clear_b   ; $0612
 @C995:
     C995: 20 60 CB    jsr update_round_frame   ; $CB60
     C998: C6 0F       dec countdown_lo   ; $0F
@@ -1603,8 +1603,8 @@ next_round:
     C9EF: 20 7B CB    jsr update_bonus_round_frame   ; $CB7B
     C9F2: A5 4B       lda player_down   ; $4B
     C9F4: F0 08       beq @C9FE   ; $C9FE
-    C9F6: AD 2F 04    lda stage_phase_state   ; $042F
-    C9F9: 0D 3F 04    ora $043f
+    C9F6: AD 2F 04    lda slot2_state   ; $042F
+    C9F9: 0D 3F 04    ora slot3_state   ; $043F
     C9FC: F0 13       beq @CA11   ; $CA11
 @C9FE:
     C9FE: A5 4F       lda round_cleared   ; $4F
@@ -1633,7 +1633,7 @@ next_round:
 handle_player_caught:
     CA28: 20 41 C1    jsr yield_to_render_loop   ; $C141
     CA2B: 20 60 CB    jsr update_round_frame   ; $CB60
-    CA2E: AD 0F 04    lda $040f
+    CA2E: AD 0F 04    lda obj_state   ; $040F
     CA31: D0 F5       bne handle_player_caught   ; $CA28
     CA33: A5 40       lda two_player_game   ; $40
     CA35: D0 0A       bne @CA41   ; $CA41
@@ -1678,11 +1678,11 @@ swap_player_state:
     CA85: 85 41       sta game_state_flags   ; $41
     CA87: A2 00       ldx #$00
 @CA89:
-    CA89: BD 00 02    lda obj_timer,x   ; $0200
-    CA8C: BC 00 03    ldy obj_state,x   ; $0300
-    CA8F: 9D 00 03    sta obj_state,x   ; $0300
+    CA89: BD 00 02    lda tramp_bounce_anims,x   ; $0200
+    CA8C: BC 00 03    ldy other_player_round_state,x   ; $0300
+    CA8F: 9D 00 03    sta other_player_round_state,x   ; $0300
     CA92: 98          tya
-    CA93: 9D 00 02    sta obj_timer,x   ; $0200
+    CA93: 9D 00 02    sta tramp_bounce_anims,x   ; $0200
     CA96: E8          inx
     CA97: D0 F0       bne @CA89   ; $CA89
 @CA99:
@@ -1699,7 +1699,7 @@ clear_object_tables:
     CAA7: A9 00       lda #$00
     CAA9: A2 00       ldx #$00
 @CAAB:
-    CAAB: 9D 00 04    sta $0400,x
+    CAAB: 9D 00 04    sta obj_x_frac,x   ; $0400
     CAAE: E8          inx
     CAAF: E0 C0       cpx #$c0
     CAB1: D0 F8       bne @CAAB   ; $CAAB
@@ -1716,9 +1716,9 @@ game_over_for_one_player:
 
 game_over:
     CAC3: A9 01       lda #$01
-    CAC5: 8D 15 06    sta $0615
-    CAC8: 8D 16 06    sta $0616
-    CACB: 8D 17 06    sta $0617
+    CAC5: 8D 15 06    sta snd_game_over   ; $0615
+    CAC8: 8D 16 06    sta snd_game_over_b   ; $0616
+    CACB: 8D 17 06    sta snd_game_over_c   ; $0617
     CACE: A9 00       lda #$00
     CAD0: 85 42       sta game_phase   ; $42
     CAD2: A9 A4       lda #$a4
@@ -1762,20 +1762,20 @@ draw_player_number_text:
 
 draw_sprite_glyph:
     CB14: F0 0F       beq @CB25   ; $CB25
-    CB16: 85 12       sta gfx_src_ptr   ; $12
+    CB16: 85 12       sta draw_tile_or_src   ; $12
     CB18: A9 02       lda #$02
-    CB1A: 85 13       sta data_ptr_hi   ; $13
+    CB1A: 85 13       sta draw_attr_or_src_hi   ; $13
     CB1C: A9 00       lda #$00
-    CB1E: 85 14       sta scan_src_ptr   ; $14
-    CB20: 85 15       sta scratch_counter   ; $15
+    CB1E: 85 14       sta draw_palette   ; $14
+    CB20: 85 15       sta draw_count   ; $15
     CB22: 20 15 C4    jsr write_sprite_to_oam   ; $C415
 @CB25:
-    CB25: A5 10       lda src_ptr   ; $10
+    CB25: A5 10       lda draw_pos   ; $10
     CB27: 18          clc
     CB28: 69 08       adc #$08
-    CB2A: 85 10       sta src_ptr   ; $10
+    CB2A: 85 10       sta draw_pos   ; $10
     CB2C: D0 02       bne @CB30   ; $CB30
-    CB2E: E6 11       inc zp_ptr_hi   ; $11
+    CB2E: E6 11       inc draw_pos_hi   ; $11
 @CB30:
     CB30: 60          rts
 
@@ -1789,10 +1789,10 @@ draw_sprite_text:
     CB3B: A0 00       ldy #$00
     CB3D: B1 1E       lda (obj_record_ptr),y   ; $1E
     CB3F: C8          iny
-    CB40: 85 10       sta src_ptr   ; $10
+    CB40: 85 10       sta draw_pos   ; $10
     CB42: B1 1E       lda (obj_record_ptr),y   ; $1E
     CB44: C8          iny
-    CB45: 85 11       sta zp_ptr_hi   ; $11
+    CB45: 85 11       sta draw_pos_hi   ; $11
     CB47: B1 1E       lda (obj_record_ptr),y   ; $1E
     CB49: C8          iny
     CB4A: 85 16       sta sprite_y   ; $16
@@ -1889,7 +1889,7 @@ draw_title_screen:
     CBC3: A0 08       ldy #$08
     CBC5: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
     CBC8: A9 B0       lda #$b0
-    CBCA: 85 10       sta src_ptr   ; $10
+    CBCA: 85 10       sta draw_pos   ; $10
     CBCC: A0 00       ldy #$00
 @CBCE:
     CBCE: A2 14       ldx #$14
@@ -1898,9 +1898,9 @@ draw_title_screen:
     CBD6: B9 ED CB    lda title_logo_row_addrs,y   ; $CBED
     CBD9: 8D 06 20    sta PPUADDR   ; $2006
 @CBDC:
-    CBDC: A5 10       lda src_ptr   ; $10
+    CBDC: A5 10       lda draw_pos   ; $10
     CBDE: 8D 07 20    sta PPUDATA   ; $2007
-    CBE1: E6 10       inc src_ptr   ; $10
+    CBE1: E6 10       inc draw_pos   ; $10
     CBE3: CA          dex
     CBE4: D0 F6       bne @CBDC   ; $CBDC
     CBE6: C8          iny
@@ -1941,27 +1941,27 @@ ppu_clear_nametables:
 
 ppu_run_draw_blocks:
     CC15: B9 41 CC    lda tbl_palhud_ptr,y   ; $CC41
-    CC18: 85 10       sta src_ptr   ; $10
+    CC18: 85 10       sta draw_pos   ; $10
     CC1A: B9 42 CC    lda $cc42,y
-    CC1D: 85 11       sta zp_ptr_hi   ; $11
+    CC1D: 85 11       sta draw_pos_hi   ; $11
     CC1F: A0 00       ldy #$00
 @CC21:
-    CC21: B1 10       lda (src_ptr),y   ; $10
+    CC21: B1 10       lda (draw_pos),y   ; $10
     CC23: F0 EF       beq @CC14   ; $CC14
     CC25: C8          iny
-    CC26: 85 12       sta gfx_src_ptr   ; $12
-    CC28: B1 10       lda (src_ptr),y   ; $10
+    CC26: 85 12       sta draw_tile_or_src   ; $12
+    CC28: B1 10       lda (draw_pos),y   ; $10
     CC2A: C8          iny
     CC2B: AA          tax
-    CC2C: B1 10       lda (src_ptr),y   ; $10
+    CC2C: B1 10       lda (draw_pos),y   ; $10
     CC2E: C8          iny
     CC2F: 8D 06 20    sta PPUADDR   ; $2006
     CC32: 8E 06 20    stx PPUADDR   ; $2006
 @CC35:
-    CC35: B1 10       lda (src_ptr),y   ; $10
+    CC35: B1 10       lda (draw_pos),y   ; $10
     CC37: C8          iny
     CC38: 8D 07 20    sta PPUDATA   ; $2007
-    CC3B: C6 12       dec gfx_src_ptr   ; $12
+    CC3B: C6 12       dec draw_tile_or_src   ; $12
     CC3D: D0 F6       bne @CC35   ; $CC35
     CC3F: F0 E0       beq @CC21   ; $CC21
 
@@ -2210,7 +2210,7 @@ init_title_object:
     CD2B: A2 00       ldx #$00
 @CD2D:
     CD2D: BD 39 CD    lda title_object_record,x   ; $CD39
-    CD30: 9D 90 04    sta obj_state_counter,x   ; $0490
+    CD30: 9D 90 04    sta hurry_x,x   ; $0490
     CD33: E8          inx
     CD34: E0 05       cpx #$05
     CD36: D0 F5       bne @CD2D   ; $CD2D
@@ -2248,9 +2248,9 @@ build_stage_screen_layout:
     CD65: 20 26 D1    jsr ppu_draw_mansion_stamps   ; $D126
     CD68: 20 39 C2    jsr ppu_enable_render   ; $C239
     CD6B: A9 01       lda #$01
-    CD6D: 8D 0E 06    sta $060e
-    CD70: 8D 0F 06    sta $060f
-    CD73: 8D 10 06    sta $0610
+    CD6D: 8D 0E 06    sta snd_bonus_intro   ; $060E
+    CD70: 8D 0F 06    sta snd_bonus_intro_b   ; $060F
+    CD73: 8D 10 06    sta snd_bonus_intro_c   ; $0610
     CD76: A9 D2       lda #$d2
     CD78: 85 0F       sta countdown_lo   ; $0F
 @CD7A:
@@ -2355,17 +2355,17 @@ tbl_round_attributes:
 
 draw_bonus_intro_sprite:
     CDFF: A9 7C       lda #$7c
-    CE01: 85 10       sta src_ptr   ; $10
+    CE01: 85 10       sta draw_pos   ; $10
     CE03: A9 00       lda #$00
-    CE05: 85 11       sta zp_ptr_hi   ; $11
-    CE07: 85 14       sta scan_src_ptr   ; $14
-    CE09: 85 15       sta scratch_counter   ; $15
+    CE05: 85 11       sta draw_pos_hi   ; $11
+    CE07: 85 14       sta draw_palette   ; $14
+    CE09: 85 15       sta draw_count   ; $15
     CE0B: A9 AA       lda #$aa
     CE0D: 85 16       sta sprite_y   ; $16
     CE0F: A9 CB       lda #$cb
-    CE11: 85 12       sta gfx_src_ptr   ; $12
+    CE11: 85 12       sta draw_tile_or_src   ; $12
     CE13: A9 02       lda #$02
-    CE15: 85 13       sta data_ptr_hi   ; $13
+    CE15: 85 13       sta draw_attr_or_src_hi   ; $13
     CE17: 4C EC C3    jmp draw_metasprite_2x2   ; $C3EC
 
 show_bonus_results:
@@ -2379,8 +2379,8 @@ show_bonus_results:
     CE2C: A0 00       ldy #$00
     CE2E: 20 CD CE    jsr draw_indexed_text_line   ; $CECD
     CE31: A9 01       lda #$01
-    CE33: 8D 01 06    sta $0601
-    CE36: 8D 18 06    sta $0618
+    CE33: 8D 01 06    sta snd_bonus_results   ; $0601
+    CE36: 8D 18 06    sta snd_bonus_results_b   ; $0618
     CE39: 20 BB CE    jsr wait_120_frames   ; $CEBB
     CE3C: A0 04       ldy #$04
     CE3E: 20 CD CE    jsr draw_indexed_text_line   ; $CECD
@@ -2396,17 +2396,17 @@ show_bonus_results:
     CE58: A0 14       ldy #$14
     CE5A: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
     CE5D: 20 94 CE    jsr wait_120_frames_with_sprite   ; $CE94
-    CE60: A5 5A       lda ppu_block_src_ptr   ; $5A
-    CE62: 85 5E       sta $5e
+    CE60: A5 5A       lda bonus_goal_points   ; $5A
+    CE62: 85 5E       sta bonus_total_mid   ; $5E
     CE64: F0 10       beq @CE76   ; $CE76
-    CE66: A5 52       lda object_def_ptr   ; $52
+    CE66: A5 52       lda bonus_targets_left   ; $52
     CE68: D0 0C       bne @CE76   ; $CE76
     CE6A: A0 0C       ldy #$0c
     CE6C: 20 CD CE    jsr draw_indexed_text_line   ; $CECD
-    CE6F: A5 5E       lda $5e
+    CE6F: A5 5E       lda bonus_total_mid   ; $5E
     CE71: 18          clc
     CE72: 69 50       adc #$50
-    CE74: 85 5E       sta $5e
+    CE74: 85 5E       sta bonus_total_mid   ; $5E
 @CE76:
     CE76: 20 94 CE    jsr wait_120_frames_with_sprite   ; $CE94
     CE79: A0 10       ldy #$10
@@ -2427,14 +2427,14 @@ wait_120_frames_with_sprite:
 @CE98:
     CE98: 20 41 C1    jsr yield_to_render_loop   ; $C141
     CE9B: A9 38       lda #$38
-    CE9D: 85 10       sta src_ptr   ; $10
+    CE9D: 85 10       sta draw_pos   ; $10
     CE9F: A9 70       lda #$70
     CEA1: 85 16       sta sprite_y   ; $16
     CEA3: A9 00       lda #$00
-    CEA5: 85 11       sta zp_ptr_hi   ; $11
-    CEA7: 85 14       sta scan_src_ptr   ; $14
+    CEA5: 85 11       sta draw_pos_hi   ; $11
+    CEA7: 85 14       sta draw_palette   ; $14
     CEA9: A9 02       lda #$02
-    CEAB: 85 13       sta data_ptr_hi   ; $13
+    CEAB: 85 13       sta draw_attr_or_src_hi   ; $13
     CEAD: 20 3D C6    jsr draw_goal_block_dd   ; $C63D
     CEB0: 20 1C D7    jsr blink_player_up_label   ; $D71C
     CEB3: 20 AB D5    jsr update_score   ; $D5AB
@@ -2455,15 +2455,15 @@ wait_120_frames:
 
 draw_indexed_text_line:
     CECD: B9 08 CF    lda tbl_text_lines,y   ; $CF08
-    CED0: 85 10       sta src_ptr   ; $10
+    CED0: 85 10       sta draw_pos   ; $10
     CED2: B9 09 CF    lda $cf09,y
-    CED5: 85 11       sta zp_ptr_hi   ; $11
+    CED5: 85 11       sta draw_pos_hi   ; $11
     CED7: B9 0A CF    lda $cf0a,y
-    CEDA: 85 12       sta gfx_src_ptr   ; $12
+    CEDA: 85 12       sta draw_tile_or_src   ; $12
     CEDC: B9 0B CF    lda $cf0b,y
-    CEDF: 85 13       sta data_ptr_hi   ; $13
+    CEDF: 85 13       sta draw_attr_or_src_hi   ; $13
     CEE1: A9 80       lda #$80
-    CEE3: 85 14       sta scan_src_ptr   ; $14
+    CEE3: 85 14       sta draw_palette   ; $14
     CEE5: 4C FB C6    jmp draw_rle_text   ; $C6FB
 
 dead_clear_zp_04_07:
@@ -2613,29 +2613,29 @@ text_line_10:
 
 ppu_draw_rle_blocks:
     CF69: B9 A6 CF    lda tbl_frameitem_ptr,y   ; $CFA6
-    CF6C: 85 10       sta src_ptr   ; $10
+    CF6C: 85 10       sta draw_pos   ; $10
     CF6E: B9 A7 CF    lda $cfa7,y
-    CF71: 85 11       sta zp_ptr_hi   ; $11
+    CF71: 85 11       sta draw_pos_hi   ; $11
     CF73: A0 00       ldy #$00
 @CF75:
-    CF75: B1 10       lda (src_ptr),y   ; $10
+    CF75: B1 10       lda (draw_pos),y   ; $10
     CF77: F0 2C       beq @CFA5   ; $CFA5
     CF79: C8          iny
     CF7A: 85 17       sta draw_row_counter   ; $17
-    CF7C: B1 10       lda (src_ptr),y   ; $10
+    CF7C: B1 10       lda (draw_pos),y   ; $10
     CF7E: C8          iny
     CF7F: AA          tax
-    CF80: B1 10       lda (src_ptr),y   ; $10
+    CF80: B1 10       lda (draw_pos),y   ; $10
     CF82: C8          iny
     CF83: 8D 06 20    sta PPUADDR   ; $2006
     CF86: 8E 06 20    stx PPUADDR   ; $2006
     CF89: 84 16       sty sprite_y   ; $16
 @CF8B:
-    CF8B: B1 10       lda (src_ptr),y   ; $10
+    CF8B: B1 10       lda (draw_pos),y   ; $10
     CF8D: F0 0D       beq @CF9C   ; $CF9C
     CF8F: C8          iny
     CF90: AA          tax
-    CF91: B1 10       lda (src_ptr),y   ; $10
+    CF91: B1 10       lda (draw_pos),y   ; $10
     CF93: C8          iny
 @CF94:
     CF94: 8D 07 20    sta PPUDATA   ; $2007
@@ -3045,55 +3045,55 @@ frameitem_block_0A:
 
 ppu_draw_mansion_stamps:
     D126: B9 85 D1    lda tbl_mansion_ptr,y   ; $D185
-    D129: 85 10       sta src_ptr   ; $10
+    D129: 85 10       sta draw_pos   ; $10
     D12B: B9 86 D1    lda $d186,y
-    D12E: 85 11       sta zp_ptr_hi   ; $11
+    D12E: 85 11       sta draw_pos_hi   ; $11
     D130: A0 00       ldy #$00
 @D132:
-    D132: B1 10       lda (src_ptr),y   ; $10
+    D132: B1 10       lda (draw_pos),y   ; $10
     D134: F0 4E       beq @D184   ; $D184
     D136: C8          iny
     D137: 85 17       sta draw_row_counter   ; $17
-    D139: B1 10       lda (src_ptr),y   ; $10
+    D139: B1 10       lda (draw_pos),y   ; $10
     D13B: C8          iny
-    D13C: 85 12       sta gfx_src_ptr   ; $12
-    D13E: B1 10       lda (src_ptr),y   ; $10
+    D13C: 85 12       sta draw_tile_or_src   ; $12
+    D13E: B1 10       lda (draw_pos),y   ; $10
     D140: C8          iny
-    D141: 85 13       sta data_ptr_hi   ; $13
+    D141: 85 13       sta draw_attr_or_src_hi   ; $13
 @D143:
-    D143: B1 10       lda (src_ptr),y   ; $10
+    D143: B1 10       lda (draw_pos),y   ; $10
     D145: C8          iny
-    D146: 85 14       sta scan_src_ptr   ; $14
-    D148: B1 10       lda (src_ptr),y   ; $10
+    D146: 85 14       sta draw_palette   ; $14
+    D148: B1 10       lda (draw_pos),y   ; $10
     D14A: C8          iny
-    D14B: 85 15       sta scratch_counter   ; $15
+    D14B: 85 15       sta draw_count   ; $15
     D14D: 84 16       sty sprite_y   ; $16
     D14F: A0 00       ldy #$00
 @D151:
-    D151: A5 15       lda scratch_counter   ; $15
+    D151: A5 15       lda draw_count   ; $15
     D153: 8D 06 20    sta PPUADDR   ; $2006
-    D156: A5 14       lda scan_src_ptr   ; $14
+    D156: A5 14       lda draw_palette   ; $14
     D158: 8D 06 20    sta PPUADDR   ; $2006
-    D15B: B1 12       lda (gfx_src_ptr),y   ; $12
+    D15B: B1 12       lda (draw_tile_or_src),y   ; $12
     D15D: C8          iny
     D15E: AA          tax
 @D15F:
-    D15F: B1 12       lda (gfx_src_ptr),y   ; $12
+    D15F: B1 12       lda (draw_tile_or_src),y   ; $12
     D161: C8          iny
     D162: 8D 07 20    sta PPUDATA   ; $2007
     D165: CA          dex
     D166: D0 F7       bne @D15F   ; $D15F
-    D168: B1 12       lda (gfx_src_ptr),y   ; $12
+    D168: B1 12       lda (draw_tile_or_src),y   ; $12
     D16A: F0 10       beq @D17C   ; $D17C
     D16C: 10 02       bpl @D170   ; $D170
-    D16E: C6 15       dec scratch_counter   ; $15
+    D16E: C6 15       dec draw_count   ; $15
 @D170:
     D170: C8          iny
     D171: 18          clc
-    D172: 65 14       adc scan_src_ptr   ; $14
-    D174: 85 14       sta scan_src_ptr   ; $14
+    D172: 65 14       adc draw_palette   ; $14
+    D174: 85 14       sta draw_palette   ; $14
     D176: 90 D9       bcc @D151   ; $D151
-    D178: E6 15       inc scratch_counter   ; $15
+    D178: E6 15       inc draw_count   ; $15
     D17A: B0 D5       bcs @D151   ; $D151
 @D17C:
     D17C: A4 16       ldy sprite_y   ; $16
@@ -3938,9 +3938,9 @@ mansion_frame_bonus:
     D4BD: 00          .byte $00
 
 add_score_n_times:
-    D4BE: 85 19       sta draw_data_ptr_hi   ; $19
+    D4BE: 85 19       sta score_offset_save   ; $19
 @D4C0:
-    D4C0: A4 19       ldy draw_data_ptr_hi   ; $19
+    D4C0: A4 19       ldy score_offset_save   ; $19
     D4C2: 20 CA D4    jsr add_score_from_table   ; $D4CA
     D4C5: C6 18       dec scratch_loop_counter   ; $18
     D4C7: D0 F7       bne @D4C0   ; $D4C0
@@ -3954,54 +3954,54 @@ add_score_from_table:
     D4D0: 98          tya
     D4D1: 18          clc
     D4D2: 6D 61 D5    adc ptr_score_amounts   ; $D561
-    D4D5: 85 12       sta gfx_src_ptr   ; $12
+    D4D5: 85 12       sta draw_tile_or_src   ; $12
     D4D7: AD 62 D5    lda $d562
     D4DA: 69 00       adc #$00
-    D4DC: 85 13       sta data_ptr_hi   ; $13
+    D4DC: 85 13       sta draw_attr_or_src_hi   ; $13
     D4DE: A2 74       ldx #$74
     D4E0: A0 03       ldy #$03
     D4E2: 4C 02 D5    jmp bcd_add   ; $D502
 
 bcd_add_from_table:
     D4E5: B9 36 D5    lda tbl_bcd_add_records,y   ; $D536
-    D4E8: 85 10       sta src_ptr   ; $10
+    D4E8: 85 10       sta draw_pos   ; $10
     D4EA: B9 37 D5    lda $d537,y
-    D4ED: 85 11       sta zp_ptr_hi   ; $11
+    D4ED: 85 11       sta draw_pos_hi   ; $11
     D4EF: A0 00       ldy #$00
-    D4F1: B1 10       lda (src_ptr),y   ; $10
+    D4F1: B1 10       lda (draw_pos),y   ; $10
     D4F3: C8          iny
     D4F4: AA          tax
-    D4F5: B1 10       lda (src_ptr),y   ; $10
+    D4F5: B1 10       lda (draw_pos),y   ; $10
     D4F7: C8          iny
-    D4F8: 85 12       sta gfx_src_ptr   ; $12
-    D4FA: B1 10       lda (src_ptr),y   ; $10
+    D4F8: 85 12       sta draw_tile_or_src   ; $12
+    D4FA: B1 10       lda (draw_pos),y   ; $10
     D4FC: C8          iny
-    D4FD: 85 13       sta data_ptr_hi   ; $13
-    D4FF: B1 10       lda (src_ptr),y   ; $10
+    D4FD: 85 13       sta draw_attr_or_src_hi   ; $13
+    D4FF: B1 10       lda (draw_pos),y   ; $10
     D501: A8          tay
 
 bcd_add:
     D502: 18          clc
 @D503:
-    D503: B1 12       lda (gfx_src_ptr),y   ; $12
+    D503: B1 12       lda (draw_tile_or_src),y   ; $12
     D505: 29 0F       and #$0f
-    D507: 85 14       sta scan_src_ptr   ; $14
-    D509: B1 12       lda (gfx_src_ptr),y   ; $12
+    D507: 85 14       sta draw_palette   ; $14
+    D509: B1 12       lda (draw_tile_or_src),y   ; $12
     D50B: 29 F0       and #$f0
-    D50D: 85 15       sta scratch_counter   ; $15
-    D50F: B5 00       lda indirect_ptr,x   ; $00
+    D50D: 85 15       sta draw_count   ; $15
+    D50F: B5 00       lda zero_page_base,x   ; $00
     D511: 29 0F       and #$0f
-    D513: 65 14       adc scan_src_ptr   ; $14
+    D513: 65 14       adc draw_palette   ; $14
     D515: C9 0A       cmp #$0a
     D517: 90 02       bcc @D51B   ; $D51B
     D519: 69 05       adc #$05
 @D51B:
-    D51B: 85 14       sta scan_src_ptr   ; $14
+    D51B: 85 14       sta draw_palette   ; $14
     D51D: 18          clc
-    D51E: B5 00       lda indirect_ptr,x   ; $00
+    D51E: B5 00       lda zero_page_base,x   ; $00
     D520: 29 F0       and #$f0
-    D522: 65 14       adc scan_src_ptr   ; $14
-    D524: 65 15       adc scratch_counter   ; $15
+    D522: 65 14       adc draw_palette   ; $14
+    D524: 65 15       adc draw_count   ; $15
     D526: B0 04       bcs @D52C   ; $D52C
     D528: C9 A0       cmp #$a0
     D52A: 90 03       bcc @D52F   ; $D52F
@@ -4009,7 +4009,7 @@ bcd_add:
     D52C: 69 5F       adc #$5f
     D52E: 38          sec
 @D52F:
-    D52F: 95 00       sta indirect_ptr,x   ; $00
+    D52F: 95 00       sta zero_page_base,x   ; $00
     D531: CA          dex
     D532: 88          dey
     D533: 10 CE       bpl @D503   ; $D503
@@ -4179,47 +4179,47 @@ update_score:
 
 queue_bcd_number:
     D5D9: B9 40 D6    lda tbl_bcd_number_entries,y   ; $D640
-    D5DC: 85 10       sta src_ptr   ; $10
+    D5DC: 85 10       sta draw_pos   ; $10
     D5DE: B9 41 D6    lda $d641,y
-    D5E1: 85 11       sta zp_ptr_hi   ; $11
+    D5E1: 85 11       sta draw_pos_hi   ; $11
     D5E3: A0 00       ldy #$00
-    D5E5: B1 10       lda (src_ptr),y   ; $10
+    D5E5: B1 10       lda (draw_pos),y   ; $10
     D5E7: C8          iny
-    D5E8: 85 12       sta gfx_src_ptr   ; $12
-    D5EA: B1 10       lda (src_ptr),y   ; $10
+    D5E8: 85 12       sta draw_tile_or_src   ; $12
+    D5EA: B1 10       lda (draw_pos),y   ; $10
     D5EC: C8          iny
-    D5ED: 85 13       sta data_ptr_hi   ; $13
-    D5EF: B1 10       lda (src_ptr),y   ; $10
+    D5ED: 85 13       sta draw_attr_or_src_hi   ; $13
+    D5EF: B1 10       lda (draw_pos),y   ; $10
     D5F1: C8          iny
     D5F2: AA          tax
-    D5F3: B1 10       lda (src_ptr),y   ; $10
+    D5F3: B1 10       lda (draw_pos),y   ; $10
     D5F5: C8          iny
-    D5F6: 85 14       sta scan_src_ptr   ; $14
-    D5F8: B1 10       lda (src_ptr),y   ; $10
-    D5FA: 85 15       sta scratch_counter   ; $15
+    D5F6: 85 14       sta draw_palette   ; $14
+    D5F8: B1 10       lda (draw_pos),y   ; $10
+    D5FA: 85 15       sta draw_count   ; $15
     D5FC: A4 2A       ldy ppu_buffer_cursor   ; $2A
-    D5FE: A5 12       lda gfx_src_ptr   ; $12
+    D5FE: A5 12       lda draw_tile_or_src   ; $12
     D600: 99 00 05    sta vram_buffer,y   ; $0500
     D603: C8          iny
-    D604: A5 13       lda data_ptr_hi   ; $13
+    D604: A5 13       lda draw_attr_or_src_hi   ; $13
     D606: 99 00 05    sta vram_buffer,y   ; $0500
     D609: C8          iny
-    D60A: A5 14       lda scan_src_ptr   ; $14
+    D60A: A5 14       lda draw_palette   ; $14
     D60C: 0A          asl a
     D60D: 99 00 05    sta vram_buffer,y   ; $0500
     D610: C8          iny
 @D611:
-    D611: B5 00       lda indirect_ptr,x   ; $00
+    D611: B5 00       lda zero_page_base,x   ; $00
     D613: 4A          lsr a
     D614: 4A          lsr a
     D615: 4A          lsr a
     D616: 4A          lsr a
     D617: 20 29 D6    jsr queue_digit_blank_leading_zero   ; $D629
-    D61A: B5 00       lda indirect_ptr,x   ; $00
+    D61A: B5 00       lda zero_page_base,x   ; $00
     D61C: E8          inx
     D61D: 29 0F       and #$0f
     D61F: 20 29 D6    jsr queue_digit_blank_leading_zero   ; $D629
-    D622: C6 14       dec scan_src_ptr   ; $14
+    D622: C6 14       dec draw_palette   ; $14
     D624: D0 EB       bne @D611   ; $D611
     D626: 84 2A       sty ppu_buffer_cursor   ; $2A
 @D628:
@@ -4227,7 +4227,7 @@ queue_bcd_number:
 
 queue_digit_blank_leading_zero:
     D629: D0 09       bne @D634   ; $D634
-    D62B: C6 15       dec scratch_counter   ; $15
+    D62B: C6 15       dec draw_count   ; $15
     D62D: 30 05       bmi @D634   ; $D634
     D62F: 99 00 05    sta vram_buffer,y   ; $0500
     D632: C8          iny
@@ -4238,7 +4238,7 @@ queue_digit_blank_leading_zero:
     D637: 99 00 05    sta vram_buffer,y   ; $0500
     D63A: C8          iny
     D63B: A9 00       lda #$00
-    D63D: 85 15       sta scratch_counter   ; $15
+    D63D: 85 15       sta draw_count   ; $15
     D63F: 60          rts
 
 tbl_bcd_number_entries:
@@ -4370,30 +4370,30 @@ update_high_score:
     D6A9: 60          rts
 
 award_extra_life:
-    D6AA: A5 75       lda current_record_index   ; $75
-    D6AC: C5 48       cmp indirect_ptr   ; $48
+    D6AA: A5 75       lda extra_lives_awarded   ; $75
+    D6AC: C5 48       cmp extra_life_cap   ; $48
     D6AE: F0 F9       beq @D6A9   ; $D6A9
-    D6B0: A5 72       lda draw_src_ptr   ; $72
-    D6B2: C5 76       cmp record_index   ; $76
+    D6B0: A5 72       lda score_byte1   ; $72
+    D6B2: C5 76       cmp next_extra_life   ; $76
     D6B4: 90 F3       bcc @D6A9   ; $D6A9
-    D6B6: A5 75       lda current_record_index   ; $75
+    D6B6: A5 75       lda extra_lives_awarded   ; $75
     D6B8: D0 02       bne @D6BC   ; $D6BC
-    D6BA: 85 76       sta record_index   ; $76
+    D6BA: 85 76       sta next_extra_life   ; $76
 @D6BC:
-    D6BC: E6 75       inc current_record_index   ; $75
+    D6BC: E6 75       inc extra_lives_awarded   ; $75
     D6BE: D0 02       bne @D6C2   ; $D6C2
-    D6C0: C6 75       dec current_record_index   ; $75
+    D6C0: C6 75       dec extra_lives_awarded   ; $75
 @D6C2:
     D6C2: A0 00       ldy #$00
     D6C4: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
     D6C7: 90 04       bcc @D6CD   ; $D6CD
-    D6C9: A5 48       lda indirect_ptr   ; $48
-    D6CB: 85 75       sta current_record_index   ; $75
+    D6C9: A5 48       lda extra_life_cap   ; $48
+    D6CB: 85 75       sta extra_lives_awarded   ; $75
 @D6CD:
     D6CD: A9 01       lda #$01
-    D6CF: 8D 02 06    sta $0602
-    D6D2: 8D 03 06    sta $0603
-    D6D5: 8D 04 06    sta $0604
+    D6CF: 8D 02 06    sta snd_extra_life   ; $0602
+    D6D2: 8D 03 06    sta snd_extra_life_b   ; $0603
+    D6D5: 8D 04 06    sta snd_extra_life_c   ; $0604
     D6D8: A0 02       ldy #$02
     D6DA: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
     D6DD: 90 04       bcc @D6E3   ; $D6E3
@@ -4458,17 +4458,17 @@ show_player_up_label:
     D73B: 4C 7A D7    jmp queue_vram_packet   ; $D77A
 
 title_menu_cursor:
-    D73E: A5 24       lda draw_data_ptr   ; $24
+    D73E: A5 24       lda select_history   ; $24
     D740: 29 03       and #$03
     D742: C9 01       cmp #$01
     D744: D0 0A       bne @D750   ; $D750
     D746: A9 F0       lda #$f0
     D748: 85 0F       sta countdown_lo   ; $0F
-    D74A: A5 4A       lda seq_data_ptr   ; $4A
+    D74A: A5 4A       lda two_player_choice   ; $4A
     D74C: 49 01       eor #$01
-    D74E: 85 4A       sta seq_data_ptr   ; $4A
+    D74E: 85 4A       sta two_player_choice   ; $4A
 @D750:
-    D750: A5 4A       lda seq_data_ptr   ; $4A
+    D750: A5 4A       lda two_player_choice   ; $4A
     D752: 0A          asl a
     D753: 69 08       adc #$08
     D755: 48          pha
@@ -4508,30 +4508,30 @@ dead_toggle_cat_touch_flag:
 
 queue_vram_packet:
     D77A: B9 AD D7    lda tbl_vram_packets,y   ; $D7AD
-    D77D: 85 10       sta src_ptr   ; $10
+    D77D: 85 10       sta draw_pos   ; $10
     D77F: B9 AE D7    lda $d7ae,y
-    D782: 85 11       sta zp_ptr_hi   ; $11
+    D782: 85 11       sta draw_pos_hi   ; $11
     D784: A0 00       ldy #$00
     D786: A6 2A       ldx ppu_buffer_cursor   ; $2A
-    D788: B1 10       lda (src_ptr),y   ; $10
+    D788: B1 10       lda (draw_pos),y   ; $10
     D78A: C8          iny
     D78B: 9D 00 05    sta vram_buffer,x   ; $0500
     D78E: E8          inx
-    D78F: B1 10       lda (src_ptr),y   ; $10
+    D78F: B1 10       lda (draw_pos),y   ; $10
     D791: C8          iny
     D792: 9D 00 05    sta vram_buffer,x   ; $0500
     D795: E8          inx
-    D796: B1 10       lda (src_ptr),y   ; $10
+    D796: B1 10       lda (draw_pos),y   ; $10
     D798: C8          iny
     D799: 9D 00 05    sta vram_buffer,x   ; $0500
-    D79C: 85 12       sta gfx_src_ptr   ; $12
+    D79C: 85 12       sta draw_tile_or_src   ; $12
     D79E: E8          inx
 @D79F:
-    D79F: B1 10       lda (src_ptr),y   ; $10
+    D79F: B1 10       lda (draw_pos),y   ; $10
     D7A1: C8          iny
     D7A2: 9D 00 05    sta vram_buffer,x   ; $0500
     D7A5: E8          inx
-    D7A6: C6 12       dec gfx_src_ptr   ; $12
+    D7A6: C6 12       dec draw_tile_or_src   ; $12
     D7A8: D0 F5       bne @D79F   ; $D79F
     D7AA: 86 2A       stx ppu_buffer_cursor   ; $2A
     D7AC: 60          rts
@@ -4714,20 +4714,20 @@ init_round_cats:
     D86E: 18          clc
     D86F: 69 10       adc #$10
     D871: 85 1E       sta obj_record_ptr   ; $1E
-    D873: C5 68       cmp ptr_hi   ; $68
+    D873: C5 68       cmp cat_slots_end   ; $68
     D875: D0 E5       bne @D85C   ; $D85C
     D877: A9 00       lda #$00
-    D879: 85 35       sta obj_collision_state   ; $35
+    D879: 85 35       sta slot2_step_now   ; $35
     D87B: A9 09       lda #$09
-    D87D: 85 36       sta obj_record_ptr   ; $36
+    D87D: 85 36       sta slot2_target_row   ; $36
     D87F: A9 04       lda #$04
-    D881: 85 37       sta obj_record_ptr_hi   ; $37
+    D881: 85 37       sta slot2_row_step   ; $37
     D883: A9 20       lda #$20
     D885: 85 1E       sta obj_record_ptr   ; $1E
     D887: A9 04       lda #$04
     D889: 85 1F       sta obj_record_ptr_hi   ; $1F
     D88B: A9 FF       lda #$ff
-    D88D: 8D 26 04    sta $0426
+    D88D: 8D 26 04    sta slot2_dir   ; $0426
     D890: A2 00       ldx #$00
     D892: A9 02       lda #$02
 
@@ -4761,12 +4761,12 @@ init_bonus_goal_object:
     D8C0: A2 00       ldx #$00
 @D8C2:
     D8C2: BD D3 D8    lda bonus_goal_template,x   ; $D8D3
-    D8C5: 9D 10 04    sta $0410,x
+    D8C5: 9D 10 04    sta slot1_x_frac,x   ; $0410
     D8C8: E8          inx
     D8C9: E0 05       cpx #$05
     D8CB: D0 F5       bne @D8C2   ; $D8C2
     D8CD: A9 0E       lda #$0e
-    D8CF: 8D 1F 04    sta obj_state   ; $041F
+    D8CF: 8D 1F 04    sta slot1_state   ; $041F
     D8D2: 60          rts
 
 bonus_goal_template:
@@ -4798,22 +4798,22 @@ update_and_respawn_objects:
     D8FC: A9 00       lda #$00
     D8FE: 85 4D       sta respawn_tick   ; $4D
     D900: A6 4C       ldx respawn_slot   ; $4C
-    D902: BD 0F 04    lda $040f,x
+    D902: BD 0F 04    lda obj_state,x   ; $040F
     D905: C9 1A       cmp #$1a
     D907: D0 22       bne @D92B   ; $D92B
-    D909: BD 07 04    lda $0407,x
+    D909: BD 07 04    lda obj_timer,x   ; $0407
     D90C: D0 1D       bne @D92B   ; $D92B
-    D90E: 9D 00 04    sta $0400,x
-    D911: 9D 02 04    sta $0402,x
+    D90E: 9D 00 04    sta obj_x_frac,x   ; $0400
+    D911: 9D 02 04    sta obj_y_frac,x   ; $0402
     D914: A9 1D       lda #$1d
-    D916: 9D 01 04    sta $0401,x
+    D916: 9D 01 04    sta obj_x,x   ; $0401
     D919: A9 06       lda #$06
-    D91B: 9D 03 04    sta $0403,x
-    D91E: 9D 04 04    sta $0404,x
+    D91B: 9D 03 04    sta obj_y,x   ; $0403
+    D91E: 9D 04 04    sta obj_anim,x   ; $0404
     D921: A9 1C       lda #$1c
-    D923: 9D 0F 04    sta $040f,x
+    D923: 9D 0F 04    sta obj_state,x   ; $040F
     D926: A9 00       lda #$00
-    D928: 9D 08 04    sta $0408,x
+    D928: 9D 08 04    sta obj_tile,x   ; $0408
 @D92B:
     D92B: 8A          txa
     D92C: 18          clc
@@ -4844,16 +4844,16 @@ set_object_intent:
     D951: F0 44       beq @D997   ; $D997
     D953: C9 0C       cmp #$0c
     D955: D0 40       bne @D997   ; $D997
-    D957: AD 0F 04    lda $040f
+    D957: AD 0F 04    lda obj_state   ; $040F
     D95A: C9 0C       cmp #$0c
     D95C: D0 12       bne @D970   ; $D970
     D95E: A0 00       ldy #$00
     D960: B1 1E       lda (obj_record_ptr),y   ; $1E
     D962: 38          sec
-    D963: ED 00 04    sbc $0400
+    D963: ED 00 04    sbc obj_x_frac   ; $0400
     D966: C8          iny
     D967: B1 1E       lda (obj_record_ptr),y   ; $1E
-    D969: ED 01 04    sbc $0401
+    D969: ED 01 04    sbc obj_x   ; $0401
     D96C: C9 02       cmp #$02
     D96E: 90 27       bcc @D997   ; $D997
 @D970:
@@ -4875,21 +4875,21 @@ set_object_intent:
     D98C: F0 39       beq @D9C7   ; $D9C7
     D98E: A5 26       lda pad_dir   ; $26
     D990: 91 1E       sta (obj_record_ptr),y   ; $1E
-    D992: A5 22       lda scan_ptr   ; $22
+    D992: A5 22       lda button_history   ; $22
     D994: C8          iny
     D995: 91 1E       sta (obj_record_ptr),y   ; $1E
 @D997:
     D997: 60          rts
 @D998:
-    D998: AD 2F 04    lda stage_phase_state   ; $042F
+    D998: AD 2F 04    lda slot2_state   ; $042F
     D99B: C9 02       cmp #$02
     D99D: F0 F8       beq @D997   ; $D997
     D99F: C9 0C       cmp #$0c
     D9A1: D0 F4       bne @D997   ; $D997
-    D9A3: A5 36       lda obj_record_ptr   ; $36
-    D9A5: CD 23 04    cmp obj_state   ; $0423
+    D9A3: A5 36       lda slot2_target_row   ; $36
+    D9A5: CD 23 04    cmp slot2_y   ; $0423
     D9A8: 90 ED       bcc @D997   ; $D997
-    D9AA: AD 21 04    lda target_compare_value   ; $0421
+    D9AA: AD 21 04    lda slot2_x   ; $0421
     D9AD: C9 06       cmp #$06
     D9AF: 90 0B       bcc set_intent_right   ; $D9BC
     D9B1: C9 34       cmp #$34
@@ -4906,14 +4906,14 @@ set_intent_right:
     D9BE: 91 1E       sta (obj_record_ptr),y   ; $1E
     D9C0: 60          rts
 @D9C1:
-    D9C1: AD 26 04    lda $0426
+    D9C1: AD 26 04    lda slot2_dir   ; $0426
     D9C4: 91 1E       sta (obj_record_ptr),y   ; $1E
     D9C6: 60          rts
 @D9C7:
-    D9C7: 0E 0E 04    asl $040e
-    D9CA: A5 3C       lda seq_data_ptr_hi   ; $3C
+    D9C7: 0E 0E 04    asl obj_buttons   ; $040E
+    D9CA: A5 3C       lda demo_hold_frames   ; $3C
     D9CC: F0 03       beq @D9D1   ; $D9D1
-    D9CE: C6 3C       dec seq_data_ptr_hi   ; $3C
+    D9CE: C6 3C       dec demo_hold_frames   ; $3C
     D9D0: 60          rts
 @D9D1:
     D9D1: A6 3D       ldx demo_script_cursor   ; $3D
@@ -4921,7 +4921,7 @@ set_intent_right:
     D9D6: F0 0F       beq @D9E7   ; $D9E7
     D9D8: 0A          asl a
     D9D9: 0A          asl a
-    D9DA: 85 3C       sta seq_data_ptr_hi   ; $3C
+    D9DA: 85 3C       sta demo_hold_frames   ; $3C
     D9DC: BD E1 FF    lda tbl_demo_input_script,x   ; $FFE1
     D9DF: E8          inx
     D9E0: 86 3D       stx demo_script_cursor   ; $3D
@@ -4933,38 +4933,38 @@ set_intent_right:
     D9E9: 91 1E       sta (obj_record_ptr),y   ; $1E
     D9EB: 60          rts
 @D9EC:
-    D9EC: EE 0E 04    inc $040e
+    D9EC: EE 0E 04    inc obj_buttons   ; $040E
     D9EF: 60          rts
 
 slot2_maybe_step_target_floor:
-    D9F0: AD 21 04    lda target_compare_value   ; $0421
+    D9F0: AD 21 04    lda slot2_x   ; $0421
     D9F3: 38          sec
     D9F4: E9 06       sbc #$06
     D9F6: C9 2E       cmp #$2e
     D9F8: B0 08       bcs slot2_step_target_floor   ; $DA02
-    D9FA: A5 35       lda obj_collision_state   ; $35
+    D9FA: A5 35       lda slot2_step_now   ; $35
     D9FC: F0 20       beq @DA1E   ; $DA1E
     D9FE: A9 00       lda #$00
-    DA00: 85 35       sta obj_collision_state   ; $35
+    DA00: 85 35       sta slot2_step_now   ; $35
 
 slot2_step_target_floor:
-    DA02: A5 36       lda obj_record_ptr   ; $36
+    DA02: A5 36       lda slot2_target_row   ; $36
     DA04: C9 09       cmp #$09
     DA06: D0 07       bne @DA0F   ; $DA0F
     DA08: A9 04       lda #$04
-    DA0A: 85 37       sta obj_record_ptr_hi   ; $37
+    DA0A: 85 37       sta slot2_row_step   ; $37
     DA0C: 4C 17 DA    jmp slot2_add_floor_step   ; $DA17
 @DA0F:
     DA0F: C9 19       cmp #$19
     DA11: D0 04       bne slot2_add_floor_step   ; $DA17
     DA13: A9 FC       lda #$fc
-    DA15: 85 37       sta obj_record_ptr_hi   ; $37
+    DA15: 85 37       sta slot2_row_step   ; $37
 
 slot2_add_floor_step:
-    DA17: A5 36       lda obj_record_ptr   ; $36
+    DA17: A5 36       lda slot2_target_row   ; $36
     DA19: 18          clc
-    DA1A: 65 37       adc obj_record_ptr_hi   ; $37
-    DA1C: 85 36       sta obj_record_ptr   ; $36
+    DA1A: 65 37       adc slot2_row_step   ; $37
+    DA1C: 85 36       sta slot2_target_row   ; $36
 @DA1E:
     DA1E: 60          rts
 @DA1F:
@@ -5015,9 +5015,9 @@ state02_walk:
     DA70: A5 1E       lda obj_record_ptr   ; $1E
     DA72: C9 20       cmp #$20
     DA74: D0 08       bne @DA7E   ; $DA7E
-    DA76: AD 2A 04    lda bonus_item_timer   ; $042A
+    DA76: AD 2A 04    lda slot2_cooldown   ; $042A
     DA79: F0 03       beq @DA7E   ; $DA7E
-    DA7B: CE 2A 04    dec bonus_item_timer   ; $042A
+    DA7B: CE 2A 04    dec slot2_cooldown   ; $042A
 @DA7E:
     DA7E: 20 B7 E0    jsr walking_cat_touches_player   ; $E0B7
     DA81: F0 55       beq catch_player_or_knock_out   ; $DAD8
@@ -5075,11 +5075,11 @@ catch_player_or_knock_out:
     DAD8: A5 1E       lda obj_record_ptr   ; $1E
     DADA: D0 35       bne @DB11   ; $DB11
     DADC: A9 1E       lda #$1e
-    DADE: 8D 04 04    sta $0404
+    DADE: 8D 04 04    sta obj_anim   ; $0404
     DAE1: A9 00       lda #$00
-    DAE3: 8D 07 04    sta $0407
+    DAE3: 8D 07 04    sta obj_timer   ; $0407
     DAE6: A9 08       lda #$08
-    DAE8: 8D 0F 04    sta $040f
+    DAE8: 8D 0F 04    sta obj_state   ; $040F
     DAEB: A9 01       lda #$01
     DAED: 85 4B       sta player_down   ; $4B
 
@@ -5087,14 +5087,14 @@ reset_objects_except_persistent_types:
     DAEF: 20 BF F4    jsr init_sound_voices   ; $F4BF
     DAF2: A2 10       ldx #$10
 @DAF4:
-    DAF4: BD 0F 04    lda $040f,x
+    DAF4: BD 0F 04    lda obj_state,x   ; $040F
     DAF7: C9 16       cmp #$16
     DAF9: F0 0C       beq @DB07   ; $DB07
     DAFB: C9 20       cmp #$20
     DAFD: F0 08       beq @DB07   ; $DB07
     DAFF: A9 00       lda #$00
-    DB01: 9D 0F 04    sta $040f,x
-    DB04: 9D 04 04    sta $0404,x
+    DB01: 9D 0F 04    sta obj_state,x   ; $040F
+    DB04: 9D 04 04    sta obj_anim,x   ; $0404
 @DB07:
     DB07: 8A          txa
     DB08: 18          clc
@@ -5116,7 +5116,7 @@ reset_objects_except_persistent_types:
     DB22: A9 78       lda #$78
     DB24: E0 03       cpx #$03
     DB26: D0 02       bne @DB2A   ; $DB2A
-    DB28: A5 65       lda active_object_count   ; $65
+    DB28: A5 65       lda stun_time   ; $65
 @DB2A:
     DB2A: A0 07       ldy #$07
     DB2C: 91 1E       sta (obj_record_ptr),y   ; $1E
@@ -5138,35 +5138,35 @@ state22_knocked_out:
     DB42: 4C 17 DD    jmp land_on_floor   ; $DD17
 
 state08_player_caught:
-    DB45: EE 07 04    inc $0407
-    DB48: AD 07 04    lda $0407
+    DB45: EE 07 04    inc obj_timer   ; $0407
+    DB48: AD 07 04    lda obj_timer   ; $0407
     DB4B: C9 20       cmp #$20
     DB4D: 90 05       bcc @DB54   ; $DB54
     DB4F: A9 2A       lda #$2a
-    DB51: 8D 0F 04    sta $040f
+    DB51: 8D 0F 04    sta obj_state   ; $040F
 @DB54:
     DB54: 60          rts
 
 state2A_wait_then_start_tune:
-    DB55: AD A5 04    lda obj_state   ; $04A5
-    DB58: 0D AD 04    ora $04ad
+    DB55: AD A5 04    lda wave_state   ; $04A5
+    DB58: 0D AD 04    ora wave1_state   ; $04AD
     DB5B: D0 1D       bne @DB7A   ; $DB7A
     DB5D: 20 BF F4    jsr init_sound_voices   ; $F4BF
     DB60: A9 01       lda #$01
-    DB62: 8D 0B 06    sta $060b
-    DB65: 8D 0C 06    sta $060c
-    DB68: 8D 0D 06    sta $060d
+    DB62: 8D 0B 06    sta snd_death   ; $060B
+    DB65: 8D 0C 06    sta snd_death_b   ; $060C
+    DB68: 8D 0D 06    sta snd_death_c   ; $060D
     DB6B: A9 16       lda #$16
-    DB6D: 8D 04 04    sta $0404
+    DB6D: 8D 04 04    sta obj_anim   ; $0404
     DB70: A9 00       lda #$00
-    DB72: 8D 07 04    sta $0407
+    DB72: 8D 07 04    sta obj_timer   ; $0407
     DB75: A9 2C       lda #$2c
-    DB77: 8D 0F 04    sta $040f
+    DB77: 8D 0F 04    sta obj_state   ; $040F
 @DB7A:
     DB7A: 60          rts
 
 state2C_wait_tune:
-    DB7B: EE 07 04    inc $0407
+    DB7B: EE 07 04    inc obj_timer   ; $0407
     DB7E: 10 FA       bpl @DB7A   ; $DB7A
     DB80: 4C 6F DE    jmp clear_object   ; $DE6F
 
@@ -5210,28 +5210,28 @@ land_on_trampoline:
     DBBE: D0 23       bne @DBE3   ; $DBE3
     DBC0: 86 18       stx scratch_loop_counter   ; $18
     DBC2: A5 42       lda game_phase   ; $42
-    DBC4: 8D 0A 06    sta $060a
+    DBC4: 8D 0A 06    sta snd_trampoline   ; $060A
     DBC7: A0 3C       ldy #$3c
     DBC9: 20 CA D4    jsr add_score_from_table   ; $D4CA
     DBCC: A6 18       ldx scratch_loop_counter   ; $18
-    DBCE: BD 02 02    lda obj_timer,x   ; $0202
+    DBCE: BD 02 02    lda tramp_bounces_left,x   ; $0202
     DBD1: D0 10       bne @DBE3   ; $DBE3
     DBD3: A9 01       lda #$01
-    DBD5: 9D 00 02    sta obj_timer,x   ; $0200
+    DBD5: 9D 00 02    sta tramp_bounce_anims,x   ; $0200
     DBD8: A9 09       lda #$09
-    DBDA: 9D 01 02    sta obj_anim_timer,x   ; $0201
+    DBDA: 9D 01 02    sta tramp_frame,x   ; $0201
     DBDD: A9 80       lda #$80
-    DBDF: 9D 02 02    sta obj_timer,x   ; $0202
+    DBDF: 9D 02 02    sta tramp_bounces_left,x   ; $0202
     DBE2: 60          rts
 @DBE3:
     DBE3: A0 01       ldy #$01
-    DBE5: BD 01 02    lda obj_anim_timer,x   ; $0201
+    DBE5: BD 01 02    lda tramp_frame,x   ; $0201
     DBE8: C9 08       cmp #$08
     DBEA: 90 01       bcc @DBED   ; $DBED
     DBEC: C8          iny
 @DBED:
     DBED: 98          tya
-    DBEE: 9D 00 02    sta obj_timer,x   ; $0200
+    DBEE: 9D 00 02    sta tramp_bounce_anims,x   ; $0200
     DBF1: 8A          txa
     DBF2: A0 0B       ldy #$0b
     DBF4: 91 1E       sta (obj_record_ptr),y   ; $1E
@@ -5247,17 +5247,17 @@ state0A_trampoline_bounce:
     DC04: B1 1E       lda (obj_record_ptr),y   ; $1E
     DC06: AA          tax
     DC07: 20 A4 E4    jsr trampoline_bounce_step   ; $E4A4
-    DC0A: BD 02 02    lda obj_timer,x   ; $0202
+    DC0A: BD 02 02    lda tramp_bounces_left,x   ; $0202
     DC0D: 10 03       bpl @DC12   ; $DC12
     DC0F: 4C 83 DB    jmp enter_fall   ; $DB83
 @DC12:
-    DC12: BD 01 02    lda obj_anim_timer,x   ; $0201
+    DC12: BD 01 02    lda tramp_frame,x   ; $0201
     DC15: C9 07       cmp #$07
     DC17: D0 3F       bne @DC58   ; $DC58
     DC19: A0 05       ldy #$05
     DC1B: B1 1E       lda (obj_record_ptr),y   ; $1E
     DC1D: D0 03       bne @DC22   ; $DC22
-    DC1F: DE 02 02    dec obj_timer,x   ; $0202
+    DC1F: DE 02 02    dec tramp_bounces_left,x   ; $0202
 @DC22:
     DC22: A9 00       lda #$00
     DC24: A0 08       ldy #$08
@@ -5280,11 +5280,11 @@ state0A_trampoline_bounce:
     DC46: 90 10       bcc @DC58   ; $DC58
     DC48: B1 1E       lda (obj_record_ptr),y   ; $1E
     DC4A: 29 FC       and #$fc
-    DC4C: 85 10       sta src_ptr   ; $10
+    DC4C: 85 10       sta draw_pos   ; $10
     DC4E: A0 0A       ldy #$0a
     DC50: B1 1E       lda (obj_record_ptr),y   ; $1E
     DC52: 29 01       and #$01
-    DC54: 05 10       ora src_ptr   ; $10
+    DC54: 05 10       ora draw_pos   ; $10
     DC56: 91 1E       sta (obj_record_ptr),y   ; $1E
 @DC58:
     DC58: 60          rts
@@ -5324,18 +5324,18 @@ state0C_rise:
     DC91: A0 03       ldy #$03
     DC93: B1 1E       lda (obj_record_ptr),y   ; $1E
     DC95: 29 FC       and #$fc
-    DC97: 85 10       sta src_ptr   ; $10
+    DC97: 85 10       sta draw_pos   ; $10
     DC99: A5 1E       lda obj_record_ptr   ; $1E
     DC9B: C9 20       cmp #$20
     DC9D: F0 1E       beq @DCBD   ; $DCBD
     DC9F: A0 0A       ldy #$0a
     DCA1: B1 1E       lda (obj_record_ptr),y   ; $1E
     DCA3: 29 FC       and #$fc
-    DCA5: C5 10       cmp src_ptr   ; $10
+    DCA5: C5 10       cmp draw_pos   ; $10
     DCA7: F0 0B       beq @DCB4   ; $DCB4
     DCA9: B1 1E       lda (obj_record_ptr),y   ; $1E
     DCAB: 29 03       and #$03
-    DCAD: 05 10       ora src_ptr   ; $10
+    DCAD: 05 10       ora draw_pos   ; $10
     DCAF: 91 1E       sta (obj_record_ptr),y   ; $1E
     DCB1: 4C 83 DB    jmp enter_fall   ; $DB83
 @DCB4:
@@ -5344,13 +5344,13 @@ state0C_rise:
     DCB8: 91 1E       sta (obj_record_ptr),y   ; $1E
     DCBA: 4C 83 DB    jmp enter_fall   ; $DB83
 @DCBD:
-    DCBD: A5 10       lda src_ptr   ; $10
+    DCBD: A5 10       lda draw_pos   ; $10
     DCBF: 09 01       ora #$01
     DCC1: 38          sec
-    DCC2: E5 37       sbc obj_record_ptr_hi   ; $37
-    DCC4: 85 36       sta obj_record_ptr   ; $36
+    DCC2: E5 37       sbc slot2_row_step   ; $37
+    DCC4: 85 36       sta slot2_target_row   ; $36
     DCC6: A9 01       lda #$01
-    DCC8: 85 35       sta obj_collision_state   ; $35
+    DCC8: 85 35       sta slot2_step_now   ; $35
     DCCA: 4C 83 DB    jmp enter_fall   ; $DB83
 @DCCD:
     DCCD: A0 06       ldy #$06
@@ -5466,7 +5466,7 @@ state10_door_knockback:
     DD90: D0 03       bne @DD95   ; $DD95
     DD92: 4C 17 DD    jmp land_on_floor   ; $DD17
 @DD95:
-    DD95: A5 65       lda active_object_count   ; $65
+    DD95: A5 65       lda stun_time   ; $65
     DD97: A0 07       ldy #$07
     DD99: 91 1E       sta (obj_record_ptr),y   ; $1E
     DD9B: A9 12       lda #$12
@@ -5542,50 +5542,50 @@ state1C_respawn_drop:
     DE09: C9 20       cmp #$20
     DE0B: D0 1D       bne @DE2A   ; $DE2A
     DE0D: A9 24       lda #$24
-    DE0F: 8D 2F 04    sta stage_phase_state   ; $042F
+    DE0F: 8D 2F 04    sta slot2_state   ; $042F
     DE12: A9 12       lda #$12
-    DE14: 8D 24 04    sta obj_state   ; $0424
+    DE14: 8D 24 04    sta slot2_anim   ; $0424
     DE17: A9 78       lda #$78
-    DE19: 8D 27 04    sta bonus_item_timer   ; $0427
+    DE19: 8D 27 04    sta slot2_timer   ; $0427
     DE1C: A9 09       lda #$09
-    DE1E: 85 36       sta obj_record_ptr   ; $36
+    DE1E: 85 36       sta slot2_target_row   ; $36
     DE20: A9 04       lda #$04
-    DE22: 85 37       sta obj_record_ptr_hi   ; $37
+    DE22: 85 37       sta slot2_row_step   ; $37
 @DE24:
     DE24: 60          rts
 
 state24_slot2_landing_pause:
-    DE25: CE 27 04    dec bonus_item_timer   ; $0427
+    DE25: CE 27 04    dec slot2_timer   ; $0427
     DE28: D0 FA       bne @DE24   ; $DE24
 @DE2A:
     DE2A: 4C 17 DD    jmp land_on_floor   ; $DD17
 
 state1E_slot2_on_item:
-    DE2D: CE 27 04    dec bonus_item_timer   ; $0427
+    DE2D: CE 27 04    dec slot2_timer   ; $0427
     DE30: F0 27       beq @DE59   ; $DE59
-    DE32: AD 23 04    lda obj_state   ; $0423
-    DE35: CD 03 04    cmp $0403
+    DE32: AD 23 04    lda slot2_y   ; $0423
+    DE35: CD 03 04    cmp obj_y   ; $0403
     DE38: D0 3F       bne @DE79   ; $DE79
-    DE3A: AD 21 04    lda target_compare_value   ; $0421
+    DE3A: AD 21 04    lda slot2_x   ; $0421
     DE3D: 38          sec
-    DE3E: ED 01 04    sbc $0401
+    DE3E: ED 01 04    sbc obj_x   ; $0401
     DE41: C9 02       cmp #$02
     DE43: B0 34       bcs @DE79   ; $DE79
     DE45: A9 20       lda #$20
-    DE47: 8D 2F 04    sta stage_phase_state   ; $042F
+    DE47: 8D 2F 04    sta slot2_state   ; $042F
     DE4A: A9 15       lda #$15
-    DE4C: 8D 24 04    sta obj_state   ; $0424
+    DE4C: 8D 24 04    sta slot2_anim   ; $0424
     DE4F: A9 78       lda #$78
-    DE51: 8D 27 04    sta bonus_item_timer   ; $0427
+    DE51: 8D 27 04    sta slot2_timer   ; $0427
     DE54: A0 44       ldy #$44
     DE56: 4C CA D4    jmp add_score_from_table   ; $D4CA
 @DE59:
     DE59: A9 10       lda #$10
-    DE5B: 8D 2A 04    sta bonus_item_timer   ; $042A
+    DE5B: 8D 2A 04    sta slot2_cooldown   ; $042A
     DE5E: 4C 17 DD    jmp land_on_floor   ; $DD17
 
 state20_slot2_scored:
-    DE61: CE 27 04    dec bonus_item_timer   ; $0427
+    DE61: CE 27 04    dec slot2_timer   ; $0427
     DE64: D0 13       bne @DE79   ; $DE79
     DE66: A5 4B       lda player_down   ; $4B
     DE68: 05 4F       ora round_cleared   ; $4F
@@ -5634,21 +5634,21 @@ choose_cat_target_floor:
     DEA8: B1 1E       lda (obj_record_ptr),y   ; $1E
     DEAA: 29 01       and #$01
     DEAC: 49 01       eor #$01
-    DEAE: 85 10       sta src_ptr   ; $10
+    DEAE: 85 10       sta draw_pos   ; $10
     DEB0: A0 03       ldy #$03
     DEB2: B1 1E       lda (obj_record_ptr),y   ; $1E
     DEB4: 29 FC       and #$fc
-    DEB6: 05 10       ora src_ptr   ; $10
-    DEB8: 85 10       sta src_ptr   ; $10
+    DEB6: 05 10       ora draw_pos   ; $10
+    DEB8: 85 10       sta draw_pos   ; $10
     DEBA: A0 01       ldy #$01
     DEBC: B1 1E       lda (obj_record_ptr),y   ; $1E
-    DEBE: CD 01 04    cmp $0401
-    DEC1: AD 03 04    lda $0403
+    DEBE: CD 01 04    cmp obj_x   ; $0401
+    DEC1: AD 03 04    lda obj_y   ; $0403
     DEC4: 29 FC       and #$fc
     DEC6: 69 00       adc #$00
     DEC8: A0 0A       ldy #$0a
     DECA: 91 1E       sta (obj_record_ptr),y   ; $1E
-    DECC: C5 10       cmp src_ptr   ; $10
+    DECC: C5 10       cmp draw_pos   ; $10
     DECE: D0 11       bne @DEE1   ; $DEE1
     DED0: A6 21       ldx frame_counter   ; $21
     DED2: BD 00 C0    lda rom_copyright_ascii,x   ; $C000
@@ -5692,7 +5692,7 @@ move_x_turn_at_walls_offset4:
     DF09: A2 04       ldx #$04
 
 move_x_turn_at_walls:
-    DF0B: 85 10       sta src_ptr   ; $10
+    DF0B: 85 10       sta draw_pos   ; $10
     DF0D: 20 8A DF    jsr scroll_camera_with_player   ; $DF8A
     DF10: A0 06       ldy #$06
     DF12: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -5704,7 +5704,7 @@ move_x_turn_at_walls:
     DF1E: 88          dey
     DF1F: B1 1E       lda (obj_record_ptr),y   ; $1E
     DF21: 18          clc
-    DF22: 65 10       adc src_ptr   ; $10
+    DF22: 65 10       adc draw_pos   ; $10
     DF24: 91 1E       sta (obj_record_ptr),y   ; $1E
     DF26: 90 2A       bcc @DF52   ; $DF52
     DF28: C8          iny
@@ -5736,7 +5736,7 @@ move_x_turn_at_walls:
     DF53: A0 00       ldy #$00
     DF55: B1 1E       lda (obj_record_ptr),y   ; $1E
     DF57: 38          sec
-    DF58: E5 10       sbc src_ptr   ; $10
+    DF58: E5 10       sbc draw_pos   ; $10
     DF5A: 91 1E       sta (obj_record_ptr),y   ; $1E
     DF5C: B0 2B       bcs @DF89   ; $DF89
     DF5E: C8          iny
@@ -5769,36 +5769,36 @@ scroll_camera_with_player:
     DF8A: A0 05       ldy #$05
     DF8C: B1 1E       lda (obj_record_ptr),y   ; $1E
     DF8E: D0 24       bne @DFB4   ; $DFB4
-    DF90: AD 01 04    lda $0401
+    DF90: AD 01 04    lda obj_x   ; $0401
     DF93: 38          sec
     DF94: E9 0F       sbc #$0f
     DF96: C9 1C       cmp #$1c
     DF98: B0 1A       bcs @DFB4   ; $DFB4
-    DF9A: AD 06 04    lda $0406
+    DF9A: AD 06 04    lda obj_dir   ; $0406
     DF9D: 30 16       bmi @DFB5   ; $DFB5
     DF9F: A5 28       lda camera_x_lo   ; $28
     DFA1: 18          clc
-    DFA2: 65 10       adc src_ptr   ; $10
-    DFA4: 85 11       sta zp_ptr_hi   ; $11
+    DFA2: 65 10       adc draw_pos   ; $10
+    DFA4: 85 11       sta draw_pos_hi   ; $11
     DFA6: A5 29       lda camera_x   ; $29
     DFA8: 69 00       adc #$00
     DFAA: C9 1C       cmp #$1c
     DFAC: B0 06       bcs @DFB4   ; $DFB4
     DFAE: 85 29       sta camera_x   ; $29
-    DFB0: A5 11       lda zp_ptr_hi   ; $11
+    DFB0: A5 11       lda draw_pos_hi   ; $11
     DFB2: 85 28       sta camera_x_lo   ; $28
 @DFB4:
     DFB4: 60          rts
 @DFB5:
     DFB5: A5 28       lda camera_x_lo   ; $28
     DFB7: 38          sec
-    DFB8: E5 10       sbc src_ptr   ; $10
-    DFBA: 85 11       sta zp_ptr_hi   ; $11
+    DFB8: E5 10       sbc draw_pos   ; $10
+    DFBA: 85 11       sta draw_pos_hi   ; $11
     DFBC: A5 29       lda camera_x   ; $29
     DFBE: E9 00       sbc #$00
     DFC0: 90 06       bcc @DFC8   ; $DFC8
     DFC2: 85 29       sta camera_x   ; $29
-    DFC4: A5 11       lda zp_ptr_hi   ; $11
+    DFC4: A5 11       lda draw_pos_hi   ; $11
     DFC6: 85 28       sta camera_x_lo   ; $28
 @DFC8:
     DFC8: 60          rts
@@ -5815,7 +5815,7 @@ queue_tile_read:
     DFD5: 0A          asl a
     DFD6: 0A          asl a
     DFD7: 0A          asl a
-    DFD8: 85 10       sta src_ptr   ; $10
+    DFD8: 85 10       sta draw_pos   ; $10
     DFDA: A0 03       ldy #$03
     DFDC: B1 1E       lda (obj_record_ptr),y   ; $1E
     DFDE: 90 02       bcc @DFE2   ; $DFE2
@@ -5824,25 +5824,25 @@ queue_tile_read:
     DFE2: 18          clc
     DFE3: 7D 11 E0    adc $e011,x
     DFE6: 4A          lsr a
-    DFE7: 66 10       ror src_ptr   ; $10
+    DFE7: 66 10       ror draw_pos   ; $10
     DFE9: 4A          lsr a
-    DFEA: 66 10       ror src_ptr   ; $10
+    DFEA: 66 10       ror draw_pos   ; $10
     DFEC: 4A          lsr a
-    DFED: 66 10       ror src_ptr   ; $10
+    DFED: 66 10       ror draw_pos   ; $10
     DFEF: 09 20       ora #$20
-    DFF1: 85 11       sta zp_ptr_hi   ; $11
+    DFF1: 85 11       sta draw_pos_hi   ; $11
     DFF3: A6 2B       ldx vram_queue_cursor   ; $2B
-    DFF5: A5 10       lda src_ptr   ; $10
-    DFF7: 9D C0 04    sta $04c0,x
+    DFF5: A5 10       lda draw_pos   ; $10
+    DFF7: 9D C0 04    sta tile_read_queue,x   ; $04C0
     DFFA: E8          inx
-    DFFB: A5 11       lda zp_ptr_hi   ; $11
-    DFFD: 9D C0 04    sta $04c0,x
+    DFFB: A5 11       lda draw_pos_hi   ; $11
+    DFFD: 9D C0 04    sta tile_read_queue,x   ; $04C0
     E000: E8          inx
     E001: A5 1E       lda obj_record_ptr   ; $1E
-    E003: 9D C0 04    sta $04c0,x
+    E003: 9D C0 04    sta tile_read_queue,x   ; $04C0
     E006: E8          inx
     E007: A5 1F       lda obj_record_ptr_hi   ; $1F
-    E009: 9D C0 04    sta $04c0,x
+    E009: 9D C0 04    sta tile_read_queue,x   ; $04C0
     E00C: E8          inx
     E00D: 86 2B       stx vram_queue_cursor   ; $2B
     E00F: 60          rts
@@ -5859,28 +5859,28 @@ tile_read_offsets:
 
 object_speed:
     E018: A0 00       ldy #$00
-    E01A: A5 60       lda sequence_state   ; $60
+    E01A: A5 60       lda round_timer_phase   ; $60
     E01C: F0 02       beq @E020   ; $E020
     E01E: A0 04       ldy #$04
 @E020:
-    E020: 84 10       sty src_ptr   ; $10
+    E020: 84 10       sty draw_pos   ; $10
     E022: A0 05       ldy #$05
     E024: B1 1E       lda (obj_record_ptr),y   ; $1E
     E026: F0 0A       beq @E032   ; $E032
     E028: C9 03       cmp #$03
     E02A: 90 09       bcc @E035   ; $E035
-    E02C: A5 64       lda data_ptr_hi   ; $64
+    E02C: A5 64       lda cat_speed   ; $64
     E02E: 18          clc
-    E02F: 65 10       adc src_ptr   ; $10
+    E02F: 65 10       adc draw_pos   ; $10
     E031: 60          rts
 @E032:
-    E032: A5 63       lda record_ptr   ; $63
+    E032: A5 63       lda player_speed   ; $63
     E034: 60          rts
 @E035:
-    E035: A5 64       lda data_ptr_hi   ; $64
+    E035: A5 64       lda cat_speed   ; $64
     E037: 18          clc
     E038: 69 04       adc #$04
-    E03A: 65 10       adc src_ptr   ; $10
+    E03A: 65 10       adc draw_pos   ; $10
     E03C: 60          rts
 
 move_hop_arc:
@@ -5933,11 +5933,11 @@ rise_step:
     E088: 69 20       adc #$20
 
 move_up_by_a:
-    E08A: 85 10       sta src_ptr   ; $10
+    E08A: 85 10       sta draw_pos   ; $10
     E08C: A0 02       ldy #$02
     E08E: B1 1E       lda (obj_record_ptr),y   ; $1E
     E090: 38          sec
-    E091: E5 10       sbc src_ptr   ; $10
+    E091: E5 10       sbc draw_pos   ; $10
     E093: 91 1E       sta (obj_record_ptr),y   ; $1E
     E095: B0 0C       bcs @E0A3   ; $E0A3
     E097: C8          iny
@@ -5965,32 +5965,32 @@ queue_tile_read_then_tick:
 walking_cat_touches_player:
     E0B7: A5 1E       lda obj_record_ptr   ; $1E
     E0B9: D0 44       bne @E0FF   ; $E0FF
-    E0BB: A5 2E       lda $2e
+    E0BB: A5 2E       lda cats_cant_catch   ; $2E
     E0BD: D0 40       bne @E0FF   ; $E0FF
     E0BF: A2 10       ldx #$10
 @E0C1:
-    E0C1: BD 0F 04    lda $040f,x
+    E0C1: BD 0F 04    lda obj_state,x   ; $040F
     E0C4: C9 02       cmp #$02
     E0C6: D0 2E       bne @E0F6   ; $E0F6
     E0C8: E0 20       cpx #$20
     E0CA: D0 05       bne @E0D1   ; $E0D1
-    E0CC: AD 2A 04    lda bonus_item_timer   ; $042A
+    E0CC: AD 2A 04    lda slot2_cooldown   ; $042A
     E0CF: D0 25       bne @E0F6   ; $E0F6
 @E0D1:
-    E0D1: BD 03 04    lda $0403,x
-    E0D4: CD 03 04    cmp $0403
+    E0D1: BD 03 04    lda obj_y,x   ; $0403
+    E0D4: CD 03 04    cmp obj_y   ; $0403
     E0D7: D0 1D       bne @E0F6   ; $E0F6
-    E0D9: BD 00 04    lda $0400,x
+    E0D9: BD 00 04    lda obj_x_frac,x   ; $0400
     E0DC: 38          sec
-    E0DD: ED 00 04    sbc $0400
-    E0E0: BD 01 04    lda $0401,x
-    E0E3: ED 01 04    sbc $0401
+    E0DD: ED 00 04    sbc obj_x_frac   ; $0400
+    E0E0: BD 01 04    lda obj_x,x   ; $0401
+    E0E3: ED 01 04    sbc obj_x   ; $0401
     E0E6: 18          clc
     E0E7: 69 01       adc #$01
     E0E9: C9 02       cmp #$02
     E0EB: B0 09       bcs @E0F6   ; $E0F6
-    E0ED: BD 06 04    lda $0406,x
-    E0F0: 8D 06 04    sta $0406
+    E0ED: BD 06 04    lda obj_dir,x   ; $0406
+    E0F0: 8D 06 04    sta obj_dir   ; $0406
     E0F3: A9 00       lda #$00
     E0F5: 60          rts
 @E0F6:
@@ -6007,20 +6007,20 @@ walking_cat_touches_player:
 slot1_touches_player:
     E102: A5 1E       lda obj_record_ptr   ; $1E
     E104: D0 2B       bne @E131   ; $E131
-    E106: AD 12 04    lda $0412
+    E106: AD 12 04    lda slot1_y_frac   ; $0412
     E109: 38          sec
-    E10A: ED 02 04    sbc $0402
-    E10D: AD 13 04    lda $0413
-    E110: ED 03 04    sbc $0403
+    E10A: ED 02 04    sbc obj_y_frac   ; $0402
+    E10D: AD 13 04    lda slot1_y   ; $0413
+    E110: ED 03 04    sbc obj_y   ; $0403
     E113: 18          clc
     E114: 69 01       adc #$01
     E116: C9 02       cmp #$02
     E118: B0 17       bcs @E131   ; $E131
-    E11A: AD 10 04    lda $0410
+    E11A: AD 10 04    lda slot1_x_frac   ; $0410
     E11D: 38          sec
-    E11E: ED 00 04    sbc $0400
-    E121: AD 11 04    lda $0411
-    E124: ED 01 04    sbc $0401
+    E11E: ED 00 04    sbc obj_x_frac   ; $0400
+    E121: AD 11 04    lda slot1_x   ; $0411
+    E124: ED 01 04    sbc obj_x   ; $0401
     E127: 18          clc
     E128: 69 01       adc #$01
     E12A: C9 02       cmp #$02
@@ -6034,29 +6034,29 @@ slot1_touches_player:
 player_knockback_pushes_cats:
     E134: A2 20       ldx #$20
 @E136:
-    E136: BD 0F 04    lda $040f,x
+    E136: BD 0F 04    lda obj_state,x   ; $040F
     E139: C9 02       cmp #$02
     E13B: D0 33       bne @E170   ; $E170
-    E13D: BD 03 04    lda $0403,x
-    E140: CD 03 04    cmp $0403
+    E13D: BD 03 04    lda obj_y,x   ; $0403
+    E140: CD 03 04    cmp obj_y   ; $0403
     E143: D0 2B       bne @E170   ; $E170
-    E145: BD 00 04    lda $0400,x
+    E145: BD 00 04    lda obj_x_frac,x   ; $0400
     E148: 38          sec
-    E149: ED 00 04    sbc $0400
-    E14C: BD 01 04    lda $0401,x
-    E14F: ED 01 04    sbc $0401
+    E149: ED 00 04    sbc obj_x_frac   ; $0400
+    E14C: BD 01 04    lda obj_x,x   ; $0401
+    E14F: ED 01 04    sbc obj_x   ; $0401
     E152: 18          clc
     E153: 69 01       adc #$01
     E155: C9 02       cmp #$02
     E157: B0 17       bcs @E170   ; $E170
-    E159: AD 06 04    lda $0406
-    E15C: 9D 06 04    sta $0406,x
+    E159: AD 06 04    lda obj_dir   ; $0406
+    E15C: 9D 06 04    sta obj_dir,x   ; $0406
     E15F: A9 0C       lda #$0c
-    E161: 9D 04 04    sta $0404,x
+    E161: 9D 04 04    sta obj_anim,x   ; $0404
     E164: A9 10       lda #$10
-    E166: 9D 0F 04    sta $040f,x
+    E166: 9D 0F 04    sta obj_state,x   ; $040F
     E169: A9 08       lda #$08
-    E16B: 9D 07 04    sta $0407,x
+    E16B: 9D 07 04    sta obj_timer,x   ; $0407
     E16E: E6 30       inc pending_score_count   ; $30
 @E170:
     E170: 8A          txa
@@ -6081,11 +6081,11 @@ tbl_bonus_state_handlers:
 
 end_bonus_round:
     E18E: A9 00       lda #$00
-    E190: 8D 07 04    sta $0407
+    E190: 8D 07 04    sta obj_timer   ; $0407
     E193: A9 01       lda #$01
     E195: 85 4B       sta player_down   ; $4B
     E197: A9 04       lda #$04
-    E199: 8D 0F 04    sta $040f
+    E199: 8D 0F 04    sta obj_state   ; $040F
 
 bonus_state04_ended:
     E19C: 60          rts
@@ -6109,29 +6109,29 @@ bonus_state02_fall:
     E1BC: D0 23       bne @E1E1   ; $E1E1
     E1BE: 86 18       stx scratch_loop_counter   ; $18
     E1C0: A9 01       lda #$01
-    E1C2: 8D 0A 06    sta $060a
+    E1C2: 8D 0A 06    sta snd_trampoline   ; $060A
     E1C5: A0 3C       ldy #$3c
     E1C7: 20 CA D4    jsr add_score_from_table   ; $D4CA
     E1CA: A6 18       ldx scratch_loop_counter   ; $18
-    E1CC: BD 02 02    lda obj_timer,x   ; $0202
+    E1CC: BD 02 02    lda tramp_bounces_left,x   ; $0202
     E1CF: D0 10       bne @E1E1   ; $E1E1
     E1D1: A9 01       lda #$01
-    E1D3: 9D 00 02    sta obj_timer,x   ; $0200
+    E1D3: 9D 00 02    sta tramp_bounce_anims,x   ; $0200
     E1D6: A9 09       lda #$09
-    E1D8: 9D 01 02    sta obj_anim_timer,x   ; $0201
+    E1D8: 9D 01 02    sta tramp_frame,x   ; $0201
     E1DB: A9 80       lda #$80
-    E1DD: 9D 02 02    sta obj_timer,x   ; $0202
+    E1DD: 9D 02 02    sta tramp_bounces_left,x   ; $0202
 @E1E0:
     E1E0: 60          rts
 @E1E1:
     E1E1: A0 01       ldy #$01
-    E1E3: BD 01 02    lda obj_anim_timer,x   ; $0201
+    E1E3: BD 01 02    lda tramp_frame,x   ; $0201
     E1E6: C9 08       cmp #$08
     E1E8: 90 01       bcc @E1EB   ; $E1EB
     E1EA: C8          iny
 @E1EB:
     E1EB: 98          tya
-    E1EC: 9D 00 02    sta obj_timer,x   ; $0200
+    E1EC: 9D 00 02    sta tramp_bounce_anims,x   ; $0200
     E1EF: 8A          txa
     E1F0: A0 0B       ldy #$0b
     E1F2: 91 1E       sta (obj_record_ptr),y   ; $1E
@@ -6147,15 +6147,15 @@ bonus_state06_trampoline_bounce:
     E202: B1 1E       lda (obj_record_ptr),y   ; $1E
     E204: AA          tax
     E205: 20 A4 E4    jsr trampoline_bounce_step   ; $E4A4
-    E208: BD 02 02    lda obj_timer,x   ; $0202
+    E208: BD 02 02    lda tramp_bounces_left,x   ; $0202
     E20B: 30 50       bmi @E25D   ; $E25D
-    E20D: BD 01 02    lda obj_anim_timer,x   ; $0201
+    E20D: BD 01 02    lda tramp_frame,x   ; $0201
     E210: C9 07       cmp #$07
     E212: D0 1B       bne @E22F   ; $E22F
     E214: A0 05       ldy #$05
     E216: B1 1E       lda (obj_record_ptr),y   ; $1E
     E218: D0 03       bne @E21D   ; $E21D
-    E21A: DE 02 02    dec obj_timer,x   ; $0202
+    E21A: DE 02 02    dec tramp_bounces_left,x   ; $0202
 @E21D:
     E21D: A9 00       lda #$00
     E21F: A0 08       ldy #$08
@@ -6273,44 +6273,44 @@ bonus_state0C_rebound:
     E2DF: 60          rts
 
 bonus_state10_slot3_timeout:
-    E2E0: CE 37 04    dec $0437
+    E2E0: CE 37 04    dec slot3_timer   ; $0437
     E2E3: D0 08       bne @E2ED   ; $E2ED
     E2E5: A9 00       lda #$00
-    E2E7: 8D 34 04    sta $0434
-    E2EA: 8D 3F 04    sta $043f
+    E2E7: 8D 34 04    sta slot3_anim   ; $0434
+    E2EA: 8D 3F 04    sta slot3_state   ; $043F
 @E2ED:
     E2ED: 60          rts
 
 bonus_state0E_goal_object:
-    E2EE: AD 13 04    lda $0413
-    E2F1: CD 03 04    cmp $0403
+    E2EE: AD 13 04    lda slot1_y   ; $0413
+    E2F1: CD 03 04    cmp obj_y   ; $0403
     E2F4: D0 3B       bne @E331   ; $E331
-    E2F6: AD 11 04    lda $0411
+    E2F6: AD 11 04    lda slot1_x   ; $0411
     E2F9: 38          sec
-    E2FA: ED 01 04    sbc $0401
+    E2FA: ED 01 04    sbc obj_x   ; $0401
     E2FD: C9 02       cmp #$02
     E2FF: B0 30       bcs @E331   ; $E331
-    E301: E6 51       inc obj_def_ptr_hi   ; $51
+    E301: E6 51       inc bonus_goals_reached   ; $51
     E303: A9 20       lda #$20
-    E305: 85 5A       sta ppu_block_src_ptr   ; $5A
+    E305: 85 5A       sta bonus_goal_points   ; $5A
     E307: 20 BF F4    jsr init_sound_voices   ; $F4BF
     E30A: A9 01       lda #$01
-    E30C: 8D 06 06    sta $0606
+    E30C: 8D 06 06    sta snd_bonus_goal   ; $0606
     E30F: A9 00       lda #$00
-    E311: 8D 14 04    sta $0414
-    E314: 8D 1F 04    sta obj_state   ; $041F
+    E311: 8D 14 04    sta slot1_anim   ; $0414
+    E314: 8D 1F 04    sta slot1_state   ; $041F
     E317: 20 8E E1    jsr end_bonus_round   ; $E18E
     E31A: A9 12       lda #$12
-    E31C: 8D 2F 04    sta stage_phase_state   ; $042F
+    E31C: 8D 2F 04    sta slot2_state   ; $042F
     E31F: A2 00       ldx #$00
 @E321:
     E321: BD 32 E3    lda released_cat_template,x   ; $E332
-    E324: 9D 20 04    sta stamp_position_table,x   ; $0420
+    E324: 9D 20 04    sta slot2_x_frac,x   ; $0420
     E327: E8          inx
     E328: E0 07       cpx #$07
     E32A: D0 F5       bne @E321   ; $E321
     E32C: A9 00       lda #$00
-    E32E: 8D 2B 04    sta $042b
+    E32E: 8D 2B 04    sta slot2_vy   ; $042B
 @E331:
     E331: 60          rts
 
@@ -6324,22 +6324,22 @@ released_cat_template:
     E338: FF          .byte $FF
 
 bonus_state12_released_cat_rises:
-    E339: AD 28 04    lda $0428
+    E339: AD 28 04    lda slot2_tile   ; $0428
     E33C: 38          sec
     E33D: E9 30       sbc #$30
     E33F: C9 19       cmp #$19
     E341: B0 03       bcs @E346   ; $E346
     E343: 20 56 E4    jsr erase_first_trampoline   ; $E456
 @E346:
-    E346: AD 23 04    lda obj_state   ; $0423
+    E346: AD 23 04    lda slot2_y   ; $0423
     E349: C9 06       cmp #$06
     E34B: 90 05       bcc @E352   ; $E352
     E34D: A9 40       lda #$40
     E34F: 4C 8A E0    jmp move_up_by_a   ; $E08A
 @E352:
     E352: A9 00       lda #$00
-    E354: 8D 24 04    sta obj_state   ; $0424
-    E357: 8D 2F 04    sta stage_phase_state   ; $042F
+    E354: 8D 24 04    sta slot2_anim   ; $0424
+    E357: 8D 2F 04    sta slot2_state   ; $042F
     E35A: 60          rts
 
 load_round_trampolines:
@@ -6352,34 +6352,34 @@ load_round_trampolines:
     E36A: A0 00       ldy #$00
     E36C: B1 1C       lda (aux_ptr),y   ; $1C
     E36E: C8          iny
-    E36F: 85 80       sta object_count   ; $80
+    E36F: 85 80       sta trampoline_table_len   ; $80
     E371: A2 00       ldx #$00
 @E373:
     E373: A9 00       lda #$00
-    E375: 9D 00 02    sta obj_timer,x   ; $0200
-    E378: 9D 01 02    sta obj_anim_timer,x   ; $0201
+    E375: 9D 00 02    sta tramp_bounce_anims,x   ; $0200
+    E378: 9D 01 02    sta tramp_frame,x   ; $0201
     E37B: A9 03       lda #$03
-    E37D: 9D 02 02    sta obj_timer,x   ; $0202
+    E37D: 9D 02 02    sta tramp_bounces_left,x   ; $0202
     E380: B1 1C       lda (aux_ptr),y   ; $1C
     E382: C8          iny
     E383: 84 1B       sty cur_obj_index   ; $1B
-    E385: 9D 03 02    sta $0203,x
+    E385: 9D 03 02    sta tramp_pos_index,x   ; $0203
     E388: A8          tay
     E389: B9 37 E5    lda tbl_trampoline_addrs,y   ; $E537
-    E38C: 85 10       sta src_ptr   ; $10
+    E38C: 85 10       sta draw_pos   ; $10
     E38E: B9 38 E5    lda $e538,y
-    E391: 85 11       sta zp_ptr_hi   ; $11
+    E391: 85 11       sta draw_pos_hi   ; $11
     E393: 20 BD E3    jsr ppu_addr_to_tile_xy   ; $E3BD
-    E396: A5 10       lda src_ptr   ; $10
-    E398: 9D 04 02    sta $0204,x
-    E39B: A5 11       lda zp_ptr_hi   ; $11
-    E39D: 9D 05 02    sta obj_field_05,x   ; $0205
+    E396: A5 10       lda draw_pos   ; $10
+    E398: 9D 04 02    sta tramp_x,x   ; $0204
+    E39B: A5 11       lda draw_pos_hi   ; $11
+    E39D: 9D 05 02    sta tramp_y,x   ; $0205
     E3A0: A4 1B       ldy cur_obj_index   ; $1B
     E3A2: 8A          txa
     E3A3: 18          clc
     E3A4: 69 08       adc #$08
     E3A6: AA          tax
-    E3A7: E4 80       cpx object_count   ; $80
+    E3A7: E4 80       cpx trampoline_table_len   ; $80
     E3A9: D0 C8       bne @E373   ; $E373
     E3AB: A2 00       ldx #$00
 @E3AD:
@@ -6389,46 +6389,46 @@ load_round_trampolines:
     E3B4: 18          clc
     E3B5: 69 08       adc #$08
     E3B7: AA          tax
-    E3B8: E4 80       cpx object_count   ; $80
+    E3B8: E4 80       cpx trampoline_table_len   ; $80
     E3BA: D0 F1       bne @E3AD   ; $E3AD
     E3BC: 60          rts
 
 ppu_addr_to_tile_xy:
-    E3BD: A5 10       lda src_ptr   ; $10
+    E3BD: A5 10       lda draw_pos   ; $10
     E3BF: 29 1F       and #$1f
-    E3C1: 06 10       asl src_ptr   ; $10
-    E3C3: 26 11       rol zp_ptr_hi   ; $11
-    E3C5: 06 10       asl src_ptr   ; $10
-    E3C7: 26 11       rol zp_ptr_hi   ; $11
-    E3C9: 06 10       asl src_ptr   ; $10
-    E3CB: 26 11       rol zp_ptr_hi   ; $11
-    E3CD: 85 10       sta src_ptr   ; $10
-    E3CF: A5 11       lda zp_ptr_hi   ; $11
+    E3C1: 06 10       asl draw_pos   ; $10
+    E3C3: 26 11       rol draw_pos_hi   ; $11
+    E3C5: 06 10       asl draw_pos   ; $10
+    E3C7: 26 11       rol draw_pos_hi   ; $11
+    E3C9: 06 10       asl draw_pos   ; $10
+    E3CB: 26 11       rol draw_pos_hi   ; $11
+    E3CD: 85 10       sta draw_pos   ; $10
+    E3CF: A5 11       lda draw_pos_hi   ; $11
     E3D1: 29 20       and #$20
-    E3D3: 05 10       ora src_ptr   ; $10
-    E3D5: 85 10       sta src_ptr   ; $10
-    E3D7: A5 11       lda zp_ptr_hi   ; $11
+    E3D3: 05 10       ora draw_pos   ; $10
+    E3D5: 85 10       sta draw_pos   ; $10
+    E3D7: A5 11       lda draw_pos_hi   ; $11
     E3D9: 29 1F       and #$1f
-    E3DB: 85 11       sta zp_ptr_hi   ; $11
+    E3DB: 85 11       sta draw_pos_hi   ; $11
     E3DD: 60          rts
 
 restore_trampolines:
     E3DE: A2 00       ldx #$00
 @E3E0:
     E3E0: 86 1B       stx cur_obj_index   ; $1B
-    E3E2: BD 02 02    lda obj_timer,x   ; $0202
+    E3E2: BD 02 02    lda tramp_bounces_left,x   ; $0202
     E3E5: 30 0C       bmi @E3F3   ; $E3F3
     E3E7: C9 03       cmp #$03
     E3E9: F0 08       beq @E3F3   ; $E3F3
     E3EB: A9 03       lda #$03
-    E3ED: 9D 02 02    sta obj_timer,x   ; $0202
+    E3ED: 9D 02 02    sta tramp_bounces_left,x   ; $0202
     E3F0: 20 27 E4    jsr draw_trampoline   ; $E427
 @E3F3:
     E3F3: A5 1B       lda cur_obj_index   ; $1B
     E3F5: 18          clc
     E3F6: 69 08       adc #$08
     E3F8: AA          tax
-    E3F9: E4 80       cpx object_count   ; $80
+    E3F9: E4 80       cpx trampoline_table_len   ; $80
     E3FB: D0 E3       bne @E3E0   ; $E3E0
     E3FD: 60          rts
 
@@ -6441,88 +6441,88 @@ animate_trampolines:
     E407: 18          clc
     E408: 69 08       adc #$08
     E40A: AA          tax
-    E40B: E4 80       cpx object_count   ; $80
+    E40B: E4 80       cpx trampoline_table_len   ; $80
     E40D: D0 F1       bne @E400   ; $E400
 @E40F:
     E40F: 60          rts
 
 animate_trampoline:
-    E410: BD 00 02    lda obj_timer,x   ; $0200
+    E410: BD 00 02    lda tramp_bounce_anims,x   ; $0200
     E413: F0 FA       beq @E40F   ; $E40F
-    E415: FE 01 02    inc obj_anim_timer,x   ; $0201
-    E418: BD 01 02    lda obj_anim_timer,x   ; $0201
+    E415: FE 01 02    inc tramp_frame,x   ; $0201
+    E418: BD 01 02    lda tramp_frame,x   ; $0201
     E41B: C9 0A       cmp #$0a
     E41D: 90 08       bcc draw_trampoline   ; $E427
     E41F: A9 00       lda #$00
-    E421: 9D 01 02    sta obj_anim_timer,x   ; $0201
-    E424: DE 00 02    dec obj_timer,x   ; $0200
+    E421: 9D 01 02    sta tramp_frame,x   ; $0201
+    E424: DE 00 02    dec tramp_bounce_anims,x   ; $0200
 
 draw_trampoline:
-    E427: BC 03 02    ldy $0203,x
+    E427: BC 03 02    ldy tramp_pos_index,x   ; $0203
     E42A: B9 37 E5    lda tbl_trampoline_addrs,y   ; $E537
-    E42D: 85 10       sta src_ptr   ; $10
+    E42D: 85 10       sta draw_pos   ; $10
     E42F: B9 38 E5    lda $e538,y
-    E432: 85 11       sta zp_ptr_hi   ; $11
-    E434: BD 02 02    lda obj_timer,x   ; $0202
+    E432: 85 11       sta draw_pos_hi   ; $11
+    E434: BD 02 02    lda tramp_bounces_left,x   ; $0202
     E437: 10 09       bpl @E442   ; $E442
     E439: A9 00       lda #$00
-    E43B: 85 14       sta scan_src_ptr   ; $14
+    E43B: 85 14       sta draw_palette   ; $14
     E43D: A0 14       ldy #$14
     E43F: 4C 49 E4    jmp draw_text_from_table   ; $E449
 @E442:
-    E442: 85 14       sta scan_src_ptr   ; $14
-    E444: BD 01 02    lda obj_anim_timer,x   ; $0201
+    E442: 85 14       sta draw_palette   ; $14
+    E444: BD 01 02    lda tramp_frame,x   ; $0201
     E447: 0A          asl a
     E448: A8          tay
 
 draw_text_from_table:
     E449: B9 69 E5    lda tbl_trampoline_pictures,y   ; $E569
-    E44C: 85 12       sta gfx_src_ptr   ; $12
+    E44C: 85 12       sta draw_tile_or_src   ; $12
     E44E: B9 6A E5    lda $e56a,y
-    E451: 85 13       sta data_ptr_hi   ; $13
+    E451: 85 13       sta draw_attr_or_src_hi   ; $13
     E453: 4C FB C6    jmp draw_rle_text   ; $C6FB
 
 erase_first_trampoline:
     E456: AD 37 E5    lda tbl_trampoline_addrs   ; $E537
-    E459: 85 10       sta src_ptr   ; $10
+    E459: 85 10       sta draw_pos   ; $10
     E45B: AD 38 E5    lda $e538
-    E45E: 85 11       sta zp_ptr_hi   ; $11
+    E45E: 85 11       sta draw_pos_hi   ; $11
     E460: A9 00       lda #$00
-    E462: 85 14       sta scan_src_ptr   ; $14
+    E462: 85 14       sta draw_palette   ; $14
     E464: A0 14       ldy #$14
     E466: 4C 49 E4    jmp draw_text_from_table   ; $E449
 
 find_trampoline_below:
     E469: A2 00       ldx #$00
 @E46B:
-    E46B: BD 02 02    lda obj_timer,x   ; $0202
+    E46B: BD 02 02    lda tramp_bounces_left,x   ; $0202
     E46E: 30 27       bmi @E497   ; $E497
     E470: A0 01       ldy #$01
     E472: B1 1E       lda (obj_record_ptr),y   ; $1E
     E474: 38          sec
-    E475: FD 04 02    sbc $0204,x
+    E475: FD 04 02    sbc tramp_x,x   ; $0204
     E478: 18          clc
     E479: 69 01       adc #$01
     E47B: C9 04       cmp #$04
     E47D: B0 18       bcs @E497   ; $E497
-    E47F: BD 05 02    lda obj_field_05,x   ; $0205
+    E47F: BD 05 02    lda tramp_y,x   ; $0205
     E482: 18          clc
     E483: 6D CE E4    adc $e4ce
-    E486: 85 11       sta zp_ptr_hi   ; $11
+    E486: 85 11       sta draw_pos_hi   ; $11
     E488: A0 02       ldy #$02
     E48A: B1 1E       lda (obj_record_ptr),y   ; $1E
     E48C: 18          clc
     E48D: ED CD E4    sbc trampoline_bounce_curve   ; $E4CD
     E490: C8          iny
     E491: B1 1E       lda (obj_record_ptr),y   ; $1E
-    E493: E5 11       sbc zp_ptr_hi   ; $11
+    E493: E5 11       sbc draw_pos_hi   ; $11
     E495: F0 0B       beq @E4A2   ; $E4A2
 @E497:
     E497: 8A          txa
     E498: 18          clc
     E499: 69 08       adc #$08
     E49B: AA          tax
-    E49C: E4 80       cpx object_count   ; $80
+    E49C: E4 80       cpx trampoline_table_len   ; $80
     E49E: D0 CB       bne @E46B   ; $E46B
     E4A0: 38          sec
     E4A1: 60          rts
@@ -6546,7 +6546,7 @@ trampoline_bounce_step:
     E4BB: C8          iny
     E4BC: 68          pla
     E4BD: 18          clc
-    E4BE: 7D 05 02    adc obj_field_05,x   ; $0205
+    E4BE: 7D 05 02    adc tramp_y,x   ; $0205
     E4C1: 91 1E       sta (obj_record_ptr),y   ; $1E
     E4C3: A0 07       ldy #$07
     E4C5: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -6860,20 +6860,20 @@ load_round_items:
     E5DF: A9 02       lda #$02
     E5E1: 9D 60 02    sta item_state,x   ; $0260
     E5E4: A9 00       lda #$00
-    E5E6: 9D 63 02    sta obj_type,x   ; $0263
+    E5E6: 9D 63 02    sta item_marked,x   ; $0263
     E5E9: B1 1C       lda (aux_ptr),y   ; $1C
     E5EB: C8          iny
     E5EC: 84 1B       sty cur_obj_index   ; $1B
-    E5EE: 9D 61 02    sta obj_type,x   ; $0261
+    E5EE: 9D 61 02    sta item_kind,x   ; $0261
     E5F1: A8          tay
     E5F2: B9 A5 E7    lda tbl_item_addrs,y   ; $E7A5
-    E5F5: 85 10       sta src_ptr   ; $10
+    E5F5: 85 10       sta draw_pos   ; $10
     E5F7: B9 A6 E7    lda $e7a6,y
-    E5FA: 85 11       sta zp_ptr_hi   ; $11
+    E5FA: 85 11       sta draw_pos_hi   ; $11
     E5FC: 20 BD E3    jsr ppu_addr_to_tile_xy   ; $E3BD
-    E5FF: A5 10       lda src_ptr   ; $10
+    E5FF: A5 10       lda draw_pos   ; $10
     E601: 9D 64 02    sta item_x,x   ; $0264
-    E604: A5 11       lda zp_ptr_hi   ; $11
+    E604: A5 11       lda draw_pos_hi   ; $11
     E606: 9D 65 02    sta item_y,x   ; $0265
     E609: A4 1B       ldy cur_obj_index   ; $1B
     E60B: 8A          txa
@@ -6885,14 +6885,14 @@ load_round_items:
 
 draw_round_items:
     E614: A2 00       ldx #$00
-    E616: 86 31       stx obj_record_ptr   ; $31
+    E616: 86 31       stx item_streak   ; $31
 @E618:
     E618: 86 1B       stx cur_obj_index   ; $1B
     E61A: BD 60 02    lda item_state,x   ; $0260
     E61D: C9 02       cmp #$02
     E61F: D0 08       bne @E629   ; $E629
     E621: A9 00       lda #$00
-    E623: 9D 63 02    sta obj_type,x   ; $0263
+    E623: 9D 63 02    sta item_marked,x   ; $0263
     E626: 20 2C E7    jsr draw_item   ; $E72C
 @E629:
     E629: A5 1B       lda cur_obj_index   ; $1B
@@ -6935,17 +6935,17 @@ tbl_item_state_handlers:
 
 player_collects_item:
     E660: 20 57 E7    jsr slot2_sits_on_item   ; $E757
-    E663: BD 63 02    lda obj_type,x   ; $0263
+    E663: BD 63 02    lda item_marked,x   ; $0263
     E666: F0 05       beq @E66D   ; $E66D
     E668: 20 1E E7    jsr blink_marked_item   ; $E71E
     E66B: A6 1B       ldx cur_obj_index   ; $1B
 @E66D:
     E66D: BD 65 02    lda item_y,x   ; $0265
-    E670: CD 03 04    cmp $0403
+    E670: CD 03 04    cmp obj_y   ; $0403
     E673: D0 D4       bne @E649   ; $E649
     E675: BD 64 02    lda item_x,x   ; $0264
     E678: 38          sec
-    E679: ED 01 04    sbc $0401
+    E679: ED 01 04    sbc obj_x   ; $0401
     E67C: C9 02       cmp #$02
     E67E: B0 C9       bcs @E649   ; $E649
     E680: C6 7B       dec round_items_remaining   ; $7B
@@ -6953,8 +6953,8 @@ player_collects_item:
     E684: A9 01       lda #$01
     E686: 85 4F       sta round_cleared   ; $4F
     E688: A9 00       lda #$00
-    E68A: 8D 0F 04    sta $040f
-    E68D: 8D 04 04    sta $0404
+    E68A: 8D 0F 04    sta obj_state   ; $040F
+    E68D: 8D 04 04    sta obj_anim   ; $0404
     E690: 8A          txa
     E691: 48          pha
     E692: 20 EF DA    jsr reset_objects_except_persistent_types   ; $DAEF
@@ -6962,41 +6962,41 @@ player_collects_item:
     E696: AA          tax
 @E697:
     E697: A5 42       lda game_phase   ; $42
-    E699: 8D 08 06    sta $0608
+    E699: 8D 08 06    sta snd_collect   ; $0608
     E69C: A9 04       lda #$04
     E69E: 9D 60 02    sta item_state,x   ; $0260
     E6A1: A9 3C       lda #$3c
-    E6A3: 9D 62 02    sta $0262,x
+    E6A3: 9D 62 02    sta item_timer,x   ; $0262
     E6A6: A9 01       lda #$01
     E6A8: 85 18       sta scratch_loop_counter   ; $18
-    E6AA: BD 63 02    lda obj_type,x   ; $0263
+    E6AA: BD 63 02    lda item_marked,x   ; $0263
     E6AD: F0 07       beq @E6B6   ; $E6B6
-    E6AF: A5 31       lda obj_record_ptr   ; $31
+    E6AF: A5 31       lda item_streak   ; $31
     E6B1: 18          clc
     E6B2: 69 02       adc #$02
     E6B4: 85 18       sta scratch_loop_counter   ; $18
 @E6B6:
-    E6B6: BD 61 02    lda obj_type,x   ; $0261
+    E6B6: BD 61 02    lda item_kind,x   ; $0261
     E6B9: 29 FC       and #$fc
     E6BB: 20 BE D4    jsr add_score_n_times   ; $D4BE
     E6BE: A6 1B       ldx cur_obj_index   ; $1B
     E6C0: 20 0A E7    jsr erase_item   ; $E70A
     E6C3: A6 1B       ldx cur_obj_index   ; $1B
-    E6C5: BD 63 02    lda obj_type,x   ; $0263
+    E6C5: BD 63 02    lda item_marked,x   ; $0263
     E6C8: D0 2D       bne @E6F7   ; $E6F7
     E6CA: A2 00       ldx #$00
 @E6CC:
-    E6CC: 86 1A       stx data_src_ptr   ; $1A
+    E6CC: 86 1A       stx item_loop_index   ; $1A
     E6CE: BD 60 02    lda item_state,x   ; $0260
     E6D1: C9 02       cmp #$02
     E6D3: D0 0D       bne @E6E2   ; $E6E2
-    E6D5: BD 63 02    lda obj_type,x   ; $0263
+    E6D5: BD 63 02    lda item_marked,x   ; $0263
     E6D8: F0 08       beq @E6E2   ; $E6E2
     E6DA: A9 00       lda #$00
-    E6DC: 9D 63 02    sta obj_type,x   ; $0263
+    E6DC: 9D 63 02    sta item_marked,x   ; $0263
     E6DF: 20 2C E7    jsr draw_item   ; $E72C
 @E6E2:
-    E6E2: A5 1A       lda data_src_ptr   ; $1A
+    E6E2: A5 1A       lda item_loop_index   ; $1A
     E6E4: 18          clc
     E6E5: 69 08       adc #$08
     E6E7: AA          tax
@@ -7006,16 +7006,16 @@ player_collects_item:
     E6EE: 49 08       eor #$08
     E6F0: AA          tax
     E6F1: A9 01       lda #$01
-    E6F3: 9D 63 02    sta obj_type,x   ; $0263
+    E6F3: 9D 63 02    sta item_marked,x   ; $0263
     E6F6: 60          rts
 @E6F7:
-    E6F7: E6 31       inc obj_record_ptr   ; $31
+    E6F7: E6 31       inc item_streak   ; $31
     E6F9: 60          rts
 
 show_item_points:
     E6FA: 20 F5 E7    jsr draw_item_points_sprites   ; $E7F5
     E6FD: A6 1B       ldx cur_obj_index   ; $1B
-    E6FF: DE 62 02    dec $0262,x
+    E6FF: DE 62 02    dec item_timer,x   ; $0262
     E702: D0 19       bne @E71D   ; $E71D
     E704: A9 00       lda #$00
     E706: 9D 60 02    sta item_state,x   ; $0260
@@ -7024,11 +7024,11 @@ show_item_points:
 erase_item:
     E70A: A0 0A       ldy #$0a
     E70C: B9 B9 E7    lda tbl_item_pictures,y   ; $E7B9
-    E70F: 85 12       sta gfx_src_ptr   ; $12
+    E70F: 85 12       sta draw_tile_or_src   ; $12
     E711: B9 BA E7    lda $e7ba,y
-    E714: 85 13       sta data_ptr_hi   ; $13
+    E714: 85 13       sta draw_attr_or_src_hi   ; $13
     E716: A9 80       lda #$80
-    E718: 85 14       sta scan_src_ptr   ; $14
+    E718: 85 14       sta draw_palette   ; $14
     E71A: 4C 47 E7    jmp draw_at_item_address   ; $E747
 @E71D:
     E71D: 60          rts
@@ -7043,7 +7043,7 @@ blink_marked_item:
     E72A: F0 DE       beq erase_item   ; $E70A
 
 draw_item:
-    E72C: BD 61 02    lda obj_type,x   ; $0261
+    E72C: BD 61 02    lda item_kind,x   ; $0261
     E72F: 4A          lsr a
     E730: 29 FE       and #$fe
     E732: A8          tay
@@ -7052,40 +7052,40 @@ draw_item:
     E737: 90 02       bcc @E73B   ; $E73B
     E739: A9 02       lda #$02
 @E73B:
-    E73B: 85 14       sta scan_src_ptr   ; $14
+    E73B: 85 14       sta draw_palette   ; $14
     E73D: B9 B9 E7    lda tbl_item_pictures,y   ; $E7B9
-    E740: 85 12       sta gfx_src_ptr   ; $12
+    E740: 85 12       sta draw_tile_or_src   ; $12
     E742: B9 BA E7    lda $e7ba,y
-    E745: 85 13       sta data_ptr_hi   ; $13
+    E745: 85 13       sta draw_attr_or_src_hi   ; $13
 
 draw_at_item_address:
-    E747: BC 61 02    ldy obj_type,x   ; $0261
+    E747: BC 61 02    ldy item_kind,x   ; $0261
     E74A: B9 A5 E7    lda tbl_item_addrs,y   ; $E7A5
-    E74D: 85 10       sta src_ptr   ; $10
+    E74D: 85 10       sta draw_pos   ; $10
     E74F: B9 A6 E7    lda $e7a6,y
-    E752: 85 11       sta zp_ptr_hi   ; $11
+    E752: 85 11       sta draw_pos_hi   ; $11
     E754: 4C FB C6    jmp draw_rle_text   ; $C6FB
 
 slot2_sits_on_item:
-    E757: AD 2F 04    lda stage_phase_state   ; $042F
+    E757: AD 2F 04    lda slot2_state   ; $042F
     E75A: C9 02       cmp #$02
     E75C: D0 29       bne @E787   ; $E787
-    E75E: AD 2A 04    lda bonus_item_timer   ; $042A
+    E75E: AD 2A 04    lda slot2_cooldown   ; $042A
     E761: D0 24       bne @E787   ; $E787
     E763: BD 65 02    lda item_y,x   ; $0265
-    E766: CD 23 04    cmp obj_state   ; $0423
+    E766: CD 23 04    cmp slot2_y   ; $0423
     E769: D0 1C       bne @E787   ; $E787
     E76B: BD 64 02    lda item_x,x   ; $0264
-    E76E: CD 21 04    cmp target_compare_value   ; $0421
+    E76E: CD 21 04    cmp slot2_x   ; $0421
     E771: D0 14       bne @E787   ; $E787
     E773: A9 00       lda #$00
-    E775: 8D 20 04    sta stamp_position_table   ; $0420
+    E775: 8D 20 04    sta slot2_x_frac   ; $0420
     E778: A9 13       lda #$13
-    E77A: 8D 24 04    sta obj_state   ; $0424
+    E77A: 8D 24 04    sta slot2_anim   ; $0424
     E77D: A9 1E       lda #$1e
-    E77F: 8D 2F 04    sta stage_phase_state   ; $042F
+    E77F: 8D 2F 04    sta slot2_state   ; $042F
     E782: A9 78       lda #$78
-    E784: 8D 27 04    sta bonus_item_timer   ; $0427
+    E784: 8D 27 04    sta slot2_timer   ; $0427
 @E787:
     E787: 60          rts
 
@@ -7222,23 +7222,23 @@ item_picture_0a:
 
 draw_item_points_sprites:
     E7F5: A9 00       lda #$00
-    E7F7: 85 11       sta zp_ptr_hi   ; $11
+    E7F7: 85 11       sta draw_pos_hi   ; $11
     E7F9: 38          sec
     E7FA: E5 28       sbc camera_x_lo   ; $28
-    E7FC: 85 10       sta src_ptr   ; $10
+    E7FC: 85 10       sta draw_pos   ; $10
     E7FE: BD 64 02    lda item_x,x   ; $0264
     E801: E5 29       sbc camera_x   ; $29
     E803: 18          clc
     E804: 69 01       adc #$01
-    E806: 06 10       asl src_ptr   ; $10
+    E806: 06 10       asl draw_pos   ; $10
     E808: 2A          rol a
-    E809: 06 10       asl src_ptr   ; $10
+    E809: 06 10       asl draw_pos   ; $10
     E80B: 2A          rol a
-    E80C: 06 10       asl src_ptr   ; $10
+    E80C: 06 10       asl draw_pos   ; $10
     E80E: 2A          rol a
-    E80F: 85 10       sta src_ptr   ; $10
+    E80F: 85 10       sta draw_pos   ; $10
     E811: 90 02       bcc @E815   ; $E815
-    E813: C6 11       dec zp_ptr_hi   ; $11
+    E813: C6 11       dec draw_pos_hi   ; $11
 @E815:
     E815: BD 65 02    lda item_y,x   ; $0265
     E818: 38          sec
@@ -7247,40 +7247,40 @@ draw_item_points_sprites:
     E81C: 0A          asl a
     E81D: 0A          asl a
     E81E: 85 16       sta sprite_y   ; $16
-    E820: BD 61 02    lda obj_type,x   ; $0261
+    E820: BD 61 02    lda item_kind,x   ; $0261
     E823: 4A          lsr a
     E824: 4A          lsr a
     E825: 18          clc
     E826: 69 AC       adc #$ac
-    E828: 85 12       sta gfx_src_ptr   ; $12
+    E828: 85 12       sta draw_tile_or_src   ; $12
     E82A: A9 03       lda #$03
-    E82C: 85 13       sta data_ptr_hi   ; $13
+    E82C: 85 13       sta draw_attr_or_src_hi   ; $13
     E82E: 20 4D E8    jsr draw_sprite_advance_x   ; $E84D
     E831: A9 67       lda #$67
-    E833: 85 12       sta gfx_src_ptr   ; $12
+    E833: 85 12       sta draw_tile_or_src   ; $12
     E835: 20 4D E8    jsr draw_sprite_advance_x   ; $E84D
     E838: A6 1B       ldx cur_obj_index   ; $1B
-    E83A: BD 63 02    lda obj_type,x   ; $0263
+    E83A: BD 63 02    lda item_marked,x   ; $0263
     E83D: F0 22       beq @E861   ; $E861
     E83F: A9 68       lda #$68
-    E841: 85 12       sta gfx_src_ptr   ; $12
+    E841: 85 12       sta draw_tile_or_src   ; $12
     E843: 20 4D E8    jsr draw_sprite_advance_x   ; $E84D
-    E846: A5 31       lda obj_record_ptr   ; $31
+    E846: A5 31       lda item_streak   ; $31
     E848: 18          clc
     E849: 69 B0       adc #$b0
-    E84B: 85 12       sta gfx_src_ptr   ; $12
+    E84B: 85 12       sta draw_tile_or_src   ; $12
 
 draw_sprite_advance_x:
     E84D: A9 00       lda #$00
-    E84F: 85 14       sta scan_src_ptr   ; $14
-    E851: 85 15       sta scratch_counter   ; $15
+    E84F: 85 14       sta draw_palette   ; $14
+    E851: 85 15       sta draw_count   ; $15
     E853: 20 15 C4    jsr write_sprite_to_oam   ; $C415
-    E856: A5 10       lda src_ptr   ; $10
+    E856: A5 10       lda draw_pos   ; $10
     E858: 18          clc
     E859: 69 08       adc #$08
-    E85B: 85 10       sta src_ptr   ; $10
+    E85B: 85 10       sta draw_pos   ; $10
     E85D: 90 02       bcc @E861   ; $E861
-    E85F: E6 11       inc zp_ptr_hi   ; $11
+    E85F: E6 11       inc draw_pos_hi   ; $11
 @E861:
     E861: 60          rts
 
@@ -7294,57 +7294,57 @@ load_round_doors:
     E86E: 85 1D       sta aux_ptr_hi   ; $1D
     E870: A0 00       ldy #$00
     E872: B1 1C       lda (aux_ptr),y   ; $1C
-    E874: 85 83       sta object_count   ; $83
+    E874: 85 83       sta door_table_len   ; $83
     E876: F0 53       beq @E8CB   ; $E8CB
     E878: C8          iny
     E879: A2 00       ldx #$00
 @E87B:
     E87B: 86 1B       stx cur_obj_index   ; $1B
     E87D: A9 00       lda #$00
-    E87F: 9D B0 02    sta obj_anim_timer,x   ; $02B0
-    E882: 9D B6 02    sta $02b6,x
+    E87F: 9D B0 02    sta door_swinging,x   ; $02B0
+    E882: 9D B6 02    sta door_swing_frame,x   ; $02B6
     E885: B1 1C       lda (aux_ptr),y   ; $1C
     E887: C8          iny
-    E888: 9D B1 02    sta obj_state,x   ; $02B1
+    E888: 9D B1 02    sta door_kind,x   ; $02B1
     E88B: B1 1C       lda (aux_ptr),y   ; $1C
     E88D: C8          iny
-    E88E: 9D B2 02    sta $02b2,x
-    E891: 85 10       sta src_ptr   ; $10
+    E88E: 9D B2 02    sta door_addr,x   ; $02B2
+    E891: 85 10       sta draw_pos   ; $10
     E893: B1 1C       lda (aux_ptr),y   ; $1C
     E895: C8          iny
-    E896: 9D B3 02    sta $02b3,x
-    E899: 85 11       sta zp_ptr_hi   ; $11
+    E896: 9D B3 02    sta door_addr_hi,x   ; $02B3
+    E899: 85 11       sta draw_pos_hi   ; $11
     E89B: 20 BD E3    jsr ppu_addr_to_tile_xy   ; $E3BD
-    E89E: A5 10       lda src_ptr   ; $10
-    E8A0: 9D B4 02    sta obj_pos,x   ; $02B4
-    E8A3: A5 11       lda zp_ptr_hi   ; $11
-    E8A5: 9D B5 02    sta obj_x,x   ; $02B5
+    E89E: A5 10       lda draw_pos   ; $10
+    E8A0: 9D B4 02    sta door_x,x   ; $02B4
+    E8A3: A5 11       lda draw_pos_hi   ; $11
+    E8A5: 9D B5 02    sta door_y,x   ; $02B5
     E8A8: A5 1B       lda cur_obj_index   ; $1B
     E8AA: 18          clc
     E8AB: 69 08       adc #$08
     E8AD: AA          tax
-    E8AE: E4 83       cpx object_count   ; $83
+    E8AE: E4 83       cpx door_table_len   ; $83
     E8B0: D0 C9       bne @E87B   ; $E87B
 
 close_and_draw_doors:
     E8B2: A2 00       ldx #$00
 @E8B4:
     E8B4: 86 1B       stx cur_obj_index   ; $1B
-    E8B6: BD B1 02    lda obj_state,x   ; $02B1
+    E8B6: BD B1 02    lda door_kind,x   ; $02B1
     E8B9: 29 FC       and #$fc
-    E8BB: 9D B1 02    sta obj_state,x   ; $02B1
+    E8BB: 9D B1 02    sta door_kind,x   ; $02B1
     E8BE: 20 FF E8    jsr draw_door   ; $E8FF
     E8C1: A5 1B       lda cur_obj_index   ; $1B
     E8C3: 18          clc
     E8C4: 69 08       adc #$08
     E8C6: AA          tax
-    E8C7: E4 83       cpx object_count   ; $83
+    E8C7: E4 83       cpx door_table_len   ; $83
     E8C9: D0 E9       bne @E8B4   ; $E8B4
 @E8CB:
     E8CB: 60          rts
 
 update_doors:
-    E8CC: A5 83       lda object_count   ; $83
+    E8CC: A5 83       lda door_table_len   ; $83
     E8CE: F0 FB       beq @E8CB   ; $E8CB
     E8D0: A2 00       ldx #$00
 @E8D2:
@@ -7354,7 +7354,7 @@ update_doors:
     E8D9: 18          clc
     E8DA: 69 08       adc #$08
     E8DC: AA          tax
-    E8DD: E4 83       cpx object_count   ; $83
+    E8DD: E4 83       cpx door_table_len   ; $83
     E8DF: D0 F1       bne @E8D2   ; $E8D2
     E8E1: A5 21       lda frame_counter   ; $21
     E8E3: 29 03       and #$03
@@ -7362,9 +7362,9 @@ update_doors:
     E8E6: 0A          asl a
     E8E7: 0A          asl a
     E8E8: AA          tax
-    E8E9: BD B0 02    lda obj_anim_timer,x   ; $02B0
+    E8E9: BD B0 02    lda door_swinging,x   ; $02B0
     E8EC: D0 DD       bne @E8CB   ; $E8CB
-    E8EE: BD B1 02    lda obj_state,x   ; $02B1
+    E8EE: BD B1 02    lda door_kind,x   ; $02B1
     E8F1: 29 0A       and #$0a
     E8F3: 49 08       eor #$08
     E8F5: D0 D4       bne @E8CB   ; $E8CB
@@ -7374,48 +7374,48 @@ update_doors:
     E8FD: F0 03       beq draw_door_kind_y   ; $E902
 
 draw_door:
-    E8FF: BC B1 02    ldy obj_state,x   ; $02B1
+    E8FF: BC B1 02    ldy door_kind,x   ; $02B1
 
 draw_door_kind_y:
-    E902: BD B2 02    lda $02b2,x
-    E905: 85 10       sta src_ptr   ; $10
-    E907: BD B3 02    lda $02b3,x
-    E90A: 85 11       sta zp_ptr_hi   ; $11
+    E902: BD B2 02    lda door_addr,x   ; $02B2
+    E905: 85 10       sta draw_pos   ; $10
+    E907: BD B3 02    lda door_addr_hi,x   ; $02B3
+    E90A: 85 11       sta draw_pos_hi   ; $11
     E90C: B9 4F EC    lda tbl_door_pictures,y   ; $EC4F
-    E90F: 85 12       sta gfx_src_ptr   ; $12
+    E90F: 85 12       sta draw_tile_or_src   ; $12
     E911: B9 50 EC    lda $ec50,y
-    E914: 85 13       sta data_ptr_hi   ; $13
+    E914: 85 13       sta draw_attr_or_src_hi   ; $13
     E916: A9 80       lda #$80
-    E918: 85 14       sta scan_src_ptr   ; $14
+    E918: 85 14       sta draw_palette   ; $14
     E91A: 4C FB C6    jmp draw_rle_text   ; $C6FB
 
 animate_door_swing:
-    E91D: BD B0 02    lda obj_anim_timer,x   ; $02B0
+    E91D: BD B0 02    lda door_swinging,x   ; $02B0
     E920: F0 20       beq @E942   ; $E942
-    E922: FE B6 02    inc $02b6,x
-    E925: BD B6 02    lda $02b6,x
+    E922: FE B6 02    inc door_swing_frame,x   ; $02B6
+    E925: BD B6 02    lda door_swing_frame,x   ; $02B6
     E928: C9 05       cmp #$05
     E92A: 90 17       bcc @E943   ; $E943
     E92C: A9 00       lda #$00
-    E92E: 9D B0 02    sta obj_anim_timer,x   ; $02B0
-    E931: 9D B6 02    sta $02b6,x
-    E934: BD B1 02    lda obj_state,x   ; $02B1
+    E92E: 9D B0 02    sta door_swinging,x   ; $02B0
+    E931: 9D B6 02    sta door_swing_frame,x   ; $02B6
+    E934: BD B1 02    lda door_kind,x   ; $02B1
     E937: 29 06       and #$06
     E939: 49 02       eor #$02
-    E93B: 9D B1 02    sta obj_state,x   ; $02B1
+    E93B: 9D B1 02    sta door_kind,x   ; $02B1
     E93E: 29 02       and #$02
     E940: F0 BD       beq draw_door   ; $E8FF
 @E942:
     E942: 60          rts
 @E943:
     E943: 0A          asl a
-    E944: 85 10       sta src_ptr   ; $10
+    E944: 85 10       sta draw_pos   ; $10
     E946: 20 4D E9    jsr door_swing_frame   ; $E94D
     E949: A8          tay
     E94A: 4C 02 E9    jmp draw_door_kind_y   ; $E902
 
 door_swing_frame:
-    E94D: BD B1 02    lda obj_state,x   ; $02B1
+    E94D: BD B1 02    lda door_kind,x   ; $02B1
     E950: 29 06       and #$06
     E952: F0 0C       beq @E960   ; $E960
     E954: C9 04       cmp #$04
@@ -7423,27 +7423,27 @@ door_swing_frame:
     E958: F0 12       beq @E96C   ; $E96C
     E95A: A9 22       lda #$22
     E95C: 38          sec
-    E95D: E5 10       sbc src_ptr   ; $10
+    E95D: E5 10       sbc draw_pos   ; $10
     E95F: 60          rts
 @E960:
-    E960: A5 10       lda src_ptr   ; $10
+    E960: A5 10       lda draw_pos   ; $10
     E962: 18          clc
     E963: 69 10       adc #$10
     E965: 60          rts
 @E966:
     E966: A9 1A       lda #$1a
     E968: 38          sec
-    E969: E5 10       sbc src_ptr   ; $10
+    E969: E5 10       sbc draw_pos   ; $10
     E96B: 60          rts
 @E96C:
-    E96C: A5 10       lda src_ptr   ; $10
+    E96C: A5 10       lda draw_pos   ; $10
     E96E: 18          clc
     E96F: 69 18       adc #$18
 @E971:
     E971: 60          rts
 
 player_opens_nearest_door:
-    E972: A5 83       lda object_count   ; $83
+    E972: A5 83       lda door_table_len   ; $83
     E974: F0 FB       beq @E971   ; $E971
     E976: A0 0E       ldy #$0e
     E978: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -7458,38 +7458,38 @@ player_opens_nearest_door:
     E988: 18          clc
     E989: 69 08       adc #$08
     E98B: AA          tax
-    E98C: E4 83       cpx object_count   ; $83
+    E98C: E4 83       cpx door_table_len   ; $83
     E98E: D0 F4       bne @E984   ; $E984
     E990: 88          dey
     E991: 30 DE       bmi @E971   ; $E971
 @E993:
-    E993: B9 12 00    lda gfx_src_ptr,y   ; $0012
+    E993: B9 12 00    lda draw_tile_or_src,y   ; $0012
     E996: 88          dey
-    E997: B6 12       ldx gfx_src_ptr,y   ; $12
+    E997: B6 12       ldx draw_tile_or_src,y   ; $12
 @E999:
     E999: 88          dey
     E99A: 30 08       bmi open_door   ; $E9A4
-    E99C: D9 12 00    cmp gfx_src_ptr,y   ; $0012
+    E99C: D9 12 00    cmp draw_tile_or_src,y   ; $0012
     E99F: B0 F2       bcs @E993   ; $E993
     E9A1: 88          dey
     E9A2: 90 F5       bcc @E999   ; $E999
 
 open_door:
     E9A4: A9 01       lda #$01
-    E9A6: 9D B0 02    sta obj_anim_timer,x   ; $02B0
+    E9A6: 9D B0 02    sta door_swinging,x   ; $02B0
     E9A9: 20 05 EA    jsr door_knock_back_objects   ; $EA05
-    E9AC: BD B1 02    lda obj_state,x   ; $02B1
+    E9AC: BD B1 02    lda door_kind,x   ; $02B1
     E9AF: 29 0A       and #$0a
     E9B1: 49 08       eor #$08
     E9B3: D0 BC       bne @E971   ; $E971
     E9B5: 4C 04 EE    jmp launch_door_wave   ; $EE04
 
 add_door_if_in_reach:
-    E9B8: 84 11       sty zp_ptr_hi   ; $11
+    E9B8: 84 11       sty draw_pos_hi   ; $11
     E9BA: A5 1E       lda obj_record_ptr   ; $1E
-    E9BC: 9D B7 02    sta obj_contact_state,x   ; $02B7
+    E9BC: 9D B7 02    sta door_opener,x   ; $02B7
     E9BF: D0 0A       bne @E9CB   ; $E9CB
-    E9C1: BD B4 02    lda obj_pos,x   ; $02B4
+    E9C1: BD B4 02    lda door_x,x   ; $02B4
     E9C4: 38          sec
     E9C5: E5 29       sbc camera_x   ; $29
     E9C7: C9 21       cmp #$21
@@ -7498,41 +7498,41 @@ add_door_if_in_reach:
     E9CB: A0 03       ldy #$03
     E9CD: B1 1E       lda (obj_record_ptr),y   ; $1E
     E9CF: 38          sec
-    E9D0: FD B5 02    sbc obj_x,x   ; $02B5
+    E9D0: FD B5 02    sbc door_y,x   ; $02B5
     E9D3: C9 02       cmp #$02
     E9D5: B0 14       bcs @E9EB   ; $E9EB
     E9D7: A0 01       ldy #$01
     E9D9: B1 1E       lda (obj_record_ptr),y   ; $1E
     E9DB: 38          sec
-    E9DC: FD B4 02    sbc obj_pos,x   ; $02B4
-    E9DF: 85 10       sta src_ptr   ; $10
+    E9DC: FD B4 02    sbc door_x,x   ; $02B4
+    E9DF: 85 10       sta draw_pos   ; $10
     E9E1: A0 06       ldy #$06
     E9E3: B1 1E       lda (obj_record_ptr),y   ; $1E
     E9E5: 30 07       bmi @E9EE   ; $E9EE
-    E9E7: E6 10       inc src_ptr   ; $10
+    E9E7: E6 10       inc draw_pos   ; $10
     E9E9: 30 07       bmi @E9F2   ; $E9F2
 @E9EB:
-    E9EB: A4 11       ldy zp_ptr_hi   ; $11
+    E9EB: A4 11       ldy draw_pos_hi   ; $11
     E9ED: 60          rts
 @E9EE:
-    E9EE: A5 10       lda src_ptr   ; $10
+    E9EE: A5 10       lda draw_pos   ; $10
     E9F0: 30 F9       bmi @E9EB   ; $E9EB
 @E9F2:
-    E9F2: A4 11       ldy zp_ptr_hi   ; $11
-    E9F4: 96 12       stx gfx_src_ptr,y   ; $12
+    E9F2: A4 11       ldy draw_pos_hi   ; $11
+    E9F4: 96 12       stx draw_tile_or_src,y   ; $12
     E9F6: C8          iny
-    E9F7: A5 10       lda src_ptr   ; $10
+    E9F7: A5 10       lda draw_pos   ; $10
     E9F9: 10 05       bpl @EA00   ; $EA00
     E9FB: A9 00       lda #$00
     E9FD: 38          sec
-    E9FE: E5 10       sbc src_ptr   ; $10
+    E9FE: E5 10       sbc draw_pos   ; $10
 @EA00:
-    EA00: 99 12 00    sta gfx_src_ptr,y   ; $0012
+    EA00: 99 12 00    sta draw_tile_or_src,y   ; $0012
     EA03: C8          iny
     EA04: 60          rts
 
 door_knock_back_objects:
-    EA05: BD B1 02    lda obj_state,x   ; $02B1
+    EA05: BD B1 02    lda door_kind,x   ; $02B1
     EA08: 29 06       and #$06
     EA0A: A8          tay
     EA0B: B9 49 EA    lda tbl_door_kind_knockback,y   ; $EA49
@@ -7543,19 +7543,19 @@ door_knock_back_objects:
 @EA17:
     EA17: C0 10       cpy #$10
     EA19: F0 21       beq @EA3C   ; $EA3C
-    EA1B: B9 04 04    lda $0404,y
+    EA1B: B9 04 04    lda obj_anim,y   ; $0404
     EA1E: F0 1C       beq @EA3C   ; $EA3C
-    EA20: B9 0F 04    lda $040f,y
+    EA20: B9 0F 04    lda obj_state,y   ; $040F
     EA23: C9 16       cmp #$16
     EA25: F0 15       beq @EA3C   ; $EA3C
-    EA27: B9 03 04    lda $0403,y
+    EA27: B9 03 04    lda obj_y,y   ; $0403
     EA2A: 38          sec
-    EA2B: FD B5 02    sbc obj_x,x   ; $02B5
+    EA2B: FD B5 02    sbc door_y,x   ; $02B5
     EA2E: C9 02       cmp #$02
     EA30: B0 0A       bcs @EA3C   ; $EA3C
-    EA32: BD B4 02    lda obj_pos,x   ; $02B4
+    EA32: BD B4 02    lda door_x,x   ; $02B4
     EA35: 38          sec
-    EA36: F9 01 04    sbc $0401,y
+    EA36: F9 01 04    sbc obj_x,y   ; $0401
     EA39: 20 46 EA    jsr jmp_indirect_zp_vector   ; $EA46
 @EA3C:
     EA3C: 98          tya
@@ -7604,16 +7604,16 @@ door_kind2_knock_back:
 @EA70:
     EA70: A9 FF       lda #$ff
 @EA72:
-    EA72: 99 06 04    sta $0406,y
+    EA72: 99 06 04    sta obj_dir,y   ; $0406
     EA75: A9 0C       lda #$0c
-    EA77: 99 04 04    sta $0404,y
+    EA77: 99 04 04    sta obj_anim,y   ; $0404
     EA7A: A9 10       lda #$10
-    EA7C: 99 0F 04    sta $040f,y
+    EA7C: 99 0F 04    sta obj_state,y   ; $040F
     EA7F: A9 08       lda #$08
-    EA81: 99 07 04    sta $0407,y
+    EA81: 99 07 04    sta obj_timer,y   ; $0407
     EA84: C0 00       cpy #$00
     EA86: F0 07       beq @EA8F   ; $EA8F
-    EA88: BD B7 02    lda obj_contact_state,x   ; $02B7
+    EA88: BD B7 02    lda door_opener,x   ; $02B7
     EA8B: D0 02       bne @EA8F   ; $EA8F
     EA8D: E6 30       inc pending_score_count   ; $30
 @EA8F:
@@ -7625,21 +7625,21 @@ walker_meets_closed_door:
     EA94: 91 1E       sta (obj_record_ptr),y   ; $1E
     EA96: A2 00       ldx #$00
 @EA98:
-    EA98: BD B0 02    lda obj_anim_timer,x   ; $02B0
+    EA98: BD B0 02    lda door_swinging,x   ; $02B0
     EA9B: D0 4B       bne @EAE8   ; $EAE8
-    EA9D: BD B1 02    lda obj_state,x   ; $02B1
+    EA9D: BD B1 02    lda door_kind,x   ; $02B1
     EAA0: 29 02       and #$02
     EAA2: D0 44       bne @EAE8   ; $EAE8
     EAA4: A0 03       ldy #$03
     EAA6: B1 1E       lda (obj_record_ptr),y   ; $1E
     EAA8: 38          sec
-    EAA9: FD B5 02    sbc obj_x,x   ; $02B5
+    EAA9: FD B5 02    sbc door_y,x   ; $02B5
     EAAC: C9 02       cmp #$02
     EAAE: B0 38       bcs @EAE8   ; $EAE8
     EAB0: A0 06       ldy #$06
     EAB2: B1 1E       lda (obj_record_ptr),y   ; $1E
     EAB4: 30 28       bmi @EADE   ; $EADE
-    EAB6: BD B4 02    lda obj_pos,x   ; $02B4
+    EAB6: BD B4 02    lda door_x,x   ; $02B4
     EAB9: 38          sec
     EABA: A0 01       ldy #$01
     EABC: F1 1E       sbc (obj_record_ptr),y   ; $1E
@@ -7647,11 +7647,11 @@ walker_meets_closed_door:
     EAC0: D0 26       bne @EAE8   ; $EAE8
 @EAC2:
     EAC2: A5 1E       lda obj_record_ptr   ; $1E
-    EAC4: 9D B7 02    sta obj_contact_state,x   ; $02B7
+    EAC4: 9D B7 02    sta door_opener,x   ; $02B7
     EAC7: F0 0E       beq @EAD7   ; $EAD7
     EAC9: C9 20       cmp #$20
     EACB: 90 07       bcc @EAD4   ; $EAD4
-    EACD: BD B1 02    lda obj_state,x   ; $02B1
+    EACD: BD B1 02    lda door_kind,x   ; $02B1
     EAD0: 29 08       and #$08
     EAD2: D0 1E       bne @EAF2   ; $EAF2
 @EAD4:
@@ -7662,7 +7662,7 @@ walker_meets_closed_door:
     EADB: 91 1E       sta (obj_record_ptr),y   ; $1E
     EADD: 60          rts
 @EADE:
-    EADE: BD B4 02    lda obj_pos,x   ; $02B4
+    EADE: BD B4 02    lda door_x,x   ; $02B4
     EAE1: 38          sec
     EAE2: A0 01       ldy #$01
     EAE4: D1 1E       cmp (obj_record_ptr),y   ; $1E
@@ -7672,7 +7672,7 @@ walker_meets_closed_door:
     EAE9: 18          clc
     EAEA: 69 08       adc #$08
     EAEC: AA          tax
-    EAED: E4 83       cpx object_count   ; $83
+    EAED: E4 83       cpx door_table_len   ; $83
     EAEF: D0 A7       bne @EA98   ; $EA98
     EAF1: 60          rts
 @EAF2:
@@ -8288,16 +8288,16 @@ end_door_wave:
     ED28: 91 1E       sta (obj_record_ptr),y   ; $1E
     ED2A: A2 20       ldx #$20
 @ED2C:
-    ED2C: BD 0B 04    lda $040b,x
+    ED2C: BD 0B 04    lda obj_vy_or_link,x   ; $040B
     ED2F: C5 1E       cmp obj_record_ptr   ; $1E
     ED31: D0 11       bne @ED44   ; $ED44
-    ED33: BD 0F 04    lda $040f,x
+    ED33: BD 0F 04    lda obj_state,x   ; $040F
     ED36: C9 18       cmp #$18
     ED38: D0 0A       bne @ED44   ; $ED44
     ED3A: A9 1A       lda #$1a
-    ED3C: 9D 0F 04    sta $040f,x
+    ED3C: 9D 0F 04    sta obj_state,x   ; $040F
     ED3F: A9 3C       lda #$3c
-    ED41: 9D 07 04    sta $0407,x
+    ED41: 9D 07 04    sta obj_timer,x   ; $0407
 @ED44:
     ED44: 8A          txa
     ED45: 18          clc
@@ -8330,13 +8330,13 @@ update_door_wave:
     ED6B: C9 02       cmp #$02
     ED6D: B0 A3       bcs @ED12   ; $ED12
     ED6F: A5 42       lda game_phase   ; $42
-    ED71: 8D 09 06    sta $0609
+    ED71: 8D 09 06    sta snd_door_wave   ; $0609
     ED74: 20 77 EE    jsr door_wave_catches_cats   ; $EE77
     ED77: 20 C9 EE    jsr carry_wave_cats   ; $EEC9
     ED7A: A9 08       lda #$08
     ED7C: A0 04       ldy #$04
     ED7E: 91 1E       sta (obj_record_ptr),y   ; $1E
-    ED80: A5 63       lda record_ptr   ; $63
+    ED80: A5 63       lda player_speed   ; $63
     ED82: 18          clc
     ED83: 69 08       adc #$08
     ED85: 20 4D EE    jsr move_record_x_by_direction   ; $EE4D
@@ -8396,16 +8396,16 @@ update_door_wave:
     EDDF: 4C BE D4    jmp add_score_n_times   ; $D4BE
 
 hide_wave_cats:
-    EDE2: BD 0B 04    lda $040b,x
+    EDE2: BD 0B 04    lda obj_vy_or_link,x   ; $040B
     EDE5: C5 1E       cmp obj_record_ptr   ; $1E
     EDE7: D0 1A       bne @EE03   ; $EE03
-    EDE9: BD 0F 04    lda $040f,x
+    EDE9: BD 0F 04    lda obj_state,x   ; $040F
     EDEC: C9 16       cmp #$16
     EDEE: D0 13       bne @EE03   ; $EE03
     EDF0: A9 18       lda #$18
-    EDF2: 9D 0F 04    sta $040f,x
+    EDF2: 9D 0F 04    sta obj_state,x   ; $040F
     EDF5: A9 00       lda #$00
-    EDF7: 9D 04 04    sta $0404,x
+    EDF7: 9D 04 04    sta obj_anim,x   ; $0404
     EDFA: C8          iny
     EDFB: E0 20       cpx #$20
     EDFD: D0 04       bne @EE03   ; $EE03
@@ -8418,7 +8418,7 @@ hide_wave_cats:
 launch_door_wave:
     EE04: A0 00       ldy #$00
 @EE06:
-    EE06: B9 A5 04    lda obj_state,y   ; $04A5
+    EE06: B9 A5 04    lda wave_state,y   ; $04A5
     EE09: F0 0A       beq @EE15   ; $EE15
     EE0B: 98          tya
     EE0C: 18          clc
@@ -8429,40 +8429,40 @@ launch_door_wave:
     EE14: 60          rts
 @EE15:
     EE15: A9 01       lda #$01
-    EE17: 99 A5 04    sta obj_state,y   ; $04A5
+    EE17: 99 A5 04    sta wave_state,y   ; $04A5
     EE1A: A9 00       lda #$00
-    EE1C: 99 A0 04    sta $04a0,y
-    EE1F: 99 A2 04    sta $04a2,y
-    EE22: BD B5 02    lda obj_x,x   ; $02B5
+    EE1C: 99 A0 04    sta wave_x_frac,y   ; $04A0
+    EE1F: 99 A2 04    sta wave_y_frac,y   ; $04A2
+    EE22: BD B5 02    lda door_y,x   ; $02B5
     EE25: 38          sec
     EE26: E9 01       sbc #$01
-    EE28: 99 A3 04    sta $04a3,y
-    EE2B: BD B1 02    lda obj_state,x   ; $02B1
+    EE28: 99 A3 04    sta wave_y,y   ; $04A3
+    EE2B: BD B1 02    lda door_kind,x   ; $02B1
     EE2E: 29 04       and #$04
     EE30: F0 0F       beq @EE41   ; $EE41
     EE32: A9 FF       lda #$ff
-    EE34: 99 A6 04    sta $04a6,y
-    EE37: BD B4 02    lda obj_pos,x   ; $02B4
+    EE34: 99 A6 04    sta wave_dir,y   ; $04A6
+    EE37: BD B4 02    lda door_x,x   ; $02B4
     EE3A: 38          sec
     EE3B: E9 02       sbc #$02
-    EE3D: 99 A1 04    sta $04a1,y
+    EE3D: 99 A1 04    sta wave_x,y   ; $04A1
     EE40: 60          rts
 @EE41:
     EE41: A9 01       lda #$01
-    EE43: 99 A6 04    sta $04a6,y
-    EE46: BD B4 02    lda obj_pos,x   ; $02B4
-    EE49: 99 A1 04    sta $04a1,y
+    EE43: 99 A6 04    sta wave_dir,y   ; $04A6
+    EE46: BD B4 02    lda door_x,x   ; $02B4
+    EE49: 99 A1 04    sta wave_x,y   ; $04A1
     EE4C: 60          rts
 
 move_record_x_by_direction:
-    EE4D: 85 10       sta src_ptr   ; $10
+    EE4D: 85 10       sta draw_pos   ; $10
     EE4F: A0 06       ldy #$06
     EE51: B1 1E       lda (obj_record_ptr),y   ; $1E
     EE53: 30 11       bmi @EE66   ; $EE66
     EE55: A0 00       ldy #$00
     EE57: B1 1E       lda (obj_record_ptr),y   ; $1E
     EE59: 18          clc
-    EE5A: 65 10       adc src_ptr   ; $10
+    EE5A: 65 10       adc draw_pos   ; $10
     EE5C: 91 1E       sta (obj_record_ptr),y   ; $1E
     EE5E: C8          iny
     EE5F: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -8473,7 +8473,7 @@ move_record_x_by_direction:
     EE66: A0 00       ldy #$00
     EE68: B1 1E       lda (obj_record_ptr),y   ; $1E
     EE6A: 38          sec
-    EE6B: E5 10       sbc src_ptr   ; $10
+    EE6B: E5 10       sbc draw_pos   ; $10
     EE6D: 91 1E       sta (obj_record_ptr),y   ; $1E
     EE6F: C8          iny
     EE70: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -8484,14 +8484,14 @@ move_record_x_by_direction:
 door_wave_catches_cats:
     EE77: A2 20       ldx #$20
 @EE79:
-    EE79: BD 04 04    lda $0404,x
+    EE79: BD 04 04    lda obj_anim,x   ; $0404
     EE7C: F0 41       beq @EEBF   ; $EEBF
-    EE7E: BD 0F 04    lda $040f,x
+    EE7E: BD 0F 04    lda obj_state,x   ; $040F
     EE81: 38          sec
     EE82: E9 16       sbc #$16
     EE84: C9 06       cmp #$06
     EE86: 90 37       bcc @EEBF   ; $EEBF
-    EE88: BD 03 04    lda $0403,x
+    EE88: BD 03 04    lda obj_y,x   ; $0403
     EE8B: A0 03       ldy #$03
     EE8D: 38          sec
     EE8E: F1 1E       sbc (obj_record_ptr),y   ; $1E
@@ -8499,7 +8499,7 @@ door_wave_catches_cats:
     EE91: 69 01       adc #$01
     EE93: C9 04       cmp #$04
     EE95: B0 28       bcs @EEBF   ; $EEBF
-    EE97: BD 01 04    lda $0401,x
+    EE97: BD 01 04    lda obj_x,x   ; $0401
     EE9A: A0 01       ldy #$01
     EE9C: 38          sec
     EE9D: F1 1E       sbc (obj_record_ptr),y   ; $1E
@@ -8516,11 +8516,11 @@ door_wave_catches_cats:
     EEAC: C9 02       cmp #$02
     EEAE: B0 0F       bcs @EEBF   ; $EEBF
     EEB0: A5 1E       lda obj_record_ptr   ; $1E
-    EEB2: 9D 0B 04    sta $040b,x
+    EEB2: 9D 0B 04    sta obj_vy_or_link,x   ; $040B
     EEB5: A9 00       lda #$00
-    EEB7: 9D 07 04    sta $0407,x
+    EEB7: 9D 07 04    sta obj_timer,x   ; $0407
     EEBA: A9 16       lda #$16
-    EEBC: 9D 0F 04    sta $040f,x
+    EEBC: 9D 0F 04    sta obj_state,x   ; $040F
 @EEBF:
     EEBF: 8A          txa
     EEC0: 18          clc
@@ -8533,13 +8533,13 @@ door_wave_catches_cats:
 carry_wave_cats:
     EEC9: A2 20       ldx #$20
 @EECB:
-    EECB: BD 0B 04    lda $040b,x
+    EECB: BD 0B 04    lda obj_vy_or_link,x   ; $040B
     EECE: C5 1E       cmp obj_record_ptr   ; $1E
     EED0: D0 0F       bne @EEE1   ; $EEE1
-    EED2: BD 0F 04    lda $040f,x
+    EED2: BD 0F 04    lda obj_state,x   ; $040F
     EED5: C9 16       cmp #$16
     EED7: D0 08       bne @EEE1   ; $EEE1
-    EED9: A5 63       lda record_ptr   ; $63
+    EED9: A5 63       lda player_speed   ; $63
     EEDB: 18          clc
     EEDC: 69 08       adc #$08
     EEDE: 20 EB EE    jsr move_cat_x_by_wave_direction   ; $EEEB
@@ -8553,26 +8553,26 @@ carry_wave_cats:
     EEEA: 60          rts
 
 move_cat_x_by_wave_direction:
-    EEEB: 85 10       sta src_ptr   ; $10
+    EEEB: 85 10       sta draw_pos   ; $10
     EEED: A0 06       ldy #$06
     EEEF: B1 1E       lda (obj_record_ptr),y   ; $1E
     EEF1: 30 12       bmi @EF05   ; $EF05
-    EEF3: BD 00 04    lda $0400,x
+    EEF3: BD 00 04    lda obj_x_frac,x   ; $0400
     EEF6: 18          clc
-    EEF7: 65 10       adc src_ptr   ; $10
-    EEF9: 9D 00 04    sta $0400,x
-    EEFC: BD 01 04    lda $0401,x
+    EEF7: 65 10       adc draw_pos   ; $10
+    EEF9: 9D 00 04    sta obj_x_frac,x   ; $0400
+    EEFC: BD 01 04    lda obj_x,x   ; $0401
     EEFF: 69 00       adc #$00
-    EF01: 9D 01 04    sta $0401,x
+    EF01: 9D 01 04    sta obj_x,x   ; $0401
     EF04: 60          rts
 @EF05:
-    EF05: BD 00 04    lda $0400,x
+    EF05: BD 00 04    lda obj_x_frac,x   ; $0400
     EF08: 38          sec
-    EF09: E5 10       sbc src_ptr   ; $10
-    EF0B: 9D 00 04    sta $0400,x
-    EF0E: BD 01 04    lda $0401,x
+    EF09: E5 10       sbc draw_pos   ; $10
+    EF0B: 9D 00 04    sta obj_x_frac,x   ; $0400
+    EF0E: BD 01 04    lda obj_x,x   ; $0401
     EF11: E9 00       sbc #$00
-    EF13: 9D 01 04    sta $0401,x
+    EF13: 9D 01 04    sta obj_x,x   ; $0401
     EF16: 60          rts
 
 load_dropped_objects:
@@ -8585,7 +8585,7 @@ load_dropped_objects:
     EF22: A2 00       ldx #$00
 @EF24:
     EF24: BD 2F EF    lda dropped_objects_template,x   ; $EF2F
-    EF27: 95 A0       sta block_data_ptr,x   ; $A0
+    EF27: 95 A0       sta dropped_objects,x   ; $A0
     EF29: E8          inx
     EF2A: E0 10       cpx #$10
     EF2C: D0 F6       bne @EF24   ; $EF24
@@ -8645,16 +8645,16 @@ update_dropped_object:
 @EF78:
     EF78: A0 03       ldy #$03
     EF7A: B1 1E       lda (obj_record_ptr),y   ; $1E
-    EF7C: CD 03 04    cmp $0403
+    EF7C: CD 03 04    cmp obj_y   ; $0403
     EF7F: D0 17       bne @EF98   ; $EF98
     EF81: A0 01       ldy #$01
     EF83: B1 1E       lda (obj_record_ptr),y   ; $1E
     EF85: 38          sec
-    EF86: ED 01 04    sbc $0401
+    EF86: ED 01 04    sbc obj_x   ; $0401
     EF89: C9 02       cmp #$02
     EF8B: B0 0B       bcs @EF98   ; $EF98
     EF8D: A5 42       lda game_phase   ; $42
-    EF8F: 8D 07 06    sta $0607
+    EF8F: 8D 07 06    sta snd_drop   ; $0607
     EF92: A9 02       lda #$02
     EF94: A0 05       ldy #$05
     EF96: 91 1E       sta (obj_record_ptr),y   ; $1E
@@ -8664,16 +8664,16 @@ update_dropped_object:
 dropped_object_stuns_cats:
     EF9B: A2 20       ldx #$20
 @EF9D:
-    EF9D: BD 0F 04    lda $040f,x
+    EF9D: BD 0F 04    lda obj_state,x   ; $040F
     EFA0: C9 16       cmp #$16
     EFA2: B0 53       bcs @EFF7   ; $EFF7
     EFA4: A0 00       ldy #$00
     EFA6: B1 1E       lda (obj_record_ptr),y   ; $1E
     EFA8: 38          sec
-    EFA9: FD 00 04    sbc $0400,x
+    EFA9: FD 00 04    sbc obj_x_frac,x   ; $0400
     EFAC: C8          iny
     EFAD: B1 1E       lda (obj_record_ptr),y   ; $1E
-    EFAF: FD 01 04    sbc $0401,x
+    EFAF: FD 01 04    sbc obj_x,x   ; $0401
     EFB2: 18          clc
     EFB3: 69 01       adc #$01
     EFB5: C9 02       cmp #$02
@@ -8681,25 +8681,25 @@ dropped_object_stuns_cats:
     EFB9: C8          iny
     EFBA: B1 1E       lda (obj_record_ptr),y   ; $1E
     EFBC: 38          sec
-    EFBD: FD 02 04    sbc $0402,x
+    EFBD: FD 02 04    sbc obj_y_frac,x   ; $0402
     EFC0: C8          iny
     EFC1: B1 1E       lda (obj_record_ptr),y   ; $1E
-    EFC3: FD 03 04    sbc $0403,x
+    EFC3: FD 03 04    sbc obj_y,x   ; $0403
     EFC6: 18          clc
     EFC7: 69 01       adc #$01
     EFC9: C9 02       cmp #$02
     EFCB: B0 2A       bcs @EFF7   ; $EFF7
-    EFCD: A5 65       lda active_object_count   ; $65
-    EFCF: 9D 07 04    sta $0407,x
+    EFCD: A5 65       lda stun_time   ; $65
+    EFCF: 9D 07 04    sta obj_timer,x   ; $0407
     EFD2: A9 26       lda #$26
-    EFD4: 9D 0F 04    sta $040f,x
+    EFD4: 9D 0F 04    sta obj_state,x   ; $040F
     EFD7: A9 22       lda #$22
-    EFD9: 9D 04 04    sta $0404,x
-    EFDC: BD 03 04    lda $0403,x
+    EFD9: 9D 04 04    sta obj_anim,x   ; $0404
+    EFDC: BD 03 04    lda obj_y,x   ; $0403
     EFDF: C9 19       cmp #$19
     EFE1: 90 05       bcc @EFE8   ; $EFE8
     EFE3: A9 19       lda #$19
-    EFE5: 9D 03 04    sta $0403,x
+    EFE5: 9D 03 04    sta obj_y,x   ; $0403
 @EFE8:
     EFE8: 86 1B       stx cur_obj_index   ; $1B
     EFEA: A0 08       ldy #$08
@@ -8732,21 +8732,21 @@ spawn_floor_traps:
 
 init_floor_trap:
     F013: A9 02       lda #$02
-    F015: 99 90 00    sta obj_state,y   ; $0090
+    F015: 99 90 00    sta floor_trap_state,y   ; $0090
     F018: BD 41 F0    lda floor_trap_addrs,x   ; $F041
     F01B: E8          inx
-    F01C: 99 92 00    sta obj_trigger_coord,y   ; $0092
-    F01F: 85 10       sta src_ptr   ; $10
+    F01C: 99 92 00    sta floor_trap_addr,y   ; $0092
+    F01F: 85 10       sta draw_pos   ; $10
     F021: BD 41 F0    lda floor_trap_addrs,x   ; $F041
     F024: E8          inx
     F025: 86 1B       stx cur_obj_index   ; $1B
-    F027: 99 93 00    sta ppu_block_data_ptr,y   ; $0093
-    F02A: 85 11       sta zp_ptr_hi   ; $11
+    F027: 99 93 00    sta floor_trap_addr_hi,y   ; $0093
+    F02A: 85 11       sta draw_pos_hi   ; $11
     F02C: 20 BD E3    jsr ppu_addr_to_tile_xy   ; $E3BD
-    F02F: A5 10       lda src_ptr   ; $10
-    F031: 99 94 00    sta obj_pos_field,y   ; $0094
-    F034: A5 11       lda zp_ptr_hi   ; $11
-    F036: 99 95 00    sta obj_x,y   ; $0095
+    F02F: A5 10       lda draw_pos   ; $10
+    F031: 99 94 00    sta floor_trap_x,y   ; $0094
+    F034: A5 11       lda draw_pos_hi   ; $11
+    F036: 99 95 00    sta floor_trap_y,y   ; $0095
     F039: A2 00       ldx #$00
     F03B: 20 6D F0    jsr draw_floor_trap_frame   ; $F06D
     F03E: A6 1B       ldx cur_obj_index   ; $1B
@@ -8773,7 +8773,7 @@ update_floor_traps:
     F052: A0 08       ldy #$08
 
 update_floor_trap:
-    F054: B9 90 00    lda obj_state,y   ; $0090
+    F054: B9 90 00    lda floor_trap_state,y   ; $0090
     F057: F0 E7       beq @F040   ; $F040
     F059: C9 02       cmp #$02
     F05B: 90 3F       bcc @F09C   ; $F09C
@@ -8788,34 +8788,34 @@ update_floor_trap:
     F06C: AA          tax
 
 draw_floor_trap_frame:
-    F06D: B9 92 00    lda obj_trigger_coord,y   ; $0092
-    F070: 85 10       sta src_ptr   ; $10
-    F072: B9 93 00    lda ppu_block_data_ptr,y   ; $0093
-    F075: 85 11       sta zp_ptr_hi   ; $11
+    F06D: B9 92 00    lda floor_trap_addr,y   ; $0092
+    F070: 85 10       sta draw_pos   ; $10
+    F072: B9 93 00    lda floor_trap_addr_hi,y   ; $0093
+    F075: 85 11       sta draw_pos_hi   ; $11
     F077: A9 80       lda #$80
-    F079: 85 14       sta scan_src_ptr   ; $14
+    F079: 85 14       sta draw_palette   ; $14
     F07B: BD 28 F1    lda tbl_floor_trap_pictures,x   ; $F128
-    F07E: 85 12       sta gfx_src_ptr   ; $12
+    F07E: 85 12       sta draw_tile_or_src   ; $12
     F080: BD 29 F1    lda $f129,x
-    F083: 85 13       sta data_ptr_hi   ; $13
+    F083: 85 13       sta draw_attr_or_src_hi   ; $13
     F085: 4C FB C6    jmp draw_rle_text   ; $C6FB
 @F088:
     F088: 20 CE F0    jsr player_on_floor_trap   ; $F0CE
     F08B: F0 B3       beq @F040   ; $F040
     F08D: A9 01       lda #$01
-    F08F: 99 90 00    sta obj_state,y   ; $0090
+    F08F: 99 90 00    sta floor_trap_state,y   ; $0090
     F092: A9 78       lda #$78
-    F094: 99 96 00    sta scratch_bitshift,y   ; $0096
+    F094: 99 96 00    sta floor_trap_timer,y   ; $0096
     F097: A2 00       ldx #$00
     F099: 4C 6D F0    jmp draw_floor_trap_frame   ; $F06D
 @F09C:
-    F09C: B9 96 00    lda scratch_bitshift,y   ; $0096
+    F09C: B9 96 00    lda floor_trap_timer,y   ; $0096
     F09F: 38          sec
     F0A0: E9 01       sbc #$01
-    F0A2: 99 96 00    sta scratch_bitshift,y   ; $0096
+    F0A2: 99 96 00    sta floor_trap_timer,y   ; $0096
     F0A5: D0 99       bne @F040   ; $F040
     F0A7: A9 00       lda #$00
-    F0A9: 99 90 00    sta obj_state,y   ; $0090
+    F0A9: 99 90 00    sta floor_trap_state,y   ; $0090
     F0AC: A2 04       ldx #$04
     F0AE: 4C 6D F0    jmp draw_floor_trap_frame   ; $F06D
 
@@ -8825,25 +8825,25 @@ press_floor_traps:
     F0B6: A0 08       ldy #$08
 
 press_floor_trap:
-    F0B8: B9 90 00    lda obj_state,y   ; $0090
+    F0B8: B9 90 00    lda floor_trap_state,y   ; $0090
     F0BB: C9 02       cmp #$02
     F0BD: D0 27       bne @F0E6   ; $F0E6
     F0BF: 20 CE F0    jsr player_on_floor_trap   ; $F0CE
     F0C2: D0 22       bne @F0E6   ; $F0E6
     F0C4: A9 03       lda #$03
-    F0C6: 99 90 00    sta obj_state,y   ; $0090
+    F0C6: 99 90 00    sta floor_trap_state,y   ; $0090
     F0C9: A2 02       ldx #$02
     F0CB: 4C 6D F0    jmp draw_floor_trap_frame   ; $F06D
 
 player_on_floor_trap:
-    F0CE: B9 94 00    lda obj_pos_field,y   ; $0094
+    F0CE: B9 94 00    lda floor_trap_x,y   ; $0094
     F0D1: 38          sec
-    F0D2: ED 01 04    sbc $0401
+    F0D2: ED 01 04    sbc obj_x   ; $0401
     F0D5: C9 02       cmp #$02
     F0D7: B0 0B       bcs @F0E4   ; $F0E4
-    F0D9: B9 95 00    lda obj_x,y   ; $0095
+    F0D9: B9 95 00    lda floor_trap_y,y   ; $0095
     F0DC: 38          sec
-    F0DD: ED 03 04    sbc $0403
+    F0DD: ED 03 04    sbc obj_y   ; $0403
     F0E0: C9 02       cmp #$02
     F0E2: F0 02       beq @F0E6   ; $F0E6
 @F0E4:
@@ -8858,16 +8858,16 @@ walker_over_open_trap:
     F0EE: A2 08       ldx #$08
 
 walker_over_open_trap_x:
-    F0F0: B5 90       lda obj_state,x   ; $90
+    F0F0: B5 90       lda floor_trap_state,x   ; $90
     F0F2: C9 01       cmp #$01
     F0F4: D0 31       bne @F127   ; $F127
-    F0F6: B5 95       lda obj_x,x   ; $95
+    F0F6: B5 95       lda floor_trap_y,x   ; $95
     F0F8: 38          sec
     F0F9: A0 03       ldy #$03
     F0FB: F1 1E       sbc (obj_record_ptr),y   ; $1E
     F0FD: C9 02       cmp #$02
     F0FF: D0 E3       bne @F0E4   ; $F0E4
-    F101: B5 94       lda obj_pos_field,x   ; $94
+    F101: B5 94       lda floor_trap_x,x   ; $94
     F103: 38          sec
     F104: A0 01       ldy #$01
     F106: F1 1E       sbc (obj_record_ptr),y   ; $1E
@@ -8886,7 +8886,7 @@ walker_over_open_trap_x:
     F11E: B0 C4       bcs @F0E4   ; $F0E4
 @F120:
     F120: A9 01       lda #$01
-    F122: 8D 07 06    sta $0607
+    F122: 8D 07 06    sta snd_drop   ; $0607
     F125: A9 00       lda #$00
 @F127:
     F127: 60          rts
@@ -8926,17 +8926,17 @@ load_bonus_targets:
     F146: A0 00       ldy #$00
     F148: B1 1C       lda (aux_ptr),y   ; $1C
     F14A: C8          iny
-    F14B: 85 53       sta object_def_ptr   ; $53
+    F14B: 85 53       sta bonus_target_table_len   ; $53
     F14D: 4A          lsr a
     F14E: 4A          lsr a
     F14F: 4A          lsr a
-    F150: 85 52       sta object_def_ptr   ; $52
+    F150: 85 52       sta bonus_targets_left   ; $52
     F152: A9 00       lda #$00
-    F154: 85 50       sta obj_table_ptr   ; $50
-    F156: 85 51       sta obj_def_ptr_hi   ; $51
+    F154: 85 50       sta bonus_targets_popped   ; $50
+    F156: 85 51       sta bonus_goals_reached   ; $51
     F158: A2 00       ldx #$00
 @F15A:
-    F15A: 95 54       sta object_table_ptr,x   ; $54
+    F15A: 95 54       sta bonus_tallies,x   ; $54
     F15C: E8          inx
     F15D: E0 0C       cpx #$0c
     F15F: D0 F9       bne @F15A   ; $F15A
@@ -8946,27 +8946,27 @@ load_bonus_targets:
     F165: 9D 60 02    sta item_state,x   ; $0260
     F168: B1 1C       lda (aux_ptr),y   ; $1C
     F16A: C8          iny
-    F16B: 85 10       sta src_ptr   ; $10
-    F16D: 9D 66 02    sta $0266,x
+    F16B: 85 10       sta draw_pos   ; $10
+    F16D: 9D 66 02    sta target_addr,x   ; $0266
     F170: B1 1C       lda (aux_ptr),y   ; $1C
     F172: C8          iny
-    F173: 85 11       sta zp_ptr_hi   ; $11
-    F175: 9D 67 02    sta $0267,x
+    F173: 85 11       sta draw_pos_hi   ; $11
+    F175: 9D 67 02    sta target_addr_hi,x   ; $0267
     F178: 20 BD E3    jsr ppu_addr_to_tile_xy   ; $E3BD
-    F17B: A5 10       lda src_ptr   ; $10
+    F17B: A5 10       lda draw_pos   ; $10
     F17D: 9D 64 02    sta item_x,x   ; $0264
-    F180: A5 11       lda zp_ptr_hi   ; $11
+    F180: A5 11       lda draw_pos_hi   ; $11
     F182: 9D 65 02    sta item_y,x   ; $0265
     F185: 8A          txa
     F186: 18          clc
     F187: 69 08       adc #$08
     F189: AA          tax
-    F18A: E4 53       cpx object_def_ptr   ; $53
+    F18A: E4 53       cpx bonus_target_table_len   ; $53
     F18C: D0 D5       bne @F163   ; $F163
     F18E: 60          rts
 
 update_bonus_targets:
-    F18F: A5 53       lda object_def_ptr   ; $53
+    F18F: A5 53       lda bonus_target_table_len   ; $53
     F191: F0 11       beq @F1A4   ; $F1A4
     F193: A2 00       ldx #$00
 @F195:
@@ -8976,7 +8976,7 @@ update_bonus_targets:
     F19C: 18          clc
     F19D: 69 08       adc #$08
     F19F: AA          tax
-    F1A0: E4 53       cpx object_def_ptr   ; $53
+    F1A0: E4 53       cpx bonus_target_table_len   ; $53
     F1A2: D0 F1       bne @F195   ; $F195
 @F1A4:
     F1A4: 60          rts
@@ -9001,53 +9001,53 @@ bonus_target_live:
     F1C4: C9 02       cmp #$02
     F1C6: D0 4C       bne @F214   ; $F214
     F1C8: BD 65 02    lda item_y,x   ; $0265
-    F1CB: CD 03 04    cmp $0403
+    F1CB: CD 03 04    cmp obj_y   ; $0403
     F1CE: D0 44       bne @F214   ; $F214
     F1D0: BD 64 02    lda item_x,x   ; $0264
     F1D3: 38          sec
-    F1D4: ED 01 04    sbc $0401
+    F1D4: ED 01 04    sbc obj_x   ; $0401
     F1D7: C9 02       cmp #$02
     F1D9: B0 39       bcs @F214   ; $F214
-    F1DB: AD 0F 04    lda $040f
+    F1DB: AD 0F 04    lda obj_state   ; $040F
     F1DE: C9 08       cmp #$08
     F1E0: D0 0F       bne pop_bonus_target   ; $F1F1
     F1E2: A9 00       lda #$00
-    F1E4: 8D 08 04    sta $0408
+    F1E4: 8D 08 04    sta obj_tile   ; $0408
     F1E7: A9 02       lda #$02
-    F1E9: 8D 0F 04    sta $040f
+    F1E9: 8D 0F 04    sta obj_state   ; $040F
     F1EC: A9 06       lda #$06
-    F1EE: 8D 04 04    sta $0404
+    F1EE: 8D 04 04    sta obj_anim   ; $0404
 
 pop_bonus_target:
     F1F1: A9 01       lda #$01
-    F1F3: 8D 08 06    sta $0608
+    F1F3: 8D 08 06    sta snd_collect   ; $0608
     F1F6: A9 00       lda #$00
     F1F8: 9D 60 02    sta item_state,x   ; $0260
-    F1FB: C6 52       dec object_def_ptr   ; $52
+    F1FB: C6 52       dec bonus_targets_left   ; $52
     F1FD: A0 06       ldy #$06
     F1FF: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
     F202: A0 08       ldy #$08
     F204: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
     F207: AD 77 F2    lda ptr_popped_target_picture   ; $F277
-    F20A: 85 12       sta gfx_src_ptr   ; $12
+    F20A: 85 12       sta draw_tile_or_src   ; $12
     F20C: AD 78 F2    lda $f278
-    F20F: 85 13       sta data_ptr_hi   ; $13
+    F20F: 85 13       sta draw_attr_or_src_hi   ; $13
     F211: 4C 50 F2    jmp draw_bonus_target   ; $F250
 @F214:
     F214: 60          rts
 
 released_cat_pops_target:
     F215: BD 65 02    lda item_y,x   ; $0265
-    F218: CD 23 04    cmp obj_state   ; $0423
+    F218: CD 23 04    cmp slot2_y   ; $0423
     F21B: D0 F7       bne @F214   ; $F214
     F21D: BD 64 02    lda item_x,x   ; $0264
     F220: 38          sec
-    F221: ED 21 04    sbc target_compare_value   ; $0421
+    F221: ED 21 04    sbc slot2_x   ; $0421
     F224: C9 02       cmp #$02
     F226: B0 EC       bcs @F214   ; $F214
     F228: A9 00       lda #$00
-    F22A: 8D 2F 04    sta stage_phase_state   ; $042F
-    F22D: 8D 24 04    sta obj_state   ; $0424
+    F22A: 8D 2F 04    sta slot2_state   ; $042F
+    F22D: 8D 24 04    sta slot2_anim   ; $0424
     F230: 4C F1 F1    jmp pop_bonus_target   ; $F1F1
 
 animate_bonus_target:
@@ -9065,18 +9065,18 @@ animate_bonus_target:
     F244: 4A          lsr a
     F245: A8          tay
     F246: B9 63 F2    lda tbl_bonus_target_pictures,y   ; $F263
-    F249: 85 12       sta gfx_src_ptr   ; $12
+    F249: 85 12       sta draw_tile_or_src   ; $12
     F24B: B9 64 F2    lda $f264,y
-    F24E: 85 13       sta data_ptr_hi   ; $13
+    F24E: 85 13       sta draw_attr_or_src_hi   ; $13
 
 draw_bonus_target:
     F250: A6 1B       ldx cur_obj_index   ; $1B
-    F252: BD 66 02    lda $0266,x
-    F255: 85 10       sta src_ptr   ; $10
-    F257: BD 67 02    lda $0267,x
-    F25A: 85 11       sta zp_ptr_hi   ; $11
+    F252: BD 66 02    lda target_addr,x   ; $0266
+    F255: 85 10       sta draw_pos   ; $10
+    F257: BD 67 02    lda target_addr_hi,x   ; $0267
+    F25A: 85 11       sta draw_pos_hi   ; $11
     F25C: A9 00       lda #$00
-    F25E: 85 14       sta scan_src_ptr   ; $14
+    F25E: 85 14       sta draw_palette   ; $14
     F260: 4C FB C6    jmp draw_rle_text   ; $C6FB
 
 tbl_bonus_target_pictures:
@@ -9227,36 +9227,36 @@ bonus_targets_06:
     F2E5: 20          .byte $20
 
 tick_round_timer:
-    F2E6: A5 60       lda sequence_state   ; $60
+    F2E6: A5 60       lda round_timer_phase   ; $60
     F2E8: F0 14       beq @F2FE   ; $F2FE
     F2EA: C9 02       cmp #$02
     F2EC: 90 41       bcc @F32F   ; $F32F
     F2EE: F0 6B       beq @F35B   ; $F35B
-    F2F0: A5 61       lda seq_data_ptr   ; $61
+    F2F0: A5 61       lda round_timer_frames   ; $61
     F2F2: C9 3C       cmp #$3c
     F2F4: F0 07       beq @F2FD   ; $F2FD
-    F2F6: E6 61       inc seq_data_ptr   ; $61
+    F2F6: E6 61       inc round_timer_frames   ; $61
     F2F8: A5 42       lda game_phase   ; $42
-    F2FA: 8D 05 06    sta $0605
+    F2FA: 8D 05 06    sta snd_hurry   ; $0605
 @F2FD:
     F2FD: 60          rts
 @F2FE:
-    F2FE: E6 61       inc seq_data_ptr   ; $61
-    F300: A5 61       lda seq_data_ptr   ; $61
+    F2FE: E6 61       inc round_timer_frames   ; $61
+    F300: A5 61       lda round_timer_frames   ; $61
     F302: C9 3C       cmp #$3c
     F304: D0 F7       bne @F2FD   ; $F2FD
     F306: A9 00       lda #$00
-    F308: 85 61       sta seq_data_ptr   ; $61
-    F30A: E6 62       inc seq_data_ptr   ; $62
-    F30C: A5 62       lda seq_data_ptr   ; $62
-    F30E: C5 66       cmp $66
+    F308: 85 61       sta round_timer_frames   ; $61
+    F30A: E6 62       inc round_timer_seconds   ; $62
+    F30C: A5 62       lda round_timer_seconds   ; $62
+    F30E: C5 66       cmp hurry_seconds   ; $66
     F310: D0 EB       bne @F2FD   ; $F2FD
     F312: A9 01       lda #$01
-    F314: 85 60       sta sequence_state   ; $60
+    F314: 85 60       sta round_timer_phase   ; $60
     F316: A2 00       ldx #$00
 @F318:
     F318: BD AA F3    lda hurry_sprite_record,x   ; $F3AA
-    F31B: 9D 90 04    sta obj_state_counter,x   ; $0490
+    F31B: 9D 90 04    sta hurry_x,x   ; $0490
     F31E: E8          inx
     F31F: E0 08       cpx #$08
     F321: D0 F5       bne @F318   ; $F318
@@ -9264,70 +9264,70 @@ tick_round_timer:
 start_timer_phase_tune:
     F323: 20 BF F4    jsr init_sound_voices   ; $F4BF
     F326: A9 03       lda #$03
-    F328: 8D F5 06    sta $06f5
-    F32B: 8D F6 06    sta $06f6
+    F328: 8D F5 06    sta voice_param_19   ; $06F5
+    F32B: 8D F6 06    sta voice_param_20   ; $06F6
     F32E: 60          rts
 @F32F:
     F32F: 20 83 F3    jsr draw_hurry_sprite   ; $F383
     F332: 20 B2 F3    jsr scroll_hurry_sprite_left   ; $F3B2
     F335: A5 42       lda game_phase   ; $42
-    F337: 8D 05 06    sta $0605
-    F33A: AD 91 04    lda $0491
+    F337: 8D 05 06    sta snd_hurry   ; $0605
+    F33A: AD 91 04    lda hurry_x_hi   ; $0491
     F33D: F0 BE       beq @F2FD   ; $F2FD
     F33F: A9 02       lda #$02
-    F341: 85 60       sta sequence_state   ; $60
+    F341: 85 60       sta round_timer_phase   ; $60
     F343: A9 00       lda #$00
-    F345: 85 61       sta seq_data_ptr   ; $61
-    F347: 85 62       sta seq_data_ptr   ; $62
-    F349: A6 68       ldx ptr_hi   ; $68
+    F345: 85 61       sta round_timer_frames   ; $61
+    F347: 85 62       sta round_timer_seconds   ; $62
+    F349: A6 68       ldx cat_slots_end   ; $68
     F34B: A9 1A       lda #$1a
-    F34D: 9D 0F 04    sta $040f,x
+    F34D: 9D 0F 04    sta obj_state,x   ; $040F
     F350: A9 01       lda #$01
-    F352: 9D 07 04    sta $0407,x
+    F352: 9D 07 04    sta obj_timer,x   ; $0407
     F355: A9 03       lda #$03
-    F357: 9D 05 04    sta $0405,x
+    F357: 9D 05 04    sta obj_type,x   ; $0405
     F35A: 60          rts
 @F35B:
-    F35B: E6 61       inc seq_data_ptr   ; $61
-    F35D: A5 61       lda seq_data_ptr   ; $61
+    F35B: E6 61       inc round_timer_frames   ; $61
+    F35D: A5 61       lda round_timer_frames   ; $61
     F35F: C9 3C       cmp #$3c
     F361: D0 9A       bne @F2FD   ; $F2FD
     F363: A9 00       lda #$00
-    F365: 85 61       sta seq_data_ptr   ; $61
-    F367: E6 62       inc seq_data_ptr   ; $62
-    F369: A5 62       lda seq_data_ptr   ; $62
-    F36B: C5 67       cmp screen_layout_ptr   ; $67
+    F365: 85 61       sta round_timer_frames   ; $61
+    F367: E6 62       inc round_timer_seconds   ; $62
+    F369: A5 62       lda round_timer_seconds   ; $62
+    F36B: C5 67       cmp chaser_seconds   ; $67
     F36D: D0 8E       bne @F2FD   ; $F2FD
     F36F: A9 03       lda #$03
-    F371: 85 60       sta sequence_state   ; $60
+    F371: 85 60       sta round_timer_phase   ; $60
     F373: A9 1A       lda #$1a
-    F375: 8D 1F 04    sta obj_state   ; $041F
+    F375: 8D 1F 04    sta slot1_state   ; $041F
     F378: A9 01       lda #$01
-    F37A: 8D 17 04    sta $0417
-    F37D: 8D 15 04    sta $0415
+    F37A: 8D 17 04    sta slot1_timer   ; $0417
+    F37D: 8D 15 04    sta slot1_type   ; $0415
     F380: 4C 23 F3    jmp start_timer_phase_tune   ; $F323
 
 draw_hurry_sprite:
     F383: A2 00       ldx #$00
 @F385:
-    F385: BD 90 04    lda obj_state_counter,x   ; $0490
-    F388: 95 10       sta src_ptr,x   ; $10
+    F385: BD 90 04    lda hurry_x,x   ; $0490
+    F388: 95 10       sta draw_pos,x   ; $10
     F38A: E8          inx
     F38B: E0 08       cpx #$08
     F38D: D0 F6       bne @F385   ; $F385
     F38F: A5 21       lda frame_counter   ; $21
     F391: 29 03       and #$03
-    F393: 85 13       sta data_ptr_hi   ; $13
+    F393: 85 13       sta draw_attr_or_src_hi   ; $13
 @F395:
     F395: 20 15 C4    jsr write_sprite_to_oam   ; $C415
-    F398: A5 10       lda src_ptr   ; $10
+    F398: A5 10       lda draw_pos   ; $10
     F39A: 18          clc
     F39B: 69 08       adc #$08
-    F39D: 85 10       sta src_ptr   ; $10
+    F39D: 85 10       sta draw_pos   ; $10
     F39F: 90 02       bcc @F3A3   ; $F3A3
-    F3A1: E6 11       inc zp_ptr_hi   ; $11
+    F3A1: E6 11       inc draw_pos_hi   ; $11
 @F3A3:
-    F3A3: E6 12       inc gfx_src_ptr   ; $12
+    F3A3: E6 12       inc draw_tile_or_src   ; $12
     F3A5: C6 17       dec draw_row_counter   ; $17
     F3A7: D0 EC       bne @F395   ; $F395
     F3A9: 60          rts
@@ -9343,20 +9343,20 @@ hurry_sprite_record:
     F3B1: 04          .byte $04
 
 scroll_hurry_sprite_left:
-    F3B2: AD 90 04    lda obj_state_counter   ; $0490
+    F3B2: AD 90 04    lda hurry_x   ; $0490
     F3B5: 38          sec
     F3B6: E9 02       sbc #$02
-    F3B8: 8D 90 04    sta obj_state_counter   ; $0490
+    F3B8: 8D 90 04    sta hurry_x   ; $0490
     F3BB: B0 03       bcs @F3C0   ; $F3C0
-    F3BD: CE 91 04    dec $0491
+    F3BD: CE 91 04    dec hurry_x_hi   ; $0491
 @F3C0:
     F3C0: 60          rts
 
 load_stage_params:
     F3C1: A9 00       lda #$00
-    F3C3: 85 60       sta sequence_state   ; $60
-    F3C5: 85 61       sta seq_data_ptr   ; $61
-    F3C7: 85 62       sta seq_data_ptr   ; $62
+    F3C3: 85 60       sta round_timer_phase   ; $60
+    F3C5: 85 61       sta round_timer_frames   ; $61
+    F3C7: 85 62       sta round_timer_seconds   ; $62
     F3C9: A5 7D       lda stage_index   ; $7D
     F3CB: 0A          asl a
     F3CC: 65 7D       adc stage_index   ; $7D
@@ -9365,7 +9365,7 @@ load_stage_params:
     F3D0: A0 00       ldy #$00
 @F3D2:
     F3D2: BD DF F3    lda tbl_stage_params,x   ; $F3DF
-    F3D5: 99 63 00    sta record_ptr,y   ; $0063
+    F3D5: 99 63 00    sta player_speed,y   ; $0063
     F3D8: E8          inx
     F3D9: C8          iny
     F3DA: C0 06       cpy #$06
@@ -9573,12 +9573,12 @@ jump_table_dispatch_via_index:
     F4A2: 68          pla
     F4A3: 85 F6       sta sound_scratch   ; $F6
     F4A5: 68          pla
-    F4A6: 85 F7       sta $f7
+    F4A6: 85 F7       sta sound_scratch_hi   ; $F7
     F4A8: B1 F6       lda (sound_scratch),y   ; $F6
     F4AA: AA          tax
     F4AB: C8          iny
     F4AC: B1 F6       lda (sound_scratch),y   ; $F6
-    F4AE: 85 F7       sta $f7
+    F4AE: 85 F7       sta sound_scratch_hi   ; $F7
     F4B0: 86 F6       stx sound_scratch   ; $F6
     F4B2: 6C F6 00    jmp (sound_scratch)   ; $00F6
 
@@ -9613,7 +9613,7 @@ init_sound_voices:
     F4E4: A0 00       ldy #$00
 @F4E6:
     F4E6: B9 9E F8    lda init_sound_voices_data_f89e,y   ; $F89E
-    F4E9: 99 E2 06    sta $06e2,y
+    F4E9: 99 E2 06    sta voice_param,y   ; $06E2
     F4EC: C8          iny
     F4ED: CA          dex
     F4EE: D0 F6       bne @F4E6   ; $F4E6
@@ -9634,7 +9634,7 @@ update_sound_frame:
     F506: 8D 08 40    sta APU_4008   ; $4008
 @F509:
     F509: A9 00       lda #$00
-    F50B: 85 FC       sta $fc
+    F50B: 85 FC       sta channel_claimed   ; $FC
     F50D: 85 FD       sta $fd
     F50F: 85 FE       sta $fe
     F511: 85 FF       sta $ff
@@ -9654,15 +9654,15 @@ update_sound_frame:
     F52A: E9 05       sbc #$05
     F52C: AA          tax
     F52D: A9 01       lda #$01
-    F52F: 95 FC       sta $fc,x
+    F52F: 95 FC       sta channel_claimed,x   ; $FC
     F531: 4C 5A F5    jmp sound_registers_next_voice   ; $F55A
 @F534:
     F534: AA          tax
     F535: CA          dex
-    F536: B5 FC       lda $fc,x
+    F536: B5 FC       lda channel_claimed,x   ; $FC
     F538: D0 20       bne sound_registers_next_voice   ; $F55A
     F53A: A9 01       lda #$01
-    F53C: 95 FC       sta $fc,x
+    F53C: 95 FC       sta channel_claimed,x   ; $FC
     F53E: 8A          txa
     F53F: A8          tay
     F540: 18          clc
@@ -9696,7 +9696,7 @@ sound_registers_next_voice:
     F569: A2 00       ldx #$00
 @F56B:
     F56B: 86 F6       stx sound_scratch   ; $F6
-    F56D: B5 FC       lda $fc,x
+    F56D: B5 FC       lda channel_claimed,x   ; $FC
     F56F: D0 0C       bne @F57D   ; $F57D
     F571: 8A          txa
     F572: 0A          asl a
@@ -9822,14 +9822,14 @@ run_voice_stream:
     F649: BD 3B F8    lda tbl_note_periods,x   ; $F83B
     F64C: 85 F6       sta sound_scratch   ; $F6
     F64E: BD 3C F8    lda $f83c,x
-    F651: 85 F7       sta $f7
+    F651: 85 F7       sta sound_scratch_hi   ; $F7
     F653: 68          pla
     F654: 29 07       and #$07
     F656: F0 08       beq @F660   ; $F660
     F658: AA          tax
 @F659:
     F659: 46 F6       lsr sound_scratch   ; $F6
-    F65B: 66 F7       ror $f7
+    F65B: 66 F7       ror sound_scratch_hi   ; $F7
     F65D: CA          dex
     F65E: D0 F9       bne @F659   ; $F659
 @F660:
@@ -9838,7 +9838,7 @@ run_voice_stream:
     F664: 29 F8       and #$f8
     F666: 05 F6       ora sound_scratch   ; $F6
     F668: 91 F0       sta (voice_rec_ptr),y   ; $F0
-    F66A: A5 F7       lda $f7
+    F66A: A5 F7       lda sound_scratch_hi   ; $F7
     F66C: 88          dey
     F66D: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F66F: A0 00       ldy #$00
@@ -9853,12 +9853,12 @@ run_voice_stream:
     F67E: B1 F0       lda (voice_rec_ptr),y   ; $F0
     F680: 85 F6       sta sound_scratch   ; $F6
     F682: A6 F4       ldx voice_index   ; $F4
-    F684: BD E2 06    lda $06e2,x
-    F687: 85 F7       sta $f7
+    F684: BD E2 06    lda voice_param,x   ; $06E2
+    F687: 85 F7       sta sound_scratch_hi   ; $F7
     F689: A9 00       lda #$00
     F68B: A2 08       ldx #$08
 @F68D:
-    F68D: 46 F7       lsr $f7
+    F68D: 46 F7       lsr sound_scratch_hi   ; $F7
     F68F: 90 03       bcc @F694   ; $F694
     F691: 18          clc
     F692: 65 F6       adc sound_scratch   ; $F6
@@ -9956,7 +9956,7 @@ voice_op_clear_loop_counters:
     F732: A9 00       lda #$00
     F734: A2 08       ldx #$08
 @F736:
-    F736: 9D 61 01    sta $0161,x
+    F736: 9D 61 01    sta voice_repeat_counts,x   ; $0161
     F739: CA          dex
     F73A: 10 FA       bpl @F736   ; $F736
     F73C: 4C 36 F6    jmp run_voice_stream   ; $F636
@@ -9973,11 +9973,11 @@ voice_op_repeat_2:
     F746: A2 02       ldx #$02
 @F748:
     F748: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
-    F74B: FE 61 01    inc $0161,x
-    F74E: DD 61 01    cmp $0161,x
+    F74B: FE 61 01    inc voice_repeat_counts,x   ; $0161
+    F74E: DD 61 01    cmp voice_repeat_counts,x   ; $0161
     F751: D0 6F       bne voice_op_jump   ; $F7C2
     F753: A9 00       lda #$00
-    F755: 9D 61 01    sta $0161,x
+    F755: 9D 61 01    sta voice_repeat_counts,x   ; $0161
     F758: F0 36       beq @F790   ; $F790
 
 voice_op_jump_on_count_0:
@@ -9992,11 +9992,11 @@ voice_op_jump_on_count_2:
     F761: A2 02       ldx #$02
 @F763:
     F763: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
-    F766: FE 64 01    inc $0164,x
-    F769: DD 64 01    cmp $0164,x
+    F766: FE 64 01    inc voice_jump_counts,x   ; $0164
+    F769: DD 64 01    cmp voice_jump_counts,x   ; $0164
     F76C: D0 22       bne @F790   ; $F790
     F76E: A9 00       lda #$00
-    F770: 9D 64 01    sta $0164,x
+    F770: 9D 64 01    sta voice_jump_counts,x   ; $0164
     F773: F0 4D       beq voice_op_jump   ; $F7C2
 
 voice_op_jump_on_count_3:
@@ -10011,11 +10011,11 @@ voice_op_jump_on_count_5:
     F77C: A2 02       ldx #$02
 @F77E:
     F77E: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
-    F781: FE 67 01    inc $0167,x
-    F784: DD 67 01    cmp $0167,x
+    F781: FE 67 01    inc voice_jump_counts_2,x   ; $0167
+    F784: DD 67 01    cmp voice_jump_counts_2,x   ; $0167
     F787: D0 07       bne @F790   ; $F790
     F789: A9 00       lda #$00
-    F78B: 9D 67 01    sta $0167,x
+    F78B: 9D 67 01    sta voice_jump_counts_2,x   ; $0167
     F78E: F0 32       beq voice_op_jump   ; $F7C2
 @F790:
     F790: A5 F4       lda voice_index   ; $F4
@@ -12011,7 +12011,7 @@ attract_demo:
     FF67: 85 7A       sta stage_number   ; $7A
     FF69: 85 7D       sta stage_index   ; $7D
     FF6B: A9 01       lda #$01
-    FF6D: 85 77       sta ppu_block_src_ptr   ; $77
+    FF6D: 85 77       sta round_bcd   ; $77
     FF6F: 20 A7 CA    jsr clear_object_tables   ; $CAA7
     FF72: 20 41 C2    jsr ppu_disable_render   ; $C241
     FF75: 20 49 CD    jsr build_stage_screen_layout   ; $CD49
@@ -12022,8 +12022,8 @@ attract_demo:
     FF84: 20 39 C2    jsr ppu_enable_render   ; $C239
     FF87: A2 00       ldx #$00
 @FF89:
-    FF89: BD 00 02    lda obj_timer,x   ; $0200
-    FF8C: 9D 00 03    sta obj_state,x   ; $0300
+    FF89: BD 00 02    lda tramp_bounce_anims,x   ; $0200
+    FF8C: 9D 00 03    sta other_player_round_state,x   ; $0300
     FF8F: E8          inx
     FF90: D0 F7       bne @FF89   ; $FF89
     FF92: 20 C1 F3    jsr load_stage_params   ; $F3C1
@@ -12032,20 +12032,20 @@ attract_demo:
     FF9B: A9 00       lda #$00
     FF9D: 85 4B       sta player_down   ; $4B
     FF9F: 85 4F       sta round_cleared   ; $4F
-    FFA1: 85 31       sta obj_record_ptr   ; $31
-    FFA3: 85 3C       sta seq_data_ptr_hi   ; $3C
+    FFA1: 85 31       sta item_streak   ; $31
+    FFA3: 85 3C       sta demo_hold_frames   ; $3C
     FFA5: 85 3D       sta demo_script_cursor   ; $3D
     FFA7: A9 02       lda #$02
-    FFA9: 8D 0F 04    sta $040f
+    FFA9: 8D 0F 04    sta obj_state   ; $040F
     FFAC: A2 20       ldx #$20
 @FFAE:
     FFAE: A9 02       lda #$02
-    FFB0: 9D 0F 04    sta $040f,x
+    FFB0: 9D 0F 04    sta obj_state,x   ; $040F
     FFB3: 8A          txa
     FFB4: 18          clc
     FFB5: 69 10       adc #$10
     FFB7: AA          tax
-    FFB8: E4 68       cpx ptr_hi   ; $68
+    FFB8: E4 68       cpx cat_slots_end   ; $68
     FFBA: D0 F2       bne @FFAE   ; $FFAE
 @FFBC:
     FFBC: 20 41 C1    jsr yield_to_render_loop   ; $C141
@@ -12054,7 +12054,7 @@ attract_demo:
     FFC5: A5 4F       lda round_cleared   ; $4F
     FFC7: 05 4B       ora player_down   ; $4B
     FFC9: D0 10       bne @FFDB   ; $FFDB
-    FFCB: A5 24       lda draw_data_ptr   ; $24
+    FFCB: A5 24       lda select_history   ; $24
     FFCD: 29 03       and #$03
     FFCF: C9 01       cmp #$01
     FFD1: F0 08       beq @FFDB   ; $FFDB
