@@ -310,27 +310,27 @@ reset_cold_boot_init  $C031
                                 state26_stunned_by_drop  [dispatch]  $DE7A
                                 state28_drop_stun_recover  [dispatch]  $DE98
                                     enter_fall  [jmp, flows-into]  (above)
-                                bare_return_stub  [dispatch]  $E19C
-                                collect_item_award_score_and_spawn_reward_object  [dispatch]  $E19D
+                                bonus_state04_ended  [dispatch]  $E19C
+                                bonus_state02_fall  [dispatch]  $E19D
                                     add_score_from_table  (above)
                                     advance_pointer_by_flagged_offset_then_append_entry  (above)
-                                    init_state_vars  [flows-into]  $E18E
-                                        bare_return_stub  [flows-into]  (above)
-                                    update_obj_phase7_transition  [flows-into]  $E200
+                                    end_bonus_round  [flows-into]  $E18E
+                                        bonus_state04_ended  [flows-into]  (above)
+                                    bonus_state06_trampoline_bounce  [flows-into]  $E200
                                         set_obj_state_and_load_next_ptr  (above)
                                     find_object_at_coords  (above)
-                                update_obj_phase7_transition  [dispatch]  (above)
-                                object_state_transition_update  [dispatch]  $E230
+                                bonus_state06_trampoline_bounce  [dispatch]  (above)
+                                bonus_state08_rise  [dispatch]  $E230
                                     flag_offset_plus_0x20  [jmp, flows-into]  (above)
-                                field8_in_range_49_59  [dispatch]  $E2A1
-                                    object_bounce_timer_reverse_or_advance  [flows-into]  $E2AC
+                                bonus_state0A_walk_off  [dispatch]  $E2A1
+                                    bonus_state0C_rebound  [flows-into]  $E2AC
                                         advance_object_subpixel_position_then_clamp  [jmp, flows-into]  (above)
-                                object_bounce_timer_reverse_or_advance  [dispatch]  (above)
-                                tick_timer_clear_state_on_expiry  [dispatch]  $E2E0
-                                check_position_reached_and_reset_round  [dispatch]  $E2EE
-                                    init_state_vars  (above)
+                                bonus_state0C_rebound  [dispatch]  (above)
+                                bonus_state10_slot3_timeout  [dispatch]  $E2E0
+                                bonus_state0E_goal_object  [dispatch]  $E2EE
+                                    end_bonus_round  (above)
                                     init_sound_voices  (above)
-                                scan_table_if_code_in_range_then_advance_or_reset_counter  [dispatch]  $E339
+                                bonus_state12_released_cat_rises  [dispatch]  $E339
                                     sub16_from_struct_field_at_offset2  [jmp, flows-into]  (above)
                                     scan_table_at_e537  $E456
                                         draw_text_from_table  [jmp, flows-into]  (above)
@@ -384,9 +384,9 @@ reset_cold_boot_init  $C031
                     load_record_and_advance_anim_counters  $D6E8
                         bcd_add_from_table  (above)
                     blink_player_up_label  (above)
-                    init_struct_from_rom_template  $D80B
+                    init_bonus_player  $D80B
                         set_two_zp_pointers  $D825
-                    init_ram_block_from_table  $D8C0
+                    init_bonus_goal_object  $D8C0
                     build_object_record_block_and_dispatch  $E35B
                         shl3_pack_zp_ptr16  $E3BD
                         setup_obj_ptr_and_dispatch_scan  (above)

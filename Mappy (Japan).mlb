@@ -38,7 +38,7 @@ NesPrgRom:1694:update_high_score:[HIGH] Top-down 2026-10-26 (game thread): if th
 NesPrgRom:177A:queue_vram_packet:[HIGH] Naming 2026-10-26: copies packet Y of the table $D7AD ([addr hi][addr lo][n][n bytes]) into the VRAM queue $0500 at the cursor $2A. Was 'cop
 NesPrgRom:1825:set_two_zp_pointers:[MED] Stores immediate LE 16-bit consts into two zp pointer pairs ($28/$29=$1C00, $1E/$1F=$0400) and clears Y as an index; no hardware regs, pure 
 NesPrgRom:1894:init_object_record_via_ptr:[MED] Writes multiple fields through indirect ptr ($1e),y at offsets 0,1,3,4,5,8,15 — computed type byte (X*4+$20), X-indexed coords from $0264/$0
-NesPrgRom:18C0:init_ram_block_from_table:[HIGH] ldx#0 / lda $d8d3,x / sta $0410,x / inx / cpx #5 / bne copies a 5-byte ROM table into RAM $0410-$0414, then lda #$0e / sta $041f sets one mo
+NesPrgRom:18C0:init_bonus_goal_object:[HIGH] Bonus-round setup: slot 1 +0..+4 from $D8D3 (x 5, y $18, anim $18), state 0E (bonus_state0E_goal_object). Was 'init_ram_block_from_table'. E
 NesPrgRom:19BC:store_one_via_ptr:[MED] lda #$01; sta ($1e),y; rts — writes constant 1 through zero-page pointer ($1E/$1F) indexed by Y; no PPU/RAM specifics to fix semantics.
 NesPrgRom:19F0:clear_flag_if_value_below_threshold:[MED] Reads $0421, sbc #$06 then cmp #$2e (46); when (val-6) < 46 and flag $35 is nonzero (bne path skips the clear when zero), stores #$00 to $35
 NesPrgRom:1AB3:start_hop:[HIGH] Shared entry of state 04: +B = A, +C = 9, state 04, anim 4. Was 'set_obj_fields_via_ptr'. Earlier note: stores incoming A at ($1e)+11, then 
@@ -63,10 +63,10 @@ NesPrgRom:2018:add_flag_conditioned_offset:[MED] Picks offset $10 = 0 or 4 from 
 NesPrgRom:208A:sub16_from_struct_field_at_offset2:[HIGH] sec/sbc $10 on ($1e),y at offset+2 then iny/sbc #$00 on offset+3 with bcs skip = 16-bit subtract of A from the little-endian word at (ptr $1
 NesPrgRom:20B7:walking_cat_touches_player:[HIGH] Player only, while $2E = 0: a slot 1-8 object in state 02 (slot 2 not cooling down, $042A = 0) on the player's row within +/-1 x. Copies its
 NesPrgRom:2102:slot1_touches_player:[HIGH] Player only: slot 1 ($0410-$0413) within +/-1 in x and y; A = 0 when touched, else $FF. Slot 1 is never active in the 3 play logs. Was 'chec
-NesPrgRom:218E:init_state_vars:[MED] Three immediate constants stored to RAM/zero-page with no hardware regs or loop: $0407=0, $4B=1, $040F=4 — a straight-line state-variable in
-NesPrgRom:219C:bare_return_stub:[HIGH] Sole instruction is a single rts at $E19C (1 byte, 1 instr) — touches no registers/RAM, an empty/no-op subroutine that returns immediately.
-NesPrgRom:22A1:field8_in_range_49_59:[MED] lda ($1e),y with y=#$08 loads byte at offset 8 of pointer $1E, then sec/sbc #$49/cmp #$10/bcc is the canonical "value in [$49,$59)" contiguo
-NesPrgRom:22E0:tick_timer_clear_state_on_expiry:[HIGH] dec $0437; bne skip; on zero stores #$00 to $0434 and $043F — a countdown timer that clears two RAM state vars when it expires; no PPU/APU/I
+NesPrgRom:218E:end_bonus_round:[HIGH] Player +7 = 0, player_down = 1, state 04. 3 callers: the fall to a floor tile or below $1C (bonus_state02_fall) and reaching the goal (bonus
+NesPrgRom:219C:bonus_state04_ended:[HIGH] Bonus state 04: a bare RTS, the player held still until the bonus round's loop ends it. Also the tail of end_bonus_round. Census (warped bon
+NesPrgRom:22A1:bonus_state0A_walk_off:[HIGH] Bonus state 0A, walking off the shaft for up to 33 frames. Tile +8 in $49-$58: reverse +6, timer 6, +B = 0, +C = 9, state 0C. Otherwise fall
+NesPrgRom:22E0:bonus_state10_slot3_timeout:[MED] Bonus state 10, slot 3 (absolute $043x): counts $0437 down, then clears its anim and state. No decoded instruction stores state 10 for slot 
 NesPrgRom:23BD:shl3_pack_zp_ptr16:[MED] asl $10/rol $11 ×3 multiplies the 16-bit $10/$11 value by 8, then masks/ORs (and #$1f, and #$20, ora, and #$1f) to repack it into a 13-bit f
 NesPrgRom:2410:tick_subcounter_decrement_on_rollover:[MED] Skips when $0200,x==0 (beq); else inc $0201,x, cmp #$0a, and on reaching 10 resets $0201,x to 0 and dec $0200,x — a per-index mod-10 sub-tic
 NesPrgRom:2469:find_object_at_coords:[MED] Loops x by stride 8 over records at $0202/$0204/$0205 until x==$80, testing each: skips if $0202,x is negative (inactive), checks ($1e),y vs
@@ -118,7 +118,7 @@ NesPrgRom:171C:blink_player_up_label:[HIGH] Top-down 2026-10-26 (game thread): d
 NesPrgRom:1735:show_player_up_label:[HIGH] Top-down 2026-10-26 (game thread): queues packet (player | 2) * 2: the current player's 1UP / 2UP, shown steadily. render_loop calls it on p
 NesPrgRom:173E:animate_two_sprite_walkcycles_into_buffer:[MED] Each block masks a tick counter ($24/$22 &3 ==1) to toggle a 2-frame walk bit ($4A/$2E eor #$01) every 4th tick, computes bit*2+offset as Y 
 NesPrgRom:17F1:init_object_from_rom_template:[MED] After set_two_zp_pointers sets the ($1e) dest pointer, it copies 7 bytes from ROM table $D838 into ($1e),y for y=0..6, then stores constant 
-NesPrgRom:180B:init_struct_from_rom_template:[HIGH] Calls set_two_zp_pointers, then copies 7 bytes from ROM table $D83F into ($1E)-pointed struct (loop cpy #$07), then writes 0 at offset 8 and
+NesPrgRom:180B:init_bonus_player:[HIGH] Bonus-round setup (next_round's bonus branch, only caller): camera $1C00, player record +0..+6 from the template at $D83F, +8 = 0, state 02 
 NesPrgRom:1846:init_object_record_row:[MED] Loops jsr init_object_record_via_ptr advancing pointer $1E/$1F by $10 (16-byte record stride) until it hits limit $68, writing const #$01 at
 NesPrgRom:1939:update_object_state_vs_reference:[MED] Walks an entity record via ($1E),y reading type/state at off 0,1,3,a,d,f, compares its X/Y to reference $0400/$0401 and state flags $040F/$0
 NesPrgRom:1AA2:start_hop_off_ledge:[HIGH] Cats align to the player's floor ($DEA6, not slot 2); timer +7 = 11, then start_hop with +B = $D0. Entered when the tile under foot leaves t
@@ -131,8 +131,8 @@ NesPrgRom:1EE9:advance_object_state_counter:[MED] Indirect-indexed on entity poi
 NesPrgRom:1F0B:move_object_clamp_and_flip_direction:[MED] Adds saved delta $10 to/from the 16-bit position at ($1e)+0/+1 based on sign flag +6, clamps hi-byte to $38/$02 bounds, sets tile code +8 ($
 NesPrgRom:2084:flag_offset_plus_0x20:[MED] jsr add_flag_conditioned_offset then clc/adc #$20 — a thin wrapper returning the callee's flag-conditioned value biased by a +$20 constant (
 NesPrgRom:20A0:append_entry_then_advance_state_and_tick:[MED] calls append_computed_entry_to_buffer ($DFCD), then via struct ptr ($1e): if [+$0d]!=0 copies it into [+$06] (conditional state propagate), 
-NesPrgRom:2200:update_obj_phase7_transition:[MED] Indexes object struct via ($1e),y reads field[$0b]->X, calls set_obj_state_and_load_next_ptr, gates on $0201,x==7 and a timer, decrements $0
-NesPrgRom:22EE:check_position_reached_and_reset_round:[MED] Compares actor pos $0413/$0411 against target $0403/$0401 (within dist 2); on match calls init_object_tables + init_state_vars, sets flags $
+NesPrgRom:2200:bonus_state06_trampoline_bounce:[HIGH] Bonus copy of state0A_trampoline_bounce: a broken trampoline ($0202 bit 7) -> fall (state 02); the trampoline's anim reaching 7 -> state 08;
+NesPrgRom:22EE:bonus_state0E_goal_object:[HIGH] Bonus state 0E, slot 1 (absolute $041x): the player on its row with x 0-1 ahead -> inc $51, $5A = $20, sound $0606, clear slot 1, end_bonus_
 NesPrgRom:25C5:spawn_objects_from_level_descriptor:[MED] Reads level-data ptr from $E798/9 into ($1c), takes packed count (byte>>3) as loop limit $81, then per entry writes 8-byte records (state=$0
 NesPrgRom:2614:process_objects_in_state_two:[MED] Loops over 8-byte-stride object slots (x+=8 until cpx $81), and for each slot whose state byte $0260,x==2 clears sub-field $0263,x and calls
 NesPrgRom:2747:load_string_ptr_by_state_and_scan:[HIGH] Uses per-object state byte $0261,x as index into 16-bit pointer table $E7A5/$E7A6, stores the pointer into $10/$11, then tail-jmps scan_ptr_
@@ -168,7 +168,7 @@ NesPrgRom:1BBA:land_on_trampoline:[HIGH] Falling object meets a trampoline recor
 NesPrgRom:1C5C:state0C_rise:[HIGH] State 0C, rising up a shaft. Player touching slot 1 -> caught. At a floor row (y&3 in 1..2) with +D set (pad direction or the cat's choice):
 NesPrgRom:203D:advance_object_subpixel_position_then_clamp:[MED] Via ($1e) object record: accumulates field +$0c into +$0b, uses asl to extract overflow/sign (borrow-decrements high byte +$03), then 16-bit
 NesPrgRom:206A:advance_pointer_by_flagged_offset_then_append_entry:[MED] jsr add_flag_conditioned_offset yields A, then 16-bit add of #$20+A into the pointer at ($1e),y=2/3 with bcc/adc#$00 carry propagation, then
-NesPrgRom:2230:object_state_transition_update:[MED] Operates entirely through ($1e),y object-struct pointer: reads state field +3 / +13 / position +8 (sbc #$30, cmp #$20), then either jmps to 
+NesPrgRom:2230:bonus_state08_rise:[HIGH] Bonus copy of state0C_rise: at a floor row (y >= 8, y&3 in 1..2) with +D set: step off, timer $21 (33), +B = $E0, +C = 2, state 0A. Top reac
 NesPrgRom:2427:setup_obj_ptr_and_dispatch_scan:[MED] Indexes object fields $0203,x/$0202,x/$0201,x: loads a 16-bit pointer from table $E537/$E538 into $10/$11, sets param $14 (0 if $0202,x nega
 NesPrgRom:2456:scan_table_at_e537:[MED] Loads fixed ptr $E537/$E538 into $10/$11, clears $14, ldy #$14, jmp load_ptr_from_table_then_scan — a wrapper that sets up one specific tabl
 NesPrgRom:270A:load_string_entry10_with_flag80:[MED] Loads fixed table entry Y=$0A from pointer table $E7B9/$E7BA into ptr $12/$13, sets param $14=#$80, then jmp tail-calls load_string_ptr_by_s
@@ -189,9 +189,9 @@ NesPrgRom:1AC7:state04_hop_off_ledge:[HIGH] State 04: timer +7 (11) counts down 
 NesPrgRom:1B94:state06_fall:[HIGH] State 06, falling a shaft. Player touching slot 1, a floor tile under foot (+8 in $49-$4F) or y >= $1C -> catch_player_or_knock_out; a tramp
 NesPrgRom:1CFE:state0E_step_onto_floor:[HIGH] State 0E: timer 16 moving off the shaft onto the floor; at 0 -> land_on_floor (state 02). Tile +8 in $49-$58 (blocked) -> bounce_back_into_s
 NesPrgRom:1DE0:state1C_respawn_drop:[HIGH] State 1C, a cat dropping in from the top (frozen while player_down or round_cleared). Lands on a floor tile: slot 2 -> state 24 (anim $12, $
-NesPrgRom:219D:collect_item_award_score_and_spawn_reward_object:[MED] Gates on entity type (+8 in $49..$4F) and state (+3<$1c), uses find_object_at_coords to detect overlap, then sets trigger flag $060a=1, awar
-NesPrgRom:22AC:object_bounce_timer_reverse_or_advance:[MED] Decrements timer field ($1e)+7; while nonzero tail-jumps to advance_object_subpixel_position_then_clamp; on zero, negates velocity field +6 
-NesPrgRom:2339:scan_table_if_code_in_range_then_advance_or_reset_counter:[MED] Normalizes $0428 (sbc #$30) and if in range 0-24 calls scan_table_at_e537; then branches on $0423: if >=6 tail-calls sub16_from_struct_field
+NesPrgRom:219D:bonus_state02_fall:[HIGH] Bonus state 02, the player falling. A floor tile under foot (+8 in $49-$4F) or y >= $1C -> end_bonus_round (in a bonus round a fall ends the
+NesPrgRom:22AC:bonus_state0C_rebound:[HIGH] Bonus state 0C (and the tail of bonus_state0A_walk_off): counts +7 down while moving; at 0 -> fall (state 02, anim 6). Census (warped bonus 
+NesPrgRom:2339:bonus_state12_released_cat_rises:[HIGH] Bonus state 12, slot 2 (type 2, from bonus_state0E_goal_object): y -= $40 per frame ($E08A on +2/+3, a quarter row) until row < 6, then clea
 NesPrgRom:235B:build_object_record_block_and_dispatch:[MED] Indexes descriptor table $e4e1/$e4f1 by $7a to a pointer, reads count into $80, then loops stride-8 writing OAM entries $0200-$0205 (Y/tile/
 NesPrgRom:23DE:force_active_objects_to_state3:[MED] Loops object slots in $0202,x (stride +8, capped by $80); skips negative/already-3 state bytes, else writes #$03 and calls setup_obj_ptr_and
 NesPrgRom:2660:resolve_object_position_capture_and_score:[MED] Per-object (X stride-8 $0260 array) handler: position-match within 2px ($0264/$0265 vs $0401/$0403) gates scoring — awards BCD via add_bcd_t

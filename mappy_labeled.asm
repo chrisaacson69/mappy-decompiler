@@ -1522,8 +1522,8 @@ next_round:
     C9CF: 20 C1 F3    jsr load_record_by_index   ; $F3C1
     C9D2: 20 3A F1    jsr load_object_table_from_def   ; $F13A
     C9D5: 20 39 C2    jsr ppu_enable_render   ; $C239
-    C9D8: 20 0B D8    jsr init_struct_from_rom_template   ; $D80B
-    C9DB: 20 C0 D8    jsr init_ram_block_from_table   ; $D8C0
+    C9D8: 20 0B D8    jsr init_bonus_player   ; $D80B
+    C9DB: 20 C0 D8    jsr init_bonus_goal_object   ; $D8C0
     C9DE: A9 00       lda #$00
     C9E0: 85 4B       sta player_down   ; $4B
     C9E2: 85 4F       sta round_cleared   ; $4F
@@ -4477,7 +4477,7 @@ init_object_from_rom_template:
     D808: 91 1E       sta (obj_record_ptr),y   ; $1E
     D80A: 60          rts
 
-init_struct_from_rom_template:
+init_bonus_player:
     D80B: 20 25 D8    jsr set_two_zp_pointers   ; $D825
 @D80E:
     D80E: B9 3F D8    lda $d83f,y
@@ -4588,7 +4588,7 @@ init_object_record_via_ptr:
     D8BD: 91 1E       sta (obj_record_ptr),y   ; $1E
     D8BF: 60          rts
 
-init_ram_block_from_table:
+init_bonus_goal_object:
     D8C0: A2 00       ldx #$00
 @D8C2:
     D8C2: BD D3 D8    lda $d8d3,x
@@ -5890,17 +5890,17 @@ player_knockback_pushes_cats:
     E177: D0 BD       bne @E136   ; $E136
     E179: 60          rts
     E17A:            .word handler_rts_noop
-    E17C:            .word collect_item_award_score_and_spawn_reward_object
-    E17E:            .word bare_return_stub
-    E180:            .word update_obj_phase7_transition
-    E182:            .word object_state_transition_update
-    E184:            .word field8_in_range_49_59
-    E186:            .word object_bounce_timer_reverse_or_advance
-    E188:            .word check_position_reached_and_reset_round
-    E18A:            .word tick_timer_clear_state_on_expiry
-    E18C:            .word scan_table_if_code_in_range_then_advance_or_reset_counter
+    E17C:            .word bonus_state02_fall
+    E17E:            .word bonus_state04_ended
+    E180:            .word bonus_state06_trampoline_bounce
+    E182:            .word bonus_state08_rise
+    E184:            .word bonus_state0A_walk_off
+    E186:            .word bonus_state0C_rebound
+    E188:            .word bonus_state0E_goal_object
+    E18A:            .word bonus_state10_slot3_timeout
+    E18C:            .word bonus_state12_released_cat_rises
 
-init_state_vars:
+end_bonus_round:
     E18E: A9 00       lda #$00
     E190: 8D 07 04    sta $0407
     E193: A9 01       lda #$01
@@ -5908,20 +5908,20 @@ init_state_vars:
     E197: A9 04       lda #$04
     E199: 8D 0F 04    sta $040f
 
-bare_return_stub:
+bonus_state04_ended:
     E19C: 60          rts
 
-collect_item_award_score_and_spawn_reward_object:
+bonus_state02_fall:
     E19D: A0 08       ldy #$08
     E19F: B1 1E       lda (obj_record_ptr),y   ; $1E
     E1A1: 38          sec
     E1A2: E9 49       sbc #$49
     E1A4: C9 07       cmp #$07
-    E1A6: 90 E6       bcc init_state_vars   ; $E18E
+    E1A6: 90 E6       bcc end_bonus_round   ; $E18E
     E1A8: A0 03       ldy #$03
     E1AA: B1 1E       lda (obj_record_ptr),y   ; $1E
     E1AC: C9 1C       cmp #$1c
-    E1AE: B0 DE       bcs init_state_vars   ; $E18E
+    E1AE: B0 DE       bcs end_bonus_round   ; $E18E
     E1B0: 20 6A E0    jsr advance_pointer_by_flagged_offset_then_append_entry   ; $E06A
     E1B3: 20 69 E4    jsr find_object_at_coords   ; $E469
     E1B6: B0 28       bcs @E1E0   ; $E1E0
@@ -5963,7 +5963,7 @@ collect_item_award_score_and_spawn_reward_object:
     E1FC: A0 0F       ldy #$0f
     E1FE: 91 1E       sta (obj_record_ptr),y   ; $1E
 
-update_obj_phase7_transition:
+bonus_state06_trampoline_bounce:
     E200: A0 0B       ldy #$0b
     E202: B1 1E       lda (obj_record_ptr),y   ; $1E
     E204: AA          tax
@@ -5990,7 +5990,7 @@ update_obj_phase7_transition:
 @E22F:
     E22F: 60          rts
 
-object_state_transition_update:
+bonus_state08_rise:
     E230: A0 03       ldy #$03
     E232: B1 1E       lda (obj_record_ptr),y   ; $1E
     E234: C9 08       cmp #$08
@@ -6054,7 +6054,7 @@ object_state_transition_update:
     E29E: 91 1E       sta (obj_record_ptr),y   ; $1E
     E2A0: 60          rts
 
-field8_in_range_49_59:
+bonus_state0A_walk_off:
     E2A1: A0 08       ldy #$08
     E2A3: B1 1E       lda (obj_record_ptr),y   ; $1E
     E2A5: 38          sec
@@ -6062,7 +6062,7 @@ field8_in_range_49_59:
     E2A8: C9 10       cmp #$10
     E2AA: 90 0E       bcc @E2BA   ; $E2BA
 
-object_bounce_timer_reverse_or_advance:
+bonus_state0C_rebound:
     E2AC: A0 07       ldy #$07
     E2AE: B1 1E       lda (obj_record_ptr),y   ; $1E
     E2B0: 38          sec
@@ -6093,7 +6093,7 @@ object_bounce_timer_reverse_or_advance:
     E2DD: 91 1E       sta (obj_record_ptr),y   ; $1E
     E2DF: 60          rts
 
-tick_timer_clear_state_on_expiry:
+bonus_state10_slot3_timeout:
     E2E0: CE 37 04    dec $0437
     E2E3: D0 08       bne @E2ED   ; $E2ED
     E2E5: A9 00       lda #$00
@@ -6102,7 +6102,7 @@ tick_timer_clear_state_on_expiry:
 @E2ED:
     E2ED: 60          rts
 
-check_position_reached_and_reset_round:
+bonus_state0E_goal_object:
     E2EE: AD 13 04    lda $0413
     E2F1: CD 03 04    cmp $0403
     E2F4: D0 3B       bne @E331   ; $E331
@@ -6120,7 +6120,7 @@ check_position_reached_and_reset_round:
     E30F: A9 00       lda #$00
     E311: 8D 14 04    sta $0414
     E314: 8D 1F 04    sta obj_state   ; $041F
-    E317: 20 8E E1    jsr init_state_vars   ; $E18E
+    E317: 20 8E E1    jsr end_bonus_round   ; $E18E
     E31A: A9 12       lda #$12
     E31C: 8D 2F 04    sta stage_phase_state   ; $042F
     E31F: A2 00       ldx #$00
@@ -6142,7 +6142,7 @@ check_position_reached_and_reset_round:
     E337: 02          .byte $02
     E338: FF          .byte $FF
 
-scan_table_if_code_in_range_then_advance_or_reset_counter:
+bonus_state12_released_cat_rises:
     E339: AD 28 04    lda $0428
     E33C: 38          sec
     E33D: E9 30       sbc #$30
