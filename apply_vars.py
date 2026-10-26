@@ -5,7 +5,8 @@ and check that only names changed. The variable twin of apply_names.py.
 
 A batch file defines VARS = [(addr, name, role, conf, why), ...] and may define DROP = [addr, ...]
 (variables no real instruction touches; their entries are removed, their old text kept in the
-commit). A renamed entry keeps its old name and note at the end of `why`.
+commit). A renamed entry keeps its old name and note at the end of `why`; an address with no entry
+gets a new [[var]] block.
 
 Checks: the identifier-collapse guard (walk.guard.find_guard_violations: every identifier becomes
 ID and the line sequence must not change; the name-mapping guard cannot hold a name two addresses
@@ -66,20 +67,29 @@ def main(batch_file):
                     tail = f" Was '{prior_name}'." + (f" Earlier note: {prior.group(1)}" if prior else "")
                     blk = re.sub(r'^why = ".*"$', lambda _: f'why = "{esc(why)}{tail}"', blk, count=1, flags=re.M)
         out.append(blk)
-    missing = [a for a, *_ in batch if int(a, 16) not in old] + [a for a in drop if int(a, 16) not in old]
-    if missing:
-        sys.exit(f"no [[var]] entry for {missing}; add new variables by hand")
+    if [a for a in drop if int(a, 16) not in old]:
+        sys.exit(f"DROP names an address with no [[var]] entry: {[a for a in drop if int(a, 16) not in old]}")
+    added = [(a, n, r, c, w) for a, n, r, c, w in batch if int(a, 16) not in old]
+    new_blocks = [f'[[var]]\naddr = "{a}"\nname = "{n}"\nrole = "{r}"\nconf = "{c}"\nwhy = "{esc(w)}"\n'
+                  for a, n, r, c, w in added]
+    first_field = next((i for i, blk in enumerate(out) if blk.startswith("[[obj_field]]")), len(out))
+    out[first_field:first_field] = new_blocks          # new variables go after the last [[var]]
     text = "\n".join(out)
     VARS.write_text(text, encoding="utf-8", newline="\n")
     regen()
     after_asm = ASM.read_text(encoding="utf-8")
-    others, bad = find_guard_violations({"asm": before_asm}, {"asm": after_asm}, {"asm"})
+    # a new variable turns a raw "$44" operand into a name: treat hex literals as identifiers too (the
+    # byte-stream check below still proves no address or byte changed)
+    # a name also adds the "   ; $44" comment that restates the operand: drop it on both sides
+    hexid = lambda t: re.sub(r'\$[0-9A-Fa-f]{2,4}\b', 'HEXID', re.sub(r'[ \t]+; \$[0-9A-Fa-f]{2,4}[ \t]*$', '', t, flags=re.M))
+    others, bad = find_guard_violations({"asm": hexid(before_asm)}, {"asm": hexid(after_asm)}, {"asm"})
     if bad or byte_stream(before_asm) != byte_stream(after_asm):
         VARS.write_text(before_vars, encoding="utf-8", newline="\n")
         regen()
         print("GUARD FAILED; vars.toml restored.", bad[:3])
         sys.exit(2)
-    print(f"applied {len(batch)} variable renames, dropped {len(drop)}; byte stream unchanged; identifiers only")
+    print(f"applied {len(batch) - len(added)} variable renames, {len(added)} new, dropped {len(drop)}; "
+          "byte stream unchanged; identifiers only")
 
 
 if __name__ == "__main__":

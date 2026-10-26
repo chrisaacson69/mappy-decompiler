@@ -101,10 +101,10 @@ why = "14 routines touch $15 but none share its value across calls — every use
 
 [[var]]
 addr = "0016"
-name = "oam_write_ptr"
-role = "pointer"
-conf = "MED"
-why = "Flagged P (16-bit pointer low byte) and dereferenced as (zp),y inside ppu_draw_mansion_stamps [m,p,r,w]. Set/advanced almost exclusively by the OAM/sprite-emit family: emit_object_oam_step_pointers_8, build_sprite_attr_and_step_coords, draw_object_pair_advance_slot, draw_2x2_metasprite_tile_69, draw"
+name = "sprite_y"
+role = "scratch"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw): the screen Y of the sprite being drawn (draw_object: record +2/+3 * 8; the 2x2 draw adds 8). Was 'oam_write_ptr'. Earlier note: Flagged P (16-bit pointer low byte) and dereferenced as (zp),y inside ppu_draw_mansion_stamps [m,p,r,w]. Set/advanced almost exclusively by the OAM/sprite-emit family: emit_object_oam_step_pointers_8, build_sprite_attr_and_step_coords, draw_object_pair_advance_slot, draw_2x2_metasprite_tile_69, draw"
 
 [[var]]
 addr = "0017"
@@ -227,17 +227,17 @@ why = "Variables 2026-10-26 (fixed var_xref: real instructions only): 1 when pad
 
 [[var]]
 addr = "0028"
-name = "screen_layout_ptr_hi"
-role = "pointer"
-conf = "MED"
-why = "Tool header flags $28 as a 16-bit POINTER byte, and setup_screen_layout dereferences the pair via `and ($27,x)` at $CBEE — making $27 the low byte and $28 the high byte of a zero-page pointer. The setters that establish it are screen/stage builders: build_stage_screen_layout ($CD5F sta $28), run_scr"
+name = "camera_x_lo"
+role = "position"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw): the camera's fine X: draw_object subtracts $28/$29 from the object's X (record +0/+1) before scaling to pixels. Was 'screen_layout_ptr_hi'. Earlier note: Tool header flags $28 as a 16-bit POINTER byte, and setup_screen_layout dereferences the pair via `and ($27,x)` at $CBEE — making $27 the low byte and $28 the high byte of a zero-page pointer. The setters that establish it are screen/stage builders: build_stage_screen_layout ($CD5F sta $28), run_scr"
 
 [[var]]
 addr = "0029"
-name = "camera_scroll_x"
-role = "coord"
-conf = "MED"
-why = "Three rendering/collision routines subtract $29 from object world-coordinates: transform_object_coords_to_pixel_space ($C317 sbc $29), draw_composite_object_sprite ($E801 sbc $29), and object_overlap_check ($E9C5 sbc $29). world_coord - origin = screen-relative pixel is the canonical camera/scroll s"
+name = "camera_x"
+role = "position"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw): the camera's X in tiles (high byte of $28/$29); render_loop turns it into PPUSCROLL and the nametable bit. Was 'camera_scroll_x'. Earlier note: Three rendering/collision routines subtract $29 from object world-coordinates: transform_object_coords_to_pixel_space ($C317 sbc $29), draw_composite_object_sprite ($E801 sbc $29), and object_overlap_check ($E9C5 sbc $29). world_coord - origin = screen-relative pixel is the canonical camera/scroll s"
 
 [[var]]
 addr = "002A"
@@ -255,10 +255,10 @@ why = "Writers treat $2B as a byte index loaded into X, used, and stored back: a
 
 [[var]]
 addr = "002C"
-name = "seq_data_ptr_hi"
-role = "pointer"
-conf = "MED"
-why = "fetch_seq_byte_and_advance_index dereferences the pair via `adc ($2b,x)` at $F9E9 — an indexed-indirect read through the zero-page pointer at $2B, making $2B the low byte and $2C ($002C) the HIGH byte of that 16-bit pointer. The routine name (fetch sequential byte and advance) indicates it walks a b"
+name = "oam_cursor"
+role = "index"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw): the next free shadow-OAM slot ($0700 + X): write_sprite_to_oam writes there and adds 4. Was 'seq_data_ptr_hi'. Earlier note: fetch_seq_byte_and_advance_index dereferences the pair via `adc ($2b,x)` at $F9E9 — an indexed-indirect read through the zero-page pointer at $2B, making $2B the low byte and $2C ($002C) the HIGH byte of that 16-bit pointer. The routine name (fetch sequential byte and advance) indicates it walks a b"
 
 [[var]]
 addr = "002D"
@@ -269,10 +269,10 @@ why = "Written only by ppu_enable_render ($C23E stx $2d) and ppu_disable_render 
 
 [[var]]
 addr = "0030"
-name = "obj_state"
-role = "state"
+name = "pending_score_count"
+role = "counter"
 conf = "MED"
-why = "No pointer/index flags — only r/w/m on an 8-bit zp value. Three of the four routines are explicitly state-machine named and treat $30 as a sequencer: pump_pending_amount_then_step_entry_state does lda $30 / sta $30 (read-modify the state to step it), trigger_state_change_on_proximity does inc $30 (a"
+why = "Top-down 2026-10-26 (game thread): update_score adds amount #$40 this many times and clears it; trigger_state_change_on_proximity and pump code increment it. Was 'obj_state'. Earlier note: No pointer/index flags — only r/w/m on an 8-bit zp value. Three of the four routines are explicitly state-machine named and treat $30 as a sequencer: pump_pending_amount_then_step_entry_state does lda $30 / sta $30 (read-modify the state to step it), trigger_state_change_on_proximity does inc $30 (a"
 
 [[var]]
 addr = "0031"
@@ -318,10 +318,10 @@ why = "Byte index into tbl_demo_input_script ($FFE1). The attract-mode input pla
 
 [[var]]
 addr = "0040"
-name = "stage_state"
-role = "state"
+name = "two_player_game"
+role = "mode"
 conf = "MED"
-why = "No pointer-deref (P) or (zp),y use, so not a 16-bit pointer. Writers are state-management routines: validate_magic_and_restore_state_vars (sta $40) and init_stage_with_intro_animation_then_spawn (sta $40) — i.e. it's set when restoring saved state and when initializing a new stage. It is packed/seri"
+why = "Top-down 2026-10-26 (game thread): set from $4A when Start is pressed ($C8B1); handle_player_caught reads it to choose the one- or two-player path ($CA33); kept across a soft reset. Was 'stage_state'. Earlier note: No pointer-deref (P) or (zp),y use, so not a 16-bit pointer. Writers are state-management routines: validate_magic_and_restore_state_vars (sta $40) and init_stage_with_intro_animation_then_spawn (sta $40) — i.e. it's set when restoring saved state and when initializing a new stage. It is packed/seri"
 
 [[var]]
 addr = "0041"
@@ -339,10 +339,10 @@ why = "Written only by setup routines (init_stage_with_intro_animation_then_spaw
 
 [[var]]
 addr = "0043"
-name = "scratch_amount"
-role = "scratch"
-conf = "LOW"
-why = "placeholder"
+name = "score_update_phase"
+role = "state"
+conf = "MED"
+why = "Top-down 2026-10-26 (game thread): set by add_score_from_table; update_score steps it: 1 -> queue the digits, 2 -> high score, extra life, digits; then 0. Was 'scratch_amount'. Earlier note: placeholder"
 
 [[var]]
 addr = "0048"
@@ -367,38 +367,38 @@ why = "Marked [P] as a 16-bit pointer low byte. fetch_seq_byte_and_advance_index
 
 [[var]]
 addr = "004B"
-name = "seq_stream_ptr_hi"
-role = "pointer"
-conf = "MED"
-why = "$004B is dereferenced as a 16-bit pointer: fetch_seq_byte_and_advance_index does `adc ($4a,x)` at $F930/$F940, treating $4A/$4B as a pointer pair (so $4B is the HIGH byte of the $004A pointer, fetching sequence bytes). ppu_draw_mansion_stamps also derefs it via `ora ($4b,x)`. Writers are sequence/cu"
+name = "player_down"
+role = "flag"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread): set by player_caught ($DAED) and by the bonus-round end ($E195); play_round leaves for handle_player_caught on it; cleared at each round start. Was 'seq_stream_ptr_hi'. Earlier note: $004B is dereferenced as a 16-bit pointer: fetch_seq_byte_and_advance_index does `adc ($4a,x)` at $F930/$F940, treating $4A/$4B as a pointer pair (so $4B is the HIGH byte of the $004A pointer, fetching sequence bytes). ppu_draw_mansion_stamps also derefs it via `ora ($4b,x)`. Writers are sequence/cu"
 
 [[var]]
 addr = "004C"
-name = "ppu_block_src_ptr"
-role = "pointer"
-conf = "MED"
-why = "$004C is dereferenced as a 16-bit pointer via indexed-indirect addressing in the tile/PPU drawing routines: ppu_draw_blocks_b does `ora ($4c,x)` at $D083/$D087, reading source data through the pointer. It is SET by object/record routines — init_object_record_row `sta $4c` ($D848), update_and_respawn"
+name = "respawn_slot"
+role = "index"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread): update_and_respawn_objects checks one object slot per interval ($10..$80 step $10, wrapping) and respawns it if its state is $1A. Was 'ppu_block_src_ptr'. Earlier note: $004C is dereferenced as a 16-bit pointer via indexed-indirect addressing in the tile/PPU drawing routines: ppu_draw_blocks_b does `ora ($4c,x)` at $D083/$D087, reading source data through the pointer. It is SET by object/record routines — init_object_record_row `sta $4c` ($D848), update_and_respawn"
 
 [[var]]
 addr = "004D"
-name = "object_record_ptr_hi"
-role = "pointer"
-conf = "MED"
-why = "$004D is the high byte of the 16-bit pointer based at $4C: ppu_draw_blocks_b dereferences it with `ora ($4c,x)` (indirect through $4C/$4D). init_object_record_row sets it (`sta $4d`) and update_and_respawn_objects advances it (`inc $4d` to step the pointer to the next record page/row) then reads it."
+name = "respawn_tick"
+role = "counter"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread): counts up each frame in update_and_respawn_objects until respawn_interval, then resets. Was 'object_record_ptr_hi'. Earlier note: $004D is the high byte of the 16-bit pointer based at $4C: ppu_draw_blocks_b dereferences it with `ora ($4c,x)` (indirect through $4C/$4D). init_object_record_row sets it (`sta $4d`) and update_and_respawn_objects advances it (`inc $4d` to step the pointer to the next record page/row) then reads it."
 
 [[var]]
 addr = "004E"
-name = "block_data_ptr_hi"
-role = "pointer"
-conf = "MED"
-why = "Dereferenced via (zp,x) in ppu_draw_blocks_b: `ora ($4d,x)` at $D095/$D099 reads through the $4D/$4E pair, so $004E is the HIGH byte of a 16-bit pointer (low byte = $4D). The dereferencing routine draws blocks (tile/block data) to the PPU, so the pointer targets the block source data. It's set by in"
+name = "respawn_interval"
+role = "count"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread): the frame count between respawn checks (update_and_respawn_objects cmp $4E). Was 'block_data_ptr_hi'. Earlier note: Dereferenced via (zp,x) in ppu_draw_blocks_b: `ora ($4d,x)` at $D095/$D099 reads through the $4D/$4E pair, so $004E is the HIGH byte of a 16-bit pointer (low byte = $4D). The dereferencing routine draws blocks (tile/block data) to the PPU, so the pointer targets the block source data. It's set by in"
 
 [[var]]
 addr = "004F"
-name = "draw_src_ptr"
-role = "pointer"
-conf = "MED"
-why = "var_xref flags $004F as a 16-bit pointer low byte, and ppu_draw_blocks_b dereferences it as an indirect pointer: $D0AB `ora ($4f,x)` (alongside the adjacent `ora ($4e,x)` at $D0A9), reading source data during PPU block drawing. It's a general-purpose scratch pointer that many routines repoint before"
+name = "round_cleared"
+role = "flag"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread): set only by the item pickup when round_items_remaining reaches 0 ($E686); play_round and next_round leave on it; cleared at each round start. Was 'draw_src_ptr'. Earlier note: var_xref flags $004F as a 16-bit pointer low byte, and ppu_draw_blocks_b dereferences it as an indirect pointer: $D0AB `ora ($4f,x)` (alongside the adjacent `ora ($4e,x)` at $D0A9), reading source data during PPU block drawing. It's a general-purpose scratch pointer that many routines repoint before"
 
 [[var]]
 addr = "0050"
@@ -507,10 +507,10 @@ why = "Player-1 lives (also the base of the P1 state block $70-$AF). Set to #$03
 
 [[var]]
 addr = "0071"
-name = "stage_timer_base"
-role = "counter"
-conf = "MED"
-why = "Written directly during stage setup (init_stage_with_intro_animation_then_spawn: $C8B7 sta $71), then accessed X-indexed as the base of a zero-page slot array: append_byte_to_0500_if_counter does dec $71,x (per-index countdown decrement, mi) and clamp_var32_to_min reads/subtracts it (sbc $71,x / lda"
+name = "score"
+role = "bcd"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread): the current player's score, 4 BCD bytes $71-$74 (8 digits): add_score_from_table adds into it, update_high_score compares it, soft reset preserves it (with player 2's at $B1 and the high score at $44). Was 'stage_timer_base'. Earlier note: Written directly during stage setup (init_stage_with_intro_animation_then_spawn: $C8B7 sta $71), then accessed X-indexed as the base of a zero-page slot array: append_byte_to_0500_if_counter does dec $71,x (per-index countdown decrement, mi) and clamp_var32_to_min reads/subtracts it (sbc $71,x / lda"
 
 [[var]]
 addr = "0072"
@@ -563,10 +563,10 @@ why = "Data phase 2026-10-26, from code only: $E5D1 reads the level descriptor's
 
 [[var]]
 addr = "007C"
-name = "block_def_ptr_hi"
-role = "pointer"
-conf = "MED"
-why = "$7C is dereferenced as a 16-bit pointer in ppu_draw_blocks_b via `ora ($7b,x)` (twice) — so the pointer base is $7B (low) / $7C (high), making $7C the high byte. It is written by build_stage_screen_layout (`sta $7c`) and ppu_draw_mansion_stamps (`sty $7c`), and read by load_object_table_from_def (`l"
+name = "is_bonus_round"
+role = "flag"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread): set only by build_stage_screen_layout ($CD59) from the round-attribute byte 0, nonzero for rounds 2, 6, 10, 14; selects the bonus dispatch table $E17A ($DA31) and the bonus path in next_round. Was 'block_def_ptr_hi'. Earlier note: $7C is dereferenced as a 16-bit pointer in ppu_draw_blocks_b via `ora ($7b,x)` (twice) — so the pointer base is $7B (low) / $7C (high), making $7C the high byte. It is written by build_stage_screen_layout (`sta $7c`) and ppu_draw_mansion_stamps (`sty $7c`), and read by load_object_table_from_def (`l"
 
 [[var]]
 addr = "007D"
@@ -584,10 +584,10 @@ why = "Three named object routines read it as a loop/upper bound via cpx: find_o
 
 [[var]]
 addr = "0081"
-name = "active_object_count"
-role = "counter"
-conf = "MED"
-why = "spawn_objects_from_level_descriptor SETS it (sta $81) after populating objects, then every object-processing routine compares its X loop index against it as the loop terminator: update_all_active_objects (lda $81 / cpx $81), process_objects_in_state_two (cpx $81), resolve_object_position_capture_and"
+name = "item_table_len"
+role = "count"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread): the level descriptor's first byte (items * 8), stored by spawn_objects_from_level_descriptor ($E5D3); update_items loops to it; round_items_remaining is it >> 3. Was 'active_object_count'. Earlier note: spawn_objects_from_level_descriptor SETS it (sta $81) after populating objects, then every object-processing routine compares its X loop index against it as the loop terminator: update_all_active_objects (lda $81 / cpx $81), process_objects_in_state_two (cpx $81), resolve_object_position_capture_and"
 
 [[var]]
 addr = "0083"
@@ -936,6 +936,20 @@ why = "Data phase 2026-10-26: 25 sound trigger slots $0600-$0618, one per voice.
 # === object record layout (16 bytes, base $0400 stride $10; via obj_record_ptr $1E) ===
 # recovered from cross-routine field usage (obj_record.py); no external labels.
 
+[[var]]
+addr = "00B1"
+name = "p2_score"
+role = "bcd"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread): player 2's score while player 1 plays: swap_player_state exchanges $70-$AF with $B0-$EF, so $B1-$B4 is $71-$74's twin; soft reset preserves it."
+
+[[var]]
+addr = "0044"
+name = "hi_score"
+role = "bcd"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread): the high score, 4 BCD bytes $44-$47: update_high_score copies the score over it when the score is higher; soft reset preserves it."
+
 [[obj_field]]
 offset = "00"
 name = "obj_x_lo"
@@ -974,9 +988,9 @@ why = "Touched by 16 routines that are overwhelmingly state-machine drivers: upd
 
 [[obj_field]]
 offset = "06"
-name = "obj_velocity"
-conf = "MED"
-why = "Field is read-modify-written via the `sbc ($1e),y`/`sta ($1e),y` (subtract-with-borrow) idiom in reverse_obj_velocity_and_set_state ($DD54/$DD56), object_bounce_timer_reverse_or_advance ($E2BF/$E2C1), scan_objects_for_ad"
+name = "obj_facing"
+conf = "HIGH"
+why = "Top-down 2026-10-26: the facing direction, -1 / 0 / +1 (the only values in the attract demo): apply_facing_flip ($C3D7) sets the sprite\'s horizontal flip when it is not negative. Was \'obj_velocity\'. Field is read-modify-written via the `sbc ($1e),y`/`sta ($1e),y` (subtract-with-borrow) idiom in reverse_obj_velocity_and_set_state ($DD54/$DD56), object_bounce_timer_reverse_or_advance ($E2BF/$E2C1), scan_objects_for_ad"
 
 [[obj_field]]
 offset = "07"

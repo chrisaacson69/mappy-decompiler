@@ -44,10 +44,10 @@ render_loop:
     C079: 20 C9 C1    jsr read_and_decode_input   ; $C1C9
     C07C: 20 D0 C0    jsr build_sprite_row_oam_shadow   ; $C0D0
     C07F: A2 14       ldx #$14
-    C081: 86 2C       stx seq_data_ptr_hi   ; $2C
-    C083: A5 28       lda screen_layout_ptr_hi   ; $28
+    C081: 86 2C       stx oam_cursor   ; $2C
+    C083: A5 28       lda camera_x_lo   ; $28
     C085: 85 10       sta src_ptr   ; $10
-    C087: A5 29       lda camera_scroll_x   ; $29
+    C087: A5 29       lda camera_x   ; $29
     C089: 06 10       asl src_ptr   ; $10
     C08B: 2A          rol a
     C08C: 06 10       asl src_ptr   ; $10
@@ -63,7 +63,7 @@ render_loop:
     C0A1: 20 F1 F4    jsr update_sound_frame   ; $F4F1
     C0A4: A5 23       lda paused   ; $23
     C0A6: F0 0D       beq @C0B5   ; $C0B5
-    C0A8: 20 35 D7    jsr queue_state_vram_packet   ; $D735
+    C0A8: 20 35 D7    jsr show_player_up_label   ; $D735
     C0AB: A5 24       lda draw_data_ptr   ; $24
     C0AD: 29 03       and #$03
     C0AF: C9 01       cmp #$01
@@ -155,7 +155,7 @@ start_game_thread:
     C137: 9D C1 00    sta thread_sp_slot,x   ; $00C1
     C13A: 9A          txs
     C13B: 6C 1E 00    jmp (obj_record_ptr)   ; $001E
-    C13E:            .word init_stage_with_intro_animation_then_spawn
+    C13E:            .word title_screen
     C140: 3F          .byte $3F
 
 yield_to_render_loop:
@@ -285,8 +285,8 @@ read_and_decode_input:
     C20F: 86 27       stx pad_dir_changed   ; $27
     C211: A5 42       lda game_phase   ; $42
     C213: F0 1F       beq @C234   ; $C234
-    C215: A5 4F       lda draw_src_ptr   ; $4F
-    C217: 05 4B       ora seq_stream_ptr_hi   ; $4B
+    C215: A5 4F       lda round_cleared   ; $4F
+    C217: 05 4B       ora player_down   ; $4B
     C219: D0 19       bne @C234   ; $C234
     C21B: AD 0F 04    lda $040f
     C21E: F0 14       beq @C234   ; $C234
@@ -349,7 +349,7 @@ validate_magic_and_restore_state_vars:
     C275: A2 01       ldx #$01
     C277: B5 00       lda indirect_ptr,x   ; $00
     C279: E8          inx
-    C27A: 85 40       sta stage_state   ; $40
+    C27A: 85 40       sta two_player_game   ; $40
     C27C: B5 00       lda indirect_ptr,x   ; $00
     C27E: E8          inx
     C27F: 85 41       sta game_state_flags   ; $41
@@ -386,7 +386,7 @@ copy_4_bytes_zp_to_ram:
 
 pack_state_vars_into_zp_buffer:
     C2B3: A2 01       ldx #$01
-    C2B5: A5 40       lda stage_state   ; $40
+    C2B5: A5 40       lda two_player_game   ; $40
     C2B7: 95 00       sta indirect_ptr,x   ; $00
     C2B9: E8          inx
     C2BA: A5 41       lda game_state_flags   ; $41
@@ -447,19 +447,19 @@ nmi_count_vblank:
 irq_rti_stub:
     C304: 40          rti
 
-transform_object_coords_to_pixel_space:
-    C305: A5 2C       lda seq_data_ptr_hi   ; $2C
+draw_object:
+    C305: A5 2C       lda oam_cursor   ; $2C
     C307: 48          pha
     C308: A0 00       ldy #$00
     C30A: 84 11       sty zp_ptr_hi   ; $11
     C30C: B1 1E       lda (obj_record_ptr),y   ; $1E
     C30E: C8          iny
     C30F: 38          sec
-    C310: E5 28       sbc screen_layout_ptr_hi   ; $28
+    C310: E5 28       sbc camera_x_lo   ; $28
     C312: 85 10       sta src_ptr   ; $10
     C314: B1 1E       lda (obj_record_ptr),y   ; $1E
     C316: C8          iny
-    C317: E5 29       sbc camera_scroll_x   ; $29
+    C317: E5 29       sbc camera_x   ; $29
     C319: 06 10       asl src_ptr   ; $10
     C31B: 2A          rol a
     C31C: 06 10       asl src_ptr   ; $10
@@ -472,19 +472,19 @@ transform_object_coords_to_pixel_space:
     C326: 85 10       sta src_ptr   ; $10
     C328: B1 1E       lda (obj_record_ptr),y   ; $1E
     C32A: C8          iny
-    C32B: 85 16       sta oam_write_ptr   ; $16
+    C32B: 85 16       sta sprite_y   ; $16
     C32D: B1 1E       lda (obj_record_ptr),y   ; $1E
     C32F: C8          iny
-    C330: 06 16       asl oam_write_ptr   ; $16
+    C330: 06 16       asl sprite_y   ; $16
     C332: 2A          rol a
-    C333: 06 16       asl oam_write_ptr   ; $16
+    C333: 06 16       asl sprite_y   ; $16
     C335: 2A          rol a
-    C336: 06 16       asl oam_write_ptr   ; $16
+    C336: 06 16       asl sprite_y   ; $16
     C338: 2A          rol a
-    C339: 85 16       sta oam_write_ptr   ; $16
+    C339: 85 16       sta sprite_y   ; $16
     C33B: 20 42 C3    jsr dispatch_object_draw_from_record   ; $C342
     C33E: 68          pla
-    C33F: C5 2C       cmp seq_data_ptr_hi   ; $2C
+    C33F: C5 2C       cmp oam_cursor   ; $2C
     C341: 60          rts
 
 dispatch_object_draw_from_record:
@@ -501,7 +501,7 @@ dispatch_object_draw_routine_by_index:
     C353: 6C 1C 00    jmp (aux_ptr)   ; $001C
     C356:            .word handler_rts_noop
     C358:            .word compose_obj_field5_field7_index
-    C35A:            .word obj_field5_or10_lookup_c480_to_zp12
+    C35A:            .word draw_type_pose_10
     C35C:            .word compose_obj_anim_index_and_lookup
     C35E:            .word build_sprite_attr_and_step_coords
     C360:            .word select_object_tile_param_by_type_flag
@@ -532,7 +532,7 @@ draw_two_tile_object:
     C38E: A9 66       lda #$66
     C390: 85 12       sta gfx_src_ptr   ; $12
 @C392:
-    C392: 20 15 C4    jsr write_object_to_shadow_oam   ; $C415
+    C392: 20 15 C4    jsr write_sprite_to_oam   ; $C415
     C395: A9 67       lda #$67
     C397: 85 12       sta gfx_src_ptr   ; $12
     C399: A5 10       lda src_ptr   ; $10
@@ -542,7 +542,7 @@ draw_two_tile_object:
     C3A0: 90 02       bcc @C3A4   ; $C3A4
     C3A2: E6 11       inc zp_ptr_hi   ; $11
 @C3A4:
-    C3A4: 4C 15 C4    jmp write_object_to_shadow_oam   ; $C415
+    C3A4: 4C 15 C4    jmp write_sprite_to_oam   ; $C415
 
 dispatch_on_obj_flag_bit3:
     C3A7: A0 07       ldy #$07
@@ -552,7 +552,7 @@ dispatch_on_obj_flag_bit3:
     C3AF: A9 06       lda #$06
     C3B1: 4C 44 C3    jmp dispatch_object_draw_routine_by_index   ; $C344
 
-lookup_obj_type_ptr_hi:
+load_type_sprite_palette:
     C3B4: A0 05       ldy #$05
     C3B6: B1 1E       lda (obj_record_ptr),y   ; $1E
     C3B8: AA          tax
@@ -563,7 +563,7 @@ lookup_obj_type_ptr_hi:
     C3BF: 60          rts
 
 compose_obj_field5_field7_index:
-    C3C0: 20 B4 C3    jsr lookup_obj_type_ptr_hi   ; $C3B4
+    C3C0: 20 B4 C3    jsr load_type_sprite_palette   ; $C3B4
     C3C3: 0A          asl a
     C3C4: 0A          asl a
     C3C5: 85 12       sta gfx_src_ptr   ; $12
@@ -574,20 +574,20 @@ compose_obj_field5_field7_index:
     C3CD: 29 03       and #$03
     C3CF: 05 12       ora gfx_src_ptr   ; $12
 
-lookup_table_c480_to_zp12:
+load_metasprite_tile_base:
     C3D1: AA          tax
     C3D2: BD 80 C4    lda $c480,x
     C3D5: 85 12       sta gfx_src_ptr   ; $12
 
-toggle_flag_if_field_positive:
+apply_facing_flip:
     C3D7: A0 06       ldy #$06
     C3D9: B1 1E       lda (obj_record_ptr),y   ; $1E
-    C3DB: 30 06       bmi extract_top2_bits   ; $C3E3
+    C3DB: 30 06       bmi flip_bits_to_tile_xor   ; $C3E3
     C3DD: A5 13       lda data_ptr_hi   ; $13
     C3DF: 49 40       eor #$40
     C3E1: 85 13       sta data_ptr_hi   ; $13
 
-extract_top2_bits:
+flip_bits_to_tile_xor:
     C3E3: A5 13       lda data_ptr_hi   ; $13
     C3E5: 2A          rol a
     C3E6: 2A          rol a
@@ -595,8 +595,8 @@ extract_top2_bits:
     C3E8: 29 03       and #$03
     C3EA: 85 14       sta scan_src_ptr   ; $14
 
-emit_object_oam_step_pointers_8:
-    C3EC: 20 01 C4    jsr write_object_oam_and_advance_pointer_8   ; $C401
+draw_metasprite_2x2:
+    C3EC: 20 01 C4    jsr draw_sprite_pair   ; $C401
     C3EF: A5 10       lda src_ptr   ; $10
     C3F1: 38          sec
     C3F2: E9 08       sbc #$08
@@ -604,32 +604,32 @@ emit_object_oam_step_pointers_8:
     C3F6: B0 02       bcs @C3FA   ; $C3FA
     C3F8: C6 11       dec zp_ptr_hi   ; $11
 @C3FA:
-    C3FA: A5 16       lda oam_write_ptr   ; $16
+    C3FA: A5 16       lda sprite_y   ; $16
     C3FC: 18          clc
     C3FD: 69 08       adc #$08
-    C3FF: 85 16       sta oam_write_ptr   ; $16
+    C3FF: 85 16       sta sprite_y   ; $16
 
-write_object_oam_and_advance_pointer_8:
-    C401: 20 0F C4    jsr write_object_to_oam_and_bump_count   ; $C40F
+draw_sprite_pair:
+    C401: 20 0F C4    jsr write_sprite_next_tile   ; $C40F
     C404: A5 10       lda src_ptr   ; $10
     C406: 18          clc
     C407: 69 08       adc #$08
     C409: 85 10       sta src_ptr   ; $10
-    C40B: 90 02       bcc write_object_to_oam_and_bump_count   ; $C40F
+    C40B: 90 02       bcc write_sprite_next_tile   ; $C40F
     C40D: E6 11       inc zp_ptr_hi   ; $11
 
-write_object_to_oam_and_bump_count:
-    C40F: 20 15 C4    jsr write_object_to_shadow_oam   ; $C415
+write_sprite_next_tile:
+    C40F: 20 15 C4    jsr write_sprite_to_oam   ; $C415
     C412: E6 12       inc gfx_src_ptr   ; $12
     C414: 60          rts
 
-write_object_to_shadow_oam:
+write_sprite_to_oam:
     C415: A5 11       lda zp_ptr_hi   ; $11
     C417: D0 3B       bne @C454   ; $C454
     C419: A5 10       lda src_ptr   ; $10
     C41B: C9 F9       cmp #$f9
     C41D: B0 35       bcs @C454   ; $C454
-    C41F: A6 2C       ldx seq_data_ptr_hi   ; $2C
+    C41F: A6 2C       ldx oam_cursor   ; $2C
     C421: E0 34       cpx #$34
     C423: 90 0E       bcc @C433   ; $C433
     C425: A5 21       lda frame_counter   ; $21
@@ -641,21 +641,21 @@ write_object_to_shadow_oam:
     C430: 90 01       bcc @C433   ; $C433
     C432: AA          tax
 @C433:
-    C433: A5 16       lda oam_write_ptr   ; $16
+    C433: A5 16       lda sprite_y   ; $16
     C435: 38          sec
     C436: E9 01       sbc #$01
     C438: 9D 00 07    sta $0700,x
     C43B: A5 12       lda gfx_src_ptr   ; $12
     C43D: 45 14       eor scan_src_ptr   ; $14
     C43F: 9D 01 07    sta $0701,x
-    C442: 20 65 C4    jsr compute_obj_visibility_flag   ; $C465
+    C442: 20 65 C4    jsr sprite_attr_with_priority   ; $C465
     C445: 9D 02 07    sta $0702,x
     C448: A5 10       lda src_ptr   ; $10
     C44A: 9D 03 07    sta $0703,x
-    C44D: A5 2C       lda seq_data_ptr_hi   ; $2C
+    C44D: A5 2C       lda oam_cursor   ; $2C
     C44F: 18          clc
     C450: 69 04       adc #$04
-    C452: 85 2C       sta seq_data_ptr_hi   ; $2C
+    C452: 85 2C       sta oam_cursor   ; $2C
 @C454:
     C454: 60          rts
     C455: 00          .byte $00
@@ -675,13 +675,13 @@ write_object_to_shadow_oam:
     C463: E0          .byte $E0
     C464: 10          .byte $10
 
-compute_obj_visibility_flag:
-    C465: A5 7C       lda block_def_ptr_hi   ; $7C
+sprite_attr_with_priority:
+    C465: A5 7C       lda is_bonus_round   ; $7C
     C467: D0 10       bne @C479   ; $C479
     C469: A5 15       lda scratch_counter   ; $15
     C46B: 4A          lsr a
     C46C: B0 06       bcs @C474   ; $C474
-    C46E: A5 16       lda oam_write_ptr   ; $16
+    C46E: A5 16       lda sprite_y   ; $16
     C470: C9 40       cmp #$40
     C472: B0 05       bcs @C479   ; $C479
 @C474:
@@ -736,13 +736,13 @@ compute_obj_visibility_flag:
     C4A6: 4C          .byte $4C
     C4A7: 2C          .byte $2C
 
-obj_field5_or10_lookup_c480_to_zp12:
-    C4A8: 20 B4 C3    jsr lookup_obj_type_ptr_hi   ; $C3B4
+draw_type_pose_10:
+    C4A8: 20 B4 C3    jsr load_type_sprite_palette   ; $C3B4
     C4AB: 09 10       ora #$10
-    C4AD: 4C D1 C3    jmp lookup_table_c480_to_zp12   ; $C3D1
+    C4AD: 4C D1 C3    jmp load_metasprite_tile_base   ; $C3D1
 
 compose_obj_anim_index_and_lookup:
-    C4B0: 20 B4 C3    jsr lookup_obj_type_ptr_hi   ; $C3B4
+    C4B0: 20 B4 C3    jsr load_type_sprite_palette   ; $C3B4
     C4B3: 0A          asl a
     C4B4: 0A          asl a
     C4B5: 69 14       adc #$14
@@ -753,7 +753,7 @@ compose_obj_anim_index_and_lookup:
     C4BF: 4A          lsr a
     C4C0: 4A          lsr a
     C4C1: 05 12       ora gfx_src_ptr   ; $12
-    C4C3: 4C D1 C3    jmp lookup_table_c480_to_zp12   ; $C3D1
+    C4C3: 4C D1 C3    jmp load_metasprite_tile_base   ; $C3D1
 
 build_sprite_attr_and_step_coords:
     C4C6: A5 21       lda frame_counter   ; $21
@@ -769,7 +769,7 @@ build_sprite_attr_and_step_coords:
     C4D9: 09 40       ora #$40
     C4DB: 85 13       sta data_ptr_hi   ; $13
 @C4DD:
-    C4DD: 20 E3 C3    jsr extract_top2_bits   ; $C3E3
+    C4DD: 20 E3 C3    jsr flip_bits_to_tile_xor   ; $C3E3
     C4E0: A5 10       lda src_ptr   ; $10
     C4E2: 38          sec
     C4E3: E9 08       sbc #$08
@@ -777,11 +777,11 @@ build_sprite_attr_and_step_coords:
     C4E7: B0 02       bcs @C4EB   ; $C4EB
     C4E9: C6 11       dec zp_ptr_hi   ; $11
 @C4EB:
-    C4EB: A5 16       lda oam_write_ptr   ; $16
+    C4EB: A5 16       lda sprite_y   ; $16
     C4ED: 18          clc
     C4EE: 69 08       adc #$08
-    C4F0: 85 16       sta oam_write_ptr   ; $16
-    C4F2: 4C E3 C3    jmp extract_top2_bits   ; $C3E3
+    C4F0: 85 16       sta sprite_y   ; $16
+    C4F2: 4C E3 C3    jmp flip_bits_to_tile_xor   ; $C3E3
 
 select_object_tile_param_by_type_flag:
     C4F5: A9 3C       lda #$3c
@@ -798,7 +798,7 @@ select_object_tile_param_by_type_flag:
     C509: A0 01       ldy #$01
 @C50B:
     C50B: 84 13       sty data_ptr_hi   ; $13
-    C50D: 4C E3 C3    jmp extract_top2_bits   ; $C3E3
+    C50D: 4C E3 C3    jmp flip_bits_to_tile_xor   ; $C3E3
 
 test_bit3_of_record_field7:
     C510: A0 07       ldy #$07
@@ -807,9 +807,9 @@ test_bit3_of_record_field7:
     C516: D0 08       bne @C520   ; $C520
 
 lookup_field5_set_bits24_to_zp12:
-    C518: 20 B4 C3    jsr lookup_obj_type_ptr_hi   ; $C3B4
+    C518: 20 B4 C3    jsr load_type_sprite_palette   ; $C3B4
     C51B: 09 24       ora #$24
-    C51D: 4C D1 C3    jmp lookup_table_c480_to_zp12   ; $C3D1
+    C51D: 4C D1 C3    jmp load_metasprite_tile_base   ; $C3D1
 @C520:
     C520: 60          rts
 
@@ -837,15 +837,15 @@ draw_object_pair_once:
 
 draw_object_pair_advance_slot:
     C543: 20 63 C5    jsr draw_indexed_object_if_present   ; $C563
-    C546: A5 16       lda oam_write_ptr   ; $16
+    C546: A5 16       lda sprite_y   ; $16
     C548: 18          clc
     C549: 69 08       adc #$08
-    C54B: 85 16       sta oam_write_ptr   ; $16
+    C54B: 85 16       sta sprite_y   ; $16
     C54D: 20 63 C5    jsr draw_indexed_object_if_present   ; $C563
-    C550: A5 16       lda oam_write_ptr   ; $16
+    C550: A5 16       lda sprite_y   ; $16
     C552: 38          sec
     C553: E9 08       sbc #$08
-    C555: 85 16       sta oam_write_ptr   ; $16
+    C555: 85 16       sta sprite_y   ; $16
     C557: A5 10       lda src_ptr   ; $10
     C559: 18          clc
     C55A: 69 08       adc #$08
@@ -860,7 +860,7 @@ draw_indexed_object_if_present:
     C566: F0 09       beq @C571   ; $C571
     C568: 85 12       sta gfx_src_ptr   ; $12
     C56A: 86 17       stx draw_row_counter   ; $17
-    C56C: 20 15 C4    jsr write_object_to_shadow_oam   ; $C415
+    C56C: 20 15 C4    jsr write_sprite_to_oam   ; $C415
     C56F: A6 17       ldx draw_row_counter   ; $17
 @C571:
     C571: E8          inx
@@ -921,7 +921,7 @@ emit_object_oam_at_70_variant2:
     C5A9: 85 12       sta gfx_src_ptr   ; $12
     C5AB: A9 00       lda #$00
     C5AD: 85 14       sta scan_src_ptr   ; $14
-    C5AF: 4C EC C3    jmp emit_object_oam_step_pointers_8   ; $C3EC
+    C5AF: 4C EC C3    jmp draw_metasprite_2x2   ; $C3EC
 
 draw_2x2_metasprite_tile_69:
     C5B2: A9 02       lda #$02
@@ -937,11 +937,11 @@ draw_2x2_metasprite_tile_69:
     C5C5: B0 02       bcs @C5C9   ; $C5C9
     C5C7: C6 11       dec zp_ptr_hi   ; $11
 @C5C9:
-    C5C9: A5 16       lda oam_write_ptr   ; $16
+    C5C9: A5 16       lda sprite_y   ; $16
     C5CB: 38          sec
     C5CC: E9 08       sbc #$08
-    C5CE: 85 16       sta oam_write_ptr   ; $16
-    C5D0: 20 01 C4    jsr write_object_oam_and_advance_pointer_8   ; $C401
+    C5CE: 85 16       sta sprite_y   ; $16
+    C5D0: 20 01 C4    jsr draw_sprite_pair   ; $C401
     C5D3: A5 10       lda src_ptr   ; $10
     C5D5: 38          sec
     C5D6: E9 08       sbc #$08
@@ -949,11 +949,11 @@ draw_2x2_metasprite_tile_69:
     C5DA: B0 02       bcs @C5DE   ; $C5DE
     C5DC: C6 11       dec zp_ptr_hi   ; $11
 @C5DE:
-    C5DE: A5 16       lda oam_write_ptr   ; $16
+    C5DE: A5 16       lda sprite_y   ; $16
     C5E0: 18          clc
     C5E1: 69 08       adc #$08
-    C5E3: 85 16       sta oam_write_ptr   ; $16
-    C5E5: 20 0F C4    jsr write_object_to_oam_and_bump_count   ; $C40F
+    C5E3: 85 16       sta sprite_y   ; $16
+    C5E5: 20 0F C4    jsr write_sprite_next_tile   ; $C40F
     C5E8: A5 10       lda src_ptr   ; $10
     C5EA: 18          clc
     C5EB: 69 08       adc #$08
@@ -961,7 +961,7 @@ draw_2x2_metasprite_tile_69:
     C5EF: 90 02       bcc @C5F3   ; $C5F3
     C5F1: E6 11       inc zp_ptr_hi   ; $11
 @C5F3:
-    C5F3: 4C EC C3    jmp emit_object_oam_step_pointers_8   ; $C3EC
+    C5F3: 4C EC C3    jmp draw_metasprite_2x2   ; $C3EC
 
 build_object_sprite_attributes:
     C5F6: A9 00       lda #$00
@@ -979,13 +979,13 @@ build_object_sprite_attributes:
     C60D: A9 C0       lda #$c0
     C60F: 85 13       sta data_ptr_hi   ; $13
 @C611:
-    C611: 4C D7 C3    jmp toggle_flag_if_field_positive   ; $C3D7
+    C611: 4C D7 C3    jmp apply_facing_flip   ; $C3D7
 @C614:
     C614: 4A          lsr a
     C615: 29 04       and #$04
     C617: 09 90       ora #$90
     C619: 85 12       sta gfx_src_ptr   ; $12
-    C61B: 4C D7 C3    jmp toggle_flag_if_field_positive   ; $C3D7
+    C61B: 4C D7 C3    jmp apply_facing_flip   ; $C3D7
 
 draw_flagged_object_to_oam:
     C61E: A9 02       lda #$02
@@ -998,11 +998,11 @@ draw_flagged_object_to_oam:
     C62C: A9 E8       lda #$e8
     C62E: 85 12       sta gfx_src_ptr   ; $12
     C630: 20 4C C6    jsr draw_object_tile_rows   ; $C64C
-    C633: A5 16       lda oam_write_ptr   ; $16
+    C633: A5 16       lda sprite_y   ; $16
     C635: 38          sec
     C636: E9 08       sbc #$08
-    C638: 85 16       sta oam_write_ptr   ; $16
-    C63A: 4C 15 C4    jmp write_object_to_shadow_oam   ; $C415
+    C638: 85 16       sta sprite_y   ; $16
+    C63A: 4C 15 C4    jmp write_sprite_to_oam   ; $C415
 
 ptr16_sub6_set_const:
     C63D: A9 DD       lda #$dd
@@ -1030,7 +1030,7 @@ load_const_3:
 draw_object_tile_row:
     C65E: 85 17       sta draw_row_counter   ; $17
 @C660:
-    C660: 20 15 C4    jsr write_object_to_shadow_oam   ; $C415
+    C660: 20 15 C4    jsr write_sprite_to_oam   ; $C415
     C663: A5 10       lda src_ptr   ; $10
     C665: 18          clc
     C666: 69 08       adc #$08
@@ -1048,10 +1048,10 @@ draw_object_tile_row:
     C67B: B0 02       bcs @C67F   ; $C67F
     C67D: C6 11       dec zp_ptr_hi   ; $11
 @C67F:
-    C67F: A5 16       lda oam_write_ptr   ; $16
+    C67F: A5 16       lda sprite_y   ; $16
     C681: 18          clc
     C682: 69 08       adc #$08
-    C684: 85 16       sta oam_write_ptr   ; $16
+    C684: 85 16       sta sprite_y   ; $16
     C686: 60          rts
 
 draw_8_sprite_row_to_oam:
@@ -1064,7 +1064,7 @@ draw_8_sprite_row_to_oam:
     C693: A9 08       lda #$08
     C695: 85 17       sta draw_row_counter   ; $17
 @C697:
-    C697: 20 15 C4    jsr write_object_to_shadow_oam   ; $C415
+    C697: 20 15 C4    jsr write_sprite_to_oam   ; $C415
     C69A: A5 10       lda src_ptr   ; $10
     C69C: 18          clc
     C69D: 69 08       adc #$08
@@ -1088,7 +1088,7 @@ select_threshold_ptr_then_toggle_flag:
     C6B8: 85 12       sta gfx_src_ptr   ; $12
     C6BA: A9 00       lda #$00
     C6BC: 85 13       sta data_ptr_hi   ; $13
-    C6BE: 4C D7 C3    jmp toggle_flag_if_field_positive   ; $C3D7
+    C6BE: 4C D7 C3    jmp apply_facing_flip   ; $C3D7
 
 draw_object_by_animation_state:
     C6C1: A5 1E       lda obj_record_ptr   ; $1E
@@ -1101,17 +1101,17 @@ draw_object_by_animation_state:
     C6CE: 85 12       sta gfx_src_ptr   ; $12
     C6D0: A9 02       lda #$02
     C6D2: 85 13       sta data_ptr_hi   ; $13
-    C6D4: 4C D7 C3    jmp toggle_flag_if_field_positive   ; $C3D7
+    C6D4: 4C D7 C3    jmp apply_facing_flip   ; $C3D7
 @C6D7:
     C6D7: A9 2C       lda #$2c
     C6D9: 85 12       sta gfx_src_ptr   ; $12
     C6DB: A9 01       lda #$01
     C6DD: 85 13       sta data_ptr_hi   ; $13
-    C6DF: 20 D7 C3    jsr toggle_flag_if_field_positive   ; $C3D7
-    C6E2: A5 16       lda oam_write_ptr   ; $16
+    C6DF: 20 D7 C3    jsr apply_facing_flip   ; $C3D7
+    C6E2: A5 16       lda sprite_y   ; $16
     C6E4: 38          sec
     C6E5: E9 10       sbc #$10
-    C6E7: 85 16       sta oam_write_ptr   ; $16
+    C6E7: 85 16       sta sprite_y   ; $16
     C6E9: A9 AE       lda #$ae
     C6EB: 85 12       sta gfx_src_ptr   ; $12
     C6ED: A9 03       lda #$03
@@ -1146,7 +1146,7 @@ decode_position_stream_to_collision_bitmaps:
 @C717:
     C717: C8          iny
     C718: 85 15       sta scratch_counter   ; $15
-    C71A: 85 16       sta oam_write_ptr   ; $16
+    C71A: 85 16       sta sprite_y   ; $16
     C71C: 20 8E C7    jsr ppu_buffer_enqueue   ; $C78E
 @C71F:
     C71F: A5 14       lda scan_src_ptr   ; $14
@@ -1212,7 +1212,7 @@ decode_position_stream_to_collision_bitmaps:
     C783: D0 02       bne @C787   ; $C787
     C785: E6 11       inc zp_ptr_hi   ; $11
 @C787:
-    C787: C6 16       dec oam_write_ptr   ; $16
+    C787: C6 16       dec sprite_y   ; $16
     C789: D0 94       bne @C71F   ; $C71F
     C78B: 4C 02 C7    jmp decode_position_stream_to_collision_bitmaps   ; $C702
 
@@ -1328,7 +1328,7 @@ write_attribute_byte:
     C84B: 8D 07 20    sta PPUDATA   ; $2007
     C84E: 60          rts
 
-init_stage_with_intro_animation_then_spawn:
+title_screen:
     C84F: A9 00       lda #$00
     C851: 85 42       sta game_phase   ; $42
     C853: 20 BF F4    jsr init_sound_voices   ; $F4BF
@@ -1356,8 +1356,8 @@ init_stage_with_intro_animation_then_spawn:
     C87D: 20 B1 CB    jsr setup_screen_layout   ; $CBB1
     C880: 20 39 C2    jsr ppu_enable_render   ; $C239
     C883: A9 00       lda #$00
-    C885: 85 28       sta screen_layout_ptr_hi   ; $28
-    C887: 85 29       sta camera_scroll_x   ; $29
+    C885: 85 28       sta camera_x_lo   ; $28
+    C887: 85 29       sta camera_x   ; $29
     C889: 20 2B CD    jsr copy_5_bytes_table_to_ram_0490   ; $CD2B
     C88C: A9 F0       lda #$f0
     C88E: 85 0F       sta countdown_lo   ; $0F
@@ -1374,15 +1374,15 @@ init_stage_with_intro_animation_then_spawn:
     C8A2: F0 07       beq @C8AB   ; $C8AB
     C8A4: C6 0F       dec countdown_lo   ; $0F
     C8A6: D0 E8       bne @C890   ; $C890
-    C8A8: 4C 65 FF    jmp setup_stage_then_run_intro_frames   ; $FF65
+    C8A8: 4C 65 FF    jmp attract_demo   ; $FF65
 @C8AB:
     C8AB: A9 01       lda #$01
     C8AD: 85 42       sta game_phase   ; $42
     C8AF: A5 4A       lda seq_data_ptr   ; $4A
-    C8B1: 85 40       sta stage_state   ; $40
+    C8B1: 85 40       sta two_player_game   ; $40
     C8B3: A9 00       lda #$00
     C8B5: 85 41       sta game_state_flags   ; $41
-    C8B7: 85 71       sta stage_timer_base   ; $71
+    C8B7: 85 71       sta score   ; $71
     C8B9: 85 72       sta draw_src_ptr   ; $72
     C8BB: 85 73       sta $73
     C8BD: 85 74       sta decode_src_ptr   ; $74
@@ -1420,19 +1420,19 @@ init_stage_with_intro_animation_then_spawn:
     C8FE: E0 40       cpx #$40
     C900: D0 F7       bne @C8F9   ; $C8F9
 
-play_intro_cutscene_sequence:
+play_round:
     C902: 20 C1 F3    jsr load_record_by_index   ; $F3C1
     C905: 20 F1 D7    jsr init_object_from_rom_template   ; $D7F1
     C908: 20 46 D8    jsr init_object_record_row   ; $D846
     C90B: A9 00       lda #$00
-    C90D: 85 4B       sta seq_stream_ptr_hi   ; $4B
-    C90F: 85 4F       sta draw_src_ptr   ; $4F
+    C90D: 85 4B       sta player_down   ; $4B
+    C90F: 85 4F       sta round_cleared   ; $4F
     C911: 85 31       sta obj_record_ptr   ; $31
     C913: A9 3C       lda #$3c
     C915: 85 0F       sta countdown_lo   ; $0F
 @C917:
     C917: 20 41 C1    jsr yield_to_render_loop   ; $C141
-    C91A: 20 60 CB    jsr run_frame_game_logic_update   ; $CB60
+    C91A: 20 60 CB    jsr update_round_frame   ; $CB60
     C91D: 20 02 CB    jsr draw_fixed_glyph_string   ; $CB02
     C920: AD A6 CB    lda $cba6
     C923: 85 1E       sta obj_record_ptr   ; $1E
@@ -1468,16 +1468,16 @@ play_intro_cutscene_sequence:
     C95B: 8D 13 06    sta $0613
     C95E: 8D 14 06    sta $0614
 @C961:
-    C961: 20 60 CB    jsr run_frame_game_logic_update   ; $CB60
+    C961: 20 60 CB    jsr update_round_frame   ; $CB60
     C964: 20 E6 F2    jsr advance_state_counter_to_60   ; $F2E6
-    C967: A5 4F       lda draw_src_ptr   ; $4F
+    C967: A5 4F       lda round_cleared   ; $4F
     C969: D0 07       bne @C972   ; $C972
-    C96B: A5 4B       lda seq_stream_ptr_hi   ; $4B
+    C96B: A5 4B       lda player_down   ; $4B
     C96D: F0 D7       beq @C946   ; $C946
-    C96F: 4C 28 CA    jmp dispatch_stage_state_and_rebuild_screen   ; $CA28
+    C96F: 4C 28 CA    jmp handle_player_caught   ; $CA28
 @C972:
     C972: 20 41 C1    jsr yield_to_render_loop   ; $C141
-    C975: 20 60 CB    jsr run_frame_game_logic_update   ; $CB60
+    C975: 20 60 CB    jsr update_round_frame   ; $CB60
     C978: AD A5 04    lda obj_state   ; $04A5
     C97B: 0D AD 04    ora $04ad
     C97E: D0 F2       bne @C972   ; $C972
@@ -1492,12 +1492,12 @@ play_intro_cutscene_sequence:
     C98F: 8D 11 06    sta $0611
     C992: 8D 12 06    sta $0612
 @C995:
-    C995: 20 60 CB    jsr run_frame_game_logic_update   ; $CB60
+    C995: 20 60 CB    jsr update_round_frame   ; $CB60
     C998: C6 0F       dec countdown_lo   ; $0F
     C99A: D0 E8       bne @C984   ; $C984
     C99C: 20 BF F4    jsr init_sound_voices   ; $F4BF
 
-stage_setup_and_play_loop:
+next_round:
     C99F: 20 E8 D6    jsr load_record_and_advance_anim_counters   ; $D6E8
     C9A2: 20 A7 CA    jsr clear_object_tables   ; $CAA7
     C9A5: A2 20       ldx #$20
@@ -1510,14 +1510,14 @@ stage_setup_and_play_loop:
     C9B0: 20 41 C2    jsr ppu_disable_render   ; $C241
     C9B3: 20 49 CD    jsr build_stage_screen_layout   ; $CD49
     C9B6: 20 5B E3    jsr build_object_record_block_and_dispatch   ; $E35B
-    C9B9: A5 7C       lda block_def_ptr_hi   ; $7C
+    C9B9: A5 7C       lda is_bonus_round   ; $7C
     C9BB: D0 12       bne @C9CF   ; $C9CF
     C9BD: 20 C5 E5    jsr spawn_objects_from_level_descriptor   ; $E5C5
     C9C0: 20 62 E8    jsr load_object_table_to_ram   ; $E862
     C9C3: 20 01 F0    jsr spawn_object_pair_for_state   ; $F001
     C9C6: 20 17 EF    jsr copy_16b_table_if_var_in_range   ; $EF17
     C9C9: 20 39 C2    jsr ppu_enable_render   ; $C239
-    C9CC: 4C 02 C9    jmp play_intro_cutscene_sequence   ; $C902
+    C9CC: 4C 02 C9    jmp play_round   ; $C902
 @C9CF:
     C9CF: 20 C1 F3    jsr load_record_by_index   ; $F3C1
     C9D2: 20 3A F1    jsr load_object_table_from_def   ; $F13A
@@ -1525,22 +1525,22 @@ stage_setup_and_play_loop:
     C9D8: 20 0B D8    jsr init_struct_from_rom_template   ; $D80B
     C9DB: 20 C0 D8    jsr init_ram_block_from_table   ; $D8C0
     C9DE: A9 00       lda #$00
-    C9E0: 85 4B       sta seq_stream_ptr_hi   ; $4B
-    C9E2: 85 4F       sta draw_src_ptr   ; $4F
+    C9E0: 85 4B       sta player_down   ; $4B
+    C9E2: 85 4F       sta round_cleared   ; $4F
     C9E4: A9 AC       lda #$ac
     C9E6: 85 0F       sta countdown_lo   ; $0F
     C9E8: A9 08       lda #$08
     C9EA: 85 0E       sta countdown_hi   ; $0E
 @C9EC:
     C9EC: 20 41 C1    jsr yield_to_render_loop   ; $C141
-    C9EF: 20 7B CB    jsr run_frame_game_logic_tick   ; $CB7B
-    C9F2: A5 4B       lda seq_stream_ptr_hi   ; $4B
+    C9EF: 20 7B CB    jsr update_bonus_round_frame   ; $CB7B
+    C9F2: A5 4B       lda player_down   ; $4B
     C9F4: F0 08       beq @C9FE   ; $C9FE
     C9F6: AD 2F 04    lda stage_phase_state   ; $042F
     C9F9: 0D 3F 04    ora $043f
     C9FC: F0 13       beq @CA11   ; $CA11
 @C9FE:
-    C9FE: A5 4F       lda draw_src_ptr   ; $4F
+    C9FE: A5 4F       lda round_cleared   ; $4F
     CA00: D0 0F       bne @CA11   ; $CA11
     CA02: A5 0F       lda countdown_lo   ; $0F
     CA04: 38          sec
@@ -1556,24 +1556,24 @@ stage_setup_and_play_loop:
     CA13: 85 0F       sta countdown_lo   ; $0F
 @CA15:
     CA15: 20 41 C1    jsr yield_to_render_loop   ; $C141
-    CA18: 20 1C D7    jsr copy_active_var_record_when_phase_aligned   ; $D71C
+    CA18: 20 1C D7    jsr blink_player_up_label   ; $D71C
     CA1B: C6 0F       dec countdown_lo   ; $0F
     CA1D: D0 F6       bne @CA15   ; $CA15
     CA1F: 20 BF F4    jsr init_sound_voices   ; $F4BF
     CA22: 20 1A CE    jsr run_scripted_screen_cutscene_sequence   ; $CE1A
-    CA25: 4C 9F C9    jmp stage_setup_and_play_loop   ; $C99F
+    CA25: 4C 9F C9    jmp next_round   ; $C99F
 
-dispatch_stage_state_and_rebuild_screen:
+handle_player_caught:
     CA28: 20 41 C1    jsr yield_to_render_loop   ; $C141
-    CA2B: 20 60 CB    jsr run_frame_game_logic_update   ; $CB60
+    CA2B: 20 60 CB    jsr update_round_frame   ; $CB60
     CA2E: AD 0F 04    lda $040f
-    CA31: D0 F5       bne dispatch_stage_state_and_rebuild_screen   ; $CA28
-    CA33: A5 40       lda stage_state   ; $40
+    CA31: D0 F5       bne handle_player_caught   ; $CA28
+    CA33: A5 40       lda two_player_game   ; $40
     CA35: D0 0A       bne @CA41   ; $CA41
     CA37: A5 70       lda p1_lives   ; $70
     CA39: D0 2C       bne @CA67   ; $CA67
     CA3B: 20 C3 CA    jsr init_state_vars_and_pointer   ; $CAC3
-    CA3E: 4C 4F C8    jmp init_stage_with_intro_animation_then_spawn   ; $C84F
+    CA3E: 4C 4F C8    jmp title_screen   ; $C84F
 @CA41:
     CA41: A5 70       lda p1_lives   ; $70
     CA43: D0 1B       bne @CA60   ; $CA60
@@ -1585,10 +1585,10 @@ dispatch_stage_state_and_rebuild_screen:
 @CA50:
     CA50: 20 41 C1    jsr yield_to_render_loop   ; $C141
     CA53: 20 31 CB    jsr init_ptr_1e_from_const   ; $CB31
-    CA56: 20 1C D7    jsr copy_active_var_record_when_phase_aligned   ; $D71C
+    CA56: 20 1C D7    jsr blink_player_up_label   ; $D71C
     CA59: C6 0F       dec countdown_lo   ; $0F
     CA5B: D0 F3       bne @CA50   ; $CA50
-    CA5D: 4C 4F C8    jmp init_stage_with_intro_animation_then_spawn   ; $C84F
+    CA5D: 4C 4F C8    jmp title_screen   ; $C84F
 @CA60:
     CA60: A5 B0       lda p2_lives   ; $B0
     CA62: F0 03       beq @CA67   ; $CA67
@@ -1603,7 +1603,7 @@ dispatch_stage_state_and_rebuild_screen:
     CA75: 20 14 E6    jsr process_objects_in_state_two   ; $E614
     CA78: 20 B2 E8    jsr clear_low2_bits_per_object_record   ; $E8B2
     CA7B: 20 39 C2    jsr ppu_enable_render   ; $C239
-    CA7E: 4C 02 C9    jmp play_intro_cutscene_sequence   ; $C902
+    CA7E: 4C 02 C9    jmp play_round   ; $C902
 
 swap_player_state:
     CA81: A5 41       lda game_state_flags   ; $41
@@ -1661,12 +1661,12 @@ init_state_vars_and_pointer:
 
 redraw_var_records_loop_until_count_or_phase:
     CADA: 20 41 C1    jsr yield_to_render_loop   ; $C141
-    CADD: A5 40       lda stage_state   ; $40
+    CADD: A5 40       lda two_player_game   ; $40
     CADF: F0 03       beq @CAE4   ; $CAE4
     CAE1: 20 02 CB    jsr draw_fixed_glyph_string   ; $CB02
 @CAE4:
     CAE4: 20 31 CB    jsr init_ptr_1e_from_const   ; $CB31
-    CAE7: 20 1C D7    jsr copy_active_var_record_when_phase_aligned   ; $D71C
+    CAE7: 20 1C D7    jsr blink_player_up_label   ; $D71C
     CAEA: A5 25       lda joypad_state   ; $25
     CAEC: 29 03       and #$03
     CAEE: C9 01       cmp #$01
@@ -1701,7 +1701,7 @@ draw_glyph_and_advance_cursor:
     CB1C: A9 00       lda #$00
     CB1E: 85 14       sta scan_src_ptr   ; $14
     CB20: 85 15       sta scratch_counter   ; $15
-    CB22: 20 15 C4    jsr write_object_to_shadow_oam   ; $C415
+    CB22: 20 15 C4    jsr write_sprite_to_oam   ; $C415
 @CB25:
     CB25: A5 10       lda src_ptr   ; $10
     CB27: 18          clc
@@ -1728,7 +1728,7 @@ draw_glyph_string_from_param_block:
     CB45: 85 11       sta zp_ptr_hi   ; $11
     CB47: B1 1E       lda (obj_record_ptr),y   ; $1E
     CB49: C8          iny
-    CB4A: 85 16       sta oam_write_ptr   ; $16
+    CB4A: 85 16       sta sprite_y   ; $16
     CB4C: B1 1E       lda (obj_record_ptr),y   ; $1E
     CB4E: C8          iny
     CB4F: 85 18       sta scratch_loop_counter   ; $18
@@ -1742,23 +1742,23 @@ draw_glyph_string_from_param_block:
     CB5D: D0 F2       bne @CB51   ; $CB51
     CB5F: 60          rts
 
-run_frame_game_logic_update:
+update_round_frame:
     CB60: 20 FE E3    jsr tick_all_subcounters_stride8   ; $E3FE
     CB63: 20 D8 D8    jsr update_and_respawn_objects   ; $D8D8
     CB66: 20 4E ED    jsr tick_object_group_04a0   ; $ED4E
     CB69: 20 3F EF    jsr update_object_pair_state_at_a0_a8   ; $EF3F
-    CB6C: 20 34 E6    jsr update_all_active_objects   ; $E634
+    CB6C: 20 34 E6    jsr update_items   ; $E634
     CB6F: 20 CC E8    jsr update_all_objects_anim_and_phase   ; $E8CC
     CB72: 20 4D F0    jsr dispatch_obj0_state_then_fall_to_obj8   ; $F04D
-    CB75: 20 1C D7    jsr copy_active_var_record_when_phase_aligned   ; $D71C
-    CB78: 4C AB D5    jmp pump_pending_amount_then_step_entry_state   ; $D5AB
+    CB75: 20 1C D7    jsr blink_player_up_label   ; $D71C
+    CB78: 4C AB D5    jmp update_score   ; $D5AB
 
-run_frame_game_logic_tick:
+update_bonus_round_frame:
     CB7B: 20 FE E3    jsr tick_all_subcounters_stride8   ; $E3FE
     CB7E: 20 D8 D8    jsr update_and_respawn_objects   ; $D8D8
     CB81: 20 8F F1    jsr dispatch_all_objects_phase_handler   ; $F18F
-    CB84: 20 1C D7    jsr copy_active_var_record_when_phase_aligned   ; $D71C
-    CB87: 4C AB D5    jmp pump_pending_amount_then_step_entry_state   ; $D5AB
+    CB84: 20 1C D7    jsr blink_player_up_label   ; $D71C
+    CB87: 4C AB D5    jmp update_score   ; $D5AB
     CB8A: 8C          .byte $8C
     CB8B: CB          .byte $CB
     CB8C: 58          .byte $58
@@ -2145,7 +2145,7 @@ transform_fixed_coord_90_04:
     CD40: 85 1E       sta obj_record_ptr   ; $1E
     CD42: A9 04       lda #$04
     CD44: 85 1F       sta obj_record_ptr_hi   ; $1F
-    CD46: 4C 05 C3    jmp transform_object_coords_to_pixel_space   ; $C305
+    CD46: 4C 05 C3    jmp draw_object   ; $C305
 
 build_stage_screen_layout:
     CD49: 20 F5 CB    jsr ppu_clear_nametables   ; $CBF5
@@ -2156,11 +2156,11 @@ build_stage_screen_layout:
     CD53: 85 1F       sta obj_record_ptr_hi   ; $1F
     CD55: AA          tax
     CD56: BD BF CD    lda tbl_round_attributes,x   ; $CDBF
-    CD59: 85 7C       sta block_def_ptr_hi   ; $7C
+    CD59: 85 7C       sta is_bonus_round   ; $7C
     CD5B: F0 30       beq @CD8D   ; $CD8D
     CD5D: A9 00       lda #$00
-    CD5F: 85 28       sta screen_layout_ptr_hi   ; $28
-    CD61: 85 29       sta camera_scroll_x   ; $29
+    CD5F: 85 28       sta camera_x_lo   ; $28
+    CD61: 85 29       sta camera_x   ; $29
     CD63: A0 0C       ldy #$0c
     CD65: 20 26 D1    jsr ppu_draw_mansion_stamps   ; $D126
     CD68: 20 39 C2    jsr ppu_enable_render   ; $C239
@@ -2278,17 +2278,17 @@ setup_oam_params_and_emit_object_7c:
     CE07: 85 14       sta scan_src_ptr   ; $14
     CE09: 85 15       sta scratch_counter   ; $15
     CE0B: A9 AA       lda #$aa
-    CE0D: 85 16       sta oam_write_ptr   ; $16
+    CE0D: 85 16       sta sprite_y   ; $16
     CE0F: A9 CB       lda #$cb
     CE11: 85 12       sta gfx_src_ptr   ; $12
     CE13: A9 02       lda #$02
     CE15: 85 13       sta data_ptr_hi   ; $13
-    CE17: 4C EC C3    jmp emit_object_oam_step_pointers_8   ; $C3EC
+    CE17: 4C EC C3    jmp draw_metasprite_2x2   ; $C3EC
 
 run_scripted_screen_cutscene_sequence:
     CE1A: A9 00       lda #$00
-    CE1C: 85 28       sta screen_layout_ptr_hi   ; $28
-    CE1E: 85 29       sta camera_scroll_x   ; $29
+    CE1C: 85 28       sta camera_x_lo   ; $28
+    CE1E: 85 29       sta camera_x   ; $29
     CE20: 20 41 C2    jsr ppu_disable_render   ; $C241
     CE23: 20 F5 CB    jsr ppu_clear_nametables   ; $CBF5
     CE26: 20 03 D7    jsr draw_blocks_then_rebuild_buffer_entries   ; $D703
@@ -2329,14 +2329,14 @@ run_scripted_screen_cutscene_sequence:
     CE79: A0 10       ldy #$10
     CE7B: 20 CD CE    jsr draw_indexed_text_line   ; $CECD
     CE7E: A0 0A       ldy #$0a
-    CE80: 20 E5 D4    jsr load_record_via_ptr_table   ; $D4E5
+    CE80: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
     CE83: A0 16       ldy #$16
     CE85: 20 D9 D5    jsr build_buffer_entry_unpack_nibbles   ; $D5D9
     CE88: 20 94 CE    jsr run_entry_state_sequence_120_frames   ; $CE94
     CE8B: A9 01       lda #$01
-    CE8D: 85 43       sta scratch_amount   ; $43
+    CE8D: 85 43       sta score_update_phase   ; $43
     CE8F: A0 0C       ldy #$0c
-    CE91: 4C E5 D4    jmp load_record_via_ptr_table   ; $D4E5
+    CE91: 4C E5 D4    jmp bcd_add_from_table   ; $D4E5
 
 run_entry_state_sequence_120_frames:
     CE94: A9 78       lda #$78
@@ -2346,15 +2346,15 @@ run_entry_state_sequence_120_frames:
     CE9B: A9 38       lda #$38
     CE9D: 85 10       sta src_ptr   ; $10
     CE9F: A9 70       lda #$70
-    CEA1: 85 16       sta oam_write_ptr   ; $16
+    CEA1: 85 16       sta sprite_y   ; $16
     CEA3: A9 00       lda #$00
     CEA5: 85 11       sta zp_ptr_hi   ; $11
     CEA7: 85 14       sta scan_src_ptr   ; $14
     CEA9: A9 02       lda #$02
     CEAB: 85 13       sta data_ptr_hi   ; $13
     CEAD: 20 3D C6    jsr ptr16_sub6_set_const   ; $C63D
-    CEB0: 20 1C D7    jsr copy_active_var_record_when_phase_aligned   ; $D71C
-    CEB3: 20 AB D5    jsr pump_pending_amount_then_step_entry_state   ; $D5AB
+    CEB0: 20 1C D7    jsr blink_player_up_label   ; $D71C
+    CEB3: 20 AB D5    jsr update_score   ; $D5AB
     CEB6: C6 0F       dec countdown_lo   ; $0F
     CEB8: D0 DE       bne @CE98   ; $CE98
     CEBA: 60          rts
@@ -2364,8 +2364,8 @@ run_entry_state_pump_120_iterations:
     CEBD: 85 0F       sta countdown_lo   ; $0F
 @CEBF:
     CEBF: 20 41 C1    jsr yield_to_render_loop   ; $C141
-    CEC2: 20 1C D7    jsr copy_active_var_record_when_phase_aligned   ; $D71C
-    CEC5: 20 AB D5    jsr pump_pending_amount_then_step_entry_state   ; $D5AB
+    CEC2: 20 1C D7    jsr blink_player_up_label   ; $D71C
+    CEC5: 20 AB D5    jsr update_score   ; $D5AB
     CEC8: C6 0F       dec countdown_lo   ; $0F
     CECA: D0 F3       bne @CEBF   ; $CEBF
     CECC: 60          rts
@@ -2534,7 +2534,7 @@ ppu_draw_blocks_b:
     CF82: C8          iny
     CF83: 8D 06 20    sta PPUADDR   ; $2006
     CF86: 8E 06 20    stx PPUADDR   ; $2006
-    CF89: 84 16       sty oam_write_ptr   ; $16
+    CF89: 84 16       sty sprite_y   ; $16
 @CF8B:
     CF8B: B1 10       lda (src_ptr),y   ; $10
     CF8D: F0 0D       beq @CF9C   ; $CF9C
@@ -2551,7 +2551,7 @@ ppu_draw_blocks_b:
     CF9C: C8          iny
     CF9D: C6 17       dec draw_row_counter   ; $17
     CF9F: F0 D4       beq @CF75   ; $CF75
-    CFA1: A4 16       ldy oam_write_ptr   ; $16
+    CFA1: A4 16       ldy sprite_y   ; $16
     CFA3: D0 E6       bne @CF8B   ; $CF8B
 @CFA5:
     CFA5: 60          rts
@@ -2972,7 +2972,7 @@ ppu_draw_mansion_stamps:
     D148: B1 10       lda (src_ptr),y   ; $10
     D14A: C8          iny
     D14B: 85 15       sta scratch_counter   ; $15
-    D14D: 84 16       sty oam_write_ptr   ; $16
+    D14D: 84 16       sty sprite_y   ; $16
     D14F: A0 00       ldy #$00
 @D151:
     D151: A5 15       lda scratch_counter   ; $15
@@ -3001,7 +3001,7 @@ ppu_draw_mansion_stamps:
     D178: E6 15       inc scratch_counter   ; $15
     D17A: B0 D5       bcs @D151   ; $D151
 @D17C:
-    D17C: A4 16       ldy oam_write_ptr   ; $16
+    D17C: A4 16       ldy sprite_y   ; $16
     D17E: C6 17       dec draw_row_counter   ; $17
     D180: D0 C1       bne @D143   ; $D143
     D182: F0 AE       beq @D132   ; $D132
@@ -3842,20 +3842,20 @@ mansion_frame_bonus:
     D4BC: 1D          .byte $1D
     D4BD: 00          .byte $00
 
-add_bcd_table_amount_n_times:
+add_score_n_times:
     D4BE: 85 19       sta draw_data_ptr_hi   ; $19
 @D4C0:
     D4C0: A4 19       ldy draw_data_ptr_hi   ; $19
-    D4C2: 20 CA D4    jsr add_bcd_table_amount_to_buffer   ; $D4CA
+    D4C2: 20 CA D4    jsr add_score_from_table   ; $D4CA
     D4C5: C6 18       dec scratch_loop_counter   ; $18
     D4C7: D0 F7       bne @D4C0   ; $D4C0
 @D4C9:
     D4C9: 60          rts
 
-add_bcd_table_amount_to_buffer:
+add_score_from_table:
     D4CA: A5 42       lda game_phase   ; $42
     D4CC: F0 FB       beq @D4C9   ; $D4C9
-    D4CE: 85 43       sta scratch_amount   ; $43
+    D4CE: 85 43       sta score_update_phase   ; $43
     D4D0: 98          tya
     D4D1: 18          clc
     D4D2: 6D 61 D5    adc $d561
@@ -3867,7 +3867,7 @@ add_bcd_table_amount_to_buffer:
     D4E0: A0 03       ldy #$03
     D4E2: 4C 02 D5    jmp bcd_add_packed_buffer   ; $D502
 
-load_record_via_ptr_table:
+bcd_add_from_table:
     D4E5: B9 36 D5    lda $d536,y
     D4E8: 85 10       sta src_ptr   ; $10
     D4EA: B9 37 D5    lda $d537,y
@@ -4037,29 +4037,29 @@ bcd_add_packed_buffer:
     D5A9: 10          .byte $10
     D5AA: 00          .byte $00
 
-pump_pending_amount_then_step_entry_state:
-    D5AB: A5 30       lda obj_state   ; $30
+update_score:
+    D5AB: A5 30       lda pending_score_count   ; $30
     D5AD: F0 0F       beq @D5BE   ; $D5BE
     D5AF: 85 18       sta scratch_loop_counter   ; $18
     D5B1: A9 40       lda #$40
-    D5B3: 20 BE D4    jsr add_bcd_table_amount_n_times   ; $D4BE
+    D5B3: 20 BE D4    jsr add_score_n_times   ; $D4BE
     D5B6: A9 00       lda #$00
-    D5B8: 85 30       sta obj_state   ; $30
+    D5B8: 85 30       sta pending_score_count   ; $30
     D5BA: A9 01       lda #$01
-    D5BC: 85 43       sta scratch_amount   ; $43
+    D5BC: 85 43       sta score_update_phase   ; $43
 @D5BE:
-    D5BE: A5 43       lda scratch_amount   ; $43
+    D5BE: A5 43       lda score_update_phase   ; $43
     D5C0: F0 66       beq @D628   ; $D628
     D5C2: C9 01       cmp #$01
     D5C4: F0 0F       beq @D5D5   ; $D5D5
     D5C6: A9 00       lda #$00
-    D5C8: 85 43       sta scratch_amount   ; $43
-    D5CA: 20 94 D6    jsr clamp_var32_to_min   ; $D694
-    D5CD: 20 AA D6    jsr advance_record_index_and_refresh_entry   ; $D6AA
+    D5C8: 85 43       sta score_update_phase   ; $43
+    D5CA: 20 94 D6    jsr update_high_score   ; $D694
+    D5CD: 20 AA D6    jsr award_extra_life   ; $D6AA
     D5D0: A0 08       ldy #$08
     D5D2: 4C D9 D5    jmp build_buffer_entry_unpack_nibbles   ; $D5D9
 @D5D5:
-    D5D5: E6 43       inc scratch_amount   ; $43
+    D5D5: E6 43       inc score_update_phase   ; $43
     D5D7: A0 00       ldy #$00
 
 build_buffer_entry_unpack_nibbles:
@@ -4210,25 +4210,25 @@ append_byte_to_0500_if_counter:
     D692: 03          .byte $03
     D693: 04          .byte $04
 
-clamp_var32_to_min:
+update_high_score:
     D694: A2 03       ldx #$03
     D696: 38          sec
 @D697:
-    D697: B5 44       lda $44,x
-    D699: F5 71       sbc stage_timer_base,x   ; $71
+    D697: B5 44       lda hi_score,x   ; $44
+    D699: F5 71       sbc score,x   ; $71
     D69B: CA          dex
     D69C: 10 F9       bpl @D697   ; $D697
     D69E: B0 09       bcs @D6A9   ; $D6A9
     D6A0: A2 03       ldx #$03
 @D6A2:
-    D6A2: B5 71       lda stage_timer_base,x   ; $71
-    D6A4: 95 44       sta $44,x
+    D6A2: B5 71       lda score,x   ; $71
+    D6A4: 95 44       sta hi_score,x   ; $44
     D6A6: CA          dex
     D6A7: 10 F9       bpl @D6A2   ; $D6A2
 @D6A9:
     D6A9: 60          rts
 
-advance_record_index_and_refresh_entry:
+award_extra_life:
     D6AA: A5 75       lda current_record_index   ; $75
     D6AC: C5 48       cmp indirect_ptr   ; $48
     D6AE: F0 F9       beq @D6A9   ; $D6A9
@@ -4244,7 +4244,7 @@ advance_record_index_and_refresh_entry:
     D6C0: C6 75       dec current_record_index   ; $75
 @D6C2:
     D6C2: A0 00       ldy #$00
-    D6C4: 20 E5 D4    jsr load_record_via_ptr_table   ; $D4E5
+    D6C4: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
     D6C7: 90 04       bcc @D6CD   ; $D6CD
     D6C9: A5 48       lda indirect_ptr   ; $48
     D6CB: 85 75       sta current_record_index   ; $75
@@ -4254,7 +4254,7 @@ advance_record_index_and_refresh_entry:
     D6D2: 8D 03 06    sta $0603
     D6D5: 8D 04 06    sta $0604
     D6D8: A0 02       ldy #$02
-    D6DA: 20 E5 D4    jsr load_record_via_ptr_table   ; $D4E5
+    D6DA: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
     D6DD: 90 04       bcc @D6E3   ; $D6E3
     D6DF: A9 99       lda #$99
     D6E1: 85 70       sta p1_lives   ; $70
@@ -4264,7 +4264,7 @@ advance_record_index_and_refresh_entry:
 
 load_record_and_advance_anim_counters:
     D6E8: A0 04       ldy #$04
-    D6EA: 20 E5 D4    jsr load_record_via_ptr_table   ; $D4E5
+    D6EA: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
     D6ED: E6 7A       inc stage_number   ; $7A
     D6EF: A5 7A       lda stage_number   ; $7A
     D6F1: 29 0F       and #$0f
@@ -4291,9 +4291,9 @@ draw_blocks_then_rebuild_buffer_entries:
     D717: A0 00       ldy #$00
     D719: 4C D9 D5    jmp build_buffer_entry_unpack_nibbles   ; $D5D9
 
-copy_active_var_record_when_phase_aligned:
+blink_player_up_label:
     D71C: A5 42       lda game_phase   ; $42
-    D71E: F0 15       beq queue_state_vram_packet   ; $D735
+    D71E: F0 15       beq show_player_up_label   ; $D735
     D720: A5 21       lda frame_counter   ; $21
     D722: 29 0F       and #$0f
     D724: D0 0E       bne @D734   ; $D734
@@ -4309,7 +4309,7 @@ copy_active_var_record_when_phase_aligned:
 @D734:
     D734: 60          rts
 
-queue_state_vram_packet:
+show_player_up_label:
     D735: A9 02       lda #$02
     D737: 05 41       ora game_state_flags   ; $41
     D739: 0A          asl a
@@ -4495,9 +4495,9 @@ init_struct_from_rom_template:
 
 set_two_zp_pointers:
     D825: A9 00       lda #$00
-    D827: 85 28       sta screen_layout_ptr_hi   ; $28
+    D827: 85 28       sta camera_x_lo   ; $28
     D829: A9 1C       lda #$1c
-    D82B: 85 29       sta camera_scroll_x   ; $29
+    D82B: 85 29       sta camera_x   ; $29
     D82D: A9 00       lda #$00
     D82F: 85 1E       sta obj_record_ptr   ; $1E
     D831: A9 04       lda #$04
@@ -4521,11 +4521,11 @@ set_two_zp_pointers:
 
 init_object_record_row:
     D846: A9 30       lda #$30
-    D848: 85 4C       sta ppu_block_src_ptr   ; $4C
+    D848: 85 4C       sta respawn_slot   ; $4C
     D84A: A9 00       lda #$00
-    D84C: 85 4D       sta object_record_ptr_hi   ; $4D
+    D84C: 85 4D       sta respawn_tick   ; $4D
     D84E: A9 10       lda #$10
-    D850: 85 4E       sta block_data_ptr_hi   ; $4E
+    D850: 85 4E       sta respawn_interval   ; $4E
     D852: A9 30       lda #$30
     D854: 85 1E       sta obj_record_ptr   ; $1E
     D856: A9 04       lda #$04
@@ -4613,20 +4613,20 @@ update_and_respawn_objects:
 @D8E0:
     D8E0: 20 39 D9    jsr update_object_state_vs_reference   ; $D939
     D8E3: 20 2C DA    jsr dispatch_object_state   ; $DA2C
-    D8E6: 20 05 C3    jsr transform_object_coords_to_pixel_space   ; $C305
+    D8E6: 20 05 C3    jsr draw_object   ; $C305
     D8E9: A5 1E       lda obj_record_ptr   ; $1E
     D8EB: 18          clc
     D8EC: 69 10       adc #$10
     D8EE: 85 1E       sta obj_record_ptr   ; $1E
     D8F0: C9 90       cmp #$90
     D8F2: D0 EC       bne @D8E0   ; $D8E0
-    D8F4: E6 4D       inc object_record_ptr_hi   ; $4D
-    D8F6: A5 4D       lda object_record_ptr_hi   ; $4D
-    D8F8: C5 4E       cmp block_data_ptr_hi   ; $4E
+    D8F4: E6 4D       inc respawn_tick   ; $4D
+    D8F6: A5 4D       lda respawn_tick   ; $4D
+    D8F8: C5 4E       cmp respawn_interval   ; $4E
     D8FA: 90 3C       bcc @D938   ; $D938
     D8FC: A9 00       lda #$00
-    D8FE: 85 4D       sta object_record_ptr_hi   ; $4D
-    D900: A6 4C       ldx ppu_block_src_ptr   ; $4C
+    D8FE: 85 4D       sta respawn_tick   ; $4D
+    D900: A6 4C       ldx respawn_slot   ; $4C
     D902: BD 0F 04    lda $040f,x
     D905: C9 1A       cmp #$1a
     D907: D0 22       bne @D92B   ; $D92B
@@ -4652,7 +4652,7 @@ update_and_respawn_objects:
     D932: D0 02       bne @D936   ; $D936
     D934: A2 10       ldx #$10
 @D936:
-    D936: 86 4C       stx ppu_block_src_ptr   ; $4C
+    D936: 86 4C       stx respawn_slot   ; $4C
 @D938:
     D938: 60          rts
 
@@ -4807,7 +4807,7 @@ dispatch_object_state:
     DA2C: A0 0F       ldy #$0f
     DA2E: B1 1E       lda (obj_record_ptr),y   ; $1E
     DA30: AA          tax
-    DA31: A5 7C       lda block_def_ptr_hi   ; $7C
+    DA31: A5 7C       lda is_bonus_round   ; $7C
     DA33: D0 EA       bne @DA1F   ; $DA1F
     DA35: BD 42 DA    lda $da42,x
     DA38: 85 1C       sta aux_ptr   ; $1C
@@ -4847,7 +4847,7 @@ update_object_proximity_collision_tick:
     DA7B: CE 2A 04    dec bonus_item_timer   ; $042A
 @DA7E:
     DA7E: 20 B7 E0    jsr find_adjacent_entity_to_ref_copy_attr   ; $E0B7
-    DA81: F0 55       beq init_entity_state_if_flag_clear   ; $DAD8
+    DA81: F0 55       beq player_caught   ; $DAD8
     DA83: 20 90 EA    jsr scan_objects_for_adjacent_contact_and_trigger   ; $EA90
     DA86: 20 B1 F0    jsr advance_obj_pair_on_proximity   ; $F0B1
     DA89: 20 E7 F0    jsr check_two_obj_slots_for_hit   ; $F0E7
@@ -4898,7 +4898,7 @@ tick_object_timer_then_move_or_reset:
 @DAD5:
     DAD5: 4C 3D E0    jmp advance_object_subpixel_position_then_clamp   ; $E03D
 
-init_entity_state_if_flag_clear:
+player_caught:
     DAD8: A5 1E       lda obj_record_ptr   ; $1E
     DADA: D0 35       bne @DB11   ; $DB11
     DADC: A9 1E       lda #$1e
@@ -4908,7 +4908,7 @@ init_entity_state_if_flag_clear:
     DAE6: A9 08       lda #$08
     DAE8: 8D 0F 04    sta $040f
     DAEB: A9 01       lda #$01
-    DAED: 85 4B       sta seq_stream_ptr_hi   ; $4B
+    DAED: 85 4B       sta player_down   ; $4B
 
 reset_objects_except_persistent_types:
     DAEF: 20 BF F4    jsr init_sound_voices   ; $F4BF
@@ -4948,7 +4948,7 @@ reset_objects_except_persistent_types:
     DB2A: A0 07       ldy #$07
     DB2C: 91 1E       sta (obj_record_ptr),y   ; $1E
     DB2E: BC 33 DB    ldy $db33,x
-    DB31: 4C CA D4    jmp add_bcd_table_amount_to_buffer   ; $D4CA
+    DB31: 4C CA D4    jmp add_score_from_table   ; $D4CA
     DB34: 44          .byte $44
     DB35: 44          .byte $44
     DB36: 08          .byte $08
@@ -5017,13 +5017,13 @@ trigger_entity_state_reset_on_proximity_or_type_else_scan_next:
     DBA0: C9 07       cmp #$07
     DBA2: B0 03       bcs @DBA7   ; $DBA7
 @DBA4:
-    DBA4: 4C D8 DA    jmp init_entity_state_if_flag_clear   ; $DAD8
+    DBA4: 4C D8 DA    jmp player_caught   ; $DAD8
 @DBA7:
     DBA7: A0 03       ldy #$03
     DBA9: B1 1E       lda (obj_record_ptr),y   ; $1E
     DBAB: C9 1C       cmp #$1c
     DBAD: 90 03       bcc @DBB2   ; $DBB2
-    DBAF: 4C D8 DA    jmp init_entity_state_if_flag_clear   ; $DAD8
+    DBAF: 4C D8 DA    jmp player_caught   ; $DAD8
 @DBB2:
     DBB2: 20 6A E0    jsr advance_pointer_by_flagged_offset_then_append_entry   ; $E06A
     DBB5: 20 69 E4    jsr find_object_at_coords   ; $E469
@@ -5037,7 +5037,7 @@ collect_object_award_score_and_spawn_popup:
     DBC2: A5 42       lda game_phase   ; $42
     DBC4: 8D 0A 06    sta $060a
     DBC7: A0 3C       ldy #$3c
-    DBC9: 20 CA D4    jsr add_bcd_table_amount_to_buffer   ; $D4CA
+    DBC9: 20 CA D4    jsr add_score_from_table   ; $D4CA
     DBCC: A6 18       ldx scratch_loop_counter   ; $18
     DBCE: BD 02 02    lda obj_timer,x   ; $0202
     DBD1: D0 10       bne @DBE3   ; $DBE3
@@ -5119,7 +5119,7 @@ obj_state7_update_anim_and_snap_position:
 resolve_entity_collision_movement:
     DC5C: 20 02 E1    jsr check_two_coords_adjacent   ; $E102
     DC5F: D0 03       bne @DC64   ; $DC64
-    DC61: 4C D8 DA    jmp init_entity_state_if_flag_clear   ; $DAD8
+    DC61: 4C D8 DA    jmp player_caught   ; $DAD8
 @DC64:
     DC64: A0 03       ldy #$03
     DC66: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -5343,8 +5343,8 @@ dec_timer_field7_if_nonzero:
     DDDF: 60          rts
 
 handle_entity_object_pickup_or_special_setup:
-    DDE0: A5 4B       lda seq_stream_ptr_hi   ; $4B
-    DDE2: 05 4F       ora draw_src_ptr   ; $4F
+    DDE0: A5 4B       lda player_down   ; $4B
+    DDE2: 05 4F       ora round_cleared   ; $4F
     DDE4: D0 3E       bne @DE24   ; $DE24
     DDE6: A0 08       ldy #$08
     DDE8: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -5361,7 +5361,7 @@ handle_entity_object_pickup_or_special_setup:
     DDFF: B0 23       bcs @DE24   ; $DE24
     DE01: 4C BA DB    jmp collect_object_award_score_and_spawn_popup   ; $DBBA
 @DE04:
-    DE04: 4C D8 DA    jmp init_entity_state_if_flag_clear   ; $DAD8
+    DE04: 4C D8 DA    jmp player_caught   ; $DAD8
 @DE07:
     DE07: A5 1E       lda obj_record_ptr   ; $1E
     DE09: C9 20       cmp #$20
@@ -5403,7 +5403,7 @@ tick_bonus_item_collect_or_timeout:
     DE4F: A9 78       lda #$78
     DE51: 8D 27 04    sta bonus_item_timer   ; $0427
     DE54: A0 44       ldy #$44
-    DE56: 4C CA D4    jmp add_bcd_table_amount_to_buffer   ; $D4CA
+    DE56: 4C CA D4    jmp add_score_from_table   ; $D4CA
 @DE59:
     DE59: A9 10       lda #$10
     DE5B: 8D 2A 04    sta bonus_item_timer   ; $042A
@@ -5412,8 +5412,8 @@ tick_bonus_item_collect_or_timeout:
 tick_timer_0427_reset_obj_when_idle:
     DE61: CE 27 04    dec bonus_item_timer   ; $0427
     DE64: D0 13       bne @DE79   ; $DE79
-    DE66: A5 4B       lda seq_stream_ptr_hi   ; $4B
-    DE68: 05 4F       ora draw_src_ptr   ; $4F
+    DE66: A5 4B       lda player_down   ; $4B
+    DE68: 05 4F       ora round_cleared   ; $4F
     DE6A: D0 03       bne zero_struct_fields_4_and_15   ; $DE6F
     DE6C: 4C 17 DD    jmp reset_obj_to_state2_and_arm_field   ; $DD17
 
@@ -5601,30 +5601,30 @@ advance_pos_if_in_bounds:
     DF98: B0 1A       bcs @DFB4   ; $DFB4
     DF9A: AD 06 04    lda $0406
     DF9D: 30 16       bmi @DFB5   ; $DFB5
-    DF9F: A5 28       lda screen_layout_ptr_hi   ; $28
+    DF9F: A5 28       lda camera_x_lo   ; $28
     DFA1: 18          clc
     DFA2: 65 10       adc src_ptr   ; $10
     DFA4: 85 11       sta zp_ptr_hi   ; $11
-    DFA6: A5 29       lda camera_scroll_x   ; $29
+    DFA6: A5 29       lda camera_x   ; $29
     DFA8: 69 00       adc #$00
     DFAA: C9 1C       cmp #$1c
     DFAC: B0 06       bcs @DFB4   ; $DFB4
-    DFAE: 85 29       sta camera_scroll_x   ; $29
+    DFAE: 85 29       sta camera_x   ; $29
     DFB0: A5 11       lda zp_ptr_hi   ; $11
-    DFB2: 85 28       sta screen_layout_ptr_hi   ; $28
+    DFB2: 85 28       sta camera_x_lo   ; $28
 @DFB4:
     DFB4: 60          rts
 @DFB5:
-    DFB5: A5 28       lda screen_layout_ptr_hi   ; $28
+    DFB5: A5 28       lda camera_x_lo   ; $28
     DFB7: 38          sec
     DFB8: E5 10       sbc src_ptr   ; $10
     DFBA: 85 11       sta zp_ptr_hi   ; $11
-    DFBC: A5 29       lda camera_scroll_x   ; $29
+    DFBC: A5 29       lda camera_x   ; $29
     DFBE: E9 00       sbc #$00
     DFC0: 90 06       bcc @DFC8   ; $DFC8
-    DFC2: 85 29       sta camera_scroll_x   ; $29
+    DFC2: 85 29       sta camera_x   ; $29
     DFC4: A5 11       lda zp_ptr_hi   ; $11
-    DFC6: 85 28       sta screen_layout_ptr_hi   ; $28
+    DFC6: 85 28       sta camera_x_lo   ; $28
 @DFC8:
     DFC8: 60          rts
 @DFC9:
@@ -5880,7 +5880,7 @@ trigger_state_change_on_proximity:
     E166: 9D 0F 04    sta $040f,x
     E169: A9 08       lda #$08
     E16B: 9D 07 04    sta $0407,x
-    E16E: E6 30       inc obj_state   ; $30
+    E16E: E6 30       inc pending_score_count   ; $30
 @E170:
     E170: 8A          txa
     E171: 18          clc
@@ -5904,7 +5904,7 @@ init_state_vars:
     E18E: A9 00       lda #$00
     E190: 8D 07 04    sta $0407
     E193: A9 01       lda #$01
-    E195: 85 4B       sta seq_stream_ptr_hi   ; $4B
+    E195: 85 4B       sta player_down   ; $4B
     E197: A9 04       lda #$04
     E199: 8D 0F 04    sta $040f
 
@@ -5932,7 +5932,7 @@ collect_item_award_score_and_spawn_reward_object:
     E1C0: A9 01       lda #$01
     E1C2: 8D 0A 06    sta $060a
     E1C5: A0 3C       ldy #$3c
-    E1C7: 20 CA D4    jsr add_bcd_table_amount_to_buffer   ; $D4CA
+    E1C7: 20 CA D4    jsr add_score_from_table   ; $D4CA
     E1CA: A6 18       ldx scratch_loop_counter   ; $18
     E1CC: BD 02 02    lda obj_timer,x   ; $0202
     E1CF: D0 10       bne @E1E1   ; $E1E1
@@ -6629,7 +6629,7 @@ spawn_objects_from_level_descriptor:
     E5CD: 85 1D       sta aux_ptr_hi   ; $1D
     E5CF: A0 00       ldy #$00
     E5D1: B1 1C       lda (aux_ptr),y   ; $1C
-    E5D3: 85 81       sta active_object_count   ; $81
+    E5D3: 85 81       sta item_table_len   ; $81
     E5D5: 4A          lsr a
     E5D6: 4A          lsr a
     E5D7: 4A          lsr a
@@ -6661,7 +6661,7 @@ spawn_objects_from_level_descriptor:
     E60C: 18          clc
     E60D: 69 08       adc #$08
     E60F: AA          tax
-    E610: E4 81       cpx active_object_count   ; $81
+    E610: E4 81       cpx item_table_len   ; $81
     E612: D0 CB       bne @E5DF   ; $E5DF
 
 process_objects_in_state_two:
@@ -6680,13 +6680,13 @@ process_objects_in_state_two:
     E62B: 18          clc
     E62C: 69 08       adc #$08
     E62E: AA          tax
-    E62F: E4 81       cpx active_object_count   ; $81
+    E62F: E4 81       cpx item_table_len   ; $81
     E631: D0 E5       bne @E618   ; $E618
 @E633:
     E633: 60          rts
 
-update_all_active_objects:
-    E634: A5 81       lda active_object_count   ; $81
+update_items:
+    E634: A5 81       lda item_table_len   ; $81
     E636: F0 11       beq @E649   ; $E649
     E638: A2 00       ldx #$00
 @E63A:
@@ -6696,7 +6696,7 @@ update_all_active_objects:
     E641: 18          clc
     E642: 69 08       adc #$08
     E644: AA          tax
-    E645: E4 81       cpx active_object_count   ; $81
+    E645: E4 81       cpx item_table_len   ; $81
     E647: D0 F1       bne @E63A   ; $E63A
 @E649:
     E649: 60          rts
@@ -6730,7 +6730,7 @@ resolve_object_position_capture_and_score:
     E680: C6 7B       dec round_items_remaining   ; $7B
     E682: D0 13       bne @E697   ; $E697
     E684: A9 01       lda #$01
-    E686: 85 4F       sta draw_src_ptr   ; $4F
+    E686: 85 4F       sta round_cleared   ; $4F
     E688: A9 00       lda #$00
     E68A: 8D 0F 04    sta $040f
     E68D: 8D 04 04    sta $0404
@@ -6757,7 +6757,7 @@ resolve_object_position_capture_and_score:
 @E6B6:
     E6B6: BD 61 02    lda obj_type,x   ; $0261
     E6B9: 29 FC       and #$fc
-    E6BB: 20 BE D4    jsr add_bcd_table_amount_n_times   ; $D4BE
+    E6BB: 20 BE D4    jsr add_score_n_times   ; $D4BE
     E6BE: A6 1B       ldx cur_obj_index   ; $1B
     E6C0: 20 0A E7    jsr load_string_entry10_with_flag80   ; $E70A
     E6C3: A6 1B       ldx cur_obj_index   ; $1B
@@ -6779,7 +6779,7 @@ resolve_object_position_capture_and_score:
     E6E4: 18          clc
     E6E5: 69 08       adc #$08
     E6E7: AA          tax
-    E6E8: E4 81       cpx active_object_count   ; $81
+    E6E8: E4 81       cpx item_table_len   ; $81
     E6EA: D0 E0       bne @E6CC   ; $E6CC
     E6EC: A5 1B       lda cur_obj_index   ; $1B
     E6EE: 49 08       eor #$08
@@ -6981,10 +6981,10 @@ draw_composite_object_sprite:
     E7F5: A9 00       lda #$00
     E7F7: 85 11       sta zp_ptr_hi   ; $11
     E7F9: 38          sec
-    E7FA: E5 28       sbc screen_layout_ptr_hi   ; $28
+    E7FA: E5 28       sbc camera_x_lo   ; $28
     E7FC: 85 10       sta src_ptr   ; $10
     E7FE: BD 64 02    lda item_x,x   ; $0264
-    E801: E5 29       sbc camera_scroll_x   ; $29
+    E801: E5 29       sbc camera_x   ; $29
     E803: 18          clc
     E804: 69 01       adc #$01
     E806: 06 10       asl src_ptr   ; $10
@@ -7003,7 +7003,7 @@ draw_composite_object_sprite:
     E81B: 0A          asl a
     E81C: 0A          asl a
     E81D: 0A          asl a
-    E81E: 85 16       sta oam_write_ptr   ; $16
+    E81E: 85 16       sta sprite_y   ; $16
     E820: BD 61 02    lda obj_type,x   ; $0261
     E823: 4A          lsr a
     E824: 4A          lsr a
@@ -7031,7 +7031,7 @@ draw_object_and_advance_x8:
     E84D: A9 00       lda #$00
     E84F: 85 14       sta scan_src_ptr   ; $14
     E851: 85 15       sta scratch_counter   ; $15
-    E853: 20 15 C4    jsr write_object_to_shadow_oam   ; $C415
+    E853: 20 15 C4    jsr write_sprite_to_oam   ; $C415
     E856: A5 10       lda src_ptr   ; $10
     E858: 18          clc
     E859: 69 08       adc #$08
@@ -7248,7 +7248,7 @@ object_overlap_check:
     E9BF: D0 0A       bne @E9CB   ; $E9CB
     E9C1: BD B4 02    lda obj_pos,x   ; $02B4
     E9C4: 38          sec
-    E9C5: E5 29       sbc camera_scroll_x   ; $29
+    E9C5: E5 29       sbc camera_x   ; $29
     E9C7: C9 21       cmp #$21
     E9C9: B0 20       bcs @E9EB   ; $E9EB
 @E9CB:
@@ -7997,12 +7997,12 @@ scan_objects_for_adjacent_contact_and_trigger:
 @ED12:
     ED12: A9 60       lda #$60
     ED14: 20 4D EE    jsr add_byte_to_obj_word_if_active   ; $EE4D
-    ED17: 20 05 C3    jsr transform_object_coords_to_pixel_space   ; $C305
+    ED17: 20 05 C3    jsr draw_object   ; $C305
     ED1A: D0 31       bne @ED4D   ; $ED4D
 
 update_matching_object_state:
     ED1C: A9 30       lda #$30
-    ED1E: 85 4C       sta ppu_block_src_ptr   ; $4C
+    ED1E: 85 4C       sta respawn_slot   ; $4C
     ED20: A9 00       lda #$00
     ED22: A0 05       ldy #$05
     ED24: 91 1E       sta (obj_record_ptr),y   ; $1E
@@ -8062,7 +8062,7 @@ tick_object_state_collision_score:
     ED82: 18          clc
     ED83: 69 08       adc #$08
     ED85: 20 4D EE    jsr add_byte_to_obj_word_if_active   ; $EE4D
-    ED88: 20 05 C3    jsr transform_object_coords_to_pixel_space   ; $C305
+    ED88: 20 05 C3    jsr draw_object   ; $C305
     ED8B: D0 C0       bne @ED4D   ; $ED4D
     ED8D: A0 00       ldy #$00
     ED8F: A2 20       ldx #$20
@@ -8115,7 +8115,7 @@ tick_object_state_collision_score:
 @EDDC:
     EDDC: 18          clc
     EDDD: 69 14       adc #$14
-    EDDF: 4C BE D4    jmp add_bcd_table_amount_n_times   ; $D4BE
+    EDDF: 4C BE D4    jmp add_score_n_times   ; $D4BE
 
 advance_obj_state_if_matched:
     EDE2: BD 0B 04    lda $040b,x
@@ -8361,7 +8361,7 @@ update_active_object_state_machine:
     EF71: A0 05       ldy #$05
     EF73: 91 1E       sta (obj_record_ptr),y   ; $1E
 @EF75:
-    EF75: 4C 05 C3    jmp transform_object_coords_to_pixel_space   ; $C305
+    EF75: 4C 05 C3    jmp draw_object   ; $C305
 @EF78:
     EF78: A0 03       ldy #$03
     EF7A: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -8379,7 +8379,7 @@ update_active_object_state_machine:
     EF94: A0 05       ldy #$05
     EF96: 91 1E       sta (obj_record_ptr),y   ; $1E
 @EF98:
-    EF98: 4C 05 C3    jmp transform_object_coords_to_pixel_space   ; $C305
+    EF98: 4C 05 C3    jmp draw_object   ; $C305
 
 check_object_collision_and_award_score:
     EF9B: A2 20       ldx #$20
@@ -8427,7 +8427,7 @@ check_object_collision_and_award_score:
     EFEE: D0 02       bne @EFF2   ; $EFF2
     EFF0: A0 44       ldy #$44
 @EFF2:
-    EFF2: 20 CA D4    jsr add_bcd_table_amount_to_buffer   ; $D4CA
+    EFF2: 20 CA D4    jsr add_score_from_table   ; $D4CA
     EFF5: A6 1B       ldx cur_obj_index   ; $1B
 @EFF7:
     EFF7: 8A          txa
@@ -8628,7 +8628,7 @@ check_obj_adjacency_set_hit_flag:
     F139: 00          .byte $00
 
 load_object_table_from_def:
-    F13A: A4 7C       ldy block_def_ptr_hi   ; $7C
+    F13A: A4 7C       ldy is_bonus_round   ; $7C
     F13C: B9 7F F2    lda $f27f,y
     F13F: 85 1C       sta aux_ptr   ; $1C
     F141: B9 80 F2    lda $f280,y
@@ -8733,9 +8733,9 @@ init_object_record_load_data_and_scan:
     F1F8: 9D 60 02    sta item_state,x   ; $0260
     F1FB: C6 52       dec object_def_ptr   ; $52
     F1FD: A0 06       ldy #$06
-    F1FF: 20 E5 D4    jsr load_record_via_ptr_table   ; $D4E5
+    F1FF: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
     F202: A0 08       ldy #$08
-    F204: 20 E5 D4    jsr load_record_via_ptr_table   ; $D4E5
+    F204: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
     F207: AD 77 F2    lda $f277
     F20A: 85 12       sta gfx_src_ptr   ; $12
     F20C: AD 78 F2    lda $f278
@@ -9011,7 +9011,7 @@ draw_vertical_sprite_column:
     F391: 29 03       and #$03
     F393: 85 13       sta data_ptr_hi   ; $13
 @F395:
-    F395: 20 15 C4    jsr write_object_to_shadow_oam   ; $C415
+    F395: 20 15 C4    jsr write_sprite_to_oam   ; $C415
     F398: A5 10       lda src_ptr   ; $10
     F39A: 18          clc
     F39B: 69 08       adc #$08
@@ -11646,7 +11646,7 @@ fetch_voice_stream_byte:
     FF63: 60          .byte $60
     FF64: E8          .byte $E8
 
-setup_stage_then_run_intro_frames:
+attract_demo:
     FF65: A9 00       lda #$00
     FF67: 85 7A       sta stage_number   ; $7A
     FF69: 85 7D       sta stage_index   ; $7D
@@ -11670,8 +11670,8 @@ setup_stage_then_run_intro_frames:
     FF95: 20 F1 D7    jsr init_object_from_rom_template   ; $D7F1
     FF98: 20 46 D8    jsr init_object_record_row   ; $D846
     FF9B: A9 00       lda #$00
-    FF9D: 85 4B       sta seq_stream_ptr_hi   ; $4B
-    FF9F: 85 4F       sta draw_src_ptr   ; $4F
+    FF9D: 85 4B       sta player_down   ; $4B
+    FF9F: 85 4F       sta round_cleared   ; $4F
     FFA1: 85 31       sta obj_record_ptr   ; $31
     FFA3: 85 3C       sta seq_data_ptr_hi   ; $3C
     FFA5: 85 3D       sta demo_script_cursor   ; $3D
@@ -11689,10 +11689,10 @@ setup_stage_then_run_intro_frames:
     FFBA: D0 F2       bne @FFAE   ; $FFAE
 @FFBC:
     FFBC: 20 41 C1    jsr yield_to_render_loop   ; $C141
-    FFBF: 20 60 CB    jsr run_frame_game_logic_update   ; $CB60
+    FFBF: 20 60 CB    jsr update_round_frame   ; $CB60
     FFC2: 20 E6 F2    jsr advance_state_counter_to_60   ; $F2E6
-    FFC5: A5 4F       lda draw_src_ptr   ; $4F
-    FFC7: 05 4B       ora seq_stream_ptr_hi   ; $4B
+    FFC5: A5 4F       lda round_cleared   ; $4F
+    FFC7: 05 4B       ora player_down   ; $4B
     FFC9: D0 10       bne @FFDB   ; $FFDB
     FFCB: A5 24       lda draw_data_ptr   ; $24
     FFCD: 29 03       and #$03
@@ -11704,7 +11704,7 @@ setup_stage_then_run_intro_frames:
     FFD9: D0 E1       bne @FFBC   ; $FFBC
 @FFDB:
     FFDB: 20 41 C1    jsr yield_to_render_loop   ; $C141
-    FFDE: 4C 4F C8    jmp init_stage_with_intro_animation_then_spawn   ; $C84F
+    FFDE: 4C 4F C8    jmp title_screen   ; $C84F
 
 tbl_demo_input_script:
     FFE1: 85          .byte $85
