@@ -26,9 +26,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROM = HERE / "Mappy (Japan).nes"
-# emu-harness is a sibling repo (../emu-harness), per the vault's relative-sibling convention.
-sys.path.insert(0, str(HERE.parents[1] / "emu-harness"))
-from emu_harness.machines.nes import NES  # noqa: E402
+from emu_harness.backends.mesen import read_trace as _read_trace
+from emu_harness.machines.nes import NES
 
 SCRIPT_ADDR = 0xFFE1
 SCRIPT_LEN = 25
@@ -40,9 +39,7 @@ SCORE = (0x71, 0x72, 0x73, 0x74)  # p1 score bytes (BCD) -- see vars.toml; print
 
 
 def read_trace(path: Path) -> list[tuple[int, bytes]]:
-    data = path.read_bytes()
-    n = 1 + RAM
-    return [(data[i], data[i + 1:i + n]) for i in range(0, len(data) - n + 1, n)]
+    return _read_trace(path, RAM)
 
 
 def script_bytes(m: NES, count: int) -> list[int]:
