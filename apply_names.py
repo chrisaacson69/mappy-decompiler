@@ -70,7 +70,8 @@ def main(batch_file):
             blk = text[i:j]
             wm = re.search(r'^why\s*=\s*"(.*)"\s*$', blk, re.M)
             prior = wm.group(1) if wm else ""
-            new_why = f'why = "{esc(why)} Was \'{old[a]}\'.{(" Earlier note: " + prior) if prior else ""}"'
+            was = "Kept (name checked against the code)." if old[a] == name else f"Was '{old[a]}'."
+            new_why = f'why = "{esc(why)} {was}{(" Earlier note: " + prior) if prior else ""}"'
             blk = blk[:wm.start()] + new_why + blk[wm.end():] if wm else blk.rstrip("\n") + "\n" + new_why + "\n"
             blk = re.sub(r'(conf\s*=\s*")[^"]*(")', lambda m: m.group(1) + conf + m.group(2), blk, count=1)
             text = text[:i] + blk + text[j:]

@@ -1353,17 +1353,17 @@ title_screen:
     C876: E0 40       cpx #$40
     C878: D0 F9       bne @C873   ; $C873
     C87A: 20 41 C2    jsr ppu_disable_render   ; $C241
-    C87D: 20 B1 CB    jsr setup_screen_layout   ; $CBB1
+    C87D: 20 B1 CB    jsr draw_title_screen   ; $CBB1
     C880: 20 39 C2    jsr ppu_enable_render   ; $C239
     C883: A9 00       lda #$00
     C885: 85 28       sta camera_x_lo   ; $28
     C887: 85 29       sta camera_x   ; $29
-    C889: 20 2B CD    jsr copy_5_bytes_table_to_ram_0490   ; $CD2B
+    C889: 20 2B CD    jsr init_title_object   ; $CD2B
     C88C: A9 F0       lda #$f0
     C88E: 85 0F       sta countdown_lo   ; $0F
 @C890:
     C890: 20 41 C1    jsr yield_to_render_loop   ; $C141
-    C893: 20 3E CD    jsr transform_fixed_coord_90_04   ; $CD3E
+    C893: 20 3E CD    jsr draw_title_object   ; $CD3E
     C896: EA          nop
     C897: EA          nop
     C898: EA          nop
@@ -1401,9 +1401,9 @@ title_screen:
     C8D4: 20 A7 CA    jsr clear_object_tables   ; $CAA7
     C8D7: 20 41 C2    jsr ppu_disable_render   ; $C241
     C8DA: 20 49 CD    jsr build_stage_screen_layout   ; $CD49
-    C8DD: 20 5B E3    jsr build_object_record_block_and_dispatch   ; $E35B
-    C8E0: 20 C5 E5    jsr spawn_objects_from_level_descriptor   ; $E5C5
-    C8E3: 20 62 E8    jsr load_object_table_to_ram   ; $E862
+    C8DD: 20 5B E3    jsr load_round_trampolines   ; $E35B
+    C8E0: 20 C5 E5    jsr load_round_items   ; $E5C5
+    C8E3: 20 62 E8    jsr load_round_doors   ; $E862
     C8E6: 20 01 F0    jsr spawn_object_pair_for_state   ; $F001
     C8E9: 20 39 C2    jsr ppu_enable_render   ; $C239
     C8EC: A2 00       ldx #$00
@@ -1421,9 +1421,9 @@ title_screen:
     C900: D0 F7       bne @C8F9   ; $C8F9
 
 play_round:
-    C902: 20 C1 F3    jsr load_record_by_index   ; $F3C1
-    C905: 20 F1 D7    jsr init_object_from_rom_template   ; $D7F1
-    C908: 20 46 D8    jsr init_object_record_row   ; $D846
+    C902: 20 C1 F3    jsr load_stage_params   ; $F3C1
+    C905: 20 F1 D7    jsr init_player_record   ; $D7F1
+    C908: 20 46 D8    jsr init_round_cats   ; $D846
     C90B: A9 00       lda #$00
     C90D: 85 4B       sta player_down   ; $4B
     C90F: 85 4F       sta round_cleared   ; $4F
@@ -1433,12 +1433,12 @@ play_round:
 @C917:
     C917: 20 41 C1    jsr yield_to_render_loop   ; $C141
     C91A: 20 60 CB    jsr update_round_frame   ; $CB60
-    C91D: 20 02 CB    jsr draw_fixed_glyph_string   ; $CB02
+    C91D: 20 02 CB    jsr draw_player_number_text   ; $CB02
     C920: AD A6 CB    lda $cba6
     C923: 85 1E       sta obj_record_ptr   ; $1E
     C925: AD A7 CB    lda $cba7
     C928: 85 1F       sta obj_record_ptr_hi   ; $1F
-    C92A: 20 3B CB    jsr draw_glyph_string_from_param_block   ; $CB3B
+    C92A: 20 3B CB    jsr draw_sprite_text   ; $CB3B
     C92D: C6 0F       dec countdown_lo   ; $0F
     C92F: D0 E6       bne @C917   ; $C917
     C931: A9 02       lda #$02
@@ -1469,7 +1469,7 @@ play_round:
     C95E: 8D 14 06    sta $0614
 @C961:
     C961: 20 60 CB    jsr update_round_frame   ; $CB60
-    C964: 20 E6 F2    jsr advance_state_counter_to_60   ; $F2E6
+    C964: 20 E6 F2    jsr tick_round_timer   ; $F2E6
     C967: A5 4F       lda round_cleared   ; $4F
     C969: D0 07       bne @C972   ; $C972
     C96B: A5 4B       lda player_down   ; $4B
@@ -1509,17 +1509,17 @@ next_round:
     C9AE: D0 F9       bne @C9A9   ; $C9A9
     C9B0: 20 41 C2    jsr ppu_disable_render   ; $C241
     C9B3: 20 49 CD    jsr build_stage_screen_layout   ; $CD49
-    C9B6: 20 5B E3    jsr build_object_record_block_and_dispatch   ; $E35B
+    C9B6: 20 5B E3    jsr load_round_trampolines   ; $E35B
     C9B9: A5 7C       lda is_bonus_round   ; $7C
     C9BB: D0 12       bne @C9CF   ; $C9CF
-    C9BD: 20 C5 E5    jsr spawn_objects_from_level_descriptor   ; $E5C5
-    C9C0: 20 62 E8    jsr load_object_table_to_ram   ; $E862
+    C9BD: 20 C5 E5    jsr load_round_items   ; $E5C5
+    C9C0: 20 62 E8    jsr load_round_doors   ; $E862
     C9C3: 20 01 F0    jsr spawn_object_pair_for_state   ; $F001
-    C9C6: 20 17 EF    jsr copy_16b_table_if_var_in_range   ; $EF17
+    C9C6: 20 17 EF    jsr load_dropped_objects   ; $EF17
     C9C9: 20 39 C2    jsr ppu_enable_render   ; $C239
     C9CC: 4C 02 C9    jmp play_round   ; $C902
 @C9CF:
-    C9CF: 20 C1 F3    jsr load_record_by_index   ; $F3C1
+    C9CF: 20 C1 F3    jsr load_stage_params   ; $F3C1
     C9D2: 20 3A F1    jsr load_object_table_from_def   ; $F13A
     C9D5: 20 39 C2    jsr ppu_enable_render   ; $C239
     C9D8: 20 0B D8    jsr init_bonus_player   ; $D80B
@@ -1584,7 +1584,7 @@ handle_player_caught:
     CA4E: 85 0F       sta countdown_lo   ; $0F
 @CA50:
     CA50: 20 41 C1    jsr yield_to_render_loop   ; $C141
-    CA53: 20 31 CB    jsr init_ptr_1e_from_const   ; $CB31
+    CA53: 20 31 CB    jsr draw_game_over_text   ; $CB31
     CA56: 20 1C D7    jsr blink_player_up_label   ; $D71C
     CA59: C6 0F       dec countdown_lo   ; $0F
     CA5B: D0 F3       bne @CA50   ; $CA50
@@ -1599,9 +1599,9 @@ handle_player_caught:
     CA69: 20 A7 CA    jsr clear_object_tables   ; $CAA7
     CA6C: 20 41 C2    jsr ppu_disable_render   ; $C241
     CA6F: 20 49 CD    jsr build_stage_screen_layout   ; $CD49
-    CA72: 20 5B E3    jsr build_object_record_block_and_dispatch   ; $E35B
-    CA75: 20 14 E6    jsr process_objects_in_state_two   ; $E614
-    CA78: 20 B2 E8    jsr clear_low2_bits_per_object_record   ; $E8B2
+    CA72: 20 5B E3    jsr load_round_trampolines   ; $E35B
+    CA75: 20 14 E6    jsr draw_round_items   ; $E614
+    CA78: 20 B2 E8    jsr close_and_draw_doors   ; $E8B2
     CA7B: 20 39 C2    jsr ppu_enable_render   ; $C239
     CA7E: 4C 02 C9    jmp play_round   ; $C902
 
@@ -1663,9 +1663,9 @@ redraw_var_records_loop_until_count_or_phase:
     CADA: 20 41 C1    jsr yield_to_render_loop   ; $C141
     CADD: A5 40       lda two_player_game   ; $40
     CADF: F0 03       beq @CAE4   ; $CAE4
-    CAE1: 20 02 CB    jsr draw_fixed_glyph_string   ; $CB02
+    CAE1: 20 02 CB    jsr draw_player_number_text   ; $CB02
 @CAE4:
-    CAE4: 20 31 CB    jsr init_ptr_1e_from_const   ; $CB31
+    CAE4: 20 31 CB    jsr draw_game_over_text   ; $CB31
     CAE7: 20 1C D7    jsr blink_player_up_label   ; $D71C
     CAEA: A5 25       lda joypad_state   ; $25
     CAEC: 29 03       and #$03
@@ -1683,17 +1683,17 @@ redraw_var_records_loop_until_count_or_phase:
 @CB01:
     CB01: 60          rts
 
-draw_fixed_glyph_string:
+draw_player_number_text:
     CB02: AD 8A CB    lda $cb8a
     CB05: 85 1E       sta obj_record_ptr   ; $1E
     CB07: AD 8B CB    lda $cb8b
     CB0A: 85 1F       sta obj_record_ptr_hi   ; $1F
-    CB0C: 20 3B CB    jsr draw_glyph_string_from_param_block   ; $CB3B
+    CB0C: 20 3B CB    jsr draw_sprite_text   ; $CB3B
     CB0F: A5 41       lda game_state_flags   ; $41
     CB11: 18          clc
     CB12: 69 D6       adc #$d6
 
-draw_glyph_and_advance_cursor:
+draw_sprite_glyph:
     CB14: F0 0F       beq @CB25   ; $CB25
     CB16: 85 12       sta gfx_src_ptr   ; $12
     CB18: A9 02       lda #$02
@@ -1712,13 +1712,13 @@ draw_glyph_and_advance_cursor:
 @CB30:
     CB30: 60          rts
 
-init_ptr_1e_from_const:
+draw_game_over_text:
     CB31: AD 97 CB    lda $cb97
     CB34: 85 1E       sta obj_record_ptr   ; $1E
     CB36: AD 98 CB    lda $cb98
     CB39: 85 1F       sta obj_record_ptr_hi   ; $1F
 
-draw_glyph_string_from_param_block:
+draw_sprite_text:
     CB3B: A0 00       ldy #$00
     CB3D: B1 1E       lda (obj_record_ptr),y   ; $1E
     CB3F: C8          iny
@@ -1735,7 +1735,7 @@ draw_glyph_string_from_param_block:
 @CB51:
     CB51: B1 1E       lda (obj_record_ptr),y   ; $1E
     CB53: 84 17       sty draw_row_counter   ; $17
-    CB55: 20 14 CB    jsr draw_glyph_and_advance_cursor   ; $CB14
+    CB55: 20 14 CB    jsr draw_sprite_glyph   ; $CB14
     CB58: A4 17       ldy draw_row_counter   ; $17
     CB5A: C8          iny
     CB5B: C6 18       dec scratch_loop_counter   ; $18
@@ -1799,16 +1799,16 @@ update_bonus_round_frame:
     CBAF: CA          .byte $CA
     CBB0: D3          .byte $D3
 
-setup_screen_layout:
+draw_title_screen:
     CBB1: 20 F5 CB    jsr ppu_clear_nametables   ; $CBF5
     CBB4: A0 02       ldy #$02
     CBB6: 20 15 CC    jsr ppu_run_draw_blocks   ; $CC15
     CBB9: A0 00       ldy #$00
-    CBBB: 20 D9 D5    jsr build_buffer_entry_unpack_nibbles   ; $D5D9
+    CBBB: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
     CBBE: A0 04       ldy #$04
-    CBC0: 20 D9 D5    jsr build_buffer_entry_unpack_nibbles   ; $D5D9
+    CBC0: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
     CBC3: A0 08       ldy #$08
-    CBC5: 20 D9 D5    jsr build_buffer_entry_unpack_nibbles   ; $D5D9
+    CBC5: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
     CBC8: A9 B0       lda #$b0
     CBCA: 85 10       sta src_ptr   ; $10
     CBCC: A0 00       ldy #$00
@@ -2125,7 +2125,7 @@ palhud_block_08:
     CD29: 13          .byte $13
     CD2A: 00          .byte $00
 
-copy_5_bytes_table_to_ram_0490:
+init_title_object:
     CD2B: A2 00       ldx #$00
 @CD2D:
     CD2D: BD 39 CD    lda $cd39,x
@@ -2140,7 +2140,7 @@ copy_5_bytes_table_to_ram_0490:
     CD3C: 14          .byte $14
     CD3D: 1C          .byte $1C
 
-transform_fixed_coord_90_04:
+draw_title_object:
     CD3E: A9 90       lda #$90
     CD40: 85 1E       sta obj_record_ptr   ; $1E
     CD42: A9 04       lda #$04
@@ -2149,7 +2149,7 @@ transform_fixed_coord_90_04:
 
 build_stage_screen_layout:
     CD49: 20 F5 CB    jsr ppu_clear_nametables   ; $CBF5
-    CD4C: 20 03 D7    jsr draw_blocks_then_rebuild_buffer_entries   ; $D703
+    CD4C: 20 03 D7    jsr draw_hud   ; $D703
     CD4F: A5 7A       lda stage_number   ; $7A
     CD51: 0A          asl a
     CD52: 0A          asl a
@@ -2172,12 +2172,12 @@ build_stage_screen_layout:
     CD78: 85 0F       sta countdown_lo   ; $0F
 @CD7A:
     CD7A: 20 41 C1    jsr yield_to_render_loop   ; $C141
-    CD7D: 20 FF CD    jsr setup_oam_params_and_emit_object_7c   ; $CDFF
+    CD7D: 20 FF CD    jsr draw_bonus_intro_sprite   ; $CDFF
     CD80: C6 0F       dec countdown_lo   ; $0F
     CD82: D0 F6       bne @CD7A   ; $CD7A
     CD84: 20 41 C2    jsr ppu_disable_render   ; $C241
     CD87: 20 F5 CB    jsr ppu_clear_nametables   ; $CBF5
-    CD8A: 20 03 D7    jsr draw_blocks_then_rebuild_buffer_entries   ; $D703
+    CD8A: 20 03 D7    jsr draw_hud   ; $D703
 @CD8D:
     CD8D: A0 08       ldy #$08
     CD8F: 20 69 CF    jsr ppu_draw_blocks_b   ; $CF69
@@ -2270,7 +2270,7 @@ tbl_round_attributes:
     CDFD: 00          .byte $00
     CDFE: 00          .byte $00
 
-setup_oam_params_and_emit_object_7c:
+draw_bonus_intro_sprite:
     CDFF: A9 7C       lda #$7c
     CE01: 85 10       sta src_ptr   ; $10
     CE03: A9 00       lda #$00
@@ -2291,7 +2291,7 @@ run_scripted_screen_cutscene_sequence:
     CE1E: 85 29       sta camera_x   ; $29
     CE20: 20 41 C2    jsr ppu_disable_render   ; $C241
     CE23: 20 F5 CB    jsr ppu_clear_nametables   ; $CBF5
-    CE26: 20 03 D7    jsr draw_blocks_then_rebuild_buffer_entries   ; $D703
+    CE26: 20 03 D7    jsr draw_hud   ; $D703
     CE29: 20 39 C2    jsr ppu_enable_render   ; $C239
     CE2C: A0 00       ldy #$00
     CE2E: 20 CD CE    jsr draw_indexed_text_line   ; $CECD
@@ -2302,16 +2302,16 @@ run_scripted_screen_cutscene_sequence:
     CE3C: A0 04       ldy #$04
     CE3E: 20 CD CE    jsr draw_indexed_text_line   ; $CECD
     CE41: A0 0E       ldy #$0e
-    CE43: 20 D9 D5    jsr build_buffer_entry_unpack_nibbles   ; $D5D9
+    CE43: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
     CE46: A0 12       ldy #$12
-    CE48: 20 D9 D5    jsr build_buffer_entry_unpack_nibbles   ; $D5D9
+    CE48: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
     CE4B: 20 BB CE    jsr run_entry_state_pump_120_iterations   ; $CEBB
     CE4E: A0 08       ldy #$08
     CE50: 20 CD CE    jsr draw_indexed_text_line   ; $CECD
     CE53: A0 10       ldy #$10
-    CE55: 20 D9 D5    jsr build_buffer_entry_unpack_nibbles   ; $D5D9
+    CE55: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
     CE58: A0 14       ldy #$14
-    CE5A: 20 D9 D5    jsr build_buffer_entry_unpack_nibbles   ; $D5D9
+    CE5A: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
     CE5D: 20 94 CE    jsr run_entry_state_sequence_120_frames   ; $CE94
     CE60: A5 5A       lda ppu_block_src_ptr   ; $5A
     CE62: 85 5E       sta $5e
@@ -2331,7 +2331,7 @@ run_scripted_screen_cutscene_sequence:
     CE7E: A0 0A       ldy #$0a
     CE80: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
     CE83: A0 16       ldy #$16
-    CE85: 20 D9 D5    jsr build_buffer_entry_unpack_nibbles   ; $D5D9
+    CE85: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
     CE88: 20 94 CE    jsr run_entry_state_sequence_120_frames   ; $CE94
     CE8B: A9 01       lda #$01
     CE8D: 85 43       sta score_update_phase   ; $43
@@ -4057,12 +4057,12 @@ update_score:
     D5CA: 20 94 D6    jsr update_high_score   ; $D694
     D5CD: 20 AA D6    jsr award_extra_life   ; $D6AA
     D5D0: A0 08       ldy #$08
-    D5D2: 4C D9 D5    jmp build_buffer_entry_unpack_nibbles   ; $D5D9
+    D5D2: 4C D9 D5    jmp queue_bcd_number   ; $D5D9
 @D5D5:
     D5D5: E6 43       inc score_update_phase   ; $43
     D5D7: A0 00       ldy #$00
 
-build_buffer_entry_unpack_nibbles:
+queue_bcd_number:
     D5D9: B9 40 D6    lda $d640,y
     D5DC: 85 10       sta src_ptr   ; $10
     D5DE: B9 41 D6    lda $d641,y
@@ -4260,7 +4260,7 @@ award_extra_life:
     D6E1: 85 70       sta p1_lives   ; $70
 @D6E3:
     D6E3: A0 0A       ldy #$0a
-    D6E5: 4C D9 D5    jmp build_buffer_entry_unpack_nibbles   ; $D5D9
+    D6E5: 4C D9 D5    jmp queue_bcd_number   ; $D5D9
 
 load_record_and_advance_anim_counters:
     D6E8: A0 04       ldy #$04
@@ -4279,17 +4279,17 @@ load_record_and_advance_anim_counters:
     D700: 85 7D       sta stage_index   ; $7D
     D702: 60          rts
 
-draw_blocks_then_rebuild_buffer_entries:
+draw_hud:
     D703: A0 00       ldy #$00
     D705: 20 15 CC    jsr ppu_run_draw_blocks   ; $CC15
     D708: A0 08       ldy #$08
-    D70A: 20 D9 D5    jsr build_buffer_entry_unpack_nibbles   ; $D5D9
+    D70A: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
     D70D: A0 0A       ldy #$0a
-    D70F: 20 D9 D5    jsr build_buffer_entry_unpack_nibbles   ; $D5D9
+    D70F: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
     D712: A0 0C       ldy #$0c
-    D714: 20 D9 D5    jsr build_buffer_entry_unpack_nibbles   ; $D5D9
+    D714: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
     D717: A0 00       ldy #$00
-    D719: 4C D9 D5    jmp build_buffer_entry_unpack_nibbles   ; $D5D9
+    D719: 4C D9 D5    jmp queue_bcd_number   ; $D5D9
 
 blink_player_up_label:
     D71C: A5 42       lda game_phase   ; $42
@@ -4461,7 +4461,7 @@ queue_vram_packet:
     D7EF: 01          .byte $01
     D7F0: 18          .byte $18
 
-init_object_from_rom_template:
+init_player_record:
     D7F1: 20 25 D8    jsr set_two_zp_pointers   ; $D825
 @D7F4:
     D7F4: B9 38 D8    lda $d838,y
@@ -4519,7 +4519,7 @@ set_two_zp_pointers:
     D844: 00          .byte $00
     D845: FF          .byte $FF
 
-init_object_record_row:
+init_round_cats:
     D846: A9 30       lda #$30
     D848: 85 4C       sta respawn_slot   ; $4C
     D84A: A9 00       lda #$00
@@ -4533,7 +4533,7 @@ init_object_record_row:
     D85A: A2 00       ldx #$00
 @D85C:
     D85C: A9 03       lda #$03
-    D85E: 20 94 D8    jsr init_object_record_via_ptr   ; $D894
+    D85E: 20 94 D8    jsr init_cat_record   ; $D894
     D861: A9 01       lda #$01
     D863: A0 06       ldy #$06
     D865: 91 1E       sta (obj_record_ptr),y   ; $1E
@@ -4562,7 +4562,7 @@ init_object_record_row:
     D890: A2 00       ldx #$00
     D892: A9 02       lda #$02
 
-init_object_record_via_ptr:
+init_cat_record:
     D894: A0 05       ldy #$05
     D896: 91 1E       sta (obj_record_ptr),y   ; $1E
     D898: 8A          txa
@@ -6161,7 +6161,7 @@ bonus_state12_released_cat_rises:
     E357: 8D 2F 04    sta stage_phase_state   ; $042F
     E35A: 60          rts
 
-build_object_record_block_and_dispatch:
+load_round_trampolines:
     E35B: A6 7A       ldx stage_number   ; $7A
     E35D: BC E1 E4    ldy $e4e1,x
     E360: B9 F1 E4    lda $e4f1,y
@@ -6188,7 +6188,7 @@ build_object_record_block_and_dispatch:
     E38C: 85 10       sta src_ptr   ; $10
     E38E: B9 38 E5    lda $e538,y
     E391: 85 11       sta zp_ptr_hi   ; $11
-    E393: 20 BD E3    jsr shl3_pack_zp_ptr16   ; $E3BD
+    E393: 20 BD E3    jsr ppu_addr_to_tile_xy   ; $E3BD
     E396: A5 10       lda src_ptr   ; $10
     E398: 9D 04 02    sta $0204,x
     E39B: A5 11       lda zp_ptr_hi   ; $11
@@ -6203,7 +6203,7 @@ build_object_record_block_and_dispatch:
     E3AB: A2 00       ldx #$00
 @E3AD:
     E3AD: 86 1B       stx cur_obj_index   ; $1B
-    E3AF: 20 27 E4    jsr setup_obj_ptr_and_dispatch_scan   ; $E427
+    E3AF: 20 27 E4    jsr draw_trampoline   ; $E427
     E3B2: A5 1B       lda cur_obj_index   ; $1B
     E3B4: 18          clc
     E3B5: 69 08       adc #$08
@@ -6212,7 +6212,7 @@ build_object_record_block_and_dispatch:
     E3BA: D0 F1       bne @E3AD   ; $E3AD
     E3BC: 60          rts
 
-shl3_pack_zp_ptr16:
+ppu_addr_to_tile_xy:
     E3BD: A5 10       lda src_ptr   ; $10
     E3BF: 29 1F       and #$1f
     E3C1: 06 10       asl src_ptr   ; $10
@@ -6241,7 +6241,7 @@ force_active_objects_to_state3:
     E3E9: F0 08       beq @E3F3   ; $E3F3
     E3EB: A9 03       lda #$03
     E3ED: 9D 02 02    sta obj_timer,x   ; $0202
-    E3F0: 20 27 E4    jsr setup_obj_ptr_and_dispatch_scan   ; $E427
+    E3F0: 20 27 E4    jsr draw_trampoline   ; $E427
 @E3F3:
     E3F3: A5 1B       lda cur_obj_index   ; $1B
     E3F5: 18          clc
@@ -6271,12 +6271,12 @@ tick_subcounter_decrement_on_rollover:
     E415: FE 01 02    inc obj_anim_timer,x   ; $0201
     E418: BD 01 02    lda obj_anim_timer,x   ; $0201
     E41B: C9 0A       cmp #$0a
-    E41D: 90 08       bcc setup_obj_ptr_and_dispatch_scan   ; $E427
+    E41D: 90 08       bcc draw_trampoline   ; $E427
     E41F: A9 00       lda #$00
     E421: 9D 01 02    sta obj_anim_timer,x   ; $0201
     E424: DE 00 02    dec obj_timer,x   ; $0200
 
-setup_obj_ptr_and_dispatch_scan:
+draw_trampoline:
     E427: BC 03 02    ldy $0203,x
     E42A: B9 37 E5    lda $e537,y
     E42D: 85 10       sta src_ptr   ; $10
@@ -6622,7 +6622,7 @@ set_obj_state_and_load_next_ptr:
     E5C3: 00          .byte $00
     E5C4: 00          .byte $00
 
-spawn_objects_from_level_descriptor:
+load_round_items:
     E5C5: AD 98 E7    lda $e798
     E5C8: 85 1C       sta aux_ptr   ; $1C
     E5CA: AD 99 E7    lda $e799
@@ -6651,7 +6651,7 @@ spawn_objects_from_level_descriptor:
     E5F5: 85 10       sta src_ptr   ; $10
     E5F7: B9 A6 E7    lda $e7a6,y
     E5FA: 85 11       sta zp_ptr_hi   ; $11
-    E5FC: 20 BD E3    jsr shl3_pack_zp_ptr16   ; $E3BD
+    E5FC: 20 BD E3    jsr ppu_addr_to_tile_xy   ; $E3BD
     E5FF: A5 10       lda src_ptr   ; $10
     E601: 9D 64 02    sta item_x,x   ; $0264
     E604: A5 11       lda zp_ptr_hi   ; $11
@@ -6664,7 +6664,7 @@ spawn_objects_from_level_descriptor:
     E610: E4 81       cpx item_table_len   ; $81
     E612: D0 CB       bne @E5DF   ; $E5DF
 
-process_objects_in_state_two:
+draw_round_items:
     E614: A2 00       ldx #$00
     E616: 86 31       stx obj_record_ptr   ; $31
 @E618:
@@ -6674,7 +6674,7 @@ process_objects_in_state_two:
     E61F: D0 08       bne @E629   ; $E629
     E621: A9 00       lda #$00
     E623: 9D 63 02    sta obj_type,x   ; $0263
-    E626: 20 2C E7    jsr load_ptr_from_state_index   ; $E72C
+    E626: 20 2C E7    jsr draw_item   ; $E72C
 @E629:
     E629: A5 1B       lda cur_obj_index   ; $1B
     E62B: 18          clc
@@ -6709,10 +6709,10 @@ dispatch_item_state:
     E655: 85 1D       sta aux_ptr_hi   ; $1D
     E657: 6C 1C 00    jmp (aux_ptr)   ; $001C
     E65A:            .word handler_rts_noop
-    E65C:            .word resolve_object_position_capture_and_score
+    E65C:            .word player_collects_item
     E65E:            .word draw_object_and_tick_state_timer
 
-resolve_object_position_capture_and_score:
+player_collects_item:
     E660: 20 57 E7    jsr slot2_sits_on_item   ; $E757
     E663: BD 63 02    lda obj_type,x   ; $0263
     E666: F0 05       beq @E66D   ; $E66D
@@ -6759,7 +6759,7 @@ resolve_object_position_capture_and_score:
     E6B9: 29 FC       and #$fc
     E6BB: 20 BE D4    jsr add_score_n_times   ; $D4BE
     E6BE: A6 1B       ldx cur_obj_index   ; $1B
-    E6C0: 20 0A E7    jsr load_string_entry10_with_flag80   ; $E70A
+    E6C0: 20 0A E7    jsr erase_item   ; $E70A
     E6C3: A6 1B       ldx cur_obj_index   ; $1B
     E6C5: BD 63 02    lda obj_type,x   ; $0263
     E6C8: D0 2D       bne @E6F7   ; $E6F7
@@ -6773,7 +6773,7 @@ resolve_object_position_capture_and_score:
     E6D8: F0 08       beq @E6E2   ; $E6E2
     E6DA: A9 00       lda #$00
     E6DC: 9D 63 02    sta obj_type,x   ; $0263
-    E6DF: 20 2C E7    jsr load_ptr_from_state_index   ; $E72C
+    E6DF: 20 2C E7    jsr draw_item   ; $E72C
 @E6E2:
     E6E2: A5 1A       lda data_src_ptr   ; $1A
     E6E4: 18          clc
@@ -6800,7 +6800,7 @@ draw_object_and_tick_state_timer:
     E706: 9D 60 02    sta item_state,x   ; $0260
     E709: 60          rts
 
-load_string_entry10_with_flag80:
+erase_item:
     E70A: A0 0A       ldy #$0a
     E70C: B9 B9 E7    lda $e7b9,y
     E70F: 85 12       sta gfx_src_ptr   ; $12
@@ -6808,7 +6808,7 @@ load_string_entry10_with_flag80:
     E714: 85 13       sta data_ptr_hi   ; $13
     E716: A9 80       lda #$80
     E718: 85 14       sta scan_src_ptr   ; $14
-    E71A: 4C 47 E7    jmp load_string_ptr_by_state_and_scan   ; $E747
+    E71A: 4C 47 E7    jmp draw_at_item_address   ; $E747
 @E71D:
     E71D: 60          rts
 
@@ -6819,9 +6819,9 @@ branch_on_state21_bits:
     E724: D0 F7       bne @E71D   ; $E71D
     E726: A5 21       lda frame_counter   ; $21
     E728: 29 04       and #$04
-    E72A: F0 DE       beq load_string_entry10_with_flag80   ; $E70A
+    E72A: F0 DE       beq erase_item   ; $E70A
 
-load_ptr_from_state_index:
+draw_item:
     E72C: BD 61 02    lda obj_type,x   ; $0261
     E72F: 4A          lsr a
     E730: 29 FE       and #$fe
@@ -6837,7 +6837,7 @@ load_ptr_from_state_index:
     E742: B9 BA E7    lda $e7ba,y
     E745: 85 13       sta data_ptr_hi   ; $13
 
-load_string_ptr_by_state_and_scan:
+draw_at_item_address:
     E747: BC 61 02    ldy obj_type,x   ; $0261
     E74A: B9 A5 E7    lda $e7a5,y
     E74D: 85 10       sta src_ptr   ; $10
@@ -7041,7 +7041,7 @@ draw_object_and_advance_x8:
 @E861:
     E861: 60          rts
 
-load_object_table_to_ram:
+load_round_doors:
     E862: A5 7A       lda stage_number   ; $7A
     E864: 0A          asl a
     E865: A8          tay
@@ -7071,7 +7071,7 @@ load_object_table_to_ram:
     E895: C8          iny
     E896: 9D B3 02    sta $02b3,x
     E899: 85 11       sta zp_ptr_hi   ; $11
-    E89B: 20 BD E3    jsr shl3_pack_zp_ptr16   ; $E3BD
+    E89B: 20 BD E3    jsr ppu_addr_to_tile_xy   ; $E3BD
     E89E: A5 10       lda src_ptr   ; $10
     E8A0: 9D B4 02    sta obj_pos,x   ; $02B4
     E8A3: A5 11       lda zp_ptr_hi   ; $11
@@ -7083,14 +7083,14 @@ load_object_table_to_ram:
     E8AE: E4 83       cpx object_count   ; $83
     E8B0: D0 C9       bne @E87B   ; $E87B
 
-clear_low2_bits_per_object_record:
+close_and_draw_doors:
     E8B2: A2 00       ldx #$00
 @E8B4:
     E8B4: 86 1B       stx cur_obj_index   ; $1B
     E8B6: BD B1 02    lda obj_state,x   ; $02B1
     E8B9: 29 FC       and #$fc
     E8BB: 9D B1 02    sta obj_state,x   ; $02B1
-    E8BE: 20 FF E8    jsr load_y_from_table_x   ; $E8FF
+    E8BE: 20 FF E8    jsr draw_door   ; $E8FF
     E8C1: A5 1B       lda cur_obj_index   ; $1B
     E8C3: 18          clc
     E8C4: 69 08       adc #$08
@@ -7128,12 +7128,12 @@ update_all_objects_anim_and_phase:
     E8F7: A0 10       ldy #$10
     E8F9: A5 21       lda frame_counter   ; $21
     E8FB: 29 04       and #$04
-    E8FD: F0 03       beq setup_ptrs_and_scan_zero_term   ; $E902
+    E8FD: F0 03       beq draw_door_kind_y   ; $E902
 
-load_y_from_table_x:
+draw_door:
     E8FF: BC B1 02    ldy obj_state,x   ; $02B1
 
-setup_ptrs_and_scan_zero_term:
+draw_door_kind_y:
     E902: BD B2 02    lda $02b2,x
     E905: 85 10       sta src_ptr   ; $10
     E907: BD B3 02    lda $02b3,x
@@ -7161,7 +7161,7 @@ advance_object_anim_timer_and_dispatch_phase:
     E939: 49 02       eor #$02
     E93B: 9D B1 02    sta obj_state,x   ; $02B1
     E93E: 29 02       and #$02
-    E940: F0 BD       beq load_y_from_table_x   ; $E8FF
+    E940: F0 BD       beq draw_door   ; $E8FF
 @E942:
     E942: 60          rts
 @E943:
@@ -7169,7 +7169,7 @@ advance_object_anim_timer_and_dispatch_phase:
     E944: 85 10       sta src_ptr   ; $10
     E946: 20 4D E9    jsr dispatch_on_masked_state_field   ; $E94D
     E949: A8          tay
-    E94A: 4C 02 E9    jmp setup_ptrs_and_scan_zero_term   ; $E902
+    E94A: 4C 02 E9    jmp draw_door_kind_y   ; $E902
 
 dispatch_on_masked_state_field:
     E94D: BD B1 02    lda obj_state,x   ; $02B1
@@ -8274,7 +8274,7 @@ add_byte_to_word_if_active:
     EF13: 9D 01 04    sta $0401,x
     EF16: 60          rts
 
-copy_16b_table_if_var_in_range:
+load_dropped_objects:
     EF17: A5 7A       lda stage_number   ; $7A
     EF19: 38          sec
     EF1A: E9 07       sbc #$07
@@ -8439,7 +8439,7 @@ spawn_object_from_table_entry:
     F025: 86 1B       stx cur_obj_index   ; $1B
     F027: 99 93 00    sta ppu_block_data_ptr,y   ; $0093
     F02A: 85 11       sta zp_ptr_hi   ; $11
-    F02C: 20 BD E3    jsr shl3_pack_zp_ptr16   ; $E3BD
+    F02C: 20 BD E3    jsr ppu_addr_to_tile_xy   ; $E3BD
     F02F: A5 10       lda src_ptr   ; $10
     F031: 99 94 00    sta obj_pos_field,y   ; $0094
     F034: A5 11       lda zp_ptr_hi   ; $11
@@ -8639,7 +8639,7 @@ load_object_table_from_def:
     F172: C8          iny
     F173: 85 11       sta zp_ptr_hi   ; $11
     F175: 9D 67 02    sta $0267,x
-    F178: 20 BD E3    jsr shl3_pack_zp_ptr16   ; $E3BD
+    F178: 20 BD E3    jsr ppu_addr_to_tile_xy   ; $E3BD
     F17B: A5 10       lda src_ptr   ; $10
     F17D: 9D 64 02    sta item_x,x   ; $0264
     F180: A5 11       lda zp_ptr_hi   ; $11
@@ -8895,7 +8895,7 @@ load_indexed_ptr_then_scan_for_terminator:
     F2E4: E5          .byte $E5
     F2E5: 20          .byte $20
 
-advance_state_counter_to_60:
+tick_round_timer:
     F2E6: A5 60       lda sequence_state   ; $60
     F2E8: F0 14       beq @F2FE   ; $F2FE
     F2EA: C9 02       cmp #$02
@@ -8930,7 +8930,7 @@ advance_state_counter_to_60:
     F31F: E0 08       cpx #$08
     F321: D0 F5       bne @F318   ; $F318
 
-init_object_sequence_state:
+start_timer_phase_tune:
     F323: 20 BF F4    jsr init_sound_voices   ; $F4BF
     F326: A9 03       lda #$03
     F328: 8D F5 06    sta $06f5
@@ -8974,7 +8974,7 @@ init_object_sequence_state:
     F378: A9 01       lda #$01
     F37A: 8D 17 04    sta $0417
     F37D: 8D 15 04    sta $0415
-    F380: 4C 23 F3    jmp init_object_sequence_state   ; $F323
+    F380: 4C 23 F3    jmp start_timer_phase_tune   ; $F323
 
 draw_vertical_sprite_column:
     F383: A2 00       ldx #$00
@@ -9019,7 +9019,7 @@ sub2_from_u16_counter:
 @F3C0:
     F3C0: 60          rts
 
-load_record_by_index:
+load_stage_params:
     F3C1: A9 00       lda #$00
     F3C3: 85 60       sta sequence_state   ; $60
     F3C5: 85 61       sta seq_data_ptr   ; $61
@@ -11632,9 +11632,9 @@ attract_demo:
     FF6F: 20 A7 CA    jsr clear_object_tables   ; $CAA7
     FF72: 20 41 C2    jsr ppu_disable_render   ; $C241
     FF75: 20 49 CD    jsr build_stage_screen_layout   ; $CD49
-    FF78: 20 5B E3    jsr build_object_record_block_and_dispatch   ; $E35B
-    FF7B: 20 C5 E5    jsr spawn_objects_from_level_descriptor   ; $E5C5
-    FF7E: 20 62 E8    jsr load_object_table_to_ram   ; $E862
+    FF78: 20 5B E3    jsr load_round_trampolines   ; $E35B
+    FF7B: 20 C5 E5    jsr load_round_items   ; $E5C5
+    FF7E: 20 62 E8    jsr load_round_doors   ; $E862
     FF81: 20 01 F0    jsr spawn_object_pair_for_state   ; $F001
     FF84: 20 39 C2    jsr ppu_enable_render   ; $C239
     FF87: A2 00       ldx #$00
@@ -11643,9 +11643,9 @@ attract_demo:
     FF8C: 9D 00 03    sta obj_state,x   ; $0300
     FF8F: E8          inx
     FF90: D0 F7       bne @FF89   ; $FF89
-    FF92: 20 C1 F3    jsr load_record_by_index   ; $F3C1
-    FF95: 20 F1 D7    jsr init_object_from_rom_template   ; $D7F1
-    FF98: 20 46 D8    jsr init_object_record_row   ; $D846
+    FF92: 20 C1 F3    jsr load_stage_params   ; $F3C1
+    FF95: 20 F1 D7    jsr init_player_record   ; $D7F1
+    FF98: 20 46 D8    jsr init_round_cats   ; $D846
     FF9B: A9 00       lda #$00
     FF9D: 85 4B       sta player_down   ; $4B
     FF9F: 85 4F       sta round_cleared   ; $4F
@@ -11667,7 +11667,7 @@ attract_demo:
 @FFBC:
     FFBC: 20 41 C1    jsr yield_to_render_loop   ; $C141
     FFBF: 20 60 CB    jsr update_round_frame   ; $CB60
-    FFC2: 20 E6 F2    jsr advance_state_counter_to_60   ; $F2E6
+    FFC2: 20 E6 F2    jsr tick_round_timer   ; $F2E6
     FFC5: A5 4F       lda round_cleared   ; $4F
     FFC7: 05 4B       ora player_down   ; $4B
     FFC9: D0 10       bne @FFDB   ; $FFDB
