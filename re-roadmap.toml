@@ -60,7 +60,7 @@ evidence = ["mappy_labeled.asm", "Mappy (Japan).mlb", "asm_gen.py", "mappy_mlb.p
 
 [phase.assets]
 status   = "partial"
-gate     = "render_level runs the ROM's own draw routines on the library (cpu.m6502, Bus + PPUPort, Canvas): all 16 rounds' VRAM and pixels identical to the old tool and the committed PNGs. Not met: no check against the live PPU."
+gate     = "render_level runs the ROM's own draw routines on the library (cpu.m6502, Bus + PPUPort, Canvas): all 16 rounds' VRAM and pixels identical to the old tool and the committed PNGs.  Chris checked the 16 round renders by eye (2026-10-26): correct, in the game's own palette captured at $3F00 (the CHR atlas PNG, a one-off with no generator, uses a placeholder palette). Not met: a pixel comparison against a live Mesen frame."
 checked  = "2026-10-26"
 toolset  = "0c8f8a0"
 evidence = ["render_level.py", "mappy_levels_contact.png"]
@@ -186,13 +186,15 @@ closed = "2026-10-26: enough by the data phase's purpose (Chris): the code walk 
 item   = "vars.toml: 22 names are shared by 69 addresses (obj_state x10, seq_data_ptr x6, obj_record_ptr x5 incl. $1C/$1D, the dispatch vector ...). Rename each by role from the fixed var_xref; a name two addresses share names neither."
 phase  = "naming"
 source = "data phase 2026-10-26"
-status = "open"
+status = "closed"
+closed = "2026-10-26: 22 names / 69 addresses -> 18 / 45 after batch 1. The rest are gameplay state ($30 $31 $36/$37 $52/$53 $61/$62 the per-player $0200 page ...), carried by the game-thread revisit so each is named with the routines that use it."
 
 [[revisit]]
 item   = "9 named variables have no access in discovered code (only the old data-as-code reading found them): $0008 $000A $000B $000C $0032 $0084 $008F $0091 $009D. Drop them. 5 more ($0002-$0006) are touched only by the dead routines at $CEE8/$CEFC."
 phase  = "naming"
 source = "data phase 2026-10-26"
-status = "open"
+status = "closed"
+closed = "2026-10-26: dropped 10 (the 9 plus $0005, which only the dead routine touches), apply_vars.py batch 1."
 
 [[revisit]]
 item   = "The sound engine is named as objects: init_object_tables ($F4BF) zeroes the 25 sound triggers and their 8-byte voice states ($0619+); run_object_animation_script ($F606) is the voice stream interpreter (its 18 $F6AC handlers are stream opcodes $E8+); scan_ptr_buf_for_zero_terminator ($C6FB) is a run-length text writer ([n][n tiles], [0][delta], [0][0]). $0600 is already renamed sound_trigger."
@@ -215,7 +217,7 @@ source = "data phase 2026-10-26 (from the polymorphic-fields revisit)"
 status = "open"
 
 [[revisit]]
-item   = "Game thread top-down (221 routines from start_game_thread $C84F down; the stage loop is one SCC): verify each name against its code and its callers in call_tree.html. Carry the leftovers: $E456 (capture the $0500 text it queues), $ED4E's 4 records at $04A0, $CD2B's $0490 block, $C480 lookup, $DF09's X=4."
+item   = "Game thread top-down (221 routines from start_game_thread $C84F down; the stage loop is one SCC): verify each name against its code and its callers in call_tree.html. Name the 18 shared variable names (45 addresses) with the routines that use them (apply_vars.py). Carry the leftovers: $E456 (capture the $0500 text it queues), $ED4E's 4 records at $04A0, $CD2B's $0490 block, $C480 lookup, $DF09's X=4."
 phase  = "naming"
 source = "naming 2026-10-26"
 status = "open"
@@ -224,7 +226,8 @@ status = "open"
 item   = "Render-thread variables found misnamed by the top-down pass: $20 = vblank flag ('scan_ptr'; nmi_count_vblank increments it, render_loop waits on it), $23 = the render-only-frame flag ('data_read_ptr'), $0E/$0F = a 16-bit frame-wait counter ('stage_phase_countdown'), $F5 = voices to update ('draw_source_ptr'), $0161-$0169 = shared stream loop counters; record +8 = the nametable tile read back under the object (flush_vram_readback_queue_and_restore_render stores PPUDATA to ($1E)+8)."
 phase  = "naming"
 source = "naming 2026-10-26"
-status = "open"
+status = "closed"
+closed = "2026-10-26: vblank_flag, frame_counter, paused (its sprites at $C123 spell PAUSE in the sprite table), pad_dir / pad_dir_changed, countdown_hi/lo, aux_ptr (the dispatch vector), voice_count, the sound pointers, attr_dirty_bitmap; record +8 = obj_bg_tile (proven by the readback queue's store at $C19D)."
 
 [next]
-session = "naming, game thread: top-down from start_game_thread through the stage loop with call_tree.html beside the listing, then the variable pass (the 22 shared names, 9 phantom variables, the render-thread misnames)."
+session = "naming, game thread: top-down from start_game_thread through the stage loop with call_tree.html beside the listing; name the 18 remaining shared variables with the routines that use them (apply_names.py / apply_vars.py, both guarded)."

@@ -304,14 +304,9 @@ NesInternalRam:0001:ptr_hi:[pointer] Flagged P (16-bit pointer). It is the HIGH 
 NesInternalRam:0002:src_ptr_hi:[pointer] Repeatedly dereferenced as a 16-bit pointer paired with $01: routines use ($01,x), ($02),y, and ($02,x). load_ptr_descriptor_and_scan (ora (
 NesInternalRam:0003:scan_ptr_hi:[pointer] $0003 is the high byte of the $0002/$0003 16-bit pointer pair. Multiple routines dereference it as a pointer: check_obj_adjacency_set_hit_fl
 NesInternalRam:0004:obj_descriptor_ptr:[pointer] Marked [P] = 16-bit pointer low byte; dereferenced via indirect-indexed/indirect-X addressing in several named routines: compute_obj_visibil
-NesInternalRam:0005:data_ptr_hi:[pointer] Flagged [P] and part of the $04/$05 zero-page pointer pair. Deref'd as a 16-bit indirect pointer via ($04,x) in fetch_seq_byte_and_advance_i
 NesInternalRam:0006:ppu_attr_bits:[scratch] Writers are not address stores but bit-manipulation: fill_attr_source_0170 does `asl $06` twice ($CDEC/$CDF1); ppu_draw_blocks_b does `ror $
-NesInternalRam:0008:obj_state_flags:[flag] Operations ON $08 itself are bit/shift, not 16-bit pointer-walks: writers/modifiers are `sty $08` (ppu_draw_blocks_b), `asl $08` (set_obj_st
-NesInternalRam:000A:indirect_ptr:[pointer] pointer confirmed by indirect deref but target unknown
-NesInternalRam:000B:seq_data_ptr:[pointer] Dereferenced as a 16-bit pointer (flag P) by multiple routines: load_ptr_descriptor_and_scan does `ora ($0b),y` (indirect-indexed read), and
-NesInternalRam:000C:seq_ptr_hi:[pointer] $000C is the HIGH byte of the 16-bit pointer based at $000B: dereferencing routines use ($0b),y and ($0b,x) — load_ptr_descriptor_and_scan (
-NesInternalRam:000E:redraw_record_counter:[counter] Set with `sta $0e` in stage_setup_and_play_loop ($C9EA), redraw_var_records_at_7800_if_flag_set ($CABE), and init_state_vars_and_pointer ($C
-NesInternalRam:000F:stage_phase_countdown:[counter] The dominant idiom is set-then-decrement across many stage/intro/animation routines: init_stage_with_intro_animation_then_spawn (sta $0f / d
+NesInternalRam:000E:countdown_hi:[counter] Variables 2026-10-26 (fixed var_xref: real instructions only): high byte of the 16-bit countdown $0E:$0F: the wait loop at $CAF0 borrows int
+NesInternalRam:000F:countdown_lo:[counter] Variables 2026-10-26 (fixed var_xref: real instructions only): low byte of the countdown $0E:$0F; 11 routines load it and loop on yield_to_r
 NesInternalRam:0010:src_ptr:[pointer] Flagged P and dereferenced as 16-bit pointer in many routines via `lda ($10),y`: ppu_run_draw_blocks ($CC21), ppu_draw_blocks_b ($CF75), ppu
 NesInternalRam:0011:zp_ptr_hi:[pointer] $0011 is the high byte of the general-purpose 16-bit indirect pointer at $10/$11. Many routines write it then immediately dereference ($10),
 NesInternalRam:0012:gfx_src_ptr:[pointer] $12 is flagged P and is dereferenced as a 16-bit pointer via (zp),y: ppu_draw_mansion_stamps does `lda ($12),y` at $D15B after `sta $12`, an
@@ -324,18 +319,18 @@ NesInternalRam:0018:scratch_loop_counter:[scratch] Touched by 12 unrelated routi
 NesInternalRam:0019:draw_data_ptr_hi:[pointer] Tool flags $0019 as a 16-bit POINTER. ppu_draw_mansion_stamps dereferences the $18/$19 pair via `and ($18,x)` (indexed-indirect), making $18
 NesInternalRam:001A:data_src_ptr:[pointer] $001A is dereferenced as a 16-bit pointer via indexed-indirect ($1a,x): fetch_seq_byte_and_advance_index does `adc ($1a,x)` twice ($F966/$F9
 NesInternalRam:001B:cur_obj_index:[obj_field] 17 of 21 routines are object loops that save the current object's index/offset here via stx/sty $1b and reload it with ldx/ldy $1b across th
-NesInternalRam:001C:object_record_ptr:[pointer] Flagged P and dereferenced as 16-bit pointer via `lda ($1c),y` in build_object_record_block_and_dispatch ($E36C), spawn_objects_from_level_d
-NesInternalRam:001D:obj_record_ptr:[pointer] $001D is the HIGH byte of a 16-bit pointer whose low byte is $001C: every dereference is `lda ($1c),y` ($E36C, $E5D1, $E872, $F148) and `ora
+NesInternalRam:001C:aux_ptr:[pointer] Variables 2026-10-26 (fixed var_xref: real instructions only): a second pointer pair with $1D: the jump vector of every dispatch (jmp ($001C
+NesInternalRam:001D:aux_ptr_hi:[pointer] Variables 2026-10-26 (fixed var_xref: real instructions only): high byte of aux_ptr. Was 'obj_record_ptr'. Earlier note: $001D is the HIGH b
 NesInternalRam:001E:obj_record_ptr:[pointer] $001E is flagged P and is dereferenced as a 16-bit pointer via ($1e),y by a large family of object routines. It is set up by init_object_rec
 NesInternalRam:001F:obj_record_ptr_hi:[pointer] obj record pointer high byte
-NesInternalRam:0020:scan_ptr:[pointer] Flagged P and dereferenced as 16-bit via ($20),y in load_indexed_ptr_then_scan_for_terminator ($F2A0: sbc ($20),y), so $20 is the low byte o
-NesInternalRam:0021:cur_obj_state:[state] Overwhelmingly read as a state byte by object routines: dispatch_obj_state ($F05F/$F067 lda $21), set_obj_state_and_load_next_ptr ($E4FC), b
+NesInternalRam:0020:vblank_flag:[flag] Variables 2026-10-26 (fixed var_xref: real instructions only): nmi_count_vblank increments it; render_loop waits while it is 0 ($C06D) and c
+NesInternalRam:0021:frame_counter:[counter] Variables 2026-10-26 (fixed var_xref: real instructions only): render_loop increments it once per frame ($C0C7); five sprite routines read i
 NesInternalRam:0022:scan_ptr:[pointer] Dereferenced as a 16-bit (zp) pointer in multiple routines: load_indexed_ptr_then_scan_for_terminator does `cmp ($22),y` ($F2DE) and fetch_s
-NesInternalRam:0023:data_read_ptr:[pointer] Flagged P and dereferenced as a 16-bit pointer (low byte; +1=$24) by several named routines: ppu_run_draw_blocks does `cmp ($23),y`, scan_ob
+NesInternalRam:0023:paused:[flag] Variables 2026-10-26 (fixed var_xref: real instructions only): read_and_decode_input toggles it on a new button press during play ($C228 eor
 NesInternalRam:0024:draw_data_ptr:[pointer] Tool flags it as a 16-bit pointer low byte, and the dereference instructions confirm a pointer pair. ppu_draw_mansion_stamps does `lda ($24,
 NesInternalRam:0025:joypad_state:[flag] read_and_decode_input builds the value with `rol $25` (C1FA) then reads `lda $25` (C220) — the canonical NES controller read shifts one butt
-NesInternalRam:0026:obj_record_ptr:[pointer] $26 is dereferenced as a 16-bit pointer via indirect addressing in multiple routines: spawn_object_from_table_entry ($F047: ora ($26),y), lo
-NesInternalRam:0027:obj_record_ptr_hi:[pointer] $0027 is consumed almost exclusively via 16-bit pointer dereferences: load_ptr_descriptor_and_scan ($CF0D and ($26,x)), trigger_state_transi
+NesInternalRam:0026:pad_dir:[input] Variables 2026-10-26 (fixed var_xref: real instructions only): read_and_decode_input stores the pad direction from the table $C258 (00, FF, 
+NesInternalRam:0027:pad_dir_changed:[flag] Variables 2026-10-26 (fixed var_xref: real instructions only): 1 when pad_dir differs from last frame's ($C206-$C20F). Was 'obj_record_ptr_h
 NesInternalRam:0028:screen_layout_ptr_hi:[pointer] Tool header flags $28 as a 16-bit POINTER byte, and setup_screen_layout dereferences the pair via `and ($27,x)` at $CBEE — making $27 the lo
 NesInternalRam:0029:camera_scroll_x:[coord] Three rendering/collision routines subtract $29 from object world-coordinates: transform_object_coords_to_pixel_space ($C317 sbc $29), draw_
 NesInternalRam:002A:ppu_buffer_cursor:[buffer_cursor] Dominant writer pattern across the PPU/VRAM update-buffer routines is load-into-index → append → store-back: ppu_buffer_enqueue ($C792 ldx $
@@ -344,7 +339,6 @@ NesInternalRam:002C:seq_data_ptr_hi:[pointer] fetch_seq_byte_and_advance_index d
 NesInternalRam:002D:ppu_mask_shadow:[state] Written only by ppu_enable_render ($C23E stx $2d) and ppu_disable_render ($C246 stx $2d) — the two routines that toggle rendering on/off, i.
 NesInternalRam:0030:obj_state:[state] No pointer/index flags — only r/w/m on an 8-bit zp value. Three of the four routines are explicitly state-machine named and treat $30 as a s
 NesInternalRam:0031:obj_record_ptr:[pointer] Flagged P and dereferenced as a 16-bit pointer via `eor ($31,x)` at $FF36, so $0031 is the low byte of a pointer ($0032 = high). The reading
-NesInternalRam:0032:seq_data_ptr:[pointer] $0032 is dereferenced as a 16-bit pointer in multiple indirect modes: `and ($32),y` in set_obj_state_and_load_next_ptr and `adc ($32,x)` in 
 NesInternalRam:0035:obj_collision_state:[obj_field] No P (pointer-deref) or i (indexed) flag and no (zp),y usage — an 8-bit scalar, not a pointer. All writers are object/entity routines: init_
 NesInternalRam:0036:obj_record_ptr:[pointer] Dereferenced as a 16-bit pointer with (zp),y in two routines: ppu_run_draw_blocks ($CD0B: ora ($36),y) and check_obj_adjacency_set_hit_flag 
 NesInternalRam:0037:obj_record_ptr_hi:[pointer] $0036/$0037 form a 16-bit pointer dereferenced via (zp),y: ppu_run_draw_blocks does `ora ($36),y` ($CD0B) and check_obj_adjacency_set_hit_fl
@@ -390,40 +384,36 @@ NesInternalRam:007D:stage_index:[state] Not a pointer (no (zp),y deref, no P fla
 NesInternalRam:0080:object_count:[counter] Three named object routines read it as a loop/upper bound via cpx: find_object_at_coords ($E49C cpx $80), force_active_objects_to_state3 ($E
 NesInternalRam:0081:active_object_count:[counter] spawn_objects_from_level_descriptor SETS it (sta $81) after populating objects, then every object-processing routine compares its X loop ind
 NesInternalRam:0083:object_count:[counter] Five object routines read it as a loop terminator over object records: clear_low2_bits_per_object_record ($E8C7: cpx $83), update_all_object
-NesInternalRam:0084:ppu_draw_src_ptr_hi:[pointer] $0084 is the high byte of a 16-bit pointer pair whose low byte is $83: ppu_draw_blocks_b dereferences it via `ora ($83,x)` (indexed-indirect
-NesInternalRam:008F:deref_ptr:[pointer] var_xref flags $008F as P (16-bit pointer low byte) and shows it dereferenced via indirect-X addressing at $FDBA `ora ($8f,x)` in data_or_un
 NesInternalRam:0090:obj_state:[obj_field] Almost every access is `sta/lda $0090,y` — a Y-indexed object-table field, not a scalar. It's set by spawn_object_from_table_entry (initiali
-NesInternalRam:0091:obj_data_ptr_hi:[pointer] Dereferenced as a 16-bit pointer via the $90/$91 zero-page pair: ppu_draw_blocks_b does `ora ($91,x)` and append_byte_to_0500_if_counter doe
 NesInternalRam:0092:obj_trigger_coord:[obj_field] Written and read via Y-indexing, not as a global pointer: spawn_object_from_table_entry does `sta $0092,y` (sets it per-object at spawn) and
 NesInternalRam:0093:ppu_block_data_ptr:[pointer] $0093 is dereferenced as a 16-bit pointer (flagged P): ppu_draw_blocks_b does `ora ($93,x)` and ppu_draw_mansion_stamps does `ora ($93,x)` (
 NesInternalRam:0094:obj_pos_field:[obj_field] Accessed as an indexed object-table field ($0094,y / $94,x) by object routines: spawn_object_from_table_entry WRITES it (sta $0094,y) when p
 NesInternalRam:0095:obj_x:[obj_field] Always accessed indexed into an object table ($95,x and $0095,y), never as a scalar — so it's a per-object record field, not scratch/flag/po
 NesInternalRam:0096:scratch_bitshift:[scratch] No 16-bit deref ((zp),y) anywhere, so not a pointer. Two routines use it as a bit-shift working byte: ppu_draw_mansion_stamps does `and $96`
-NesInternalRam:009D:data_ptr_hi:[pointer] $009D is the HIGH byte of a 16-bit pointer pair whose low byte is $009C. ppu_draw_mansion_stamps dereferences the pair via indexed-indirect 
 NesInternalRam:00A0:block_data_ptr:[pointer] Flagged as 16-bit pointer low byte (P) and dereferenced indirect-indexed by ppu_draw_blocks_b ($CFC6: ora ($a0,x)) and append_computed_entry
 NesInternalRam:00B0:p2_lives:[counter] Player-2 lives (base of the P2 state block $B0-$EF) — the mirror of p1_lives ($70), exchanged with it in swap_double_buffers_toggle_flag. Ne
-NesInternalRam:00C1:block_data_ptr_hi:[pointer] All three dereferences operate on the $00C0 pair via indirect addressing — ppu_draw_blocks_b uses `ora ($c0,x)`/`ora ($c0,x)`, and setup_sta
-NesInternalRam:00F0:work_ptr:[pointer] Flagged P (16-bit pointer low byte, +1 = high byte). Every user loads it then dereferences via (zp),y: init_object_tables sta $f0 / sta ($f0
-NesInternalRam:00F1:data_ptr_hi:[pointer] $00F1 is the high byte of a 16-bit pointer based at $00F0; nearly every reference dereferences it as ($f0),y. Writers set it directly (sound
-NesInternalRam:00F2:seq_data_ptr:[pointer] Flagged P (16-bit pointer low byte; +1 = high byte). set_ptr_from_word_table_by_id WRITES it ($F803: sta $f2) — i.e. it loads a pointer sele
-NesInternalRam:00F3:seq_data_ptr_hi:[pointer] $F3 is the HIGH byte of the 16-bit pointer pair $F2/$F3. set_ptr_from_word_table_by_id writes it ($F808: sta $f3) from a word table indexed 
-NesInternalRam:00F4:sound_seq_index:[counter] Set by sound_command_dispatch (sta $f4) and driven by sound_engine_tick (dec $f4 / sty $f4). advance_to_next_8byte_record_and_loop does inc 
-NesInternalRam:00F5:draw_source_ptr:[pointer] Dereferenced as a 16-bit pointer: ppu_draw_mansion_stamps does `cmp ($f5),y` ($D186) and data_or_unclear does `and ($f4,x)` ($FF21) — both i
-NesInternalRam:00F6:indirect_ptr:[pointer] Flagged P and dereferenced as a 16-bit pointer: jump_table_dispatch_via_index does `sta $f6` then `lda ($f6),y` — loading the low byte then 
-NesInternalRam:00F8:anim_script_ptr:[pointer] Dereferenced as a 16-bit pointer (low byte) in fetch_seq_byte_and_advance_index: `$F827: lda ($f8),y` then `$F829: inc $f8` — reading a byte
-NesInternalRam:00F9:anim_script_ptr_hi:[pointer] $00F9 is the HIGH byte of a 16-bit pointer based at $F8: fetch_seq_byte_and_advance_index dereferences it with `lda ($f8),y` and bumps it vi
-NesInternalRam:00FA:anim_script_ptr:[pointer] $00FA is dereferenced as a 16-bit pointer: fetch_seq_byte_and_advance_index does `lda ($fa),y` then `inc $fa` (flagged m,p) — classic read-a
-NesInternalRam:00FB:seq_data_ptr_hi:[pointer] $FB is the HIGH byte of a 16-bit pointer whose low byte is $FA: fetch_seq_byte_and_advance_index dereferences it with `lda ($fa),y` (flagged
-NesInternalRam:0170:collision_bitmap_buf:[array] Every writer touches it indexed (,x/,y), so $0170 is the base of an array/buffer, not a scalar. decode_position_stream_to_collision_bitmaps 
+NesInternalRam:00C1:thread_sp_slot:[array] Variables 2026-10-26 (fixed var_xref: real instructions only): start_game_thread stores the stack pointer at $00C1+$3F = $0100, the cell swa
+NesInternalRam:00F0:voice_rec_ptr:[pointer] Variables 2026-10-26 (fixed var_xref: real instructions only): points at the current voice's 8-byte record ($0619 + 8k); every sound routine
+NesInternalRam:00F1:voice_rec_ptr_hi:[pointer] Variables 2026-10-26 (fixed var_xref: real instructions only): high byte of voice_rec_ptr. Was 'data_ptr_hi'. Earlier note: $00F1 is the hig
+NesInternalRam:00F2:voice_stream_ptr:[pointer] Variables 2026-10-26 (fixed var_xref: real instructions only): the current voice's stream base from $F853 (load_voice_stream_ptr); fetch_voi
+NesInternalRam:00F3:voice_stream_ptr_hi:[pointer] Variables 2026-10-26 (fixed var_xref: real instructions only): high byte of voice_stream_ptr. Was 'seq_data_ptr_hi'. Earlier note: $F3 is th
+NesInternalRam:00F4:voice_index:[index] Variables 2026-10-26 (fixed var_xref: real instructions only): the voice being processed (counts down from voice_count); $13 and $14 select 
+NesInternalRam:00F5:voice_count:[counter] Variables 2026-10-26 (fixed var_xref: real instructions only): voices to process this frame: 25, or 1 while paused (update_sound_frame $F4F1
+NesInternalRam:00F6:sound_scratch:[scratch] Variables 2026-10-26 (fixed var_xref: real instructions only): the sound code's scratch pair with $F7: the dispatcher's return-address point
+NesInternalRam:00F8:voice13_stream_ptr:[pointer] Variables 2026-10-26 (fixed var_xref: real instructions only): voice $13's own 16-bit stream pointer (its stream passes 256 bytes); loaded f
+NesInternalRam:00F9:voice13_stream_ptr_hi:[pointer] Variables 2026-10-26 (fixed var_xref: real instructions only): high byte of voice13_stream_ptr. Was 'anim_script_ptr_hi'. Earlier note: $00F
+NesInternalRam:00FA:voice14_stream_ptr:[pointer] Variables 2026-10-26 (fixed var_xref: real instructions only): voice $14's own 16-bit stream pointer, from $F87B; as voice13_stream_ptr. Was
+NesInternalRam:00FB:voice14_stream_ptr_hi:[pointer] Variables 2026-10-26 (fixed var_xref: real instructions only): high byte of voice14_stream_ptr. Was 'seq_data_ptr_hi'. Earlier note: $FB is 
+NesInternalRam:0170:attr_dirty_bitmap:[array] Variables 2026-10-26 (fixed var_xref: real instructions only): 16 bytes, one bit per attribute byte of the two nametables; flush_dirty_attri
 NesInternalRam:0200:obj_timer:[obj_field] $0200 is the base of an ,x-indexed object-record table touched only by object/spawn routines. build_object_record_block_and_dispatch ($E375 
 NesInternalRam:0201:obj_anim_timer:[obj_field] Always accessed as $0201,x by object routines — a per-object field at offset +1 in the object table (base $0200). It is INC'd as a subcounte
 NesInternalRam:0202:obj_timer:[obj_field] Always accessed as $0202,x by object routines (build_object_record_block_and_dispatch writes it on construction; force_active_objects_to_sta
 NesInternalRam:0205:obj_field_05:[obj_field] All 3 accesses are X-indexed into the $0200 object-record block ($0205,x): written by build_object_record_block_and_dispatch ($E39D: sta $02
-NesInternalRam:0260:obj_state:[obj_field] All 9 routines touch it indexed as $0260,x — a per-object array field. Written by object setup routines (spawn_objects_from_level_descriptor
+NesInternalRam:0260:item_state:[array] Variables 2026-10-26 (fixed var_xref: real instructions only): item record +0: spawn_objects_from_level_descriptor sets 2 per item ($E5E1); 
 NesInternalRam:0261:obj_type:[obj_field] Every access is indexed (sta/lda $0261,x), so $0261 is a per-object field in an object table. spawn_objects_from_level_descriptor WRITES it 
 NesInternalRam:0263:obj_type:[obj_field] Always accessed indexed as $0263,x (the object-slot index) and only by object routines. Written at spawn (spawn_objects_from_level_descripto
-NesInternalRam:0264:obj_state:[obj_field] All 9 accesses are indexed into $0264 (sta/lda $0264,x and sbc $0264,y), marking it a per-object table field in the $02xx object array. Writ
-NesInternalRam:0265:obj_type:[obj_field] Every access is X-indexed (sta/lda $0265,x), so $0265 is a per-object field in an object table. It's WRITTEN only at object creation: spawn_
+NesInternalRam:0264:item_x:[array] Variables 2026-10-26 (fixed var_xref: real instructions only): item record +4: compared with the player's obj_x_hi ($0401) at $E675 to detec
+NesInternalRam:0265:item_y:[array] Variables 2026-10-26 (fixed var_xref: real instructions only): item record +5: compared with the player's obj_y_hi ($0403) at $E66D. Was 'ob
 NesInternalRam:02B0:obj_anim_timer:[obj_field] All five accessors index it as $02b0,x — an object-table FIELD. The defining read-modify-write is in advance_object_anim_timer_and_dispatch_
 NesInternalRam:02B1:obj_state:[obj_field] Always accessed indexed by object slot (sta/lda/ldy $02b1,x across 10 routines) → it is a per-object-record field in a $04xx-style object ta
 NesInternalRam:02B4:obj_pos:[obj_field] Every access is base+,x indexed ([wi]/[ri]) => an entry in a parallel object-table array. Populated by load_object_table_to_ram ($E8A0: sta 
@@ -450,7 +440,7 @@ NesInternalRam:0404:obj0_obj_draw_index:obj record +4 [HIGH] Proven by code + da
 NesInternalRam:0405:obj0_obj_type:obj record +5 [HIGH] Touched by 16 routines that are overwhelmingly state-machine drivers: update_active_object_state_mac
 NesInternalRam:0406:obj0_obj_velocity:obj record +6 [MED] Field is read-modify-written via the `sbc ($1e),y`/`sta ($1e),y` (subtract-with-borrow) idiom in rev
 NesInternalRam:0407:obj0_obj_timer:obj record +7 [HIGH] HIGH
-NesInternalRam:0408:obj0_field_8:obj record +8 [LOW] field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven
+NesInternalRam:0408:obj0_obj_bg_tile:obj record +8 [HIGH] Variables 2026-10-26: the nametable tile under the object, read back from VRAM: flush_vram_readback_
 NesInternalRam:0409:obj0_field_9:obj record +9 [LOW] field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven
 NesInternalRam:040A:obj0_field_A:obj record +A [LOW] field+N (data gate): was 'obj_timer', a name other offsets share or a LOW guess; no code role proven
 NesInternalRam:040B:obj0_field_B:obj record +B [LOW] field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven

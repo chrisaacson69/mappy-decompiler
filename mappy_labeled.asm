@@ -36,7 +36,7 @@ reset_cold_boot_init:
     C06A: 8D 00 20    sta PPUCTRL   ; $2000
 
 render_loop:
-    C06D: A5 20       lda scan_ptr   ; $20
+    C06D: A5 20       lda vblank_flag   ; $20
     C06F: F0 FC       beq render_loop   ; $C06D
     C071: A9 07       lda #$07
     C073: 8D 14 40    sta OAMDMA   ; $4014
@@ -61,7 +61,7 @@ render_loop:
     C09C: 69 00       adc #$00
     C09E: 8D 00 20    sta PPUCTRL   ; $2000
     C0A1: 20 F1 F4    jsr update_sound_frame   ; $F4F1
-    C0A4: A5 23       lda data_read_ptr   ; $23
+    C0A4: A5 23       lda paused   ; $23
     C0A6: F0 0D       beq @C0B5   ; $C0B5
     C0A8: 20 35 D7    jsr queue_state_vram_packet   ; $D735
     C0AB: A5 24       lda draw_data_ptr   ; $24
@@ -81,14 +81,14 @@ render_loop:
     C0C2: A0 00       ldy #$00
     C0C4: 20 46 C1    jsr swap_stack_pointer   ; $C146
 @C0C7:
-    C0C7: E6 21       inc cur_obj_state   ; $21
+    C0C7: E6 21       inc frame_counter   ; $21
     C0C9: A9 00       lda #$00
-    C0CB: 85 20       sta scan_ptr   ; $20
+    C0CB: 85 20       sta vblank_flag   ; $20
     C0CD: 4C 6D C0    jmp render_loop   ; $C06D
 
 build_sprite_row_oam_shadow:
     C0D0: A2 00       ldx #$00
-    C0D2: A5 23       lda data_read_ptr   ; $23
+    C0D2: A5 23       lda paused   ; $23
     C0D4: F0 41       beq @C117   ; $C117
     C0D6: A5 24       lda draw_data_ptr   ; $24
     C0D8: 29 03       and #$03
@@ -98,7 +98,7 @@ build_sprite_row_oam_shadow:
     C0DE: A9 68       lda #$68
     C0E0: 85 10       sta src_ptr   ; $10
     C0E2: A0 67       ldy #$67
-    C0E4: A5 21       lda cur_obj_state   ; $21
+    C0E4: A5 21       lda frame_counter   ; $21
     C0E6: 29 10       and #$10
     C0E8: D0 02       bne @C0EC   ; $C0EC
     C0EA: A0 F7       ldy #$f7
@@ -152,7 +152,7 @@ start_game_thread:
     C132: BA          tsx
     C133: 8A          txa
     C134: BE 40 C1    ldx $c140,y
-    C137: 9D C1 00    sta block_data_ptr_hi,x   ; $00C1
+    C137: 9D C1 00    sta thread_sp_slot,x   ; $00C1
     C13A: 9A          txs
     C13B: 6C 1E 00    jmp (obj_record_ptr)   ; $001E
     C13E:            .word init_stage_with_intro_animation_then_spawn
@@ -277,12 +277,12 @@ read_and_decode_input:
     C202: AA          tax
     C203: BD 58 C2    lda $c258,x
     C206: A2 00       ldx #$00
-    C208: C5 26       cmp obj_record_ptr   ; $26
+    C208: C5 26       cmp pad_dir   ; $26
     C20A: F0 01       beq @C20D   ; $C20D
     C20C: E8          inx
 @C20D:
-    C20D: 85 26       sta obj_record_ptr   ; $26
-    C20F: 86 27       stx obj_record_ptr_hi   ; $27
+    C20D: 85 26       sta pad_dir   ; $26
+    C20F: 86 27       stx pad_dir_changed   ; $27
     C211: A5 42       lda game_phase   ; $42
     C213: F0 1F       beq @C234   ; $C234
     C215: A5 4F       lda draw_src_ptr   ; $4F
@@ -294,8 +294,8 @@ read_and_decode_input:
     C222: 29 03       and #$03
     C224: C9 01       cmp #$01
     C226: D0 0B       bne @C233   ; $C233
-    C228: 45 23       eor data_read_ptr   ; $23
-    C22A: 85 23       sta data_read_ptr   ; $23
+    C228: 45 23       eor paused   ; $23
+    C22A: 85 23       sta paused   ; $23
     C22C: F0 05       beq @C233   ; $C233
     C22E: A9 01       lda #$01
     C230: 8D 00 06    sta sound_trigger   ; $0600
@@ -303,7 +303,7 @@ read_and_decode_input:
     C233: 60          rts
 @C234:
     C234: A9 00       lda #$00
-    C236: 85 23       sta data_read_ptr   ; $23
+    C236: 85 23       sta paused   ; $23
     C238: 60          rts
 
 ppu_enable_render:
@@ -432,11 +432,11 @@ nmi_count_vblank:
     C2F2: 48          pha
     C2F3: 98          tya
     C2F4: 48          pha
-    C2F5: A5 20       lda scan_ptr   ; $20
+    C2F5: A5 20       lda vblank_flag   ; $20
     C2F7: F0 03       beq @C2FC   ; $C2FC
     C2F9: 20 F1 F4    jsr update_sound_frame   ; $F4F1
 @C2FC:
-    C2FC: E6 20       inc scan_ptr   ; $20
+    C2FC: E6 20       inc vblank_flag   ; $20
     C2FE: 68          pla
     C2FF: A8          tay
     C300: 68          pla
@@ -495,10 +495,10 @@ dispatch_object_draw_routine_by_index:
     C346: 29 FE       and #$fe
     C348: AA          tax
     C349: BD 56 C3    lda $c356,x
-    C34C: 85 1C       sta object_record_ptr   ; $1C
+    C34C: 85 1C       sta aux_ptr   ; $1C
     C34E: BD 57 C3    lda $c357,x
-    C351: 85 1D       sta obj_record_ptr   ; $1D
-    C353: 6C 1C 00    jmp (object_record_ptr)   ; $001C
+    C351: 85 1D       sta aux_ptr_hi   ; $1D
+    C353: 6C 1C 00    jmp (aux_ptr)   ; $001C
     C356:            .word handler_rts_noop
     C358:            .word compose_obj_field5_field7_index
     C35A:            .word obj_field5_or10_lookup_c480_to_zp12
@@ -632,7 +632,7 @@ write_object_to_shadow_oam:
     C41F: A6 2C       ldx seq_data_ptr_hi   ; $2C
     C421: E0 34       cpx #$34
     C423: 90 0E       bcc @C433   ; $C433
-    C425: A5 21       lda cur_obj_state   ; $21
+    C425: A5 21       lda frame_counter   ; $21
     C427: 29 0F       and #$0f
     C429: A8          tay
     C42A: 8A          txa
@@ -756,7 +756,7 @@ compose_obj_anim_index_and_lookup:
     C4C3: 4C D1 C3    jmp lookup_table_c480_to_zp12   ; $C3D1
 
 build_sprite_attr_and_step_coords:
-    C4C6: A5 21       lda cur_obj_state   ; $21
+    C4C6: A5 21       lda frame_counter   ; $21
     C4C8: 4A          lsr a
     C4C9: 29 03       and #$03
     C4CB: 85 13       sta data_ptr_hi   ; $13
@@ -791,7 +791,7 @@ select_object_tile_param_by_type_flag:
     C4FD: C9 01       cmp #$01
     C4FF: D0 08       bne @C509   ; $C509
     C501: A0 41       ldy #$41
-    C503: A5 21       lda cur_obj_state   ; $21
+    C503: A5 21       lda frame_counter   ; $21
     C505: 29 10       and #$10
     C507: D0 02       bne @C50B   ; $C50B
 @C509:
@@ -814,7 +814,7 @@ lookup_field5_set_bits24_to_zp12:
     C520: 60          rts
 
 draw_object_animated_sprite:
-    C521: A5 21       lda cur_obj_state   ; $21
+    C521: A5 21       lda frame_counter   ; $21
     C523: 4A          lsr a
     C524: 29 03       and #$03
     C526: 85 13       sta data_ptr_hi   ; $13
@@ -992,7 +992,7 @@ draw_flagged_object_to_oam:
     C620: 85 13       sta data_ptr_hi   ; $13
     C622: A9 00       lda #$00
     C624: 85 14       sta scan_src_ptr   ; $14
-    C626: A5 21       lda cur_obj_state   ; $21
+    C626: A5 21       lda frame_counter   ; $21
     C628: 29 20       and #$20
     C62A: F0 11       beq ptr16_sub6_set_const   ; $C63D
     C62C: A9 E8       lda #$e8
@@ -1205,8 +1205,8 @@ decode_position_stream_to_collision_bitmaps:
     C777: D0 FC       bne @C775   ; $C775
 @C779:
     C779: A6 18       ldx scratch_loop_counter   ; $18
-    C77B: 1D 70 01    ora collision_bitmap_buf,x   ; $0170
-    C77E: 9D 70 01    sta collision_bitmap_buf,x   ; $0170
+    C77B: 1D 70 01    ora attr_dirty_bitmap,x   ; $0170
+    C77E: 9D 70 01    sta attr_dirty_bitmap,x   ; $0170
 @C781:
     C781: E6 10       inc src_ptr   ; $10
     C783: D0 02       bne @C787   ; $C787
@@ -1274,10 +1274,10 @@ init_zp14_zp15_to_8:
 
 emit_records_for_set_bits_in_bitmap:
     C7EA: A4 12       ldy gfx_src_ptr   ; $12
-    C7EC: B9 70 01    lda collision_bitmap_buf,y   ; $0170
+    C7EC: B9 70 01    lda attr_dirty_bitmap,y   ; $0170
     C7EF: F0 12       beq @C803   ; $C803
     C7F1: 4A          lsr a
-    C7F2: 99 70 01    sta collision_bitmap_buf,y   ; $0170
+    C7F2: 99 70 01    sta attr_dirty_bitmap,y   ; $0170
     C7F5: 90 03       bcc @C7FA   ; $C7FA
     C7F7: 20 18 C8    jsr write_attribute_byte   ; $C818
 @C7FA:
@@ -1360,7 +1360,7 @@ init_stage_with_intro_animation_then_spawn:
     C887: 85 29       sta camera_scroll_x   ; $29
     C889: 20 2B CD    jsr copy_5_bytes_table_to_ram_0490   ; $CD2B
     C88C: A9 F0       lda #$f0
-    C88E: 85 0F       sta stage_phase_countdown   ; $0F
+    C88E: 85 0F       sta countdown_lo   ; $0F
 @C890:
     C890: 20 41 C1    jsr yield_to_render_loop   ; $C141
     C893: 20 3E CD    jsr transform_fixed_coord_90_04   ; $CD3E
@@ -1372,7 +1372,7 @@ init_stage_with_intro_animation_then_spawn:
     C89E: 29 03       and #$03
     C8A0: C9 01       cmp #$01
     C8A2: F0 07       beq @C8AB   ; $C8AB
-    C8A4: C6 0F       dec stage_phase_countdown   ; $0F
+    C8A4: C6 0F       dec countdown_lo   ; $0F
     C8A6: D0 E8       bne @C890   ; $C890
     C8A8: 4C 65 FF    jmp setup_stage_then_run_intro_frames   ; $FF65
 @C8AB:
@@ -1429,7 +1429,7 @@ play_intro_cutscene_sequence:
     C90F: 85 4F       sta draw_src_ptr   ; $4F
     C911: 85 31       sta obj_record_ptr   ; $31
     C913: A9 3C       lda #$3c
-    C915: 85 0F       sta stage_phase_countdown   ; $0F
+    C915: 85 0F       sta countdown_lo   ; $0F
 @C917:
     C917: 20 41 C1    jsr yield_to_render_loop   ; $C141
     C91A: 20 60 CB    jsr run_frame_game_logic_update   ; $CB60
@@ -1439,7 +1439,7 @@ play_intro_cutscene_sequence:
     C925: AD A7 CB    lda $cba7
     C928: 85 1F       sta obj_record_ptr_hi   ; $1F
     C92A: 20 3B CB    jsr draw_glyph_string_from_param_block   ; $CB3B
-    C92D: C6 0F       dec stage_phase_countdown   ; $0F
+    C92D: C6 0F       dec countdown_lo   ; $0F
     C92F: D0 E6       bne @C917   ; $C917
     C931: A9 02       lda #$02
     C933: 8D 0F 04    sta $040f
@@ -1482,10 +1482,10 @@ play_intro_cutscene_sequence:
     C97B: 0D AD 04    ora $04ad
     C97E: D0 F2       bne @C972   ; $C972
     C980: A9 B4       lda #$b4
-    C982: 85 0F       sta stage_phase_countdown   ; $0F
+    C982: 85 0F       sta countdown_lo   ; $0F
 @C984:
     C984: 20 41 C1    jsr yield_to_render_loop   ; $C141
-    C987: A5 0F       lda stage_phase_countdown   ; $0F
+    C987: A5 0F       lda countdown_lo   ; $0F
     C989: C9 78       cmp #$78
     C98B: D0 08       bne @C995   ; $C995
     C98D: A9 01       lda #$01
@@ -1493,7 +1493,7 @@ play_intro_cutscene_sequence:
     C992: 8D 12 06    sta $0612
 @C995:
     C995: 20 60 CB    jsr run_frame_game_logic_update   ; $CB60
-    C998: C6 0F       dec stage_phase_countdown   ; $0F
+    C998: C6 0F       dec countdown_lo   ; $0F
     C99A: D0 E8       bne @C984   ; $C984
     C99C: 20 BF F4    jsr init_sound_voices   ; $F4BF
 
@@ -1528,9 +1528,9 @@ stage_setup_and_play_loop:
     C9E0: 85 4B       sta seq_stream_ptr_hi   ; $4B
     C9E2: 85 4F       sta draw_src_ptr   ; $4F
     C9E4: A9 AC       lda #$ac
-    C9E6: 85 0F       sta stage_phase_countdown   ; $0F
+    C9E6: 85 0F       sta countdown_lo   ; $0F
     C9E8: A9 08       lda #$08
-    C9EA: 85 0E       sta redraw_record_counter   ; $0E
+    C9EA: 85 0E       sta countdown_hi   ; $0E
 @C9EC:
     C9EC: 20 41 C1    jsr yield_to_render_loop   ; $C141
     C9EF: 20 7B CB    jsr run_frame_game_logic_tick   ; $CB7B
@@ -1542,22 +1542,22 @@ stage_setup_and_play_loop:
 @C9FE:
     C9FE: A5 4F       lda draw_src_ptr   ; $4F
     CA00: D0 0F       bne @CA11   ; $CA11
-    CA02: A5 0F       lda stage_phase_countdown   ; $0F
+    CA02: A5 0F       lda countdown_lo   ; $0F
     CA04: 38          sec
     CA05: E9 01       sbc #$01
-    CA07: 85 0F       sta stage_phase_countdown   ; $0F
+    CA07: 85 0F       sta countdown_lo   ; $0F
     CA09: B0 02       bcs @CA0D   ; $CA0D
-    CA0B: C6 0E       dec redraw_record_counter   ; $0E
+    CA0B: C6 0E       dec countdown_hi   ; $0E
 @CA0D:
-    CA0D: 05 0E       ora redraw_record_counter   ; $0E
+    CA0D: 05 0E       ora countdown_hi   ; $0E
     CA0F: D0 DB       bne @C9EC   ; $C9EC
 @CA11:
     CA11: A9 1E       lda #$1e
-    CA13: 85 0F       sta stage_phase_countdown   ; $0F
+    CA13: 85 0F       sta countdown_lo   ; $0F
 @CA15:
     CA15: 20 41 C1    jsr yield_to_render_loop   ; $C141
     CA18: 20 1C D7    jsr copy_active_var_record_when_phase_aligned   ; $D71C
-    CA1B: C6 0F       dec stage_phase_countdown   ; $0F
+    CA1B: C6 0F       dec countdown_lo   ; $0F
     CA1D: D0 F6       bne @CA15   ; $CA15
     CA1F: 20 BF F4    jsr init_sound_voices   ; $F4BF
     CA22: 20 1A CE    jsr run_scripted_screen_cutscene_sequence   ; $CE1A
@@ -1581,12 +1581,12 @@ dispatch_stage_state_and_rebuild_screen:
     CA48: A5 B0       lda p2_lives   ; $B0
     CA4A: D0 18       bne @CA64   ; $CA64
     CA4C: A9 3C       lda #$3c
-    CA4E: 85 0F       sta stage_phase_countdown   ; $0F
+    CA4E: 85 0F       sta countdown_lo   ; $0F
 @CA50:
     CA50: 20 41 C1    jsr yield_to_render_loop   ; $C141
     CA53: 20 31 CB    jsr init_ptr_1e_from_const   ; $CB31
     CA56: 20 1C D7    jsr copy_active_var_record_when_phase_aligned   ; $D71C
-    CA59: C6 0F       dec stage_phase_countdown   ; $0F
+    CA59: C6 0F       dec countdown_lo   ; $0F
     CA5B: D0 F3       bne @CA50   ; $CA50
     CA5D: 4C 4F C8    jmp init_stage_with_intro_animation_then_spawn   ; $C84F
 @CA60:
@@ -1642,9 +1642,9 @@ redraw_var_records_at_7800_if_flag_set:
     CAB4: A5 B0       lda p2_lives   ; $B0
     CAB6: F0 0B       beq init_state_vars_and_pointer   ; $CAC3
     CAB8: A9 78       lda #$78
-    CABA: 85 0F       sta stage_phase_countdown   ; $0F
+    CABA: 85 0F       sta countdown_lo   ; $0F
     CABC: A9 00       lda #$00
-    CABE: 85 0E       sta redraw_record_counter   ; $0E
+    CABE: 85 0E       sta countdown_hi   ; $0E
     CAC0: 4C DA CA    jmp redraw_var_records_loop_until_count_or_phase   ; $CADA
 
 init_state_vars_and_pointer:
@@ -1655,9 +1655,9 @@ init_state_vars_and_pointer:
     CACE: A9 00       lda #$00
     CAD0: 85 42       sta game_phase   ; $42
     CAD2: A9 A4       lda #$a4
-    CAD4: 85 0F       sta stage_phase_countdown   ; $0F
+    CAD4: 85 0F       sta countdown_lo   ; $0F
     CAD6: A9 01       lda #$01
-    CAD8: 85 0E       sta redraw_record_counter   ; $0E
+    CAD8: 85 0E       sta countdown_hi   ; $0E
 
 redraw_var_records_loop_until_count_or_phase:
     CADA: 20 41 C1    jsr yield_to_render_loop   ; $C141
@@ -1671,14 +1671,14 @@ redraw_var_records_loop_until_count_or_phase:
     CAEC: 29 03       and #$03
     CAEE: C9 01       cmp #$01
     CAF0: F0 0F       beq @CB01   ; $CB01
-    CAF2: A5 0F       lda stage_phase_countdown   ; $0F
+    CAF2: A5 0F       lda countdown_lo   ; $0F
     CAF4: 38          sec
     CAF5: E9 01       sbc #$01
-    CAF7: 85 0F       sta stage_phase_countdown   ; $0F
+    CAF7: 85 0F       sta countdown_lo   ; $0F
     CAF9: B0 02       bcs @CAFD   ; $CAFD
-    CAFB: C6 0E       dec redraw_record_counter   ; $0E
+    CAFB: C6 0E       dec countdown_hi   ; $0E
 @CAFD:
-    CAFD: 05 0E       ora redraw_record_counter   ; $0E
+    CAFD: 05 0E       ora countdown_hi   ; $0E
     CAFF: D0 D9       bne redraw_var_records_loop_until_count_or_phase   ; $CADA
 @CB01:
     CB01: 60          rts
@@ -2169,11 +2169,11 @@ build_stage_screen_layout:
     CD70: 8D 0F 06    sta $060f
     CD73: 8D 10 06    sta $0610
     CD76: A9 D2       lda #$d2
-    CD78: 85 0F       sta stage_phase_countdown   ; $0F
+    CD78: 85 0F       sta countdown_lo   ; $0F
 @CD7A:
     CD7A: 20 41 C1    jsr yield_to_render_loop   ; $C141
     CD7D: 20 FF CD    jsr setup_oam_params_and_emit_object_7c   ; $CDFF
-    CD80: C6 0F       dec stage_phase_countdown   ; $0F
+    CD80: C6 0F       dec countdown_lo   ; $0F
     CD82: D0 F6       bne @CD7A   ; $CD7A
     CD84: 20 41 C2    jsr ppu_disable_render   ; $C241
     CD87: 20 F5 CB    jsr ppu_clear_nametables   ; $CBF5
@@ -2198,7 +2198,7 @@ build_stage_screen_layout:
     CDB5: A9 55       lda #$55
 
 fill_attr_map_run:
-    CDB7: 9D 70 01    sta collision_bitmap_buf,x   ; $0170
+    CDB7: 9D 70 01    sta attr_dirty_bitmap,x   ; $0170
     CDBA: E8          inx
     CDBB: 88          dey
     CDBC: D0 F9       bne fill_attr_map_run   ; $CDB7
@@ -2340,7 +2340,7 @@ run_scripted_screen_cutscene_sequence:
 
 run_entry_state_sequence_120_frames:
     CE94: A9 78       lda #$78
-    CE96: 85 0F       sta stage_phase_countdown   ; $0F
+    CE96: 85 0F       sta countdown_lo   ; $0F
 @CE98:
     CE98: 20 41 C1    jsr yield_to_render_loop   ; $C141
     CE9B: A9 38       lda #$38
@@ -2355,18 +2355,18 @@ run_entry_state_sequence_120_frames:
     CEAD: 20 3D C6    jsr ptr16_sub6_set_const   ; $C63D
     CEB0: 20 1C D7    jsr copy_active_var_record_when_phase_aligned   ; $D71C
     CEB3: 20 AB D5    jsr pump_pending_amount_then_step_entry_state   ; $D5AB
-    CEB6: C6 0F       dec stage_phase_countdown   ; $0F
+    CEB6: C6 0F       dec countdown_lo   ; $0F
     CEB8: D0 DE       bne @CE98   ; $CE98
     CEBA: 60          rts
 
 run_entry_state_pump_120_iterations:
     CEBB: A9 78       lda #$78
-    CEBD: 85 0F       sta stage_phase_countdown   ; $0F
+    CEBD: 85 0F       sta countdown_lo   ; $0F
 @CEBF:
     CEBF: 20 41 C1    jsr yield_to_render_loop   ; $C141
     CEC2: 20 1C D7    jsr copy_active_var_record_when_phase_aligned   ; $D71C
     CEC5: 20 AB D5    jsr pump_pending_amount_then_step_entry_state   ; $D5AB
-    CEC8: C6 0F       dec stage_phase_countdown   ; $0F
+    CEC8: C6 0F       dec countdown_lo   ; $0F
     CECA: D0 F3       bne @CEBF   ; $CEBF
     CECC: 60          rts
 
@@ -4294,10 +4294,10 @@ draw_blocks_then_rebuild_buffer_entries:
 copy_active_var_record_when_phase_aligned:
     D71C: A5 42       lda game_phase   ; $42
     D71E: F0 15       beq queue_state_vram_packet   ; $D735
-    D720: A5 21       lda cur_obj_state   ; $21
+    D720: A5 21       lda frame_counter   ; $21
     D722: 29 0F       and #$0f
     D724: D0 0E       bne @D734   ; $D734
-    D726: A5 21       lda cur_obj_state   ; $21
+    D726: A5 21       lda frame_counter   ; $21
     D728: 4A          lsr a
     D729: 4A          lsr a
     D72A: 4A          lsr a
@@ -4322,7 +4322,7 @@ animate_two_sprite_walkcycles_into_buffer:
     D742: C9 01       cmp #$01
     D744: D0 0A       bne @D750   ; $D750
     D746: A9 F0       lda #$f0
-    D748: 85 0F       sta stage_phase_countdown   ; $0F
+    D748: 85 0F       sta countdown_lo   ; $0F
     D74A: A5 4A       lda seq_data_ptr   ; $4A
     D74C: 49 01       eor #$01
     D74E: 85 4A       sta seq_data_ptr   ; $4A
@@ -4572,9 +4572,9 @@ init_object_record_via_ptr:
     D89D: A0 00       ldy #$00
     D89F: 91 1E       sta (obj_record_ptr),y   ; $1E
     D8A1: C8          iny
-    D8A2: BD 64 02    lda obj_state,x   ; $0264
+    D8A2: BD 64 02    lda item_x,x   ; $0264
     D8A5: 91 1E       sta (obj_record_ptr),y   ; $1E
-    D8A7: BD 65 02    lda obj_type,x   ; $0265
+    D8A7: BD 65 02    lda item_y,x   ; $0265
     D8AA: A0 03       ldy #$03
     D8AC: 91 1E       sta (obj_record_ptr),y   ; $1E
     D8AE: C8          iny
@@ -4702,7 +4702,7 @@ update_object_state_vs_reference:
 @D98A:
     D98A: A5 42       lda game_phase   ; $42
     D98C: F0 39       beq @D9C7   ; $D9C7
-    D98E: A5 26       lda obj_record_ptr   ; $26
+    D98E: A5 26       lda pad_dir   ; $26
     D990: 91 1E       sta (obj_record_ptr),y   ; $1E
     D992: A5 22       lda scan_ptr   ; $22
     D994: C8          iny
@@ -4798,10 +4798,10 @@ add_field37_to_field36:
     DA1E: 60          rts
 @DA1F:
     DA1F: BD 7A E1    lda $e17a,x
-    DA22: 85 1C       sta object_record_ptr   ; $1C
+    DA22: 85 1C       sta aux_ptr   ; $1C
     DA24: BD 7B E1    lda $e17b,x
-    DA27: 85 1D       sta obj_record_ptr   ; $1D
-    DA29: 6C 1C 00    jmp (object_record_ptr)   ; $001C
+    DA27: 85 1D       sta aux_ptr_hi   ; $1D
+    DA29: 6C 1C 00    jmp (aux_ptr)   ; $001C
 
 dispatch_object_state:
     DA2C: A0 0F       ldy #$0f
@@ -4810,10 +4810,10 @@ dispatch_object_state:
     DA31: A5 7C       lda block_def_ptr_hi   ; $7C
     DA33: D0 EA       bne @DA1F   ; $DA1F
     DA35: BD 42 DA    lda $da42,x
-    DA38: 85 1C       sta object_record_ptr   ; $1C
+    DA38: 85 1C       sta aux_ptr   ; $1C
     DA3A: BD 43 DA    lda $da43,x
-    DA3D: 85 1D       sta obj_record_ptr   ; $1D
-    DA3F: 6C 1C 00    jmp (object_record_ptr)   ; $001C
+    DA3D: 85 1D       sta aux_ptr_hi   ; $1D
+    DA3F: 6C 1C 00    jmp (aux_ptr)   ; $001C
     DA42:            .word handler_rts_noop
     DA44:            .word update_object_proximity_collision_tick
     DA46:            .word tick_object_timer_then_move_or_reset
@@ -5475,7 +5475,7 @@ align_obj_coord_to_target:
     DECA: 91 1E       sta (obj_record_ptr),y   ; $1E
     DECC: C5 10       cmp src_ptr   ; $10
     DECE: D0 11       bne @DEE1   ; $DEE1
-    DED0: A6 21       ldx cur_obj_state   ; $21
+    DED0: A6 21       ldx frame_counter   ; $21
     DED2: BD 00 C0    lda $c000,x
     DED5: 4A          lsr a
     DED6: A9 04       lda #$04
@@ -6165,11 +6165,11 @@ build_object_record_block_and_dispatch:
     E35B: A6 7A       ldx stage_number   ; $7A
     E35D: BC E1 E4    ldy $e4e1,x
     E360: B9 F1 E4    lda $e4f1,y
-    E363: 85 1C       sta object_record_ptr   ; $1C
+    E363: 85 1C       sta aux_ptr   ; $1C
     E365: B9 F2 E4    lda $e4f2,y
-    E368: 85 1D       sta obj_record_ptr   ; $1D
+    E368: 85 1D       sta aux_ptr_hi   ; $1D
     E36A: A0 00       ldy #$00
-    E36C: B1 1C       lda (object_record_ptr),y   ; $1C
+    E36C: B1 1C       lda (aux_ptr),y   ; $1C
     E36E: C8          iny
     E36F: 85 80       sta object_count   ; $80
     E371: A2 00       ldx #$00
@@ -6179,7 +6179,7 @@ build_object_record_block_and_dispatch:
     E378: 9D 01 02    sta obj_anim_timer,x   ; $0201
     E37B: A9 03       lda #$03
     E37D: 9D 02 02    sta obj_timer,x   ; $0202
-    E380: B1 1C       lda (object_record_ptr),y   ; $1C
+    E380: B1 1C       lda (aux_ptr),y   ; $1C
     E382: C8          iny
     E383: 84 1B       sty cur_obj_index   ; $1B
     E385: 9D 03 02    sta $0203,x
@@ -6624,11 +6624,11 @@ set_obj_state_and_load_next_ptr:
 
 spawn_objects_from_level_descriptor:
     E5C5: AD 98 E7    lda $e798
-    E5C8: 85 1C       sta object_record_ptr   ; $1C
+    E5C8: 85 1C       sta aux_ptr   ; $1C
     E5CA: AD 99 E7    lda $e799
-    E5CD: 85 1D       sta obj_record_ptr   ; $1D
+    E5CD: 85 1D       sta aux_ptr_hi   ; $1D
     E5CF: A0 00       ldy #$00
-    E5D1: B1 1C       lda (object_record_ptr),y   ; $1C
+    E5D1: B1 1C       lda (aux_ptr),y   ; $1C
     E5D3: 85 81       sta active_object_count   ; $81
     E5D5: 4A          lsr a
     E5D6: 4A          lsr a
@@ -6639,10 +6639,10 @@ spawn_objects_from_level_descriptor:
     E5DD: A2 00       ldx #$00
 @E5DF:
     E5DF: A9 02       lda #$02
-    E5E1: 9D 60 02    sta obj_state,x   ; $0260
+    E5E1: 9D 60 02    sta item_state,x   ; $0260
     E5E4: A9 00       lda #$00
     E5E6: 9D 63 02    sta obj_type,x   ; $0263
-    E5E9: B1 1C       lda (object_record_ptr),y   ; $1C
+    E5E9: B1 1C       lda (aux_ptr),y   ; $1C
     E5EB: C8          iny
     E5EC: 84 1B       sty cur_obj_index   ; $1B
     E5EE: 9D 61 02    sta obj_type,x   ; $0261
@@ -6653,9 +6653,9 @@ spawn_objects_from_level_descriptor:
     E5FA: 85 11       sta zp_ptr_hi   ; $11
     E5FC: 20 BD E3    jsr shl3_pack_zp_ptr16   ; $E3BD
     E5FF: A5 10       lda src_ptr   ; $10
-    E601: 9D 64 02    sta obj_state,x   ; $0264
+    E601: 9D 64 02    sta item_x,x   ; $0264
     E604: A5 11       lda zp_ptr_hi   ; $11
-    E606: 9D 65 02    sta obj_type,x   ; $0265
+    E606: 9D 65 02    sta item_y,x   ; $0265
     E609: A4 1B       ldy cur_obj_index   ; $1B
     E60B: 8A          txa
     E60C: 18          clc
@@ -6669,7 +6669,7 @@ process_objects_in_state_two:
     E616: 86 31       stx obj_record_ptr   ; $31
 @E618:
     E618: 86 1B       stx cur_obj_index   ; $1B
-    E61A: BD 60 02    lda obj_state,x   ; $0260
+    E61A: BD 60 02    lda item_state,x   ; $0260
     E61D: C9 02       cmp #$02
     E61F: D0 08       bne @E629   ; $E629
     E621: A9 00       lda #$00
@@ -6702,12 +6702,12 @@ update_all_active_objects:
     E649: 60          rts
 
 dispatch_item_state:
-    E64A: BC 60 02    ldy obj_state,x   ; $0260
+    E64A: BC 60 02    ldy item_state,x   ; $0260
     E64D: B9 5A E6    lda $e65a,y
-    E650: 85 1C       sta object_record_ptr   ; $1C
+    E650: 85 1C       sta aux_ptr   ; $1C
     E652: B9 5B E6    lda $e65b,y
-    E655: 85 1D       sta obj_record_ptr   ; $1D
-    E657: 6C 1C 00    jmp (object_record_ptr)   ; $001C
+    E655: 85 1D       sta aux_ptr_hi   ; $1D
+    E657: 6C 1C 00    jmp (aux_ptr)   ; $001C
     E65A:            .word handler_rts_noop
     E65C:            .word resolve_object_position_capture_and_score
     E65E:            .word draw_object_and_tick_state_timer
@@ -6719,10 +6719,10 @@ resolve_object_position_capture_and_score:
     E668: 20 1E E7    jsr branch_on_state21_bits   ; $E71E
     E66B: A6 1B       ldx cur_obj_index   ; $1B
 @E66D:
-    E66D: BD 65 02    lda obj_type,x   ; $0265
+    E66D: BD 65 02    lda item_y,x   ; $0265
     E670: CD 03 04    cmp $0403
     E673: D0 D4       bne @E649   ; $E649
-    E675: BD 64 02    lda obj_state,x   ; $0264
+    E675: BD 64 02    lda item_x,x   ; $0264
     E678: 38          sec
     E679: ED 01 04    sbc $0401
     E67C: C9 02       cmp #$02
@@ -6743,7 +6743,7 @@ resolve_object_position_capture_and_score:
     E697: A5 42       lda game_phase   ; $42
     E699: 8D 08 06    sta $0608
     E69C: A9 04       lda #$04
-    E69E: 9D 60 02    sta obj_state,x   ; $0260
+    E69E: 9D 60 02    sta item_state,x   ; $0260
     E6A1: A9 3C       lda #$3c
     E6A3: 9D 62 02    sta $0262,x
     E6A6: A9 01       lda #$01
@@ -6766,7 +6766,7 @@ resolve_object_position_capture_and_score:
     E6CA: A2 00       ldx #$00
 @E6CC:
     E6CC: 86 1A       stx data_src_ptr   ; $1A
-    E6CE: BD 60 02    lda obj_state,x   ; $0260
+    E6CE: BD 60 02    lda item_state,x   ; $0260
     E6D1: C9 02       cmp #$02
     E6D3: D0 0D       bne @E6E2   ; $E6E2
     E6D5: BD 63 02    lda obj_type,x   ; $0263
@@ -6797,7 +6797,7 @@ draw_object_and_tick_state_timer:
     E6FF: DE 62 02    dec $0262,x
     E702: D0 19       bne @E71D   ; $E71D
     E704: A9 00       lda #$00
-    E706: 9D 60 02    sta obj_state,x   ; $0260
+    E706: 9D 60 02    sta item_state,x   ; $0260
     E709: 60          rts
 
 load_string_entry10_with_flag80:
@@ -6813,11 +6813,11 @@ load_string_entry10_with_flag80:
     E71D: 60          rts
 
 branch_on_state21_bits:
-    E71E: A5 21       lda cur_obj_state   ; $21
+    E71E: A5 21       lda frame_counter   ; $21
     E720: 29 03       and #$03
     E722: 49 01       eor #$01
     E724: D0 F7       bne @E71D   ; $E71D
-    E726: A5 21       lda cur_obj_state   ; $21
+    E726: A5 21       lda frame_counter   ; $21
     E728: 29 04       and #$04
     E72A: F0 DE       beq load_string_entry10_with_flag80   ; $E70A
 
@@ -6851,10 +6851,10 @@ trigger_state_transition_on_position_match:
     E75C: D0 29       bne @E787   ; $E787
     E75E: AD 2A 04    lda bonus_item_timer   ; $042A
     E761: D0 24       bne @E787   ; $E787
-    E763: BD 65 02    lda obj_type,x   ; $0265
+    E763: BD 65 02    lda item_y,x   ; $0265
     E766: CD 23 04    cmp obj_state   ; $0423
     E769: D0 1C       bne @E787   ; $E787
-    E76B: BD 64 02    lda obj_state,x   ; $0264
+    E76B: BD 64 02    lda item_x,x   ; $0264
     E76E: CD 21 04    cmp target_compare_value   ; $0421
     E771: D0 14       bne @E787   ; $E787
     E773: A9 00       lda #$00
@@ -6983,7 +6983,7 @@ draw_composite_object_sprite:
     E7F9: 38          sec
     E7FA: E5 28       sbc screen_layout_ptr_hi   ; $28
     E7FC: 85 10       sta src_ptr   ; $10
-    E7FE: BD 64 02    lda obj_state,x   ; $0264
+    E7FE: BD 64 02    lda item_x,x   ; $0264
     E801: E5 29       sbc camera_scroll_x   ; $29
     E803: 18          clc
     E804: 69 01       adc #$01
@@ -6997,7 +6997,7 @@ draw_composite_object_sprite:
     E811: 90 02       bcc @E815   ; $E815
     E813: C6 11       dec zp_ptr_hi   ; $11
 @E815:
-    E815: BD 65 02    lda obj_type,x   ; $0265
+    E815: BD 65 02    lda item_y,x   ; $0265
     E818: 38          sec
     E819: E9 01       sbc #$01
     E81B: 0A          asl a
@@ -7046,11 +7046,11 @@ load_object_table_to_ram:
     E864: 0A          asl a
     E865: A8          tay
     E866: B9 FC EA    lda $eafc,y
-    E869: 85 1C       sta object_record_ptr   ; $1C
+    E869: 85 1C       sta aux_ptr   ; $1C
     E86B: B9 FD EA    lda $eafd,y
-    E86E: 85 1D       sta obj_record_ptr   ; $1D
+    E86E: 85 1D       sta aux_ptr_hi   ; $1D
     E870: A0 00       ldy #$00
-    E872: B1 1C       lda (object_record_ptr),y   ; $1C
+    E872: B1 1C       lda (aux_ptr),y   ; $1C
     E874: 85 83       sta object_count   ; $83
     E876: F0 53       beq @E8CB   ; $E8CB
     E878: C8          iny
@@ -7060,14 +7060,14 @@ load_object_table_to_ram:
     E87D: A9 00       lda #$00
     E87F: 9D B0 02    sta obj_anim_timer,x   ; $02B0
     E882: 9D B6 02    sta $02b6,x
-    E885: B1 1C       lda (object_record_ptr),y   ; $1C
+    E885: B1 1C       lda (aux_ptr),y   ; $1C
     E887: C8          iny
     E888: 9D B1 02    sta obj_state,x   ; $02B1
-    E88B: B1 1C       lda (object_record_ptr),y   ; $1C
+    E88B: B1 1C       lda (aux_ptr),y   ; $1C
     E88D: C8          iny
     E88E: 9D B2 02    sta $02b2,x
     E891: 85 10       sta src_ptr   ; $10
-    E893: B1 1C       lda (object_record_ptr),y   ; $1C
+    E893: B1 1C       lda (aux_ptr),y   ; $1C
     E895: C8          iny
     E896: 9D B3 02    sta $02b3,x
     E899: 85 11       sta zp_ptr_hi   ; $11
@@ -7113,7 +7113,7 @@ update_all_objects_anim_and_phase:
     E8DC: AA          tax
     E8DD: E4 83       cpx object_count   ; $83
     E8DF: D0 F1       bne @E8D2   ; $E8D2
-    E8E1: A5 21       lda cur_obj_state   ; $21
+    E8E1: A5 21       lda frame_counter   ; $21
     E8E3: 29 03       and #$03
     E8E5: 0A          asl a
     E8E6: 0A          asl a
@@ -7126,7 +7126,7 @@ update_all_objects_anim_and_phase:
     E8F3: 49 08       eor #$08
     E8F5: D0 D4       bne @E8CB   ; $E8CB
     E8F7: A0 10       ldy #$10
-    E8F9: A5 21       lda cur_obj_state   ; $21
+    E8F9: A5 21       lda frame_counter   ; $21
     E8FB: 29 04       and #$04
     E8FD: F0 03       beq setup_ptrs_and_scan_zero_term   ; $E902
 
@@ -7293,9 +7293,9 @@ check_subject_vs_object_list_collision:
     EA08: 29 06       and #$06
     EA0A: A8          tay
     EA0B: B9 49 EA    lda $ea49,y
-    EA0E: 85 1C       sta object_record_ptr   ; $1C
+    EA0E: 85 1C       sta aux_ptr   ; $1C
     EA10: B9 4A EA    lda $ea4a,y
-    EA13: 85 1D       sta obj_record_ptr   ; $1D
+    EA13: 85 1D       sta aux_ptr_hi   ; $1D
     EA15: A0 00       ldy #$00
 @EA17:
     EA17: C0 10       cpy #$10
@@ -7324,7 +7324,7 @@ check_subject_vs_object_list_collision:
     EA45: 60          rts
 
 jmp_indirect_zp_vector:
-    EA46: 6C 1C 00    jmp (object_record_ptr)   ; $001C
+    EA46: 6C 1C 00    jmp (aux_ptr)   ; $001C
     EA49: 5E          .byte $5E
     EA4A: EA          .byte $EA
     EA4B: 51          .byte $51
@@ -8496,11 +8496,11 @@ dispatch_obj_state:
     F059: C9 02       cmp #$02
     F05B: 90 3F       bcc @F09C   ; $F09C
     F05D: D0 29       bne @F088   ; $F088
-    F05F: A5 21       lda cur_obj_state   ; $21
+    F05F: A5 21       lda frame_counter   ; $21
     F061: 29 03       and #$03
     F063: C9 02       cmp #$02
     F065: D0 D9       bne @F040   ; $F040
-    F067: A5 21       lda cur_obj_state   ; $21
+    F067: A5 21       lda frame_counter   ; $21
     F069: 29 04       and #$04
     F06B: 4A          lsr a
     F06C: AA          tax
@@ -8630,11 +8630,11 @@ check_obj_adjacency_set_hit_flag:
 load_object_table_from_def:
     F13A: A4 7C       ldy block_def_ptr_hi   ; $7C
     F13C: B9 7F F2    lda $f27f,y
-    F13F: 85 1C       sta object_record_ptr   ; $1C
+    F13F: 85 1C       sta aux_ptr   ; $1C
     F141: B9 80 F2    lda $f280,y
-    F144: 85 1D       sta obj_record_ptr   ; $1D
+    F144: 85 1D       sta aux_ptr_hi   ; $1D
     F146: A0 00       ldy #$00
-    F148: B1 1C       lda (object_record_ptr),y   ; $1C
+    F148: B1 1C       lda (aux_ptr),y   ; $1C
     F14A: C8          iny
     F14B: 85 53       sta object_def_ptr   ; $53
     F14D: 4A          lsr a
@@ -8653,20 +8653,20 @@ load_object_table_from_def:
     F161: A2 00       ldx #$00
 @F163:
     F163: A9 02       lda #$02
-    F165: 9D 60 02    sta obj_state,x   ; $0260
-    F168: B1 1C       lda (object_record_ptr),y   ; $1C
+    F165: 9D 60 02    sta item_state,x   ; $0260
+    F168: B1 1C       lda (aux_ptr),y   ; $1C
     F16A: C8          iny
     F16B: 85 10       sta src_ptr   ; $10
     F16D: 9D 66 02    sta $0266,x
-    F170: B1 1C       lda (object_record_ptr),y   ; $1C
+    F170: B1 1C       lda (aux_ptr),y   ; $1C
     F172: C8          iny
     F173: 85 11       sta zp_ptr_hi   ; $11
     F175: 9D 67 02    sta $0267,x
     F178: 20 BD E3    jsr shl3_pack_zp_ptr16   ; $E3BD
     F17B: A5 10       lda src_ptr   ; $10
-    F17D: 9D 64 02    sta obj_state,x   ; $0264
+    F17D: 9D 64 02    sta item_x,x   ; $0264
     F180: A5 11       lda zp_ptr_hi   ; $11
-    F182: 9D 65 02    sta obj_type,x   ; $0265
+    F182: 9D 65 02    sta item_y,x   ; $0265
     F185: 8A          txa
     F186: 18          clc
     F187: 69 08       adc #$08
@@ -8692,12 +8692,12 @@ dispatch_all_objects_phase_handler:
     F1A4: 60          rts
 
 dispatch_object_phase_handler:
-    F1A5: BC 60 02    ldy obj_state,x   ; $0260
+    F1A5: BC 60 02    ldy item_state,x   ; $0260
     F1A8: B9 B5 F1    lda $f1b5,y
-    F1AB: 85 1C       sta object_record_ptr   ; $1C
+    F1AB: 85 1C       sta aux_ptr   ; $1C
     F1AD: B9 B6 F1    lda $f1b6,y
-    F1B0: 85 1D       sta obj_record_ptr   ; $1D
-    F1B2: 6C 1C 00    jmp (object_record_ptr)   ; $001C
+    F1B0: 85 1D       sta aux_ptr_hi   ; $1D
+    F1B2: 6C 1C 00    jmp (aux_ptr)   ; $001C
     F1B5:            .word handler_rts_noop
     F1B7:            .word check_object_reached_target_then_advance_phase
 
@@ -8705,13 +8705,13 @@ check_object_reached_target_then_advance_phase:
     F1B9: 20 33 F2    jsr load_ptr_from_table_by_state_bit   ; $F233
     F1BC: 20 15 F2    jsr on_object_reaching_target_reset_and_rescan   ; $F215
     F1BF: A6 1B       ldx cur_obj_index   ; $1B
-    F1C1: BD 60 02    lda obj_state,x   ; $0260
+    F1C1: BD 60 02    lda item_state,x   ; $0260
     F1C4: C9 02       cmp #$02
     F1C6: D0 4C       bne @F214   ; $F214
-    F1C8: BD 65 02    lda obj_type,x   ; $0265
+    F1C8: BD 65 02    lda item_y,x   ; $0265
     F1CB: CD 03 04    cmp $0403
     F1CE: D0 44       bne @F214   ; $F214
-    F1D0: BD 64 02    lda obj_state,x   ; $0264
+    F1D0: BD 64 02    lda item_x,x   ; $0264
     F1D3: 38          sec
     F1D4: ED 01 04    sbc $0401
     F1D7: C9 02       cmp #$02
@@ -8730,7 +8730,7 @@ init_object_record_load_data_and_scan:
     F1F1: A9 01       lda #$01
     F1F3: 8D 08 06    sta $0608
     F1F6: A9 00       lda #$00
-    F1F8: 9D 60 02    sta obj_state,x   ; $0260
+    F1F8: 9D 60 02    sta item_state,x   ; $0260
     F1FB: C6 52       dec object_def_ptr   ; $52
     F1FD: A0 06       ldy #$06
     F1FF: 20 E5 D4    jsr load_record_via_ptr_table   ; $D4E5
@@ -8745,10 +8745,10 @@ init_object_record_load_data_and_scan:
     F214: 60          rts
 
 on_object_reaching_target_reset_and_rescan:
-    F215: BD 65 02    lda obj_type,x   ; $0265
+    F215: BD 65 02    lda item_y,x   ; $0265
     F218: CD 23 04    cmp obj_state   ; $0423
     F21B: D0 F7       bne @F214   ; $F214
-    F21D: BD 64 02    lda obj_state,x   ; $0264
+    F21D: BD 64 02    lda item_x,x   ; $0264
     F220: 38          sec
     F221: ED 21 04    sbc target_compare_value   ; $0421
     F224: C9 02       cmp #$02
@@ -8763,10 +8763,10 @@ load_ptr_from_table_by_state_bit:
     F235: 4A          lsr a
     F236: 4A          lsr a
     F237: 4A          lsr a
-    F238: 45 21       eor cur_obj_state   ; $21
+    F238: 45 21       eor frame_counter   ; $21
     F23A: 29 0F       and #$0f
     F23C: D0 D6       bne @F214   ; $F214
-    F23E: A5 21       lda cur_obj_state   ; $21
+    F23E: A5 21       lda frame_counter   ; $21
     F240: 29 10       and #$10
     F242: 4A          lsr a
     F243: 4A          lsr a
@@ -9007,7 +9007,7 @@ draw_vertical_sprite_column:
     F38A: E8          inx
     F38B: E0 08       cpx #$08
     F38D: D0 F6       bne @F385   ; $F385
-    F38F: A5 21       lda cur_obj_state   ; $21
+    F38F: A5 21       lda frame_counter   ; $21
     F391: 29 03       and #$03
     F393: 85 13       sta data_ptr_hi   ; $13
 @F395:
@@ -9259,16 +9259,16 @@ jump_table_dispatch_via_index:
     F4A0: A8          tay
     F4A1: C8          iny
     F4A2: 68          pla
-    F4A3: 85 F6       sta indirect_ptr   ; $F6
+    F4A3: 85 F6       sta sound_scratch   ; $F6
     F4A5: 68          pla
     F4A6: 85 F7       sta $f7
-    F4A8: B1 F6       lda (indirect_ptr),y   ; $F6
+    F4A8: B1 F6       lda (sound_scratch),y   ; $F6
     F4AA: AA          tax
     F4AB: C8          iny
-    F4AC: B1 F6       lda (indirect_ptr),y   ; $F6
+    F4AC: B1 F6       lda (sound_scratch),y   ; $F6
     F4AE: 85 F7       sta $f7
-    F4B0: 86 F6       stx indirect_ptr   ; $F6
-    F4B2: 6C F6 00    jmp (indirect_ptr)   ; $00F6
+    F4B0: 86 F6       stx sound_scratch   ; $F6
+    F4B2: 6C F6 00    jmp (sound_scratch)   ; $00F6
 
 init_apu_channels_and_frame_counter:
     F4B5: A9 0F       lda #$0f
@@ -9278,21 +9278,21 @@ init_apu_channels_and_frame_counter:
 
 init_sound_voices:
     F4BF: A9 19       lda #$19
-    F4C1: 85 F0       sta work_ptr   ; $F0
+    F4C1: 85 F0       sta voice_rec_ptr   ; $F0
     F4C3: A9 06       lda #$06
-    F4C5: 85 F1       sta data_ptr_hi   ; $F1
+    F4C5: 85 F1       sta voice_rec_ptr_hi   ; $F1
     F4C7: A2 00       ldx #$00
     F4C9: A0 00       ldy #$00
 @F4CB:
     F4CB: A9 00       lda #$00
-    F4CD: 91 F0       sta (work_ptr),y   ; $F0
+    F4CD: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F4CF: 9D 00 06    sta sound_trigger,x   ; $0600
     F4D2: 18          clc
-    F4D3: A5 F0       lda work_ptr   ; $F0
+    F4D3: A5 F0       lda voice_rec_ptr   ; $F0
     F4D5: 69 08       adc #$08
-    F4D7: 85 F0       sta work_ptr   ; $F0
+    F4D7: 85 F0       sta voice_rec_ptr   ; $F0
     F4D9: 90 02       bcc @F4DD   ; $F4DD
-    F4DB: E6 F1       inc data_ptr_hi   ; $F1
+    F4DB: E6 F1       inc voice_rec_ptr_hi   ; $F1
 @F4DD:
     F4DD: E8          inx
     F4DE: E0 19       cpx #$19
@@ -9308,14 +9308,14 @@ init_sound_voices:
     F4F0: 60          rts
 
 update_sound_frame:
-    F4F1: A5 23       lda data_read_ptr   ; $23
+    F4F1: A5 23       lda paused   ; $23
     F4F3: D0 06       bne @F4FB   ; $F4FB
     F4F5: A9 19       lda #$19
-    F4F7: 85 F5       sta draw_source_ptr   ; $F5
+    F4F7: 85 F5       sta voice_count   ; $F5
     F4F9: 10 0E       bpl @F509   ; $F509
 @F4FB:
     F4FB: A9 01       lda #$01
-    F4FD: 85 F5       sta draw_source_ptr   ; $F5
+    F4FD: 85 F5       sta voice_count   ; $F5
     F4FF: A9 10       lda #$10
     F501: 8D 04 40    sta APU_4004   ; $4004
     F504: A9 00       lda #$00
@@ -9326,15 +9326,15 @@ update_sound_frame:
     F50D: 85 FD       sta $fd
     F50F: 85 FE       sta $fe
     F511: 85 FF       sta $ff
-    F513: A5 F5       lda draw_source_ptr   ; $F5
-    F515: 85 F4       sta sound_seq_index   ; $F4
+    F513: A5 F5       lda voice_count   ; $F5
+    F515: 85 F4       sta voice_index   ; $F4
     F517: A9 19       lda #$19
-    F519: 85 F0       sta work_ptr   ; $F0
+    F519: 85 F0       sta voice_rec_ptr   ; $F0
     F51B: A9 06       lda #$06
-    F51D: 85 F1       sta data_ptr_hi   ; $F1
+    F51D: 85 F1       sta voice_rec_ptr_hi   ; $F1
 @F51F:
     F51F: A0 00       ldy #$00
-    F521: B1 F0       lda (work_ptr),y   ; $F0
+    F521: B1 F0       lda (voice_rec_ptr),y   ; $F0
     F523: F0 35       beq sound_registers_next_voice   ; $F55A
     F525: C9 05       cmp #$05
     F527: 90 0B       bcc @F534   ; $F534
@@ -9356,34 +9356,34 @@ update_sound_frame:
     F540: 18          clc
     F541: 69 05       adc #$05
     F543: A0 00       ldy #$00
-    F545: 91 F0       sta (work_ptr),y   ; $F0
+    F545: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F547: 8A          txa
     F548: 0A          asl a
     F549: 0A          asl a
     F54A: AA          tax
     F54B: A9 04       lda #$04
-    F54D: 85 F6       sta indirect_ptr   ; $F6
+    F54D: 85 F6       sta sound_scratch   ; $F6
 @F54F:
     F54F: C8          iny
-    F550: B1 F0       lda (work_ptr),y   ; $F0
+    F550: B1 F0       lda (voice_rec_ptr),y   ; $F0
     F552: 9D 00 40    sta APU_4000,x   ; $4000
     F555: E8          inx
-    F556: C6 F6       dec indirect_ptr   ; $F6
+    F556: C6 F6       dec sound_scratch   ; $F6
     F558: D0 F5       bne @F54F   ; $F54F
 
 sound_registers_next_voice:
     F55A: 18          clc
-    F55B: A5 F0       lda work_ptr   ; $F0
+    F55B: A5 F0       lda voice_rec_ptr   ; $F0
     F55D: 69 08       adc #$08
-    F55F: 85 F0       sta work_ptr   ; $F0
+    F55F: 85 F0       sta voice_rec_ptr   ; $F0
     F561: 90 02       bcc @F565   ; $F565
-    F563: E6 F1       inc data_ptr_hi   ; $F1
+    F563: E6 F1       inc voice_rec_ptr_hi   ; $F1
 @F565:
-    F565: C6 F4       dec sound_seq_index   ; $F4
+    F565: C6 F4       dec voice_index   ; $F4
     F567: D0 B6       bne @F51F   ; $F51F
     F569: A2 00       ldx #$00
 @F56B:
-    F56B: 86 F6       stx indirect_ptr   ; $F6
+    F56B: 86 F6       stx sound_scratch   ; $F6
     F56D: B5 FC       lda $fc,x
     F56F: D0 0C       bne @F57D   ; $F57D
     F571: 8A          txa
@@ -9395,31 +9395,31 @@ sound_registers_next_voice:
     F578: 49 10       eor #$10
     F57A: 9D 00 40    sta APU_4000,x   ; $4000
 @F57D:
-    F57D: A6 F6       ldx indirect_ptr   ; $F6
+    F57D: A6 F6       ldx sound_scratch   ; $F6
     F57F: E8          inx
     F580: E0 04       cpx #$04
     F582: 90 E7       bcc @F56B   ; $F56B
     F584: A0 00       ldy #$00
-    F586: 84 F4       sty sound_seq_index   ; $F4
+    F586: 84 F4       sty voice_index   ; $F4
     F588: A9 19       lda #$19
-    F58A: 85 F0       sta work_ptr   ; $F0
+    F58A: 85 F0       sta voice_rec_ptr   ; $F0
     F58C: A9 06       lda #$06
-    F58E: 85 F1       sta data_ptr_hi   ; $F1
+    F58E: 85 F1       sta voice_rec_ptr_hi   ; $F1
 @F590:
-    F590: A6 F4       ldx sound_seq_index   ; $F4
+    F590: A6 F4       ldx voice_index   ; $F4
     F592: BD 85 F8    lda $f885,x
     F595: F0 0D       beq @F5A4   ; $F5A4
     F597: BD 00 06    lda sound_trigger,x   ; $0600
     F59A: D0 15       bne @F5B1   ; $F5B1
     F59C: A0 00       ldy #$00
-    F59E: B1 F0       lda (work_ptr),y   ; $F0
+    F59E: B1 F0       lda (voice_rec_ptr),y   ; $F0
     F5A0: F0 16       beq sound_streams_next_voice   ; $F5B8
     F5A2: D0 28       bne @F5CC   ; $F5CC
 @F5A4:
     F5A4: BD 00 06    lda sound_trigger,x   ; $0600
     F5A7: F0 0F       beq sound_streams_next_voice   ; $F5B8
     F5A9: A0 00       ldy #$00
-    F5AB: B1 F0       lda (work_ptr),y   ; $F0
+    F5AB: B1 F0       lda (voice_rec_ptr),y   ; $F0
     F5AD: D0 1D       bne @F5CC   ; $F5CC
     F5AF: F0 28       beq @F5D9   ; $F5D9
 @F5B1:
@@ -9429,68 +9429,68 @@ sound_registers_next_voice:
 
 sound_streams_next_voice:
     F5B8: 18          clc
-    F5B9: A5 F0       lda work_ptr   ; $F0
+    F5B9: A5 F0       lda voice_rec_ptr   ; $F0
     F5BB: 69 08       adc #$08
-    F5BD: 85 F0       sta work_ptr   ; $F0
+    F5BD: 85 F0       sta voice_rec_ptr   ; $F0
     F5BF: 90 02       bcc @F5C3   ; $F5C3
-    F5C1: E6 F1       inc data_ptr_hi   ; $F1
+    F5C1: E6 F1       inc voice_rec_ptr_hi   ; $F1
 @F5C3:
-    F5C3: E6 F4       inc sound_seq_index   ; $F4
-    F5C5: A5 F4       lda sound_seq_index   ; $F4
-    F5C7: C5 F5       cmp draw_source_ptr   ; $F5
+    F5C3: E6 F4       inc voice_index   ; $F4
+    F5C5: A5 F4       lda voice_index   ; $F4
+    F5C7: C5 F5       cmp voice_count   ; $F5
     F5C9: 90 C5       bcc @F590   ; $F590
     F5CB: 60          rts
 @F5CC:
     F5CC: A0 07       ldy #$07
-    F5CE: B1 F0       lda (work_ptr),y   ; $F0
+    F5CE: B1 F0       lda (voice_rec_ptr),y   ; $F0
     F5D0: 38          sec
     F5D1: E9 01       sbc #$01
-    F5D3: 91 F0       sta (work_ptr),y   ; $F0
+    F5D3: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F5D5: F0 5C       beq @F633   ; $F633
     F5D7: D0 DF       bne sound_streams_next_voice   ; $F5B8
 @F5D9:
-    F5D9: A5 F4       lda sound_seq_index   ; $F4
+    F5D9: A5 F4       lda voice_index   ; $F4
     F5DB: C9 13       cmp #$13
     F5DD: F0 10       beq @F5EF   ; $F5EF
     F5DF: C9 14       cmp #$14
     F5E1: F0 19       beq @F5FC   ; $F5FC
     F5E3: A9 00       lda #$00
     F5E5: A0 05       ldy #$05
-    F5E7: 91 F0       sta (work_ptr),y   ; $F0
+    F5E7: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F5E9: 20 F4 F7    jsr load_voice_stream_ptr   ; $F7F4
     F5EC: 4C 06 F6    jmp start_voice_stream   ; $F606
 @F5EF:
     F5EF: AD 79 F8    lda $f879
-    F5F2: 85 F8       sta anim_script_ptr   ; $F8
+    F5F2: 85 F8       sta voice13_stream_ptr   ; $F8
     F5F4: AD 7A F8    lda $f87a
-    F5F7: 85 F9       sta anim_script_ptr_hi   ; $F9
+    F5F7: 85 F9       sta voice13_stream_ptr_hi   ; $F9
     F5F9: 4C 06 F6    jmp start_voice_stream   ; $F606
 @F5FC:
     F5FC: AD 7B F8    lda $f87b
-    F5FF: 85 FA       sta anim_script_ptr   ; $FA
+    F5FF: 85 FA       sta voice14_stream_ptr   ; $FA
     F601: AD 7C F8    lda $f87c
-    F604: 85 FB       sta seq_data_ptr_hi   ; $FB
+    F604: 85 FB       sta voice14_stream_ptr_hi   ; $FB
 
 start_voice_stream:
     F606: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
     F609: A0 00       ldy #$00
-    F60B: 91 F0       sta (work_ptr),y   ; $F0
+    F60B: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F60D: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
     F610: A0 01       ldy #$01
-    F612: 91 F0       sta (work_ptr),y   ; $F0
+    F612: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F614: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
     F617: A0 02       ldy #$02
-    F619: 91 F0       sta (work_ptr),y   ; $F0
+    F619: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F61B: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
     F61E: A0 04       ldy #$04
-    F620: 91 F0       sta (work_ptr),y   ; $F0
+    F620: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F622: A0 00       ldy #$00
-    F624: B1 F0       lda (work_ptr),y   ; $F0
+    F624: B1 F0       lda (voice_rec_ptr),y   ; $F0
     F626: C9 04       cmp #$04
     F628: D0 0C       bne run_voice_stream   ; $F636
     F62A: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
     F62D: A0 03       ldy #$03
-    F62F: 91 F0       sta (work_ptr),y   ; $F0
+    F62F: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F631: 10 03       bpl run_voice_stream   ; $F636
 @F633:
     F633: 20 F4 F7    jsr load_voice_stream_ptr   ; $F7F4
@@ -9508,7 +9508,7 @@ run_voice_stream:
     F647: 4A          lsr a
     F648: AA          tax
     F649: BD 3B F8    lda $f83b,x
-    F64C: 85 F6       sta indirect_ptr   ; $F6
+    F64C: 85 F6       sta sound_scratch   ; $F6
     F64E: BD 3C F8    lda $f83c,x
     F651: 85 F7       sta $f7
     F653: 68          pla
@@ -9516,31 +9516,31 @@ run_voice_stream:
     F656: F0 08       beq @F660   ; $F660
     F658: AA          tax
 @F659:
-    F659: 46 F6       lsr indirect_ptr   ; $F6
+    F659: 46 F6       lsr sound_scratch   ; $F6
     F65B: 66 F7       ror $f7
     F65D: CA          dex
     F65E: D0 F9       bne @F659   ; $F659
 @F660:
     F660: A0 04       ldy #$04
-    F662: B1 F0       lda (work_ptr),y   ; $F0
+    F662: B1 F0       lda (voice_rec_ptr),y   ; $F0
     F664: 29 F8       and #$f8
-    F666: 05 F6       ora indirect_ptr   ; $F6
-    F668: 91 F0       sta (work_ptr),y   ; $F0
+    F666: 05 F6       ora sound_scratch   ; $F6
+    F668: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F66A: A5 F7       lda $f7
     F66C: 88          dey
-    F66D: 91 F0       sta (work_ptr),y   ; $F0
+    F66D: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F66F: A0 00       ldy #$00
-    F671: B1 F0       lda (work_ptr),y   ; $F0
+    F671: B1 F0       lda (voice_rec_ptr),y   ; $F0
     F673: C9 05       cmp #$05
     F675: 90 05       bcc @F67C   ; $F67C
     F677: 38          sec
     F678: E9 04       sbc #$04
-    F67A: 91 F0       sta (work_ptr),y   ; $F0
+    F67A: 91 F0       sta (voice_rec_ptr),y   ; $F0
 @F67C:
     F67C: A0 06       ldy #$06
-    F67E: B1 F0       lda (work_ptr),y   ; $F0
-    F680: 85 F6       sta indirect_ptr   ; $F6
-    F682: A6 F4       ldx sound_seq_index   ; $F4
+    F67E: B1 F0       lda (voice_rec_ptr),y   ; $F0
+    F680: 85 F6       sta sound_scratch   ; $F6
+    F682: A6 F4       ldx voice_index   ; $F4
     F684: BD E2 06    lda $06e2,x
     F687: 85 F7       sta $f7
     F689: A9 00       lda #$00
@@ -9549,18 +9549,18 @@ run_voice_stream:
     F68D: 46 F7       lsr $f7
     F68F: 90 03       bcc @F694   ; $F694
     F691: 18          clc
-    F692: 65 F6       adc indirect_ptr   ; $F6
+    F692: 65 F6       adc sound_scratch   ; $F6
 @F694:
-    F694: 06 F6       asl indirect_ptr   ; $F6
+    F694: 06 F6       asl sound_scratch   ; $F6
     F696: CA          dex
     F697: D0 F4       bne @F68D   ; $F68D
     F699: C8          iny
-    F69A: 91 F0       sta (work_ptr),y   ; $F0
+    F69A: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F69C: 4C B8 F5    jmp sound_streams_next_voice   ; $F5B8
 @F69F:
     F69F: E9 60       sbc #$60
     F6A1: A0 06       ldy #$06
-    F6A3: 91 F0       sta (work_ptr),y   ; $F0
+    F6A3: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F6A5: 10 8F       bpl run_voice_stream   ; $F636
 @F6A7:
     F6A7: E9 E8       sbc #$e8
@@ -9585,59 +9585,59 @@ run_voice_stream:
     F6CE:            .word voice_op_jump
 
 voice_op_end:
-    F6D0: A6 F4       ldx sound_seq_index   ; $F4
+    F6D0: A6 F4       ldx voice_index   ; $F4
     F6D2: A9 00       lda #$00
     F6D4: 9D 00 06    sta sound_trigger,x   ; $0600
     F6D7: A0 00       ldy #$00
-    F6D9: 91 F0       sta (work_ptr),y   ; $F0
+    F6D9: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F6DB: 4C B8 F5    jmp sound_streams_next_voice   ; $F5B8
 
 voice_op_set_duty:
     F6DE: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
-    F6E1: 85 F6       sta indirect_ptr   ; $F6
+    F6E1: 85 F6       sta sound_scratch   ; $F6
     F6E3: A0 01       ldy #$01
-    F6E5: B1 F0       lda (work_ptr),y   ; $F0
+    F6E5: B1 F0       lda (voice_rec_ptr),y   ; $F0
     F6E7: 29 3F       and #$3f
-    F6E9: 05 F6       ora indirect_ptr   ; $F6
-    F6EB: 91 F0       sta (work_ptr),y   ; $F0
+    F6E9: 05 F6       ora sound_scratch   ; $F6
+    F6EB: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F6ED: 4C 36 F6    jmp run_voice_stream   ; $F636
 
 voice_op_set_envelope:
     F6F0: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
-    F6F3: 85 F6       sta indirect_ptr   ; $F6
+    F6F3: 85 F6       sta sound_scratch   ; $F6
     F6F5: A0 01       ldy #$01
-    F6F7: B1 F0       lda (work_ptr),y   ; $F0
+    F6F7: B1 F0       lda (voice_rec_ptr),y   ; $F0
     F6F9: 29 C0       and #$c0
-    F6FB: 05 F6       ora indirect_ptr   ; $F6
-    F6FD: 91 F0       sta (work_ptr),y   ; $F0
+    F6FB: 05 F6       ora sound_scratch   ; $F6
+    F6FD: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F6FF: 4C 36 F6    jmp run_voice_stream   ; $F636
 
 voice_op_set_volume:
     F702: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
-    F705: 85 F6       sta indirect_ptr   ; $F6
+    F705: 85 F6       sta sound_scratch   ; $F6
     F707: A0 01       ldy #$01
-    F709: B1 F0       lda (work_ptr),y   ; $F0
+    F709: B1 F0       lda (voice_rec_ptr),y   ; $F0
     F70B: 29 F0       and #$f0
-    F70D: 05 F6       ora indirect_ptr   ; $F6
-    F70F: 91 F0       sta (work_ptr),y   ; $F0
+    F70D: 05 F6       ora sound_scratch   ; $F6
+    F70F: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F711: 4C 36 F6    jmp run_voice_stream   ; $F636
 
 voice_op_set_sweep:
     F714: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
     F717: A0 02       ldy #$02
-    F719: 91 F0       sta (work_ptr),y   ; $F0
+    F719: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F71B: 4C 36 F6    jmp run_voice_stream   ; $F636
 
 voice_op_set_length_period_hi:
     F71E: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
     F721: A0 04       ldy #$04
-    F723: 91 F0       sta (work_ptr),y   ; $F0
+    F723: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F725: 4C 36 F6    jmp run_voice_stream   ; $F636
 
 voice_op_set_control:
     F728: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
     F72B: A0 01       ldy #$01
-    F72D: 91 F0       sta (work_ptr),y   ; $F0
+    F72D: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F72F: 4C 36 F6    jmp run_voice_stream   ; $F636
 
 voice_op_clear_loop_counters:
@@ -9706,65 +9706,65 @@ voice_op_jump_on_count_5:
     F78B: 9D 67 01    sta $0167,x
     F78E: F0 32       beq voice_op_jump   ; $F7C2
 @F790:
-    F790: A5 F4       lda sound_seq_index   ; $F4
+    F790: A5 F4       lda voice_index   ; $F4
     F792: C9 13       cmp #$13
     F794: F0 10       beq @F7A6   ; $F7A6
     F796: C9 14       cmp #$14
     F798: F0 1A       beq @F7B4   ; $F7B4
     F79A: A0 05       ldy #$05
-    F79C: B1 F0       lda (work_ptr),y   ; $F0
+    F79C: B1 F0       lda (voice_rec_ptr),y   ; $F0
     F79E: 18          clc
     F79F: 69 01       adc #$01
-    F7A1: 91 F0       sta (work_ptr),y   ; $F0
+    F7A1: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F7A3: 4C 36 F6    jmp run_voice_stream   ; $F636
 @F7A6:
-    F7A6: A5 F8       lda anim_script_ptr   ; $F8
+    F7A6: A5 F8       lda voice13_stream_ptr   ; $F8
     F7A8: 18          clc
     F7A9: 69 02       adc #$02
-    F7AB: 85 F8       sta anim_script_ptr   ; $F8
+    F7AB: 85 F8       sta voice13_stream_ptr   ; $F8
     F7AD: 90 02       bcc @F7B1   ; $F7B1
-    F7AF: E6 F9       inc anim_script_ptr_hi   ; $F9
+    F7AF: E6 F9       inc voice13_stream_ptr_hi   ; $F9
 @F7B1:
     F7B1: 4C 36 F6    jmp run_voice_stream   ; $F636
 @F7B4:
-    F7B4: A5 FA       lda anim_script_ptr   ; $FA
+    F7B4: A5 FA       lda voice14_stream_ptr   ; $FA
     F7B6: 18          clc
     F7B7: 69 02       adc #$02
-    F7B9: 85 FA       sta anim_script_ptr   ; $FA
+    F7B9: 85 FA       sta voice14_stream_ptr   ; $FA
     F7BB: 90 02       bcc @F7BF   ; $F7BF
-    F7BD: E6 FB       inc seq_data_ptr_hi   ; $FB
+    F7BD: E6 FB       inc voice14_stream_ptr_hi   ; $FB
 @F7BF:
     F7BF: 4C 36 F6    jmp run_voice_stream   ; $F636
 
 voice_op_jump:
-    F7C2: A5 F4       lda sound_seq_index   ; $F4
+    F7C2: A5 F4       lda voice_index   ; $F4
     F7C4: C9 13       cmp #$13
     F7C6: F0 0E       beq @F7D6   ; $F7D6
     F7C8: C9 14       cmp #$14
     F7CA: F0 19       beq @F7E5   ; $F7E5
     F7CC: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
     F7CF: A0 05       ldy #$05
-    F7D1: 91 F0       sta (work_ptr),y   ; $F0
+    F7D1: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F7D3: 4C 36 F6    jmp run_voice_stream   ; $F636
 @F7D6:
     F7D6: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
     F7D9: 48          pha
     F7DA: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
-    F7DD: 85 F9       sta anim_script_ptr_hi   ; $F9
+    F7DD: 85 F9       sta voice13_stream_ptr_hi   ; $F9
     F7DF: 68          pla
-    F7E0: 85 F8       sta anim_script_ptr   ; $F8
+    F7E0: 85 F8       sta voice13_stream_ptr   ; $F8
     F7E2: 4C 36 F6    jmp run_voice_stream   ; $F636
 @F7E5:
     F7E5: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
     F7E8: 48          pha
     F7E9: 20 0B F8    jsr fetch_voice_stream_byte   ; $F80B
-    F7EC: 85 FB       sta seq_data_ptr_hi   ; $FB
+    F7EC: 85 FB       sta voice14_stream_ptr_hi   ; $FB
     F7EE: 68          pla
-    F7EF: 85 FA       sta anim_script_ptr   ; $FA
+    F7EF: 85 FA       sta voice14_stream_ptr   ; $FA
     F7F1: 4C 36 F6    jmp run_voice_stream   ; $F636
 
 load_voice_stream_ptr:
-    F7F4: A5 F4       lda sound_seq_index   ; $F4
+    F7F4: A5 F4       lda voice_index   ; $F4
     F7F6: C9 13       cmp #$13
     F7F8: F0 10       beq @F80A   ; $F80A
     F7FA: C9 14       cmp #$14
@@ -9772,43 +9772,43 @@ load_voice_stream_ptr:
     F7FE: 0A          asl a
     F7FF: AA          tax
     F800: BD 53 F8    lda $f853,x
-    F803: 85 F2       sta seq_data_ptr   ; $F2
+    F803: 85 F2       sta voice_stream_ptr   ; $F2
     F805: BD 54 F8    lda $f854,x
-    F808: 85 F3       sta seq_data_ptr_hi   ; $F3
+    F808: 85 F3       sta voice_stream_ptr_hi   ; $F3
 @F80A:
     F80A: 60          rts
 
 fetch_voice_stream_byte:
-    F80B: A5 F4       lda sound_seq_index   ; $F4
+    F80B: A5 F4       lda voice_index   ; $F4
     F80D: C9 13       cmp #$13
     F80F: F0 14       beq @F825   ; $F825
     F811: C9 14       cmp #$14
     F813: F0 1B       beq @F830   ; $F830
     F815: A0 05       ldy #$05
-    F817: B1 F0       lda (work_ptr),y   ; $F0
+    F817: B1 F0       lda (voice_rec_ptr),y   ; $F0
     F819: A8          tay
-    F81A: B1 F2       lda (seq_data_ptr),y   ; $F2
+    F81A: B1 F2       lda (voice_stream_ptr),y   ; $F2
     F81C: 48          pha
     F81D: C8          iny
     F81E: 98          tya
     F81F: A0 05       ldy #$05
-    F821: 91 F0       sta (work_ptr),y   ; $F0
+    F821: 91 F0       sta (voice_rec_ptr),y   ; $F0
     F823: 68          pla
     F824: 60          rts
 @F825:
     F825: A0 00       ldy #$00
-    F827: B1 F8       lda (anim_script_ptr),y   ; $F8
-    F829: E6 F8       inc anim_script_ptr   ; $F8
+    F827: B1 F8       lda (voice13_stream_ptr),y   ; $F8
+    F829: E6 F8       inc voice13_stream_ptr   ; $F8
     F82B: D0 02       bne @F82F   ; $F82F
-    F82D: E6 F9       inc anim_script_ptr_hi   ; $F9
+    F82D: E6 F9       inc voice13_stream_ptr_hi   ; $F9
 @F82F:
     F82F: 60          rts
 @F830:
     F830: A0 00       ldy #$00
-    F832: B1 FA       lda (anim_script_ptr),y   ; $FA
-    F834: E6 FA       inc anim_script_ptr   ; $FA
+    F832: B1 FA       lda (voice14_stream_ptr),y   ; $FA
+    F834: E6 FA       inc voice14_stream_ptr   ; $FA
     F836: D0 02       bne @F83A   ; $F83A
-    F838: E6 FB       inc seq_data_ptr_hi   ; $FB
+    F838: E6 FB       inc voice14_stream_ptr_hi   ; $FB
 @F83A:
     F83A: 60          rts
     F83B: 07          .byte $07
