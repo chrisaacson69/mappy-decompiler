@@ -40,14 +40,14 @@ NesPrgRom:1825:set_two_zp_pointers:[MED] Stores immediate LE 16-bit consts into 
 NesPrgRom:1894:init_cat_record:[HIGH] Top-down 2026-10-26 (game thread, round setup): type +5 = A, x fraction X*4+$20, x/y from item X ($0264/$0265), anim 2, state 0, +8 = $4B. W
 NesPrgRom:18C0:init_bonus_goal_object:[HIGH] Bonus-round setup: slot 1 +0..+4 from $D8D3 (x 5, y $18, anim $18), state 0E (bonus_state0E_goal_object). Was 'init_ram_block_from_table'. E
 NesPrgRom:19BC:store_one_via_ptr:[MED] lda #$01; sta ($1e),y; rts — writes constant 1 through zero-page pointer ($1E/$1F) indexed by Y; no PPU/RAM specifics to fix semantics.
-NesPrgRom:19F0:clear_flag_if_value_below_threshold:[MED] Reads $0421, sbc #$06 then cmp #$2e (46); when (val-6) < 46 and flag $35 is nonzero (bne path skips the clear when zero), stores #$00 to $35
+NesPrgRom:19F0:slot2_maybe_step_target_floor:[HIGH] Top-down 2026-10-26 (game thread, physics): slot 2 at a wall (x < 6 or >= $34), or with flag $35 set (cleared here): slot2_step_target_floor
 NesPrgRom:1AB3:start_hop:[HIGH] Shared entry of state 04: +B = A, +C = 9, state 04, anim 4. Was 'set_obj_fields_via_ptr'. Earlier note: stores incoming A at ($1e)+11, then 
 NesPrgRom:1AD8:catch_player_or_knock_out:[HIGH] Slot 0: anim $1E, state 08, player_down = 1, then reset_objects_except_persistent_types. Any other slot: anim $20, state 22, timer 120 ($65 
 NesPrgRom:1B45:state08_player_caught:[HIGH] State 08, player only (absolute $0407/$040F): counts +7 up to $20, then state 2A. Entered from catch_player_or_knock_out with anim $1E. Trac
 NesPrgRom:1DA8:state12_stunned:[HIGH] State 12, cat stunned after a door knockback: counts +7 (from $65) down, then anim $0E, timer $40, state 14. Trace (state_census.py, 3 play 
-NesPrgRom:1E6F:zero_struct_fields_4_and_15:[MED] lda #$00 then sta ($1e),y with Y=$0f and Y=$04 writes zero to offsets +15 and +4 of the record pointed to by ZP pointer $1E.
-NesPrgRom:1EA6:align_obj_coord_to_target:[MED] Reads object record via ($1e) offsets +6/+3/+1, builds a masked low-2-bit target in $10 (and #$fc / ora), compares record+1 to $0401 then ca
-NesPrgRom:1F09:data_or_unclear_df09:[LOW] Only 2 bytes / 1 instruction (`ldx #$04`) with no RTS, no memory or hardware register access, and no loop/branch — a lone immediate load int
+NesPrgRom:1E6F:clear_object:[HIGH] Top-down 2026-10-26 (game thread, physics): state 0, anim 0. Was 'zero_struct_fields_4_and_15'. Earlier note: lda #$00 then sta ($1e),y with
+NesPrgRom:1EA6:choose_cat_target_floor:[HIGH] Top-down 2026-10-26 (game thread, physics): +A = the player's floor (row & $FC, +1 when the cat is right of the player). When that is the ca
+NesPrgRom:1F09:move_x_turn_at_walls_offset4:[HIGH] Top-down 2026-10-26 (game thread, physics): X = 4 (tile offset), falling into move_x_turn_at_walls. Entered by walk_step's fall-through and 
 NesPrgRom:2134:player_knockback_pushes_cats:[HIGH] While the player is in state 10: a cat in state 02 on its row within +/-1 x takes the player's direction, anim $0C, state 10, timer 8, and p
 NesPrgRom:2DE2:hide_wave_cats:[HIGH] Cats carried by this wave (+B = wave, state 16) -> state 18, anim 0 (not drawn). Was 'advance_obj_state_if_matched'. Earlier note: Indexed o
 NesPrgRom:33C1:load_stage_params:[HIGH] Top-down 2026-10-26 (game thread, round setup): zeroes the round timer ($60-$62) and copies 6 bytes from $F3DF + stage_index*6 into $63-$68.
@@ -57,10 +57,10 @@ NesPrgRom:34BF:init_sound_voices:[HIGH] Naming 2026-10-26 (bytes read whole afte
 NesPrgRom:355A:sound_registers_next_voice:[MED] Naming 2026-10-26 (bytes read whole after the discover fixes): the register pass's loop tail inside update_sound_frame: next 8-byte voice re
 NesPrgRom:1DD4:state1A_respawn_wait:[HIGH] State 1A: counts +7 down to 0 and holds; update_and_respawn_objects ($D8F8) then drops one such cat in at x $1D, y 6 as state 1C. Entered fr
 NesPrgRom:1E7A:state26_stunned_by_drop:[HIGH] State 26, a cat hit by a dropped object (dropped_object_stuns_cats: anim $22, timer $65, y clamped to $19): counts +7 down, then anim $24, t
-NesPrgRom:1F8A:advance_pos_if_in_bounds:[MED] 16-bit add of $10 into accumulator $28/$29 (adc #$00 carries low→high), gated by ($1e)+5 flag, a $0401-$0F<$1C range check, $0406 sign check
-NesPrgRom:1FCD:append_computed_entry_to_buffer:[MED] Computes two packed bytes from ($1e),y + tables $e010/$e011,x via asl×3 and lsr/ror×3, then writes 4-byte record {$10,$11,$1e,$1f} into buff
-NesPrgRom:2018:add_flag_conditioned_offset:[MED] Picks offset $10 = 0 or 4 from flag $60 (ldy#0/beq/ldy#4/sty $10), gates on struct field ($1e),y+5, then returns A = $64 + $10 (lda $64;clc;
-NesPrgRom:208A:sub16_from_struct_field_at_offset2:[HIGH] sec/sbc $10 on ($1e),y at offset+2 then iny/sbc #$00 on offset+3 with bcs skip = 16-bit subtract of A from the little-endian word at (ptr $1
+NesPrgRom:1F8A:scroll_camera_with_player:[HIGH] Top-down 2026-10-26 (game thread, physics): player only: while its x is in $0F-$2A, the camera ($28/$29) moves with it by A, clamped to $000
+NesPrgRom:1FCD:queue_tile_read:[HIGH] Top-down 2026-10-26 (game thread, physics): nametable address of the tile at the object's x/y + the offset pair $E010[X], queued with the re
+NesPrgRom:2018:object_speed:[HIGH] Top-down 2026-10-26 (game thread, physics): A = the object's x speed: the player (type 0) stage param $63; types 1-2 $64 + 4; cats (3+) $64;
+NesPrgRom:208A:move_up_by_a:[HIGH] Top-down 2026-10-26 (game thread, physics): y -= A; on a row change queue_tile_read (offset 0), then turn_and_tick. Was 'sub16_from_struct_f
 NesPrgRom:20B7:walking_cat_touches_player:[HIGH] Player only, while $2E = 0: a slot 1-8 object in state 02 (slot 2 not cooling down, $042A = 0) on the player's row within +/-1 x. Copies its
 NesPrgRom:2102:slot1_touches_player:[HIGH] Player only: slot 1 ($0410-$0413) within +/-1 in x and y; A = 0 when touched, else $FF. Slot 1 is never active in the 3 play logs. Was 'chec
 NesPrgRom:218E:end_bonus_round:[HIGH] Player +7 = 0, player_down = 1, state 04. 3 callers: the fall to a floor tile or below $1C (bonus_state02_fall) and reaching the goal (bonus
@@ -69,9 +69,9 @@ NesPrgRom:22A1:bonus_state0A_walk_off:[HIGH] Bonus state 0A, walking off the sha
 NesPrgRom:22E0:bonus_state10_slot3_timeout:[MED] Bonus state 10, slot 3 (absolute $043x): counts $0437 down, then clears its anim and state. No decoded instruction stores state 10 for slot 
 NesPrgRom:23BD:ppu_addr_to_tile_xy:[HIGH] Top-down 2026-10-26 (game thread, round setup): $10/$11 = nametable address -> $10 = column + 32 if the second nametable, $11 = row. Was 'sh
 NesPrgRom:2410:animate_trampoline:[HIGH] Top-down 2026-10-26 (game thread, frame update): while +0 (bounce animations left) is nonzero: +1 steps 0-9, and at 10 wraps with +0 - 1; fa
-NesPrgRom:2469:find_object_at_coords:[MED] Loops x by stride 8 over records at $0202/$0204/$0205 until x==$80, testing each: skips if $0202,x is negative (inactive), checks ($1e),y vs
-NesPrgRom:24A4:set_obj_state_and_load_next_ptr:[MED] Writes #$06 to struct field +4 via ($1e),y; uses field +7 (asl=*2) to index word table $E4CD/$E4CE, stores that 16-bit value (hi byte += $02
-NesPrgRom:271E:branch_on_state21_bits:[MED] Reads zp $21 twice; tests (and #$03 / eor #$01 / bne) low-2-bits==1 and (and #$04 / beq) bit2, branching to $E71D/$E70A — pure predicate tes
+NesPrgRom:2469:find_trampoline_below:[HIGH] Top-down 2026-10-26 (game thread, physics): an unbroken trampoline ($0202 bit 7 clear) with the object's x within -1..2 of it and its y at t
+NesPrgRom:24A4:trampoline_bounce_step:[HIGH] Top-down 2026-10-26 (game thread, physics): anim 6; y = the trampoline's row + the curve $E4CD[+7] (a sink-and-rise of word offsets); +7 += 
+NesPrgRom:271E:blink_marked_item:[HIGH] Top-down 2026-10-26 (game thread, physics): on frames with frame & 3 = 1: frame & 4 picks erase_item or draw_item (falls into it): the marke
 NesPrgRom:272C:draw_item:[HIGH] Top-down 2026-10-26 (game thread, round setup): picture $E7B9[(kind >> 1) & $FE] (one per pair), $14 = 0 for the first 3 pairs, 2 after; fal
 NesPrgRom:2757:slot2_sits_on_item:[MED] Slot 2 walking with no cooldown ($042A = 0) at an item's x/y ($0264/$0265,x): $0420 = 0, anim $13, state 1E, $0427 = 120. Was 'trigger_state
 NesPrgRom:28FF:draw_door:[HIGH] Top-down 2026-10-26 (game thread, round setup): Y = the door's kind ($02B1), falls into draw_door_kind_y. Was 'load_y_from_table_x'. Earlier
@@ -127,10 +127,10 @@ NesPrgRom:1B7B:state2C_wait_tune:[MED] State 2C, player only: counts $0407 up to
 NesPrgRom:1C02:state0A_trampoline_bounce:[HIGH] State 0A, on a trampoline (index in +B, records at $0200). Trampoline $0202 bit 7 -> enter_fall (through it); its anim $0201 reaching 7 laun
 NesPrgRom:1D4F:bounce_back_into_shaft:[HIGH] Negates the direction +6, timer +7 = 6, start_hop with +B = 0: a step-off blocked by the floor tile returns into the shaft. Was 'reverse_obj
 NesPrgRom:1E98:state28_drop_stun_recover:[HIGH] State 28: counts +7 ($40) down, then enter_fall. Not reached in the 3 play logs. Was 'obj_tick_timer7_then_reset_fields_8_F'. Earlier note: 
-NesPrgRom:1EE9:advance_object_state_counter:[MED] Indirect-indexed on entity pointer $1E: conditionally seeds field +$06 from +$0D, increments per-object counter at +$07 (adc #$01), and when
-NesPrgRom:1F0B:move_object_clamp_and_flip_direction:[MED] Adds saved delta $10 to/from the 16-bit position at ($1e)+0/+1 based on sign flag +6, clamps hi-byte to $38/$02 bounds, sets tile code +8 ($
-NesPrgRom:2084:flag_offset_plus_0x20:[MED] jsr add_flag_conditioned_offset then clc/adc #$20 — a thin wrapper returning the callee's flag-conditioned value biased by a +$20 constant (
-NesPrgRom:20A0:append_entry_then_advance_state_and_tick:[MED] calls append_computed_entry_to_buffer ($DFCD), then via struct ptr ($1e): if [+$0d]!=0 copies it into [+$06] (conditional state propagate), 
+NesPrgRom:1EE9:walk_step:[HIGH] Top-down 2026-10-26 (game thread, physics): the player takes its pad direction (+D -> +6); +7 += 1; unless blocked by a door (+9), move at o
+NesPrgRom:1F0B:move_x_turn_at_walls:[HIGH] Top-down 2026-10-26 (game thread, physics): scroll_camera_with_player, then x += / -= A by direction +6. Right wall (x $38): x frac 0, +8 = 
+NesPrgRom:2084:rise_step:[HIGH] Top-down 2026-10-26 (game thread, physics): object_speed + $20, falling into move_up_by_a. Was 'flag_offset_plus_0x20'. Earlier note: jsr ad
+NesPrgRom:20A0:queue_tile_read_then_tick:[HIGH] Top-down 2026-10-26 (game thread, physics): queue_tile_read (X = offset), then turn_and_tick at $E0A3: a set intent +D becomes the direction
 NesPrgRom:2200:bonus_state06_trampoline_bounce:[HIGH] Bonus copy of state0A_trampoline_bounce: a broken trampoline ($0202 bit 7) -> fall (state 02); the trampoline's anim reaching 7 -> state 08;
 NesPrgRom:22EE:bonus_state0E_goal_object:[HIGH] Bonus state 0E, slot 1 (absolute $041x): the player on its row with x 0-1 ahead -> inc $51, $5A = $20, sound $0606, clear slot 1, end_bonus_
 NesPrgRom:25C5:load_round_items:[HIGH] Top-down 2026-10-26 (game thread, round setup): the descriptor at ($E798) = $E79A: $50 (8 bytes x 10 items), then kinds 00, 02 ... 12. Every
@@ -166,13 +166,13 @@ NesPrgRom:1703:draw_hud:[MED] Top-down 2026-10-26 (game thread, round setup): dr
 NesPrgRom:1AEF:reset_objects_except_persistent_types:[MED] Calls init_object_tables, then loops X=$10..$80 step $10 over object slots, reading state byte $040F,x and zeroing both $040F,x and $0404,x 
 NesPrgRom:1BBA:land_on_trampoline:[HIGH] Falling object meets a trampoline record (X, $0200): the player scores (table $3C); a trampoline with no bounces left ($0202 = 0, counted do
 NesPrgRom:1C5C:state0C_rise:[HIGH] State 0C, rising up a shaft. Player touching slot 1 -> caught. At a floor row (y&3 in 1..2) with +D set (pad direction or the cat's choice):
-NesPrgRom:203D:advance_object_subpixel_position_then_clamp:[MED] Via ($1e) object record: accumulates field +$0c into +$0b, uses asl to extract overflow/sign (borrow-decrements high byte +$03), then 16-bit
-NesPrgRom:206A:advance_pointer_by_flagged_offset_then_append_entry:[MED] jsr add_flag_conditioned_offset yields A, then 16-bit add of #$20+A into the pointer at ($1e),y=2/3 with bcc/adc#$00 carry propagation, then
+NesPrgRom:203D:move_hop_arc:[HIGH] Top-down 2026-10-26 (game thread, physics): +B (vertical velocity) += +C (gravity); y (+2/+3) += 2 * +B, signed; then move_x_turn_at_walls a
+NesPrgRom:206A:fall_step:[HIGH] Top-down 2026-10-26 (game thread, physics): y += object_speed + $20; on a row change queue_tile_read (offset 4), then turn_and_tick. Was 'ad
 NesPrgRom:2230:bonus_state08_rise:[HIGH] Bonus copy of state0C_rise: at a floor row (y >= 8, y&3 in 1..2) with +D set: step off, timer $21 (33), +B = $E0, +C = 2, state 0A. Top reac
 NesPrgRom:2427:draw_trampoline:[HIGH] Top-down 2026-10-26 (game thread, round setup): trampoline X: screen address from $E537[+3]; broken (+2 bit 7) draws text entry $14, else th
-NesPrgRom:2456:scan_table_at_e537:[MED] Loads fixed ptr $E537/$E538 into $10/$11, clears $14, ldy #$14, jmp load_ptr_from_table_then_scan — a wrapper that sets up one specific tabl
+NesPrgRom:2456:erase_first_trampoline:[MED] Top-down 2026-10-26 (game thread, physics): text entry $14 (the broken-trampoline picture) queued at trampoline position $E537[0]. Called by
 NesPrgRom:270A:erase_item:[HIGH] Top-down 2026-10-26 (game thread, round setup): entry 10 of $E7B9 with $14 = $80, at the item's address (after player_collects_item). Was 'l
-NesPrgRom:284D:draw_object_and_advance_x8:[MED] Zeros $14/$15, calls write_object_to_shadow_oam, then advances 16-bit pointer $10/$11 by +8 (carry-propagated inc $11) — emits one object th
+NesPrgRom:284D:draw_sprite_advance_x:[HIGH] Top-down 2026-10-26 (game thread, physics): one sprite at $10/$11, then x += 8. Was 'draw_object_and_advance_x8'. Earlier note: Zeros $14/$1
 NesPrgRom:291D:animate_door_swing:[HIGH] Top-down 2026-10-26 (game thread, frame update): a swinging door (+0 set) steps +6 through 5 frames (picture from door_swing_frame); then +0
 NesPrgRom:29A4:open_door:[HIGH] Top-down 2026-10-26 (game thread, frame update): +0 = 1 starts the door's 5-frame swing (animate_door_swing toggles open/closed at its end);
 NesPrgRom:2F9B:dropped_object_stuns_cats:[HIGH] Cats (states < 16) within 1 in x and y of the falling object: +7 = $65, state 26, anim $22, y clamped to $19, score $08 ($44 for slot 2). Wa
@@ -193,9 +193,9 @@ NesPrgRom:219D:bonus_state02_fall:[HIGH] Bonus state 02, the player falling. A f
 NesPrgRom:22AC:bonus_state0C_rebound:[HIGH] Bonus state 0C (and the tail of bonus_state0A_walk_off): counts +7 down while moving; at 0 -> fall (state 02, anim 6). Census (warped bonus 
 NesPrgRom:2339:bonus_state12_released_cat_rises:[HIGH] Bonus state 12, slot 2 (type 2, from bonus_state0E_goal_object): y -= $40 per frame ($E08A on +2/+3, a quarter row) until row < 6, then clea
 NesPrgRom:235B:load_round_trampolines:[HIGH] Top-down 2026-10-26 (game thread, round setup): set $E4E1[stage] -> $E4F1 pointer: count in $80, then per 8-byte record at $0200: +0 = 0, +1
-NesPrgRom:23DE:force_active_objects_to_state3:[MED] Loops object slots in $0202,x (stride +8, capped by $80); skips negative/already-3 state bytes, else writes #$03 and calls setup_obj_ptr_and
+NesPrgRom:23DE:restore_trampolines:[HIGH] Top-down 2026-10-26 (game thread, physics): every unbroken trampoline back to 3 bounces, redrawn. land_on_floor calls it when the player lan
 NesPrgRom:2660:player_collects_item:[HIGH] Top-down 2026-10-26 (game thread, round setup): per item: slot2_sits_on_item first, then the player on its row with x within 2 collects it: 
-NesPrgRom:27F5:draw_composite_object_sprite:[MED] Computes screen X (object $0264/$0265 minus scroll $28/$29, ×8 via asl/rol) and Y ($16), tile/palette params ($12 tile, $13=3 palette), then
+NesPrgRom:27F5:draw_item_points_sprites:[MED] Top-down 2026-10-26 (game thread, physics): at the item's x/y (camera-relative): sprite $AC + kind/4 and $67; a matched item adds $68 and th
 NesPrgRom:28CC:update_doors:[HIGH] Top-down 2026-10-26 (game thread, frame update): animate_door_swing for each door; then one door per frame (frame & 3) that is a closed wave
 NesPrgRom:2A90:walker_meets_closed_door:[HIGH] Walking object at a closed door ($02B0 = 0, $02B1 bit 1 clear) on its row, in its facing direction: marks +9 (blocked) and the door's $02B7.
 NesPrgRom:2D65:update_door_wave:[HIGH] Top-down 2026-10-26 (game thread, frame update): +5: 0 idle. 1 moving: sound $0609, door_wave_catches_cats, carry_wave_cats, anim 8, x += st
@@ -208,7 +208,7 @@ NesPrgRom:03EC:draw_metasprite_2x2:[HIGH] Top-down 2026-10-26 (game thread, draw
 NesPrgRom:0540:draw_object_pair_once:[MED] Single instruction `jsr $C543 -> draw_object_pair_advance_slot`; a 3-byte trampoline that invokes the draw-pair routine exactly one time bef
 NesPrgRom:061E:draw_flagged_object_to_oam:[MED] Sets draw params ($13=2 rows,$14=0,$12=$E8 Y), tests bit5 of flag $21 (beq skips), calls draw_object_tile_rows, decrements X coord $16 by 8,
 NesPrgRom:0B02:draw_player_number_text:[HIGH] Top-down 2026-10-26 (game thread, round setup): sprite text 'PLAYER ' from the block at ($CB8A), then the digit tile $D6 + game_state_flags 
-NesPrgRom:1A17:add_field37_to_field36:[MED] $DA17 does $36 += $37; rts (8-bit accumulate helper); the adjacent dispatcher at $DA1F loads a 16-bit handler pointer from table $E17A,x int
+NesPrgRom:1A17:slot2_add_floor_step:[HIGH] Top-down 2026-10-26 (game thread, physics): $36 += $37. Was 'add_field37_to_field36'. Earlier note: $DA17 does $36 += $37; rts (8-bit accumu
 NesPrgRom:1A70:state02_walk:[HIGH] State 02, walking a floor (player, cats). Player: caught by a walking cat ($E0B7); a closed door in the path blocks it or is opened by a cat
 NesPrgRom:26FA:draw_object_and_tick_state_timer:[HIGH] jsr draw_composite_object_sprite, then ldx $1b indexes a per-object timer array: dec $0262,x; on expiry (bne falls through) clears state byt
 NesPrgRom:2D4E:update_door_waves:[HIGH] Top-down 2026-10-26 (game thread, frame update): update_door_wave for the 4 records $04A0-$04BF. Was 'tick_object_group_04a0'. Earlier note:
@@ -218,7 +218,7 @@ NesPrgRom:0521:draw_object_animated_sprite:[MED] Derives anim frame from global 
 NesPrgRom:05A3:emit_object_oam_at_70_variant2:[MED] Loads fixed params $13=#$02,$12=#$70,$14=#$00 into the zero-page arg block then tail-jmps to emit_object_oam_step_pointers_8 ($C3EC); a para
 NesPrgRom:05B2:draw_2x2_metasprite_tile_69:[MED] Loads tile base $12=#$69, counter $13=#$02, attr $14=#$00, then walks position $10/$11 (X, 16-bit) and $16 (Y) by ±8px between four OAM emit
 NesPrgRom:0DFF:draw_bonus_intro_sprite:[MED] Top-down 2026-10-26 (game thread, round setup): one 2x2 metasprite (tile $CB, palette 2) at x $7C, y $AA; the bonus intro's only drawing. Wa
-NesPrgRom:1A02:set_field36_step_at_bounds_then_accumulate_dispatch:[MED] Reads $36; at boundary 9 sets step $37=+4, at boundary $19(25) sets $37=-4($FC), else leaves $37; then jmp/fallthrough into accumulate_field
+NesPrgRom:1A02:slot2_step_target_floor:[HIGH] Top-down 2026-10-26 (game thread, physics): slot 2's target row $36 patrols the floors: the step $37 becomes +4 at row 9 and -4 at row $19, 
 NesPrgRom:264A:dispatch_item_state:[HIGH] Naming 2026-10-26: ldy $0260,x indexes the 3-handler table $E65A (noop, resolve_object_position_capture_and_score, draw_object_and_tick_stat
 NesPrgRom:31A5:dispatch_bonus_target:[HIGH] Top-down 2026-10-26 (game thread, frame update): by +0 through $F1B5: 0 none, 2 bonus_target_live. Was 'dispatch_object_phase_handler'. Earl
 NesPrgRom:06C1:draw_object_by_animation_state:[MED] Reads state var $1E, three-way branches (<$20/==$20/>$20), loads $12/$13 pointer-param pairs and dispatches to draw_2x2_metasprite_tile_69 /

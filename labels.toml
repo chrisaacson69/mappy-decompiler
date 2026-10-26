@@ -251,11 +251,10 @@ why = "lda #$01; sta ($1e),y; rts — writes constant 1 through zero-page pointe
 
 [[label]]
 addr = "D9F0"
-name = "clear_flag_if_value_below_threshold"
+name = "slot2_maybe_step_target_floor"
 kind = "leaf"
-conf = "MED"
-why = "Reads $0421, sbc #$06 then cmp #$2e (46); when (val-6) < 46 and flag $35 is nonzero (bne path skips the clear when zero), stores #$00 to $35 — a threshold/window check that conditionally clears zero-page flag $35."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): slot 2 at a wall (x < 6 or >= $34), or with flag $35 set (cleared here): slot2_step_target_floor. Was 'clear_flag_if_value_below_threshold'. Earlier note: Reads $0421, sbc #$06 then cmp #$2e (46); when (val-6) < 46 and flag $35 is nonzero (bne path skips the clear when zero), stores #$00 to $35 — a threshold/window check that conditionally clears zero-page flag $35."
 [[label]]
 addr = "DAB3"
 name = "start_hop"
@@ -282,25 +281,22 @@ conf = "HIGH"
 why = "State 12, cat stunned after a door knockback: counts +7 (from $65) down, then anim $0E, timer $40, state 14. Trace (state_census.py, 3 play logs): 180 frames in these logs, -> 14. Was 'dec_obj_timer_reload_state'. Earlier note: dec [($1e)+7]; bne exits early; on zero reloads +7=$40 and writes state fields +4=$0e, +15=$14 via indirect struct pointer $1e — a per-object countdown that resets state on expiry."
 [[label]]
 addr = "DE6F"
-name = "zero_struct_fields_4_and_15"
+name = "clear_object"
 kind = "leaf"
-conf = "MED"
-why = "lda #$00 then sta ($1e),y with Y=$0f and Y=$04 writes zero to offsets +15 and +4 of the record pointed to by ZP pointer $1E."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): state 0, anim 0. Was 'zero_struct_fields_4_and_15'. Earlier note: lda #$00 then sta ($1e),y with Y=$0f and Y=$04 writes zero to offsets +15 and +4 of the record pointed to by ZP pointer $1E."
 [[label]]
 addr = "DEA6"
-name = "align_obj_coord_to_target"
+name = "choose_cat_target_floor"
 kind = "leaf"
-conf = "MED"
-why = "Reads object record via ($1e) offsets +6/+3/+1, builds a masked low-2-bit target in $10 (and #$fc / ora), compares record+1 to $0401 then carry-adds masked $0403 into record offset +10; when that equals $10 it nudges the +10 field by +4 or -4 (#$fc) using a direction bit from table $c000,$21 (lsr a -> bcc)."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): +A = the player's floor (row & $FC, +1 when the cat is right of the player). When that is the cat's own floor, +A moves 4 rows up or down at random: bit 0 of the ROM byte at $C000 + frame_counter. Was 'align_obj_coord_to_target'. Earlier note: Reads object record via ($1e) offsets +6/+3/+1, builds a masked low-2-bit target in $10 (and #$fc / ora), compares record+1 to $0401 then carry-adds masked $0403 into record offset +10; when that equals $10 it nudges the +10 field by +4 or -4 (#$fc) using a direction bit from table $c000,$21 (lsr a -> bcc)."
 [[label]]
 addr = "DF09"
-name = "data_or_unclear_df09"
+name = "move_x_turn_at_walls_offset4"
 kind = "leaf"
-conf = "LOW"
-why = "Only 2 bytes / 1 instruction (`ldx #$04`) with no RTS, no memory or hardware register access, and no loop/branch — a lone immediate load into X is a fragment, not a self-contained routine, so behavior is indeterminate."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): X = 4 (tile offset), falling into move_x_turn_at_walls. Entered by walk_step's fall-through and by state10_door_knockback with A = $80 (half a tile a frame). Was 'data_or_unclear_df09'. Earlier note: Only 2 bytes / 1 instruction (`ldx #$04`) with no RTS, no memory or hardware register access, and no loop/branch — a lone immediate load into X is a fragment, not a self-contained routine, so behavior is indeterminate."
 [[label]]
 addr = "E134"
 name = "player_knockback_pushes_cats"
@@ -361,32 +357,28 @@ conf = "HIGH"
 why = "State 26, a cat hit by a dropped object (dropped_object_stuns_cats: anim $22, timer $65, y clamped to $19): counts +7 down, then anim $24, timer $40, state 28. Not reached in the 3 play logs. Was 'dec_obj_timer_reload_on_zero'. Earlier note: Decrements struct field ($1e)+7 (sec/sbc #1, sta); bne skips the reload, so on expiry it rewrites +$0f=$28, +4=$24, +7=$40 — a countdown timer that resets state on zero."
 [[label]]
 addr = "DF8A"
-name = "advance_pos_if_in_bounds"
-kind = "leaf"
-conf = "MED"
-why = "16-bit add of $10 into accumulator $28/$29 (adc #$00 carries low→high), gated by ($1e)+5 flag, a $0401-$0F<$1C range check, $0406 sign check, and a high-byte<$1C ceiling; only stores $28/$29 when all gates pass — no HW regs."
-
-[[label]]
-addr = "DFCD"
-name = "append_computed_entry_to_buffer"
-kind = "leaf"
-conf = "MED"
-why = "Computes two packed bytes from ($1e),y + tables $e010/$e011,x via asl×3 and lsr/ror×3, then writes 4-byte record {$10,$11,$1e,$1f} into buffer $04c0,x advancing write index $2b before rts; no hardware regs touched."
-
-[[label]]
-addr = "E018"
-name = "add_flag_conditioned_offset"
-kind = "leaf"
-conf = "MED"
-why = "Picks offset $10 = 0 or 4 from flag $60 (ldy#0/beq/ldy#4/sty $10), gates on struct field ($1e),y+5, then returns A = $64 + $10 (lda $64;clc;adc $10;rts)."
-
-[[label]]
-addr = "E08A"
-name = "sub16_from_struct_field_at_offset2"
+name = "scroll_camera_with_player"
 kind = "leaf"
 conf = "HIGH"
-why = "sec/sbc $10 on ($1e),y at offset+2 then iny/sbc #$00 on offset+3 with bcs skip = 16-bit subtract of A from the little-endian word at (ptr $1e)+2."
-
+why = "Top-down 2026-10-26 (game thread, physics): player only: while its x is in $0F-$2A, the camera ($28/$29) moves with it by A, clamped to $0000-$1C00. Was 'advance_pos_if_in_bounds'. Earlier note: 16-bit add of $10 into accumulator $28/$29 (adc #$00 carries low→high), gated by ($1e)+5 flag, a $0401-$0F<$1C range check, $0406 sign check, and a high-byte<$1C ceiling; only stores $28/$29 when all gates pass — no HW regs."
+[[label]]
+addr = "DFCD"
+name = "queue_tile_read"
+kind = "leaf"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): nametable address of the tile at the object's x/y + the offset pair $E010[X], queued with the record pointer into $04C0 (cursor $2B). The render thread (flush_vram_readback_queue_and_restore_render) reads that tile back from PPUDATA into record +8: the tile tests in every state read last vblank's tile. Was 'append_computed_entry_to_buffer'. Earlier note: Computes two packed bytes from ($1e),y + tables $e010/$e011,x via asl×3 and lsr/ror×3, then writes 4-byte record {$10,$11,$1e,$1f} into buffer $04c0,x advancing write index $2b before rts; no hardware regs touched."
+[[label]]
+addr = "E018"
+name = "object_speed"
+kind = "leaf"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): A = the object's x speed: the player (type 0) stage param $63; types 1-2 $64 + 4; cats (3+) $64; types 1+ +4 more once the round timer is past phase 0. (The door wave runs at $63 + 8.) Was 'add_flag_conditioned_offset'. Earlier note: Picks offset $10 = 0 or 4 from flag $60 (ldy#0/beq/ldy#4/sty $10), gates on struct field ($1e),y+5, then returns A = $64 + $10 (lda $64;clc;adc $10;rts)."
+[[label]]
+addr = "E08A"
+name = "move_up_by_a"
+kind = "leaf"
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): y -= A; on a row change queue_tile_read (offset 0), then turn_and_tick. Was 'sub16_from_struct_field_at_offset2'. Earlier note: sec/sbc $10 on ($1e),y at offset+2 then iny/sbc #$00 on offset+3 with bcs skip = 16-bit subtract of A from the little-endian word at (ptr $1e)+2."
 [[label]]
 addr = "E0B7"
 name = "walking_cat_touches_player"
@@ -437,25 +429,22 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, frame update): while +0 (bounce animations left) is nonzero: +1 steps 0-9, and at 10 wraps with +0 - 1; falls into draw_trampoline every frame. Was 'tick_subcounter_decrement_on_rollover'. Earlier note: Skips when $0200,x==0 (beq); else inc $0201,x, cmp #$0a, and on reaching 10 resets $0201,x to 0 and dec $0200,x — a per-index mod-10 sub-tick that decrements a paired countdown on each rollover."
 [[label]]
 addr = "E469"
-name = "find_object_at_coords"
+name = "find_trampoline_below"
 kind = "leaf"
-conf = "MED"
-why = "Loops x by stride 8 over records at $0202/$0204/$0205 until x==$80, testing each: skips if $0202,x is negative (inactive), checks ($1e),y vs $0204,x within delta<4 (Y bounding), then 16-bit compares ($1e) pos vs record+adc tables; beq=match falls through, else rts with SEC (not found)."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): an unbroken trampoline ($0202 bit 7 clear) with the object's x within -1..2 of it and its y at the trampoline's row + $E4CD: carry clear, X = the trampoline. Else carry set. Was 'find_object_at_coords'. Earlier note: Loops x by stride 8 over records at $0202/$0204/$0205 until x==$80, testing each: skips if $0202,x is negative (inactive), checks ($1e),y vs $0204,x within delta<4 (Y bounding), then 16-bit compares ($1e) pos vs record+adc tables; beq=match falls through, else rts with SEC (not found)."
 [[label]]
 addr = "E4A4"
-name = "set_obj_state_and_load_next_ptr"
+name = "trampoline_bounce_step"
 kind = "leaf"
-conf = "MED"
-why = "Writes #$06 to struct field +4 via ($1e),y; uses field +7 (asl=*2) to index word table $E4CD/$E4CE, stores that 16-bit value (hi byte += $0205,x page base) into fields +2/+3, then increments the field +7 sequence index."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): anim 6; y = the trampoline's row + the curve $E4CD[+7] (a sink-and-rise of word offsets); +7 += 1. Was 'set_obj_state_and_load_next_ptr'. Earlier note: Writes #$06 to struct field +4 via ($1e),y; uses field +7 (asl=*2) to index word table $E4CD/$E4CE, stores that 16-bit value (hi byte += $0205,x page base) into fields +2/+3, then increments the field +7 sequence index."
 [[label]]
 addr = "E71E"
-name = "branch_on_state21_bits"
+name = "blink_marked_item"
 kind = "leaf"
-conf = "MED"
-why = "Reads zp $21 twice; tests (and #$03 / eor #$01 / bne) low-2-bits==1 and (and #$04 / beq) bit2, branching to $E71D/$E70A — pure predicate test on state var $21, no writes or HW regs."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): on frames with frame & 3 = 1: frame & 4 picks erase_item or draw_item (falls into it): the marked partner of a collected item blinks. Was 'branch_on_state21_bits'. Earlier note: Reads zp $21 twice; tests (and #$03 / eor #$01 / bne) low-2-bits==1 and (and #$04 / beq) bit2, branching to $E71D/$E70A — pure predicate test on state var $21, no writes or HW regs."
 [[label]]
 addr = "E72C"
 name = "draw_item"
@@ -807,32 +796,28 @@ conf = "HIGH"
 why = "State 28: counts +7 ($40) down, then enter_fall. Not reached in the 3 play logs. Was 'obj_tick_timer7_then_reset_fields_8_F'. Earlier note: ldy #$07 / lda ($1e),y / sbc #$01 / sta ($1e),y decrements per-object timer field[7] via the $1e object pointer; bne keeps counting, on zero-expiry jmp obj_reset_fields_8_F resets the object's state fields."
 [[label]]
 addr = "DEE9"
-name = "advance_object_state_counter"
+name = "walk_step"
 kind = "routine"
-conf = "MED"
-why = "Indirect-indexed on entity pointer $1E: conditionally seeds field +$06 from +$0D, increments per-object counter at +$07 (adc #$01), and when gate field +$09 is clear calls add_flag_conditioned_offset ($E018) — a per-entity state/timer update tick."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): the player takes its pad direction (+D -> +6); +7 += 1; unless blocked by a door (+9), move at object_speed (falls into move_x_turn_at_walls_offset4). Was 'advance_object_state_counter'. Earlier note: Indirect-indexed on entity pointer $1E: conditionally seeds field +$06 from +$0D, increments per-object counter at +$07 (adc #$01), and when gate field +$09 is clear calls add_flag_conditioned_offset ($E018) — a per-entity state/timer update tick."
 [[label]]
 addr = "DF0B"
-name = "move_object_clamp_and_flip_direction"
+name = "move_x_turn_at_walls"
 kind = "routine"
-conf = "MED"
-why = "Adds saved delta $10 to/from the 16-bit position at ($1e)+0/+1 based on sign flag +6, clamps hi-byte to $38/$02 bounds, sets tile code +8 ($4d/$4c) and flips dir flag +6 ($ff/$01) at edges, else jmp append_computed_entry_to_buffer."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): scroll_camera_with_player, then x += / -= A by direction +6. Right wall (x $38): x frac 0, +8 = $4D, direction $FF; left wall (x < 2): x = 2, +8 = $4C, direction 1; slot 2 also steps its target (slot2_maybe_step_target_floor). Otherwise a tile change queues a tile read. Was 'move_object_clamp_and_flip_direction'. Earlier note: Adds saved delta $10 to/from the 16-bit position at ($1e)+0/+1 based on sign flag +6, clamps hi-byte to $38/$02 bounds, sets tile code +8 ($4d/$4c) and flips dir flag +6 ($ff/$01) at edges, else jmp append_computed_entry_to_buffer."
 [[label]]
 addr = "E084"
-name = "flag_offset_plus_0x20"
+name = "rise_step"
 kind = "routine"
-conf = "MED"
-why = "jsr add_flag_conditioned_offset then clc/adc #$20 — a thin wrapper returning the callee's flag-conditioned value biased by a +$20 constant (likely a second-row/variant offset)."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): object_speed + $20, falling into move_up_by_a. Was 'flag_offset_plus_0x20'. Earlier note: jsr add_flag_conditioned_offset then clc/adc #$20 — a thin wrapper returning the callee's flag-conditioned value biased by a +$20 constant (likely a second-row/variant offset)."
 [[label]]
 addr = "E0A0"
-name = "append_entry_then_advance_state_and_tick"
+name = "queue_tile_read_then_tick"
 kind = "routine"
-conf = "MED"
-why = "calls append_computed_entry_to_buffer ($DFCD), then via struct ptr ($1e): if [+$0d]!=0 copies it into [+$06] (conditional state propagate), and increments counter byte [+$07] (clc/adc #1) — per-entry update advancing a state field and a tick/frame counter"
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): queue_tile_read (X = offset), then turn_and_tick at $E0A3: a set intent +D becomes the direction +6, and +7 (the frame counter) += 1. Was 'append_entry_then_advance_state_and_tick'. Earlier note: calls append_computed_entry_to_buffer ($DFCD), then via struct ptr ($1e): if [+$0d]!=0 copies it into [+$06] (conditional state propagate), and increments counter byte [+$07] (clc/adc #1) — per-entry update advancing a state field and a tick/frame counter"
 [[label]]
 addr = "E200"
 name = "bonus_state06_trampoline_bounce"
@@ -1054,18 +1039,16 @@ conf = "HIGH"
 why = "State 0C, rising up a shaft. Player touching slot 1 -> caught. At a floor row (y&3 in 1..2) with +D set (pad direction or the cat's choice): step off, timer 16, state 0E. Top reached (tile +8 in $30-$4F or $59, or y < 6): note the floor in +A, enter_fall; otherwise keep rising ($E084). Trace (state_census.py, 3 play logs): -> 0E x85, 06 x3 (rose to the top and fell). Was 'resolve_entity_collision_movement'. Earlier note: Calls check_two_coords_adjacent then branches: if not adjacent jmp init_entity_state_if_flag_clear; else inspects ($1e),y entity fields ($03 dir/type, $08 tile vs #$59/#$30 range) to either toggle/align the direction field $0a + obj_reset_fields_8_F, compute a $37-relative delta into $36/$35, or fully reinit the entity record (sets fields $06,$03=mode2,$02=0,$07,$0b,$0c,$0f,$04) on collision."
 [[label]]
 addr = "E03D"
-name = "advance_object_subpixel_position_then_clamp"
+name = "move_hop_arc"
 kind = "routine"
-conf = "MED"
-why = "Via ($1e) object record: accumulates field +$0c into +$0b, uses asl to extract overflow/sign (borrow-decrements high byte +$03), then 16-bit adds the result into the +$02/+$03 position pair with adc carry-propagation, and tail-jumps to move_object_clamp_and_flip_direction with A=#$30,X=#$02."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): +B (vertical velocity) += +C (gravity); y (+2/+3) += 2 * +B, signed; then move_x_turn_at_walls at $30 with tile offset 2. The hop and step-off states' motion: +B = $D0 (up) / +C = 9 at a hop. Was 'advance_object_subpixel_position_then_clamp'. Earlier note: Via ($1e) object record: accumulates field +$0c into +$0b, uses asl to extract overflow/sign (borrow-decrements high byte +$03), then 16-bit adds the result into the +$02/+$03 position pair with adc carry-propagation, and tail-jumps to move_object_clamp_and_flip_direction with A=#$30,X=#$02."
 [[label]]
 addr = "E06A"
-name = "advance_pointer_by_flagged_offset_then_append_entry"
+name = "fall_step"
 kind = "routine"
-conf = "MED"
-why = "jsr add_flag_conditioned_offset yields A, then 16-bit add of #$20+A into the pointer at ($1e),y=2/3 with bcc/adc#$00 carry propagation, then ldx #$04 + jmp append_entry_then_advance_state_and_tick (tail call with type tag X=4)"
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): y += object_speed + $20; on a row change queue_tile_read (offset 4), then turn_and_tick. Was 'advance_pointer_by_flagged_offset_then_append_entry'. Earlier note: jsr add_flag_conditioned_offset yields A, then 16-bit add of #$20+A into the pointer at ($1e),y=2/3 with bcc/adc#$00 carry propagation, then ldx #$04 + jmp append_entry_then_advance_state_and_tick (tail call with type tag X=4)"
 [[label]]
 addr = "E230"
 name = "bonus_state08_rise"
@@ -1080,11 +1063,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, round setup): trampoline X: screen address from $E537[+3]; broken (+2 bit 7) draws text entry $14, else the frame picked by +1 (the bounce animation). Was 'setup_obj_ptr_and_dispatch_scan'. Earlier note: Indexes object fields $0203,x/$0202,x/$0201,x: loads a 16-bit pointer from table $E537/$E538 into $10/$11, sets param $14 (0 if $0202,x negative, else its value) and Y=2*$0201,x, then jmp's to load_ptr_from_table_then_scan."
 [[label]]
 addr = "E456"
-name = "scan_table_at_e537"
+name = "erase_first_trampoline"
 kind = "routine"
 conf = "MED"
-why = "Loads fixed ptr $E537/$E538 into $10/$11, clears $14, ldy #$14, jmp load_ptr_from_table_then_scan — a wrapper that sets up one specific table+params then tail-calls the scanner."
-
+why = "Top-down 2026-10-26 (game thread, physics): text entry $14 (the broken-trampoline picture) queued at trampoline position $E537[0]. Called by bonus_state12_released_cat_rises while its tile is $30-$48. Closes the '$E456: capture the $0500 text' leftover. Was 'scan_table_at_e537'. Earlier note: Loads fixed ptr $E537/$E538 into $10/$11, clears $14, ldy #$14, jmp load_ptr_from_table_then_scan — a wrapper that sets up one specific table+params then tail-calls the scanner."
 [[label]]
 addr = "E70A"
 name = "erase_item"
@@ -1093,11 +1075,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, round setup): entry 10 of $E7B9 with $14 = $80, at the item's address (after player_collects_item). Was 'load_string_entry10_with_flag80'. Earlier note: Loads fixed table entry Y=$0A from pointer table $E7B9/$E7BA into ptr $12/$13, sets param $14=#$80, then jmp tail-calls load_string_ptr_by_state_and_scan — a thin preset wrapper around the shared string loader."
 [[label]]
 addr = "E84D"
-name = "draw_object_and_advance_x8"
+name = "draw_sprite_advance_x"
 kind = "routine"
-conf = "MED"
-why = "Zeros $14/$15, calls write_object_to_shadow_oam, then advances 16-bit pointer $10/$11 by +8 (carry-propagated inc $11) — emits one object then steps the position pointer one 8px cell."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): one sprite at $10/$11, then x += 8. Was 'draw_object_and_advance_x8'. Earlier note: Zeros $14/$15, calls write_object_to_shadow_oam, then advances 16-bit pointer $10/$11 by +8 (carry-propagated inc $11) — emits one object then steps the position pointer one 8px cell."
 [[label]]
 addr = "E91D"
 name = "animate_door_swing"
@@ -1224,11 +1205,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, round setup): set $E4E1[stage] -> $E4F1 pointer: count in $80, then per 8-byte record at $0200: +0 = 0, +1 = 0, +2 = 3 (bounces left), +3 = position index into $E537, +4/+5 its tile x/y; then draws each. Was 'build_object_record_block_and_dispatch'. Earlier note: Indexes descriptor table $e4e1/$e4f1 by $7a to a pointer, reads count into $80, then loops stride-8 writing OAM entries $0200-$0205 (Y/tile/attr=#$03/X + packed ptr via shl3_pack_zp_ptr16 from table $e537), then loops calling setup_obj_ptr_and_dispatch_scan over each 8-byte entry."
 [[label]]
 addr = "E3DE"
-name = "force_active_objects_to_state3"
+name = "restore_trampolines"
 kind = "routine"
-conf = "MED"
-why = "Loops object slots in $0202,x (stride +8, capped by $80); skips negative/already-3 state bytes, else writes #$03 and calls setup_obj_ptr_and_dispatch_scan per slot — a batch state-transition over the object table."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): every unbroken trampoline back to 3 bounces, redrawn. land_on_floor calls it when the player lands: touching a floor heals the trampolines. Was 'force_active_objects_to_state3'. Earlier note: Loops object slots in $0202,x (stride +8, capped by $80); skips negative/already-3 state bytes, else writes #$03 and calls setup_obj_ptr_and_dispatch_scan per slot — a batch state-transition over the object table."
 [[label]]
 addr = "E660"
 name = "player_collects_item"
@@ -1237,11 +1217,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, round setup): per item: slot2_sits_on_item first, then the player on its row with x within 2 collects it: round_items_remaining - 1 (0 sets round_cleared and resets the objects); sound $0608; item state 4, +2 = $3C; score by kind & $FC, times 1, or $31 + 2 when it was the marked match; erase_item. Collecting an unmarked item clears all marks and marks its partner (index XOR 8); a marked one bumps the streak $31. Was 'resolve_object_position_capture_and_score'. Earlier note: Per-object (X stride-8 $0260 array) handler: position-match within 2px ($0264/$0265 vs $0401/$0403) gates scoring — awards BCD via add_bcd_table_amount_n_times on type ($0261&$fc), shows bonus string (load_string_entry10), decrements timer $7b to fire reset_objects_except_persistent_types + set $4f, then sweeps the array clearing state-2 flagged objects and toggles the paired object via eor #$08."
 [[label]]
 addr = "E7F5"
-name = "draw_composite_object_sprite"
+name = "draw_item_points_sprites"
 kind = "routine"
 conf = "MED"
-why = "Computes screen X (object $0264/$0265 minus scroll $28/$29, ×8 via asl/rol) and Y ($16), tile/palette params ($12 tile, $13=3 palette), then calls draw_object_and_advance_x8 for tiles $ac+,$67, and conditionally $68 (gated on $0263,x) — drawing a multi-tile object."
-
+why = "Top-down 2026-10-26 (game thread, physics): at the item's x/y (camera-relative): sprite $AC + kind/4 and $67; a matched item adds $68 and the streak digit $B0 + $31. The points shown over a collected item. Was 'draw_composite_object_sprite'. Earlier note: Computes screen X (object $0264/$0265 minus scroll $28/$29, ×8 via asl/rol) and Y ($16), tile/palette params ($12 tile, $13=3 palette), then calls draw_object_and_advance_x8 for tiles $ac+,$67, and conditionally $68 (gated on $0263,x) — drawing a multi-tile object."
 [[label]]
 addr = "E8CC"
 name = "update_doors"
@@ -1320,11 +1299,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, round setup): sprite text 'PLAYER ' from the block at ($CB8A), then the digit tile $D6 + game_state_flags ('1' / '2') via draw_sprite_glyph. play_round shows it for 60 frames with READY. Was 'draw_fixed_glyph_string'. Earlier note: Loads constant ROM pointer $CB8A/$CB8B into zp $1E/$1F then jsr draw_glyph_string_from_param_block — a thin wrapper that draws one predefined glyph string; trailing lda $41 / adc #$D6 adjusts a follow-on position param."
 [[label]]
 addr = "DA17"
-name = "add_field37_to_field36"
+name = "slot2_add_floor_step"
 kind = "routine"
-conf = "MED"
-why = "$DA17 does $36 += $37; rts (8-bit accumulate helper); the adjacent dispatcher at $DA1F loads a 16-bit handler pointer from table $E17A,x into $1C/$1D and jmp ($1C), routing to the listed object_state_transition / collect_item / tick_timer handlers."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): $36 += $37. Was 'add_field37_to_field36'. Earlier note: $DA17 does $36 += $37; rts (8-bit accumulate helper); the adjacent dispatcher at $DA1F loads a 16-bit handler pointer from table $E17A,x into $1C/$1D and jmp ($1C), routing to the listed object_state_transition / collect_item / tick_timer handlers."
 [[label]]
 addr = "DA70"
 name = "state02_walk"
@@ -1387,11 +1365,10 @@ conf = "MED"
 why = "Top-down 2026-10-26 (game thread, round setup): one 2x2 metasprite (tile $CB, palette 2) at x $7C, y $AA; the bonus intro's only drawing. Was 'setup_oam_params_and_emit_object_7c'. Earlier note: Loads fixed pointer/param block into ZP $10-$16 ($10/$11=$007C src, $12/$13=$02CB, $14/$15=$0000 counter, $16=$AA tag) then jmp $C3EC emit_object_oam_step_pointers_8 — a thin wrapper that configures one object's OAM-emit params and tail-calls the shared emitter."
 [[label]]
 addr = "DA02"
-name = "set_field36_step_at_bounds_then_accumulate_dispatch"
+name = "slot2_step_target_floor"
 kind = "routine"
-conf = "MED"
-why = "Reads $36; at boundary 9 sets step $37=+4, at boundary $19(25) sets $37=-4($FC), else leaves $37; then jmp/fallthrough into accumulate_field37_into_field36_then_jumptable_dispatch — a bounce/reverse-direction guard on the $36 index before the accumulate+dispatch."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, physics): slot 2's target row $36 patrols the floors: the step $37 becomes +4 at row 9 and -4 at row $19, then $36 += $37. Was 'set_field36_step_at_bounds_then_accumulate_dispatch'. Earlier note: Reads $36; at boundary 9 sets step $37=+4, at boundary $19(25) sets $37=-4($FC), else leaves $37; then jmp/fallthrough into accumulate_field37_into_field36_then_jumptable_dispatch — a bounce/reverse-direction guard on the $36 index before the accumulate+dispatch."
 [[label]]
 addr = "E64A"
 name = "dispatch_item_state"

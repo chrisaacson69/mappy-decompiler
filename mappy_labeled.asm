@@ -1116,10 +1116,10 @@ draw_object_by_animation_state:
     C6EB: 85 12       sta gfx_src_ptr   ; $12
     C6ED: A9 03       lda #$03
     C6EF: 85 13       sta data_ptr_hi   ; $13
-    C6F1: 20 4D E8    jsr draw_object_and_advance_x8   ; $E84D
+    C6F1: 20 4D E8    jsr draw_sprite_advance_x   ; $E84D
     C6F4: A9 67       lda #$67
     C6F6: 85 12       sta gfx_src_ptr   ; $12
-    C6F8: 4C 4D E8    jmp draw_object_and_advance_x8   ; $E84D
+    C6F8: 4C 4D E8    jmp draw_sprite_advance_x   ; $E84D
 
 draw_rle_text:
     C6FB: A0 00       ldy #$00
@@ -4765,31 +4765,31 @@ store_one_via_ptr:
     D9EC: EE 0E 04    inc $040e
     D9EF: 60          rts
 
-clear_flag_if_value_below_threshold:
+slot2_maybe_step_target_floor:
     D9F0: AD 21 04    lda target_compare_value   ; $0421
     D9F3: 38          sec
     D9F4: E9 06       sbc #$06
     D9F6: C9 2E       cmp #$2e
-    D9F8: B0 08       bcs set_field36_step_at_bounds_then_accumulate_dispatch   ; $DA02
+    D9F8: B0 08       bcs slot2_step_target_floor   ; $DA02
     D9FA: A5 35       lda obj_collision_state   ; $35
     D9FC: F0 20       beq @DA1E   ; $DA1E
     D9FE: A9 00       lda #$00
     DA00: 85 35       sta obj_collision_state   ; $35
 
-set_field36_step_at_bounds_then_accumulate_dispatch:
+slot2_step_target_floor:
     DA02: A5 36       lda obj_record_ptr   ; $36
     DA04: C9 09       cmp #$09
     DA06: D0 07       bne @DA0F   ; $DA0F
     DA08: A9 04       lda #$04
     DA0A: 85 37       sta obj_record_ptr_hi   ; $37
-    DA0C: 4C 17 DA    jmp add_field37_to_field36   ; $DA17
+    DA0C: 4C 17 DA    jmp slot2_add_floor_step   ; $DA17
 @DA0F:
     DA0F: C9 19       cmp #$19
-    DA11: D0 04       bne add_field37_to_field36   ; $DA17
+    DA11: D0 04       bne slot2_add_floor_step   ; $DA17
     DA13: A9 FC       lda #$fc
     DA15: 85 37       sta obj_record_ptr_hi   ; $37
 
-add_field37_to_field36:
+slot2_add_floor_step:
     DA17: A5 36       lda obj_record_ptr   ; $36
     DA19: 18          clc
     DA1A: 65 37       adc obj_record_ptr_hi   ; $37
@@ -4860,14 +4860,14 @@ state02_walk:
     DA96: E9 49       sbc #$49
     DA98: C9 09       cmp #$09
     DA9A: B0 06       bcs start_hop_off_ledge   ; $DAA2
-    DA9C: 20 E9 DE    jsr advance_object_state_counter   ; $DEE9
+    DA9C: 20 E9 DE    jsr walk_step   ; $DEE9
     DA9F: 4C 72 E9    jmp player_opens_nearest_door   ; $E972
 
 start_hop_off_ledge:
     DAA2: A5 1E       lda obj_record_ptr   ; $1E
     DAA4: C9 20       cmp #$20
     DAA6: F0 03       beq @DAAB   ; $DAAB
-    DAA8: 20 A6 DE    jsr align_obj_coord_to_target   ; $DEA6
+    DAA8: 20 A6 DE    jsr choose_cat_target_floor   ; $DEA6
 @DAAB:
     DAAB: A9 0B       lda #$0b
     DAAD: A0 07       ldy #$07
@@ -4896,7 +4896,7 @@ state04_hop_off_ledge:
     DAD0: D0 03       bne @DAD5   ; $DAD5
     DAD2: 4C 83 DB    jmp enter_fall   ; $DB83
 @DAD5:
-    DAD5: 4C 3D E0    jmp advance_object_subpixel_position_then_clamp   ; $E03D
+    DAD5: 4C 3D E0    jmp move_hop_arc   ; $E03D
 
 catch_player_or_knock_out:
     DAD8: A5 1E       lda obj_record_ptr   ; $1E
@@ -4993,7 +4993,7 @@ state2A_wait_then_start_tune:
 state2C_wait_tune:
     DB7B: EE 07 04    inc $0407
     DB7E: 10 FA       bpl @DB7A   ; $DB7A
-    DB80: 4C 6F DE    jmp zero_struct_fields_4_and_15   ; $DE6F
+    DB80: 4C 6F DE    jmp clear_object   ; $DE6F
 
 enter_fall:
     DB83: A9 00       lda #$00
@@ -5025,8 +5025,8 @@ state06_fall:
     DBAD: 90 03       bcc @DBB2   ; $DBB2
     DBAF: 4C D8 DA    jmp catch_player_or_knock_out   ; $DAD8
 @DBB2:
-    DBB2: 20 6A E0    jsr advance_pointer_by_flagged_offset_then_append_entry   ; $E06A
-    DBB5: 20 69 E4    jsr find_object_at_coords   ; $E469
+    DBB2: 20 6A E0    jsr fall_step   ; $E06A
+    DBB5: 20 69 E4    jsr find_trampoline_below   ; $E469
     DBB8: B0 D9       bcs @DB93   ; $DB93
 
 land_on_trampoline:
@@ -5071,7 +5071,7 @@ state0A_trampoline_bounce:
     DC02: A0 0B       ldy #$0b
     DC04: B1 1E       lda (obj_record_ptr),y   ; $1E
     DC06: AA          tax
-    DC07: 20 A4 E4    jsr set_obj_state_and_load_next_ptr   ; $E4A4
+    DC07: 20 A4 E4    jsr trampoline_bounce_step   ; $E4A4
     DC0A: BD 02 02    lda obj_timer,x   ; $0202
     DC0D: 10 03       bpl @DC12   ; $DC12
     DC0F: 4C 83 DB    jmp enter_fall   ; $DB83
@@ -5114,7 +5114,7 @@ state0A_trampoline_bounce:
 @DC58:
     DC58: 60          rts
 @DC59:
-    DC59: 4C F0 D9    jmp clear_flag_if_value_below_threshold   ; $D9F0
+    DC59: 4C F0 D9    jmp slot2_maybe_step_target_floor   ; $D9F0
 
 state0C_rise:
     DC5C: 20 02 E1    jsr slot1_touches_player   ; $E102
@@ -5144,7 +5144,7 @@ state0C_rise:
     DC88: B1 1E       lda (obj_record_ptr),y   ; $1E
     DC8A: C9 06       cmp #$06
     DC8C: 90 03       bcc @DC91   ; $DC91
-    DC8E: 4C 84 E0    jmp flag_offset_plus_0x20   ; $E084
+    DC8E: 4C 84 E0    jmp rise_step   ; $E084
 @DC91:
     DC91: A0 03       ldy #$03
     DC93: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -5218,7 +5218,7 @@ state0E_step_onto_floor:
     DD0E: E9 01       sbc #$01
     DD10: 91 1E       sta (obj_record_ptr),y   ; $1E
     DD12: F0 03       beq land_on_floor   ; $DD17
-    DD14: 4C 3D E0    jmp advance_object_subpixel_position_then_clamp   ; $E03D
+    DD14: 4C 3D E0    jmp move_hop_arc   ; $E03D
 
 land_on_floor:
     DD17: A9 00       lda #$00
@@ -5235,7 +5235,7 @@ land_on_floor:
     DD2C: A0 05       ldy #$05
     DD2E: B1 1E       lda (obj_record_ptr),y   ; $1E
     DD30: D0 03       bne @DD35   ; $DD35
-    DD32: 20 DE E3    jsr force_active_objects_to_state3   ; $E3DE
+    DD32: 20 DE E3    jsr restore_trampolines   ; $E3DE
 @DD35:
     DD35: A9 02       lda #$02
     DD37: A0 0F       ldy #$0f
@@ -5247,10 +5247,10 @@ land_on_floor:
     DD40: A5 1E       lda obj_record_ptr   ; $1E
     DD42: C9 20       cmp #$20
     DD44: F0 06       beq @DD4C   ; $DD4C
-    DD46: 20 A6 DE    jsr align_obj_coord_to_target   ; $DEA6
+    DD46: 20 A6 DE    jsr choose_cat_target_floor   ; $DEA6
     DD49: 4C 4F DD    jmp bounce_back_into_shaft   ; $DD4F
 @DD4C:
-    DD4C: 20 02 DA    jsr set_field36_step_at_bounds_then_accumulate_dispatch   ; $DA02
+    DD4C: 20 02 DA    jsr slot2_step_target_floor   ; $DA02
 
 bounce_back_into_shaft:
     DD4F: A9 00       lda #$00
@@ -5279,7 +5279,7 @@ state10_door_knockback:
     DD79: 20 34 E1    jsr player_knockback_pushes_cats   ; $E134
 @DD7C:
     DD7C: A9 80       lda #$80
-    DD7E: 20 09 DF    jsr data_or_unclear_df09   ; $DF09
+    DD7E: 20 09 DF    jsr move_x_turn_at_walls_offset4   ; $DF09
     DD81: A0 07       ldy #$07
     DD83: B1 1E       lda (obj_record_ptr),y   ; $1E
     DD85: 38          sec
@@ -5356,8 +5356,8 @@ state1C_respawn_drop:
     DDF3: B1 1E       lda (obj_record_ptr),y   ; $1E
     DDF5: C9 1C       cmp #$1c
     DDF7: B0 0B       bcs @DE04   ; $DE04
-    DDF9: 20 6A E0    jsr advance_pointer_by_flagged_offset_then_append_entry   ; $E06A
-    DDFC: 20 69 E4    jsr find_object_at_coords   ; $E469
+    DDF9: 20 6A E0    jsr fall_step   ; $E06A
+    DDFC: 20 69 E4    jsr find_trampoline_below   ; $E469
     DDFF: B0 23       bcs @DE24   ; $DE24
     DE01: 4C BA DB    jmp land_on_trampoline   ; $DBBA
 @DE04:
@@ -5414,10 +5414,10 @@ state20_slot2_scored:
     DE64: D0 13       bne @DE79   ; $DE79
     DE66: A5 4B       lda player_down   ; $4B
     DE68: 05 4F       ora round_cleared   ; $4F
-    DE6A: D0 03       bne zero_struct_fields_4_and_15   ; $DE6F
+    DE6A: D0 03       bne clear_object   ; $DE6F
     DE6C: 4C 17 DD    jmp land_on_floor   ; $DD17
 
-zero_struct_fields_4_and_15:
+clear_object:
     DE6F: A9 00       lda #$00
     DE71: A0 0F       ldy #$0f
     DE73: 91 1E       sta (obj_record_ptr),y   ; $1E
@@ -5454,7 +5454,7 @@ state28_drop_stun_recover:
     DEA1: D0 F4       bne @DE97   ; $DE97
     DEA3: 4C 83 DB    jmp enter_fall   ; $DB83
 
-align_obj_coord_to_target:
+choose_cat_target_floor:
     DEA6: A0 06       ldy #$06
     DEA8: B1 1E       lda (obj_record_ptr),y   ; $1E
     DEAA: 29 01       and #$01
@@ -5494,7 +5494,7 @@ align_obj_coord_to_target:
 @DEE8:
     DEE8: 60          rts
 
-advance_object_state_counter:
+walk_step:
     DEE9: A5 1E       lda obj_record_ptr   ; $1E
     DEEB: D0 0A       bne @DEF7   ; $DEF7
     DEED: A0 0D       ldy #$0d
@@ -5511,14 +5511,14 @@ advance_object_state_counter:
     DF00: A0 09       ldy #$09
     DF02: B1 1E       lda (obj_record_ptr),y   ; $1E
     DF04: D0 E2       bne @DEE8   ; $DEE8
-    DF06: 20 18 E0    jsr add_flag_conditioned_offset   ; $E018
+    DF06: 20 18 E0    jsr object_speed   ; $E018
 
-data_or_unclear_df09:
+move_x_turn_at_walls_offset4:
     DF09: A2 04       ldx #$04
 
-move_object_clamp_and_flip_direction:
+move_x_turn_at_walls:
     DF0B: 85 10       sta src_ptr   ; $10
-    DF0D: 20 8A DF    jsr advance_pos_if_in_bounds   ; $DF8A
+    DF0D: 20 8A DF    jsr scroll_camera_with_player   ; $DF8A
     DF10: A0 06       ldy #$06
     DF12: B1 1E       lda (obj_record_ptr),y   ; $1E
     DF14: 30 3D       bmi @DF53   ; $DF53
@@ -5538,7 +5538,7 @@ move_object_clamp_and_flip_direction:
     DF2D: 91 1E       sta (obj_record_ptr),y   ; $1E
     DF2F: C9 38       cmp #$38
     DF31: B0 03       bcs @DF36   ; $DF36
-    DF33: 4C CD DF    jmp append_computed_entry_to_buffer   ; $DFCD
+    DF33: 4C CD DF    jmp queue_tile_read   ; $DFCD
 @DF36:
     DF36: 88          dey
     DF37: A9 00       lda #$00
@@ -5550,7 +5550,7 @@ move_object_clamp_and_flip_direction:
     DF43: F0 0D       beq @DF52   ; $DF52
     DF45: C9 20       cmp #$20
     DF47: D0 03       bne @DF4C   ; $DF4C
-    DF49: 20 F0 D9    jsr clear_flag_if_value_below_threshold   ; $D9F0
+    DF49: 20 F0 D9    jsr slot2_maybe_step_target_floor   ; $D9F0
 @DF4C:
     DF4C: A9 FF       lda #$ff
     DF4E: A0 06       ldy #$06
@@ -5582,7 +5582,7 @@ move_object_clamp_and_flip_direction:
     DF7A: F0 0D       beq @DF89   ; $DF89
     DF7C: C9 20       cmp #$20
     DF7E: D0 03       bne @DF83   ; $DF83
-    DF80: 20 F0 D9    jsr clear_flag_if_value_below_threshold   ; $D9F0
+    DF80: 20 F0 D9    jsr slot2_maybe_step_target_floor   ; $D9F0
 @DF83:
     DF83: A9 01       lda #$01
     DF85: A0 06       ldy #$06
@@ -5590,7 +5590,7 @@ move_object_clamp_and_flip_direction:
 @DF89:
     DF89: 60          rts
 
-advance_pos_if_in_bounds:
+scroll_camera_with_player:
     DF8A: A0 05       ldy #$05
     DF8C: B1 1E       lda (obj_record_ptr),y   ; $1E
     DF8E: D0 24       bne @DFB4   ; $DFB4
@@ -5632,7 +5632,7 @@ advance_pos_if_in_bounds:
     DFCA: 09 04       ora #$04
     DFCC: AA          tax
 
-append_computed_entry_to_buffer:
+queue_tile_read:
     DFCD: A0 01       ldy #$01
     DFCF: B1 1E       lda (obj_record_ptr),y   ; $1E
     DFD1: 18          clc
@@ -5680,7 +5680,7 @@ append_computed_entry_to_buffer:
     E016: 00          .byte $00
     E017: 01          .byte $01
 
-add_flag_conditioned_offset:
+object_speed:
     E018: A0 00       ldy #$00
     E01A: A5 60       lda sequence_state   ; $60
     E01C: F0 02       beq @E020   ; $E020
@@ -5706,7 +5706,7 @@ add_flag_conditioned_offset:
     E03A: 65 10       adc src_ptr   ; $10
     E03C: 60          rts
 
-advance_object_subpixel_position_then_clamp:
+move_hop_arc:
     E03D: A0 0C       ldy #$0c
     E03F: B1 1E       lda (obj_record_ptr),y   ; $1E
     E041: 88          dey
@@ -5733,10 +5733,10 @@ advance_object_subpixel_position_then_clamp:
     E061: 91 1E       sta (obj_record_ptr),y   ; $1E
     E063: A9 30       lda #$30
     E065: A2 02       ldx #$02
-    E067: 4C 0B DF    jmp move_object_clamp_and_flip_direction   ; $DF0B
+    E067: 4C 0B DF    jmp move_x_turn_at_walls   ; $DF0B
 
-advance_pointer_by_flagged_offset_then_append_entry:
-    E06A: 20 18 E0    jsr add_flag_conditioned_offset   ; $E018
+fall_step:
+    E06A: 20 18 E0    jsr object_speed   ; $E018
     E06D: 18          clc
     E06E: 69 20       adc #$20
     E070: A0 02       ldy #$02
@@ -5748,14 +5748,14 @@ advance_pointer_by_flagged_offset_then_append_entry:
     E07B: 69 00       adc #$00
     E07D: 91 1E       sta (obj_record_ptr),y   ; $1E
     E07F: A2 04       ldx #$04
-    E081: 4C A0 E0    jmp append_entry_then_advance_state_and_tick   ; $E0A0
+    E081: 4C A0 E0    jmp queue_tile_read_then_tick   ; $E0A0
 
-flag_offset_plus_0x20:
-    E084: 20 18 E0    jsr add_flag_conditioned_offset   ; $E018
+rise_step:
+    E084: 20 18 E0    jsr object_speed   ; $E018
     E087: 18          clc
     E088: 69 20       adc #$20
 
-sub16_from_struct_field_at_offset2:
+move_up_by_a:
     E08A: 85 10       sta src_ptr   ; $10
     E08C: A0 02       ldy #$02
     E08E: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -5769,8 +5769,8 @@ sub16_from_struct_field_at_offset2:
     E09C: 91 1E       sta (obj_record_ptr),y   ; $1E
     E09E: A2 00       ldx #$00
 
-append_entry_then_advance_state_and_tick:
-    E0A0: 20 CD DF    jsr append_computed_entry_to_buffer   ; $DFCD
+queue_tile_read_then_tick:
+    E0A0: 20 CD DF    jsr queue_tile_read   ; $DFCD
 @E0A3:
     E0A3: A0 0D       ldy #$0d
     E0A5: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -5922,8 +5922,8 @@ bonus_state02_fall:
     E1AA: B1 1E       lda (obj_record_ptr),y   ; $1E
     E1AC: C9 1C       cmp #$1c
     E1AE: B0 DE       bcs end_bonus_round   ; $E18E
-    E1B0: 20 6A E0    jsr advance_pointer_by_flagged_offset_then_append_entry   ; $E06A
-    E1B3: 20 69 E4    jsr find_object_at_coords   ; $E469
+    E1B0: 20 6A E0    jsr fall_step   ; $E06A
+    E1B3: 20 69 E4    jsr find_trampoline_below   ; $E469
     E1B6: B0 28       bcs @E1E0   ; $E1E0
     E1B8: A0 05       ldy #$05
     E1BA: B1 1E       lda (obj_record_ptr),y   ; $1E
@@ -5967,7 +5967,7 @@ bonus_state06_trampoline_bounce:
     E200: A0 0B       ldy #$0b
     E202: B1 1E       lda (obj_record_ptr),y   ; $1E
     E204: AA          tax
-    E205: 20 A4 E4    jsr set_obj_state_and_load_next_ptr   ; $E4A4
+    E205: 20 A4 E4    jsr trampoline_bounce_step   ; $E4A4
     E208: BD 02 02    lda obj_timer,x   ; $0202
     E20B: 30 50       bmi @E25D   ; $E25D
     E20D: BD 01 02    lda obj_anim_timer,x   ; $0201
@@ -6014,7 +6014,7 @@ bonus_state08_rise:
     E254: B1 1E       lda (obj_record_ptr),y   ; $1E
     E256: C9 06       cmp #$06
     E258: 90 03       bcc @E25D   ; $E25D
-    E25A: 4C 84 E0    jmp flag_offset_plus_0x20   ; $E084
+    E25A: 4C 84 E0    jmp rise_step   ; $E084
 @E25D:
     E25D: A9 00       lda #$00
     E25F: A0 08       ldy #$08
@@ -6069,7 +6069,7 @@ bonus_state0C_rebound:
     E2B1: E9 01       sbc #$01
     E2B3: 91 1E       sta (obj_record_ptr),y   ; $1E
     E2B5: F0 A6       beq @E25D   ; $E25D
-    E2B7: 4C 3D E0    jmp advance_object_subpixel_position_then_clamp   ; $E03D
+    E2B7: 4C 3D E0    jmp move_hop_arc   ; $E03D
 @E2BA:
     E2BA: A9 00       lda #$00
     E2BC: 38          sec
@@ -6148,13 +6148,13 @@ bonus_state12_released_cat_rises:
     E33D: E9 30       sbc #$30
     E33F: C9 19       cmp #$19
     E341: B0 03       bcs @E346   ; $E346
-    E343: 20 56 E4    jsr scan_table_at_e537   ; $E456
+    E343: 20 56 E4    jsr erase_first_trampoline   ; $E456
 @E346:
     E346: AD 23 04    lda obj_state   ; $0423
     E349: C9 06       cmp #$06
     E34B: 90 05       bcc @E352   ; $E352
     E34D: A9 40       lda #$40
-    E34F: 4C 8A E0    jmp sub16_from_struct_field_at_offset2   ; $E08A
+    E34F: 4C 8A E0    jmp move_up_by_a   ; $E08A
 @E352:
     E352: A9 00       lda #$00
     E354: 8D 24 04    sta obj_state   ; $0424
@@ -6231,7 +6231,7 @@ ppu_addr_to_tile_xy:
     E3DB: 85 11       sta zp_ptr_hi   ; $11
     E3DD: 60          rts
 
-force_active_objects_to_state3:
+restore_trampolines:
     E3DE: A2 00       ldx #$00
 @E3E0:
     E3E0: 86 1B       stx cur_obj_index   ; $1B
@@ -6301,7 +6301,7 @@ draw_text_from_table:
     E451: 85 13       sta data_ptr_hi   ; $13
     E453: 4C FB C6    jmp draw_rle_text   ; $C6FB
 
-scan_table_at_e537:
+erase_first_trampoline:
     E456: AD 37 E5    lda $e537
     E459: 85 10       sta src_ptr   ; $10
     E45B: AD 38 E5    lda $e538
@@ -6311,7 +6311,7 @@ scan_table_at_e537:
     E464: A0 14       ldy #$14
     E466: 4C 49 E4    jmp draw_text_from_table   ; $E449
 
-find_object_at_coords:
+find_trampoline_below:
     E469: A2 00       ldx #$00
 @E46B:
     E46B: BD 02 02    lda obj_timer,x   ; $0202
@@ -6349,7 +6349,7 @@ find_object_at_coords:
     E4A2: 18          clc
     E4A3: 60          rts
 
-set_obj_state_and_load_next_ptr:
+trampoline_bounce_step:
     E4A4: A9 06       lda #$06
     E4A6: A0 04       ldy #$04
     E4A8: 91 1E       sta (obj_record_ptr),y   ; $1E
@@ -6716,7 +6716,7 @@ player_collects_item:
     E660: 20 57 E7    jsr slot2_sits_on_item   ; $E757
     E663: BD 63 02    lda obj_type,x   ; $0263
     E666: F0 05       beq @E66D   ; $E66D
-    E668: 20 1E E7    jsr branch_on_state21_bits   ; $E71E
+    E668: 20 1E E7    jsr blink_marked_item   ; $E71E
     E66B: A6 1B       ldx cur_obj_index   ; $1B
 @E66D:
     E66D: BD 65 02    lda item_y,x   ; $0265
@@ -6792,7 +6792,7 @@ player_collects_item:
     E6F9: 60          rts
 
 draw_object_and_tick_state_timer:
-    E6FA: 20 F5 E7    jsr draw_composite_object_sprite   ; $E7F5
+    E6FA: 20 F5 E7    jsr draw_item_points_sprites   ; $E7F5
     E6FD: A6 1B       ldx cur_obj_index   ; $1B
     E6FF: DE 62 02    dec $0262,x
     E702: D0 19       bne @E71D   ; $E71D
@@ -6812,7 +6812,7 @@ erase_item:
 @E71D:
     E71D: 60          rts
 
-branch_on_state21_bits:
+blink_marked_item:
     E71E: A5 21       lda frame_counter   ; $21
     E720: 29 03       and #$03
     E722: 49 01       eor #$01
@@ -6977,7 +6977,7 @@ slot2_sits_on_item:
     E7F3: 00          .byte $00
     E7F4: 00          .byte $00
 
-draw_composite_object_sprite:
+draw_item_points_sprites:
     E7F5: A9 00       lda #$00
     E7F7: 85 11       sta zp_ptr_hi   ; $11
     E7F9: 38          sec
@@ -7012,22 +7012,22 @@ draw_composite_object_sprite:
     E828: 85 12       sta gfx_src_ptr   ; $12
     E82A: A9 03       lda #$03
     E82C: 85 13       sta data_ptr_hi   ; $13
-    E82E: 20 4D E8    jsr draw_object_and_advance_x8   ; $E84D
+    E82E: 20 4D E8    jsr draw_sprite_advance_x   ; $E84D
     E831: A9 67       lda #$67
     E833: 85 12       sta gfx_src_ptr   ; $12
-    E835: 20 4D E8    jsr draw_object_and_advance_x8   ; $E84D
+    E835: 20 4D E8    jsr draw_sprite_advance_x   ; $E84D
     E838: A6 1B       ldx cur_obj_index   ; $1B
     E83A: BD 63 02    lda obj_type,x   ; $0263
     E83D: F0 22       beq @E861   ; $E861
     E83F: A9 68       lda #$68
     E841: 85 12       sta gfx_src_ptr   ; $12
-    E843: 20 4D E8    jsr draw_object_and_advance_x8   ; $E84D
+    E843: 20 4D E8    jsr draw_sprite_advance_x   ; $E84D
     E846: A5 31       lda obj_record_ptr   ; $31
     E848: 18          clc
     E849: 69 B0       adc #$b0
     E84B: 85 12       sta gfx_src_ptr   ; $12
 
-draw_object_and_advance_x8:
+draw_sprite_advance_x:
     E84D: A9 00       lda #$00
     E84F: 85 14       sta scan_src_ptr   ; $14
     E851: 85 15       sta scratch_counter   ; $15
