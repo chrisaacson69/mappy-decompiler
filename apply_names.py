@@ -20,6 +20,7 @@ import re
 import runpy
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 from emu_harness.walk.guard import name_map_violations
@@ -35,8 +36,19 @@ def label_names(text):
     return out
 
 
+def valid_toml(text):
+    """The symbol files are valid TOML (the generators read them with tomllib): a batch may not break that."""
+    try:
+        tomllib.loads(text)
+        return True
+    except tomllib.TOMLDecodeError:
+        return False
+
+
 def esc(s):
-    return s.replace("\\", "\\\\").replace('"', '\\"')
+    """A TOML basic-string body: backslash, quote and the control characters escaped."""
+    return (s.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r")
+            .replace("\t", "\\t"))
 
 
 def byte_stream(asm):
@@ -89,11 +101,13 @@ def main(batch_file):
     bad = name_map_violations({"asm": before_asm}, {"asm": after_asm}, name2tok, is_listing=lambda fn: True)
     added = [b for b in batch if int(b[0], 16) not in old]
     stream_ok = byte_stream(before_asm) == byte_stream(after_asm)
-    if (bad and not added) or not stream_ok:
+    toml_ok = valid_toml(text)
+    if (bad and not added) or not stream_ok or not toml_ok:
         LABELS.write_text(before_labels, encoding="utf-8", newline="\n")
         for tool in ("asm_gen.py", "mappy_mlb.py"):
             subprocess.run([sys.executable, str(HERE / tool)], cwd=HERE, capture_output=True)
-        print("GUARD FAILED; labels.toml restored.", "name mapping:", bad[:3], "byte stream equal:", stream_ok)
+        print("GUARD FAILED; labels.toml restored.", "name mapping:", bad[:3], "byte stream equal:", stream_ok,
+              "valid TOML:", toml_ok)
         sys.exit(2)
     print(f"applied {len(batch) - len(added)} renames, {len(added)} new labels; byte stream unchanged"
           + ("; name mapping clean" if not bad else "; name mapping differs only where new labels were added"))

@@ -13,6 +13,8 @@ import re
 import sys
 from pathlib import Path
 
+from code_map import label_names
+
 HERE = Path(__file__).resolve().parent
 PRG = (HERE / "Mappy (Japan).nes").read_bytes()[16:16 + 0x4000]
 
@@ -40,8 +42,7 @@ TABLES = [
 
 
 def labelled():
-    return {int(m.group(1), 16) for m in re.finditer(r'addr\s*=\s*"([0-9A-Fa-f]{4})"',
-                                                       (HERE / "labels.toml").read_text(encoding="utf-8"))}
+    return set(label_names())
 
 
 def batch():

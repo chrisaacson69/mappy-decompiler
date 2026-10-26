@@ -27,7 +27,7 @@ from pathlib import Path
 from emu_harness.cpu.m6502.descent import flow
 from emu_harness.passes.callgraph import Graph, sccs
 from emu_harness.passes.native import dead_path
-from code_map import HERE, INLINE_DISPATCH, PRG, WIN, table_lines
+from code_map import HERE, INLINE_DISPATCH, PRG, WIN, label_names, table_lines
 
 VEC = {0xC031: "RESET", 0xC2EF: "NMI", 0xC304: "IRQ"}
 TASK_SITES = {0xC13B}          # jmp ($001E) after the stack switch: a task start, not a dispatch
@@ -36,10 +36,7 @@ ORDER = ["call", "jmp", "flows-into", "dispatch", "inline", "task"]
 entries = sorted({int(l.strip()[1:], 16) for l in open(HERE / "routines_full.txt")} | set(VEC))
 ent = set(entries)
 
-NAMES = {}
-for m in re.finditer(r'addr\s*=\s*"([0-9A-Fa-f]{4})"\s*;?\s*\n?name\s*=\s*"([^"]+)"',
-                     (HERE / "labels.toml").read_text(encoding="utf-8")):
-    NAMES[int(m.group(1), 16)] = m.group(2)
+NAMES = label_names()
 NAMES.update({0xC031: NAMES.get(0xC031, "reset_cold_boot_init"), 0xC2EF: NAMES.get(0xC2EF, "nmi_sound_tick"),
               0xC304: NAMES.get(0xC304, "irq_rti_stub")})
 def name(a): return NAMES.get(a, f"sub_{a:04X}")

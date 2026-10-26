@@ -6,45 +6,97 @@
 # Confidence: HIGH = behavior unambiguous; MED = role clear, exact semantics inferred.
 
 [[label]]
-addr = "C14F"; name = "handler_rts_noop"; kind = "leaf"; conf = "HIGH"; callers = 5
+addr = "C14F"
+name = "handler_rts_noop"
+kind = "leaf"
+conf = "HIGH"
+callers = 5
 why = "Top-down 2026-10-26 (game thread, leaves): a lone RTS: the empty slot in the dispatch tables. Kept (name checked against the code). Earlier note: single RTS; appears as the no-op slot in 4 of the 6 dispatch tables"
 [[label]]
-addr = "C239"; name = "ppu_enable_render"; kind = "leaf"; conf = "HIGH"; callers = 7
+addr = "C239"
+name = "ppu_enable_render"
+kind = "leaf"
+conf = "HIGH"
+callers = 7
 why = "Top-down 2026-10-26 (game thread, leaves): PPUMASK = $1E and its shadow $2D. Kept (name checked against the code). Earlier note: LDX #$1E / STX $2001(PPUMASK) / STX $2D ; $1E = show bg+sprites; $2D = render-on shadow"
 [[label]]
-addr = "C241"; name = "ppu_disable_render"; kind = "leaf"; conf = "HIGH"; callers = 7
+addr = "C241"
+name = "ppu_disable_render"
+kind = "leaf"
+conf = "HIGH"
+callers = 7
 why = "Top-down 2026-10-26 (game thread, leaves): PPUMASK = 0 and its shadow $2D. Kept (name checked against the code). Earlier note: LDX #$00 / STX $2001(PPUMASK) / STX $2D ; mask=0 blanks screen (mirror of C239)"
 [[label]]
-addr = "C249"; name = "read_joypad"; kind = "leaf"; conf = "HIGH"; callers = 1
+addr = "C249"
+name = "read_joypad"
+kind = "leaf"
+conf = "HIGH"
+callers = 1
 why = "LDY #8 / LDA $4016,x / AND #3 / CMP #1 / ROR $10,x / loop ; 8-bit shift of pad into $10,x"
 
 [[label]]
-addr = "C304"; name = "irq_rti_stub"; kind = "leaf"; conf = "HIGH"; callers = 0
+addr = "C304"
+name = "irq_rti_stub"
+kind = "leaf"
+conf = "HIGH"
+callers = 0
 why = "IRQ vector target; single RTI — NROM has no IRQ source, so it's a stub"
 
 [[label]]
-addr = "C78E"; name = "ppu_buffer_enqueue"; kind = "leaf"; conf = "HIGH"; callers = 1
+addr = "C78E"
+name = "ppu_buffer_enqueue"
+kind = "leaf"
+conf = "HIGH"
+callers = 1
 why = "Top-down 2026-10-26 (game thread, leaves): render on ($2D): append [address][count][tiles from ($12),Y] to the $0500 buffer; render off: write them straight to PPUADDR / PPUDATA. Kept (name checked against the code). Earlier note: if $2D(render-on): append [addr_lo,addr_hi,count,data...] to $0500 buffer; else direct $2006/$2007"
 [[label]]
-addr = "CBF5"; name = "ppu_clear_nametables"; kind = "leaf"; conf = "HIGH"; callers = 3
+addr = "CBF5"
+name = "ppu_clear_nametables"
+kind = "leaf"
+conf = "HIGH"
+callers = 3
 why = "Top-down 2026-10-26 (game thread, leaves): both queue cursors $2A / $2B = 0; $2000-$27FF zeroed through PPUDATA. Kept (name checked against the code). Earlier note: reset buffer idx $2A/$2B; set $2006=$2000; write $00 to $2007 in 8x256 loop = clear $2000-$27FF"
 [[label]]
-addr = "CC15"; name = "ppu_run_draw_blocks"; kind = "leaf"; conf = "HIGH"; callers = 3
+addr = "CC15"
+name = "ppu_run_draw_blocks"
+kind = "leaf"
+conf = "HIGH"
+callers = 3
 why = "Top-down 2026-10-26 (game thread, leaves): list $CC41[Y]: [count][address lo][address hi][count bytes] blocks to PPUDATA, 0 ends. Kept (name checked against the code). Earlier note: 278b walker over [count][ppu_addr][data...] blocks -> PPUADDR/PPUDATA; the palette/HUD/template draw"
 [[label]]
-addr = "CF69"; name = "ppu_draw_rle_blocks"; kind = "leaf"; conf = "HIGH"; callers = 1
+addr = "CF69"
+name = "ppu_draw_rle_blocks"
+kind = "leaf"
+conf = "HIGH"
+callers = 1
 why = "Top-down 2026-10-26 (game thread, leaves): list $CFA6[Y]: [rows][address lo][address hi], then per row runs of [count][tile] ending in 0, written straight to PPUDATA (render off); 0 ends the list. Was 'ppu_draw_blocks_b'. Earlier note: PPUADDR/PPUDATA block walker using ptr $16/$17 (tbl_CFA6 family: fixed frame + item placement)"
 [[label]]
-addr = "D126"; name = "ppu_draw_mansion_stamps"; kind = "leaf"; conf = "HIGH"; callers = 1
+addr = "D126"
+name = "ppu_draw_mansion_stamps"
+kind = "leaf"
+conf = "HIGH"
+callers = 1
 why = "Top-down 2026-10-26 (game thread, leaves): list $D185[Y]: stamp records [repeat][tile source][targets ...] written straight to the PPU (the mansion walls and floors); used by build_stage_screen_layout and the bonus intro. Kept (name checked against the code). Earlier note: group=[count][data_ptr][N x ppu_addr]; stamps an RLE tile-run (runlen,tiles,signed-delta) at N addrs = mansion"
 [[label]]
-addr = "CDB7"; name = "fill_attr_map_run"; kind = "leaf"; conf = "HIGH"; callers = 1
+addr = "CDB7"
+name = "fill_attr_map_run"
+kind = "leaf"
+conf = "HIGH"
+callers = 1
 why = "Naming 2026-10-26: sta $0170,x / inx / dey: A into Y bytes of the attribute map at $0170+X, which clear_both_attribute_tables packs into $23C0/$27C0 (render_level runs this order). Was 'fill_attr_source_0170'. Earlier note: STA $0170,X / INX / DEY loop ; fills the $0170 attribute-bit source block consumed by the attr packer"
 [[label]]
-addr = "C3B4"; name = "load_type_sprite_palette"; kind = "leaf"; conf = "HIGH"; callers = 4
+addr = "C3B4"
+name = "load_type_sprite_palette"
+kind = "leaf"
+conf = "HIGH"
+callers = 4
 why = "Top-down 2026-10-26 (game thread, draw): record +5 (obj_type) indexes $C47C (values 0-3) into $13, which write_sprite_to_oam uses as the attribute byte: the type's sprite palette. Returns the type in A. Was 'lookup_obj_type_ptr_hi'. Earlier note: Naming 2026-10-26: record +5 (obj_type) indexes the table $C47C; the byte goes to $13, the high half of a draw pointer. Was 'obj_field5_lookup_C47C'. Earlier note: X = obj[$05] (via ptr $1E); $13 = tbl_$C47C[X]; returns A=X ; field-5 indexes a $C47C parameter table"
 [[label]]
-addr = "DB83"; name = "enter_fall"; kind = "leaf"; conf = "HIGH"; callers = 6
+addr = "DB83"
+name = "enter_fall"
+kind = "leaf"
+conf = "HIGH"
+callers = 6
 why = "Shared entry of state 06: +8 = 0, state 06, anim 6. Reached from hop timeout, broken trampoline, the top of a rise, lost floor. Was 'obj_reset_fields_8_F'. Earlier note: writes obj[$08]=$00, obj[$0F]=$06 via ptr $1E ; resets two object record fields (state/anim?)"
 # --- boundary artifacts found while labeling (NOT real routines) ---
 # $C141 "entry" (callers=9) is the off-by-one tail of the 1-entry indirect jump at $C13B:

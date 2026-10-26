@@ -18,30 +18,19 @@ import re, sys, json
 from pathlib import Path
 
 from emu_harness.passes.native import NativeMap, field_census
-from code_map import HERE, INLINE_DISPATCH, WIN, table_lines
+from code_map import HERE, INLINE_DISPATCH, WIN, label_names, table_lines, var_names
 
 M=NativeMap(WIN, noreturn=INLINE_DISPATCH)
 def norm(a): return M.off(a)
 def cpu(a):  return M.canon(a)
 
-LABELS={}; cur=None
-for l in (HERE/"labels.toml").read_text(encoding="utf-8").splitlines():
-    m=re.search(r'addr\s*=\s*"([0-9A-Fa-f]{4})"',l)
-    if m: cur=int(m.group(1),16)
-    m=re.search(r'name\s*=\s*"([^"]+)"',l)
-    if m and cur is not None: LABELS[cur]=m.group(1); cur=None
+LABELS=label_names(data=False)   # routines only: a data label owns no code
 entries=sorted(set(LABELS)|{0xC031,0xC2EF,0xC304})
 for line in table_lines():
     p=line.split(); M.mark_data(int(p[1],16), 2*(len(p)-2))
 
 # object-record pointer low bytes (from vars.toml: names containing obj + record + ptr, not _hi)
-objptr=set()
-for l in (HERE/"vars.toml").read_text(encoding="utf-8").splitlines():
-    m=re.search(r'addr = "([0-9A-Fa-f]{4})"',l)
-    if m: va=int(m.group(1),16)
-    m=re.search(r'name = "([^"]+)"',l)
-    if m and re.search(r'obj.*record.*ptr',m.group(1)) and not m.group(1).endswith("_hi") and va<0x100:
-        objptr.add(va)
+objptr={a for a,n in var_names().items() if re.search(r'obj.*record.*ptr',n) and not n.endswith("_hi") and a<0x100}
 objptr|={0x1E,0x1C,0x26,0x36,0x31}   # belt-and-suspenders
 
 fields=field_census(M, entries, pointers=objptr, table=(0x400, 0x48F), size=16)

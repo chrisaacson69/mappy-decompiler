@@ -625,18 +625,6 @@ NesInternalRam:0267:target_addr_hi:[obj_field] Variables round 2 (2026-10-26): b
 NesInternalRam:02B2:door_addr:[obj_field] Variables round 2 (2026-10-26): door +2: nametable address (draw_door_kind_y).
 NesInternalRam:02B3:door_addr_hi:[obj_field] Variables round 2 (2026-10-26): door +3: high byte.
 NesInternalRam:02B6:door_swing_frame:[obj_field] Variables round 2 (2026-10-26): door +6: 0-4 during the swing.
-NesInternalRam:0400:obj_x_frac:[obj_field] Variables round 2 (2026-10-26): record +0 (16-byte records, slots 0-8; absolute = slot 0, the player).
-NesInternalRam:0401:obj_x:[obj_field] Variables round 2 (2026-10-26): record +1: tile x.
-NesInternalRam:0402:obj_y_frac:[obj_field] Variables round 2 (2026-10-26): record +2.
-NesInternalRam:0403:obj_y:[obj_field] Variables round 2 (2026-10-26): record +3: tile row.
-NesInternalRam:0404:obj_anim:[obj_field] Variables round 2 (2026-10-26): record +4: the draw handler index (dispatch_object_draw_by_anim); 0 = not drawn.
-NesInternalRam:0405:obj_type:[obj_field] Variables round 2 (2026-10-26): record +5: 0 player, 1 the late chaser, 2 slot 2's cat, 3 cats.
-NesInternalRam:0406:obj_dir:[obj_field] Variables round 2 (2026-10-26): record +6: 1 right, $FF left.
-NesInternalRam:0407:obj_timer:[obj_field] Variables round 2 (2026-10-26): record +7: the state's frame counter / timer.
-NesInternalRam:0408:obj_tile:[obj_field] Variables round 2 (2026-10-26): record +8: the tile the render thread read back (queue_tile_read).
-NesInternalRam:040B:obj_vy_or_link:[obj_field] Variables round 2 (2026-10-26): record +B: vertical velocity in a hop (move_hop_arc), the trampoline index in a bounce, the carrying wave in
-NesInternalRam:040E:obj_buttons:[obj_field] Variables round 2 (2026-10-26): record +E: the player's button history (set_object_intent; the demo shifts it).
-NesInternalRam:040F:obj_state:[obj_field] Variables round 2 (2026-10-26): record +F: the state ($DA42 / $E17A by is_bonus_round).
 NesInternalRam:0410:slot1_x_frac:[obj_field] Variables round 2 (2026-10-26): slot 1 +0 (the bonus goal; the chaser after HURRY).
 NesInternalRam:0411:slot1_x:[obj_field] Variables round 2 (2026-10-26): slot 1 +1.
 NesInternalRam:0412:slot1_y_frac:[obj_field] Variables round 2 (2026-10-26): slot 1 +2.
@@ -693,7 +681,19 @@ NesInternalRam:06F6:voice_param_20:[array] Variables round 2 (2026-10-26): voice
 NesInternalRam:0701:oam_tile:[array] Variables round 2 (2026-10-26): OAM shadow +1 of each 4-byte sprite (write_sprite_to_oam).
 NesInternalRam:0702:oam_attr:[array] Variables round 2 (2026-10-26): OAM shadow +2.
 NesInternalRam:0703:oam_x:[array] Variables round 2 (2026-10-26): OAM shadow +3.
-NesInternalRam:0409:obj0_field_9:obj record +9 [LOW] field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven
-NesInternalRam:040A:obj0_field_A:obj record +A [LOW] field+N (data gate): was 'obj_timer', a name other offsets share or a LOW guess; no code role proven
-NesInternalRam:040C:obj0_field_C:obj record +C [LOW] field+N (data gate): was 'obj_x_sub', a name other offsets share or a LOW guess; no code role proven
-NesInternalRam:040D:obj0_field_D:obj record +D [LOW] field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven
+NesInternalRam:0400:obj_x_frac:obj record +0 [HIGH] Variables round 2 (2026-10-26): record +0: x fraction. Was 'obj_x_lo'. cited above Proven 2026-10-26
+NesInternalRam:0401:obj_x:obj record +1 [HIGH] Variables round 2 (2026-10-26): record +1: tile x. Was 'obj_x_hi'. Across ~28 routines this field is
+NesInternalRam:0402:obj_y_frac:obj record +2 [HIGH] Variables round 2 (2026-10-26): record +2: y fraction. Was 'obj_y_lo'. Field +02 is advanced additiv
+NesInternalRam:0403:obj_y:obj record +3 [HIGH] Variables round 2 (2026-10-26): record +3: tile row. Was 'obj_y_hi'. Field +03 is differenced, never
+NesInternalRam:0404:obj_anim:obj record +4 [HIGH] Variables round 2 (2026-10-26): record +4: the draw handler index (dispatch_object_draw_by_anim); 0 
+NesInternalRam:0405:obj_type:obj record +5 [HIGH] Touched by 16 routines that are overwhelmingly state-machine drivers: update_active_object_state_mac
+NesInternalRam:0406:obj_dir:obj record +6 [HIGH] Variables round 2 (2026-10-26): record +6: 1 right, $FF left. Was 'obj_facing'. Top-down 2026-10-26:
+NesInternalRam:0407:obj_timer:obj record +7 [HIGH] HIGH
+NesInternalRam:0408:obj_tile:obj record +8 [HIGH] Variables round 2 (2026-10-26): record +8: the tile the render thread read back (queue_tile_read). W
+NesInternalRam:0409:obj_blocked:obj record +9 [HIGH] Variables round 2 (2026-10-26): record +9: 1 while a closed door stands in the walker's way (walker_
+NesInternalRam:040A:obj_target_floor:obj record +A [HIGH] Variables round 2 (2026-10-26): record +A: a cat's target floor row (choose_cat_target_floor); the s
+NesInternalRam:040B:obj_vy_or_link:obj record +B [LOW] Variables round 2 (2026-10-26): record +B: vertical velocity in a hop (move_hop_arc), the trampoline
+NesInternalRam:040C:obj_gravity:obj record +C [HIGH] Variables round 2 (2026-10-26): record +C: added to +B every hop frame (move_hop_arc): 9 at a hop. W
+NesInternalRam:040D:obj_intent:obj record +D [HIGH] Variables round 2 (2026-10-26): record +D: the direction to take at the next chance: the pad, the at
+NesInternalRam:040E:obj_buttons:obj record +E [MED] Variables round 2 (2026-10-26): record +E: the player's button history (set_object_intent). Was 'obj
+NesInternalRam:040F:obj_state:obj record +F [HIGH] Proven by code + data (2026-10-26 data phase): $DA2C ldy #$0F / lda ($1E),y / tax / lda $DA42,x -> j

@@ -9,6 +9,7 @@ dispatch tables (entries are code; jump_tables.py writes it) and data_ptr_tables
 pointer tables whose entries are data blobs (the level draw-command tables, 673a53d; no generator
 writes it). `table_lines` reads both, so a regenerated jump_tables.txt can no longer drop them.
 """
+import tomllib
 from pathlib import Path
 
 from emu_harness.cpu.m6502.descent import Window
@@ -20,6 +21,26 @@ WIN = Window(PRG, 0xC000, mirrors=(0x8000,))
 # jump_table_dispatch_via_index ($F49F): pla/pla the caller's return address, read the word at
 # 2*A+1 past it, jmp ($00F6). A JSR to it never returns, and its word table sits after the call.
 INLINE_DISPATCH = {0xF49F}
+
+
+def symbols(kind):
+    """The [[label]] (labels.toml) or [[var]] (vars.toml) entries as dicts, read with tomllib: the one
+    reader every generator shares (both files are valid TOML since 2026-10-26)."""
+    return tomllib.loads((HERE / f"{kind}s.toml").read_text(encoding="utf-8"))[kind]
+
+
+def label_names(data=True):
+    """{address: name} for every label; data=False leaves out kind = "data" labels (they own no code)."""
+    return {int(e["addr"], 16): e["name"] for e in symbols("label") if data or e.get("kind") != "data"}
+
+
+def var_names():
+    """{address: name} for every variable, with the object-record field template ([[obj_field]]) projected
+    onto the record at $0400: absolute $0400-$040F is slot 0 and the base every $04xx,x access indexes."""
+    doc = tomllib.loads((HERE / "vars.toml").read_text(encoding="utf-8"))
+    out = {0x400 + int(f["offset"], 16): f["name"] for f in doc.get("obj_field", [])}
+    out.update({int(e["addr"], 16): e["name"] for e in doc["var"]})
+    return out
 
 
 def reach(seeds, is_data, code):

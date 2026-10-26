@@ -1084,90 +1084,6 @@ conf = "HIGH"
 why = "Variables round 2 (2026-10-26): door +6: 0-4 during the swing."
 
 [[var]]
-addr = "0400"
-name = "obj_x_frac"
-role = "obj_field"
-conf = "HIGH"
-why = "Variables round 2 (2026-10-26): record +0 (16-byte records, slots 0-8; absolute = slot 0, the player)."
-
-[[var]]
-addr = "0401"
-name = "obj_x"
-role = "obj_field"
-conf = "HIGH"
-why = "Variables round 2 (2026-10-26): record +1: tile x."
-
-[[var]]
-addr = "0402"
-name = "obj_y_frac"
-role = "obj_field"
-conf = "HIGH"
-why = "Variables round 2 (2026-10-26): record +2."
-
-[[var]]
-addr = "0403"
-name = "obj_y"
-role = "obj_field"
-conf = "HIGH"
-why = "Variables round 2 (2026-10-26): record +3: tile row."
-
-[[var]]
-addr = "0404"
-name = "obj_anim"
-role = "obj_field"
-conf = "HIGH"
-why = "Variables round 2 (2026-10-26): record +4: the draw handler index (dispatch_object_draw_by_anim); 0 = not drawn."
-
-[[var]]
-addr = "0405"
-name = "obj_type"
-role = "obj_field"
-conf = "HIGH"
-why = "Variables round 2 (2026-10-26): record +5: 0 player, 1 the late chaser, 2 slot 2's cat, 3 cats."
-
-[[var]]
-addr = "0406"
-name = "obj_dir"
-role = "obj_field"
-conf = "HIGH"
-why = "Variables round 2 (2026-10-26): record +6: 1 right, $FF left."
-
-[[var]]
-addr = "0407"
-name = "obj_timer"
-role = "obj_field"
-conf = "HIGH"
-why = "Variables round 2 (2026-10-26): record +7: the state's frame counter / timer."
-
-[[var]]
-addr = "0408"
-name = "obj_tile"
-role = "obj_field"
-conf = "HIGH"
-why = "Variables round 2 (2026-10-26): record +8: the tile the render thread read back (queue_tile_read)."
-
-[[var]]
-addr = "040B"
-name = "obj_vy_or_link"
-role = "obj_field"
-conf = "MED"
-why = "Variables round 2 (2026-10-26): record +B: vertical velocity in a hop (move_hop_arc), the trampoline index in a bounce, the carrying wave in state 16 (the absolute ,x users are the wave's)."
-
-[[var]]
-addr = "040E"
-name = "obj_buttons"
-role = "obj_field"
-conf = "HIGH"
-why = "Variables round 2 (2026-10-26): record +E: the player's button history (set_object_intent; the demo shifts it)."
-
-[[var]]
-addr = "040F"
-name = "obj_state"
-role = "obj_field"
-conf = "HIGH"
-why = "Variables round 2 (2026-10-26): record +F: the state ($DA42 / $E17A by is_bonus_round)."
-
-[[var]]
 addr = "0410"
 name = "slot1_x_frac"
 role = "obj_field"
@@ -1561,33 +1477,33 @@ why = "Variables round 2 (2026-10-26): OAM shadow +3."
 
 [[obj_field]]
 offset = "00"
-name = "obj_x_lo"
+name = "obj_x_frac"
 conf = "HIGH"
-why = "cited above Proven 2026-10-26: the draw code reads +0/+1 minus camera_scroll_x ($28/$29), then +2/+3 unshifted, each <<3 keeping the high byte: 8.8 fixed point in 8-px tiles, X then Y. In the attract demo +2 wrapped 693 times with +3 stepping +-1 every time (+0/+1: 108 of 132; the rest are placements)."
+why = "Variables round 2 (2026-10-26): record +0: x fraction. Was 'obj_x_lo'. cited above Proven 2026-10-26: the draw code reads +0/+1 minus camera_scroll_x ($28/$29), then +2/+3 unshifted, each <<3 keeping the high byte: 8.8 fixed point in 8-px tiles, X then Y. In the attract demo +2 wrapped 693 times with +3 stepping +-1 every time (+0/+1: 108 of 132; the rest are placements)."
 
 [[obj_field]]
 offset = "01"
-name = "obj_x_hi"
+name = "obj_x"
 conf = "HIGH"
-why = "Across ~28 routines this field is overwhelmingly used as a coordinate in distance/adjacency math: it is the subtrahend in 'sbc $0401' / 'cmp $0401' in check_two_coords_adjacent, check_obj_near_point, find_adjacent_entity Proven 2026-10-26: the draw code reads +0/+1 minus camera_scroll_x ($28/$29), then +2/+3 unshifted, each <<3 keeping the high byte: 8.8 fixed point in 8-px tiles, X then Y. In the attract demo +2 wrapped 693 times with +3 stepping +-1 every time (+0/+1: 108 of 132; the rest are placements)."
+why = "Variables round 2 (2026-10-26): record +1: tile x. Was 'obj_x_hi'. Across ~28 routines this field is overwhelmingly used as a coordinate in distance/adjacency math: it is the subtrahend in 'sbc $0401' / 'cmp $0401' in check_two_coords_adjacent, check_obj_near_point, find_adjacent_entity Proven 2026-10-26: the draw code reads +0/+1 minus camera_scroll_x ($28/$29), then +2/+3 unshifted, each <<3 keeping the high byte: 8.8 fixed point in 8-px tiles, X then Y. In the attract demo +2 wrapped 693 times with +3 stepping +-1 every time (+0/+1: 108 of 132; the rest are placements)."
 
 [[obj_field]]
 offset = "02"
-name = "obj_y_lo"
+name = "obj_y_frac"
 conf = "HIGH"
-why = "Field +02 is advanced additively each frame: advance_object_subpixel_position_then_clamp does adc ($1e),y / sta ($1e),y (accumulate a per-frame delta into the coordinate, then clamp), and advance_pointer_by_flagged_offse Proven 2026-10-26: the draw code reads +0/+1 minus camera_scroll_x ($28/$29), then +2/+3 unshifted, each <<3 keeping the high byte: 8.8 fixed point in 8-px tiles, X then Y. In the attract demo +2 wrapped 693 times with +3 stepping +-1 every time (+0/+1: 108 of 132; the rest are placements)."
+why = "Variables round 2 (2026-10-26): record +2: y fraction. Was 'obj_y_lo'. Field +02 is advanced additively each frame: advance_object_subpixel_position_then_clamp does adc ($1e),y / sta ($1e),y (accumulate a per-frame delta into the coordinate, then clamp), and advance_pointer_by_flagged_offse Proven 2026-10-26: the draw code reads +0/+1 minus camera_scroll_x ($28/$29), then +2/+3 unshifted, each <<3 keeping the high byte: 8.8 fixed point in 8-px tiles, X then Y. In the attract demo +2 wrapped 693 times with +3 stepping +-1 every time (+0/+1: 108 of 132; the rest are placements)."
 
 [[obj_field]]
 offset = "03"
-name = "obj_y_hi"
+name = "obj_y"
 conf = "HIGH"
-why = "Field +03 is differenced, never compared to small constants — across ~25 routines it is read/subtracted as a coordinate (find_adjacent_entity, trigger_state_change_on_proximity, check_object_player_collision, check_objec Proven 2026-10-26: the draw code reads +0/+1 minus camera_scroll_x ($28/$29), then +2/+3 unshifted, each <<3 keeping the high byte: 8.8 fixed point in 8-px tiles, X then Y. In the attract demo +2 wrapped 693 times with +3 stepping +-1 every time (+0/+1: 108 of 132; the rest are placements)."
+why = "Variables round 2 (2026-10-26): record +3: tile row. Was 'obj_y_hi'. Field +03 is differenced, never compared to small constants — across ~25 routines it is read/subtracted as a coordinate (find_adjacent_entity, trigger_state_change_on_proximity, check_object_player_collision, check_objec Proven 2026-10-26: the draw code reads +0/+1 minus camera_scroll_x ($28/$29), then +2/+3 unshifted, each <<3 keeping the high byte: 8.8 fixed point in 8-px tiles, X then Y. In the attract demo +2 wrapped 693 times with +3 stepping +-1 every time (+0/+1: 108 of 132; the rest are placements)."
 
 [[obj_field]]
 offset = "04"
-name = "obj_draw_index"
+name = "obj_anim"
 conf = "HIGH"
-why = "Proven by code + data (2026-10-26 data phase): the object draw ($C30C..) reads +0..+3, then jsr $C342 with Y=4: lda ($1E),y / and #$FE / tax / lda $C356,x -> jmp ($1C), the draw-routine dispatch (low bit to $15). Attract-demo values are even (00..20), as a word-table index is. Was 'obj_state'. Earlier note: 35 routines touch +04 and the naming/usage is saturated with state-machine semantics, not numeric/position math. Writers that set a new state: set_obj_state_and_load_next_ptr ($E4A8), reset_obj_to_state2_and_arm_field ($"
+why = "Variables round 2 (2026-10-26): record +4: the draw handler index (dispatch_object_draw_by_anim); 0 = not drawn. Was 'obj_draw_index'. Proven by code + data (2026-10-26 data phase): the object draw ($C30C..) reads +0..+3, then jsr $C342 with Y=4: lda ($1E),y / and #$FE / tax / lda $C356,x -> jmp ($1C), the draw-routine dispatch (low bit to $15). Attract-demo values are even (00..20), as a word-table index is. Was 'obj_state'. Earlier note: 35 routines touch +04 and the naming/usage is saturated with state-machine semantics, not numeric/position math. Writers that set a new state: set_obj_state_and_load_next_ptr ($E4A8), reset_obj_to_state2_and_arm_field ($"
 
 [[obj_field]]
 offset = "05"
@@ -1597,9 +1513,9 @@ why = "Touched by 16 routines that are overwhelmingly state-machine drivers: upd
 
 [[obj_field]]
 offset = "06"
-name = "obj_facing"
+name = "obj_dir"
 conf = "HIGH"
-why = "Top-down 2026-10-26: the facing direction, -1 / 0 / +1 (the only values in the attract demo): apply_facing_flip ($C3D7) sets the sprite\'s horizontal flip when it is not negative. Was \'obj_velocity\'. Field is read-modify-written via the `sbc ($1e),y`/`sta ($1e),y` (subtract-with-borrow) idiom in reverse_obj_velocity_and_set_state ($DD54/$DD56), object_bounce_timer_reverse_or_advance ($E2BF/$E2C1), scan_objects_for_ad"
+why = "Variables round 2 (2026-10-26): record +6: 1 right, $FF left. Was 'obj_facing'. Top-down 2026-10-26: the facing direction, -1 / 0 / +1 (the only values in the attract demo): apply_facing_flip ($C3D7) sets the sprite's horizontal flip when it is not negative. Was 'obj_velocity'. Field is read-modify-written via the `sbc ($1e),y`/`sta ($1e),y` (subtract-with-borrow) idiom in reverse_obj_velocity_and_set_state ($DD54/$DD56), object_bounce_timer_reverse_or_advance ($E2BF/$E2C1), scan_objects_for_ad"
 
 [[obj_field]]
 offset = "07"
@@ -1609,45 +1525,45 @@ why = "HIGH"
 
 [[obj_field]]
 offset = "08"
-name = "obj_bg_tile"
+name = "obj_tile"
 conf = "HIGH"
-why = "Variables 2026-10-26: the nametable tile under the object, read back from VRAM: flush_vram_readback_queue_and_restore_render takes queued [ppu address][record pointer] entries at $04C0, reads PPUDATA (dummy read first) and stores the tile at ($1E)+8 ($C19D). field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: Read+written by the engine's state machine: object_state_transition_update reads then writes it ($E249 lda / $E261 sta); reset_obj_to_state2_and_arm_field sets it to a discrete state (2); obj_state7_update_anim_and_snap_"
+why = "Variables round 2 (2026-10-26): record +8: the tile the render thread read back (queue_tile_read). Was 'obj_bg_tile'. Variables 2026-10-26: the nametable tile under the object, read back from VRAM: flush_vram_readback_queue_and_restore_render takes queued [ppu address][record pointer] entries at $04C0, reads PPUDATA (dummy read first) and stores the tile at ($1E)+8 ($C19D). field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: Read+written by the engine's state machine: object_state_transition_update reads then writes it ($E249 lda / $E261 sta); reset_obj_to_state2_and_arm_field sets it to a discrete state (2); obj_state7_update_anim_and_snap_"
 
 [[obj_field]]
 offset = "09"
-name = "field_9"
-conf = "LOW"
-why = "field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: Only 2 routines touch +09. It is WRITTEN by scan_objects_for_adjacent_contact_and_trigger (sta ($1e),y at $EA94 and $EADB — two distinct stores, i.e. set-on-contact vs reset branch) and READ by advance_object_state_count"
+name = "obj_blocked"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): record +9: 1 while a closed door stands in the walker's way (walker_meets_closed_door); walk_step does not move then. Was 'field_9'. field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: Only 2 routines touch +09. It is WRITTEN by scan_objects_for_adjacent_contact_and_trigger (sta ($1e),y at $EA94 and $EADB — two distinct stores, i.e. set-on-contact vs reset branch) and READ by advance_object_state_count"
 
 [[obj_field]]
 offset = "0A"
-name = "field_A"
-conf = "LOW"
-why = "field+N (data gate): was 'obj_timer', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: update_object_proximity_collision_tick does `dec $042a` (decrement once per tick), and tick_bonus_item_collect_or_timeout writes it via `sta $042a` (sets/reloads the countdown) — a routine literally named for collect-or-"
+name = "obj_target_floor"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): record +A: a cat's target floor row (choose_cat_target_floor); the step-off states use it. Was 'field_A'. field+N (data gate): was 'obj_timer', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: update_object_proximity_collision_tick does `dec $042a` (decrement once per tick), and tick_bonus_item_collect_or_timeout writes it via `sta $042a` (sets/reloads the countdown) — a routine literally named for collect-or-"
 
 [[obj_field]]
 offset = "0B"
-name = "field_B"
+name = "obj_vy_or_link"
 conf = "LOW"
-why = "field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: 13 routines treat +0B as a discrete state/phase selector, not a counter. It's written by a cluster of state-transition routines (object_state_transition_update $E28D, update_obj_phase7_transition $E202, advance_obj_state"
+why = "Variables round 2 (2026-10-26): record +B: vertical velocity in a hop (move_hop_arc), the trampoline index in a bounce, the carrying wave in state 16. Was 'field_B'. field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: 13 routines treat +0B as a discrete state/phase selector, not a counter. It's written by a cluster of state-transition routines (object_state_transition_update $E28D, update_obj_phase7_transition $E202, advance_obj_state"
 
 [[obj_field]]
 offset = "0C"
-name = "field_C"
-conf = "LOW"
-why = "field+N (data gate): was 'obj_x_sub', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: Only one routine touches +0C: advance_object_subpixel_position_then_clamp, which reads it via `lda ($1e),y` (Y=#$0C). A routine whose whole job is advancing subpixel position and clamping, reading this field as an input "
+name = "obj_gravity"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): record +C: added to +B every hop frame (move_hop_arc): 9 at a hop. Was 'field_C'. field+N (data gate): was 'obj_x_sub', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: Only one routine touches +0C: advance_object_subpixel_position_then_clamp, which reads it via `lda ($1e),y` (Y=#$0C). A routine whose whole job is advancing subpixel position and clamping, reading this field as an input "
 
 [[obj_field]]
 offset = "0D"
-name = "field_D"
-conf = "LOW"
-why = "field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: Field is pure-write (no inc/dec/RMW): update_object_state_vs_reference stores to it twice ($D941/$D990 sta ($1e),y) after comparing against a reference, and every other accessor only reads it — resolve_entity_collision_m"
+name = "obj_intent"
+conf = "HIGH"
+why = "Variables round 2 (2026-10-26): record +D: the direction to take at the next chance: the pad, the attract script or the cat's choice (set_object_intent). Was 'field_D'. field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: Field is pure-write (no inc/dec/RMW): update_object_state_vs_reference stores to it twice ($D941/$D990 sta ($1e),y) after comparing against a reference, and every other accessor only reads it — resolve_entity_collision_m"
 
 [[obj_field]]
 offset = "0E"
-name = "obj_flags"
+name = "obj_buttons"
 conf = "MED"
-why = "Only 3 routines touch +0E and the access pattern is bit-manipulation, not arithmetic or position math. store_one_via_ptr does `asl $040e` then `inc $040e` — shifting a bit in / setting the low bit (packing flags), with n"
+why = "Variables round 2 (2026-10-26): record +E: the player's button history (set_object_intent). Was 'obj_flags'. Only 3 routines touch +0E and the access pattern is bit-manipulation, not arithmetic or position math. store_one_via_ptr does `asl $040e` then `inc $040e` — shifting a bit in / setting the low bit (packing flags), with n"
 
 [[obj_field]]
 offset = "0F"

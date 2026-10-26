@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 
 from emu_harness.walk.guard import find_guard_violations
-from apply_names import byte_stream
+from apply_names import byte_stream, valid_toml
 
 HERE = Path(__file__).parent
 VARS, ASM = HERE / "vars.toml", HERE / "mappy_labeled.asm"
@@ -34,7 +34,9 @@ def var_names(text):
 
 
 def esc(s):
-    return s.replace("\\", "\\\\").replace('"', '\\"')
+    """A TOML basic-string body: backslash, quote and the control characters escaped."""
+    return (s.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r")
+            .replace("\t", "\\t"))
 
 
 def regen():
@@ -83,10 +85,11 @@ def main(batch_file):
     # a name also adds the "   ; $44" comment that restates the operand: drop it on both sides
     hexid = lambda t: re.sub(r'\$[0-9A-Fa-f]{2,4}\b', 'HEXID', re.sub(r'[ \t]+; \$[0-9A-Fa-f]{2,4}[ \t]*$', '', t, flags=re.M))
     others, bad = find_guard_violations({"asm": hexid(before_asm)}, {"asm": hexid(after_asm)}, {"asm"})
-    if bad or byte_stream(before_asm) != byte_stream(after_asm):
+    toml_ok = valid_toml(text)
+    if bad or byte_stream(before_asm) != byte_stream(after_asm) or not toml_ok:
         VARS.write_text(before_vars, encoding="utf-8", newline="\n")
         regen()
-        print("GUARD FAILED; vars.toml restored.", bad[:3])
+        print("GUARD FAILED; vars.toml restored.", bad[:3], "valid TOML:", toml_ok)
         sys.exit(2)
     print(f"applied {len(batch) - len(added)} variable renames, {len(added)} new, dropped {len(drop)}; "
           "byte stream unchanged; identifiers only")

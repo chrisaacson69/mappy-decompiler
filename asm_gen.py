@@ -10,7 +10,7 @@ jump-table bytes emit as `.word handler_name`; uncovered bytes emit as `.byte` d
 """
 import re, sys, bisect
 from pathlib import Path
-from code_map import table_lines   # jump_tables.txt + data_ptr_tables.txt
+from code_map import table_lines, label_names, var_names   # tables; labels.toml / vars.toml via tomllib
 from emu_harness.cpu.m6502 import disasm as disasm6502   # the shared 6502 tables (emu-harness rows B / A3)
 from emu_harness.cpu.m6502.cpu import NMI_VECTOR, RESET_VECTOR, IRQ_VECTOR
 OPS, MODE_LEN, fmt = disasm6502.OPS, disasm6502.MODE_LEN, disasm6502.fmt_operand
@@ -22,18 +22,8 @@ def norm(a): return a&0x3FFF
 def cpu(a):  return 0xC000+norm(a)
 
 # names
-FUNC={}; cur=None
-for l in (HERE/"labels.toml").read_text(encoding="utf-8").splitlines():
-    m=re.search(r'addr\s*=\s*"([0-9A-Fa-f]{4})"',l)
-    if m: cur=int(m.group(1),16)
-    m=re.search(r'name\s*=\s*"([^"]+)"',l)
-    if m and cur is not None: FUNC[cur]=m.group(1); cur=None
-VAR={}; cur=None
-for l in (HERE/"vars.toml").read_text(encoding="utf-8").splitlines():
-    m=re.search(r'addr\s*=\s*"([0-9A-Fa-f]{4})"',l)
-    if m: cur=int(m.group(1),16)
-    m=re.search(r'name\s*=\s*"([^"]+)"',l)
-    if m and cur is not None and cur not in VAR: VAR[cur]=m.group(1); cur=None
+FUNC=label_names()
+VAR=var_names()
 # hardware register names
 HW={0x2000:"PPUCTRL",0x2001:"PPUMASK",0x2002:"PPUSTATUS",0x2003:"OAMADDR",0x2004:"OAMDATA",
     0x2005:"PPUSCROLL",0x2006:"PPUADDR",0x2007:"PPUDATA",0x4014:"OAMDMA",0x4015:"APUSTATUS",
