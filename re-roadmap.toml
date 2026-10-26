@@ -27,7 +27,7 @@ evidence = ["01-reset-and-frame-structure.md", "repo_header.bin", "repo_CHR_ROM.
 status   = "done"
 gate     = "Trace 5,024 B (30.7%) -> descent 60.2% -> 7 dispatch tables incl. the $F6A9 inline table (18 handlers, new) -> 275 routines, 10,843 B (66.2%); code recall vs the published disassembly 99.4% (was 96.9%; graded after, never an input). Walker conflicts 4, unexplained 0 (3 bit-skip $F746/$F761/$F77C, 1 dead-path $CC41). Tables end at evidence ($C356 x19, $C13E x1: the old 20th/2nd words were the next routine's bytes). Stored-pointer installs 0 (the 4 old ones were data pointers, counters, a mis-pair). Phantoms $EEA9, $FA3F dropped."
 checked  = "2026-10-26"
-toolset  = "4eb3022"
+toolset  = "2f252ef"
 evidence = ["conflicts.txt", "jump_tables.txt", "data_ptr_tables.txt", "routines_full.txt", "coverage_full2.bin", "stored_pointers.py"]
 
 [phase.data]
