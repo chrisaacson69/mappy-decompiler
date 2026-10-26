@@ -11,70 +11,37 @@ The handler is set by DATA FLOW, not an indexed table, so the indexed-table swee
 it. We scan covered code for adjacent LDA#/STA pairs whose two immediates form a code pointer,
 seed those handlers, and add `installer -> handler` edges. Then re-measure coverage + the call
 graph's reachability. Builds on coverage_full / routines_full / jump_tables from the sweep.
+The scan, the call-graph partition and the reachability are emu_harness.passes.native (row R).
 """
-import bisect
-
 from emu_harness.cpu.m6502.disasm import MODE_LEN, OPS
-from code_map import HERE, PRG, reach
+from emu_harness.passes.native import (NativeMap, owner as _owner, partition_edges, reachable,
+                                       stored_pointer_installs)
+from code_map import HERE, WIN
 
-def norm(a): return a & 0x3FFF
-def cpu(a):  return 0xC000 + norm(a)
-def inc(a):  return 0xC000 <= a <= 0xFFFF or 0x8000 <= a <= 0xBFFF
-def legal(a):return PRG[norm(a)] in OPS
+def cpu(a):  return M.canon(a)
 
 seeds = {0xC031,0xC2EF,0xC304}
 seeds.update(int(l.strip()[1:],16) for l in open(HERE/"routines_full.txt"))
-code = bytearray((HERE/"coverage_full.bin").read_bytes())
-is_data = bytearray(0x4000)
+M = NativeMap(WIN, bytearray((HERE/"coverage_full.bin").read_bytes()))
+code = M.code
 # mark known jump-table bytes as data so descent won't decode them
 tables = {}
 for line in open(HERE/"jump_tables.txt"):
     p=line.split(); site=int(p[0][1:],16); base=int(p[1],16); ents=[int(x,16) for x in p[2:]]
     tables[site]=(base,ents)
-    for k in range(len(ents)): is_data[norm(base+2*k)]=is_data[norm(base+2*k+1)]=1
+    M.mark_data(base, 2*len(ents))
 
 starts = {}
 def fixpoint(seedset):
-    routines, st = reach(seedset, is_data, code)
+    routines, st = M.reach(seedset)
     for a in st:
-        op=PRG[norm(a)]; starts[norm(a)]=(op,1+MODE_LEN[OPS[op][1]])
+        op=M.byte(a); starts[M.off(a)]=(op,1+MODE_LEN[OPS[op][1]])
     return routines
 
 routines = fixpoint(seeds)
 
-# ---- scan for LDA#/STA pairs at instruction boundaries ----
-ordered = sorted(starts)
-# event = (addr, sta_target, imm) for "LDA #imm" immediately followed by "STA zp|abs"
-events=[]
-for i,n in enumerate(ordered):
-    op,ilen = starts[n]
-    if op!=0xA9: continue                 # LDA #imm
-    imm = PRG[norm(n+1)]
-    s2 = n+ilen
-    if norm(s2) not in starts: continue
-    op2,_ = starts[norm(s2)]
-    if op2==0x85:   tgt = PRG[norm(s2+1)]                       # STA zp
-    elif op2==0x8D: tgt = PRG[norm(s2+1)]|(PRG[norm(s2+2)]<<8)  # STA abs
-    else: continue
-    events.append((cpu(n), tgt, imm))
-
-# pair events with consecutive targets (t,t+1) that are close in address
-installs=[]   # (installer_addr, ptr_target_routine)
-by_addr = sorted(events)
-for j,(a,t,imm) in enumerate(by_addr):
-    for k in range(j+1, min(j+6, len(by_addr))):
-        a2,t2,imm2 = by_addr[k]
-        if a2-a > 16: break
-        lo=hi=None; base_site=a
-        if t2==t+1: lo,hi=imm,imm2          # low then high
-        elif t2==t-1: lo,hi=imm2,imm        # high then low
-        else: continue
-        p=lo|(hi<<8)
-        # accept p (or p+1 for the addr-1 convention) if it's a code routine
-        for cand in (p, (p+1)&0xFFFF):
-            if inc(cand) and legal(cand):
-                installs.append((base_site, cand)); break
-        break
+# ---- LDA#/STA pairs forming a code pointer (emu_harness.passes.native) ----
+installs = stored_pointer_installs(M, starts)
 
 ptr_targets = {c for _,c in installs}
 new = ptr_targets - {cpu(r) for r in routines}
@@ -90,20 +57,8 @@ print(f"routines: {len(routines)}   CODE: {covered:,}/16384 ({100*covered/0x4000
 # ---- rebuild call-graph reachability: direct + indexed-table + stored-pointer edges ----
 entries=sorted(c for c in {cpu(r) for r in routines})
 ent=set(entries); VEC={0xC031:"RESET",0xC2EF:"NMI",0xC304:"IRQ"}
-def owner(a):
-    a=cpu(a); i=bisect.bisect_right(entries,a)-1; return entries[i]
-edges={e:set() for e in entries}
-for idx,e in enumerate(entries):
-    end=entries[idx+1] if idx+1<len(entries) else 0x10000
-    pc=e
-    while pc<end:
-        op=PRG[norm(pc)]
-        if op not in OPS: pc+=1; continue
-        ilen=1+MODE_LEN.get(OPS[op][1],0)
-        if op in (0x20,0x4C):
-            t=PRG[norm(pc+1)]|(PRG[norm(pc+2)]<<8)
-            if t in ent and t!=e: edges[e].add(t)
-        pc+=ilen
+def owner(a): return _owner(entries, a, M)
+edges=partition_edges(M, entries)
 for site,(base,ents) in tables.items():            # indexed-table dispatch edges
     o=owner(site)
     for h in ents:
@@ -111,15 +66,7 @@ for site,(base,ents) in tables.items():            # indexed-table dispatch edge
 for site,tgt in installs:                          # stored-pointer install edges
     o=owner(site)
     if tgt in ent and tgt!=o: edges[o].add(tgt)
-callers={e:set() for e in entries}
-for a,ts in edges.items():
-    for t in ts: callers[t].add(a)
-from collections import deque
-seen=set(VEC)&ent; dq=deque(seen)
-while dq:
-    v=dq.popleft()
-    for w in edges[v]:
-        if w not in seen: seen.add(w); dq.append(w)
+seen=reachable(edges, set(VEC)&ent)
 unreached=[e for e in entries if e not in seen]
 print(f"\ncall graph: nodes={len(entries)} edges={sum(len(v) for v in edges.values())}")
 print(f"reachable from 3 vectors: {len(seen)}/{len(entries)} ({100*len(seen)/len(entries):.0f}%)")

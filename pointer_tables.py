@@ -10,49 +10,32 @@ A pointer table = a run of >=3 consecutive little-endian words that each point a
 in $C000-$FFFF, sitting in bytes we did NOT decode as code (i.e. data). Find them, seed every
 entry, connect each table to the routine whose code references its base (owner -> entries), and
 re-measure. This is the structural complement to the idiom-based jump-table sweep.
+The scan, the call-graph partition and the reachability are emu_harness.passes.native (row R).
 """
-import re, bisect
+import re
 from pathlib import Path
 
-from emu_harness.cpu.m6502.disasm import MODE_LEN, OPS
-from code_map import HERE, PRG, reach
+from emu_harness.passes.native import NativeMap, owner as _owner, partition_edges, pointer_runs, reachable
+from code_map import HERE, WIN
 
-def norm(a): return a & 0x3FFF
-def cpu(a):  return 0xC000 + norm(a)
-def inc(a):  return 0xC000 <= a <= 0xFFFF or 0x8000 <= a <= 0xBFFF
-def legal(a):return PRG[norm(a)] in OPS
+def cpu(a):  return M.canon(a)
 
 seeds = {0xC031,0xC2EF,0xC304} | {int(l.strip()[1:],16) for l in open(HERE/"routines_full.txt")}
-code = bytearray((HERE/"coverage_full2.bin").read_bytes() if (HERE/"coverage_full2.bin").exists()
-                 else (HERE/"coverage_full.bin").read_bytes())
-is_data = bytearray(0x4000)
+M = NativeMap(WIN, bytearray((HERE/"coverage_full2.bin").read_bytes() if (HERE/"coverage_full2.bin").exists()
+                             else (HERE/"coverage_full.bin").read_bytes()))
+code, PRG = M.code, M.buf
 known_tables = {}
 for line in open(HERE/"jump_tables.txt"):
     p=line.split(); known_tables[int(p[0][1:],16)]=(int(p[1],16),[int(x,16) for x in p[2:]])
-    for k in range(len(p)-2): is_data[norm(int(p[1],16)+2*k)]=is_data[norm(int(p[1],16)+2*k+1)]=1
+    M.mark_data(int(p[1],16), 2*(len(p)-2))
 
 def fixpoint(seedset):
-    return reach(seedset, is_data, code)[0]
+    return M.reach(seedset)[0]
 
 routines = fixpoint(seeds)
 
-# ---- scan DATA bytes for pointer-table runs ----
-found_tables=[]
-i=0
-while i < 0x3FFE:
-    if not code[i] and not is_data[i]:
-        # try to start a run here
-        run=[]; a=i
-        while a+1 < 0x4000:
-            w=PRG[a]|(PRG[a+1]<<8)
-            if inc(w) and legal(w) and code[norm(w)]:   # points at DECODED code
-                run.append(w); a+=2
-            else: break
-        if len(run) >= 3:
-            found_tables.append((0xC000+i, run))
-            for k in range(len(run)): is_data[norm(i+2*k)]=is_data[norm(i+2*k+1)]=1
-            i = a; continue
-    i += 1
+# ---- scan DATA bytes for pointer-table runs (emu_harness.passes.native) ----
+found_tables = pointer_runs(M)
 
 ptr_targets={t for _,run in found_tables for t in run}
 seeds.update(ptr_targets)
@@ -67,19 +50,8 @@ print(f"routines: {len(routines)}   CODE: {covered:,}/16384 ({100*covered/0x4000
 # ---- rebuild reachability: direct + indexed-tables + pointer-tables (owner-of-referencing-code) ----
 entries=sorted({cpu(r) for r in routines}); ent=set(entries)
 VEC={0xC031:"RESET",0xC2EF:"NMI",0xC304:"IRQ"}
-def owner(a):
-    a=cpu(a); j=bisect.bisect_right(entries,a)-1; return entries[j]
-edges={e:set() for e in entries}
-for idx,e in enumerate(entries):
-    end=entries[idx+1] if idx+1<len(entries) else 0x10000; pc=e
-    while pc<end:
-        op=PRG[norm(pc)]
-        if op not in OPS: pc+=1; continue
-        il=1+MODE_LEN.get(OPS[op][1],0)
-        if op in (0x20,0x4C):
-            t=PRG[norm(pc+1)]|(PRG[norm(pc+2)]<<8)
-            if t in ent and t!=e: edges[e].add(t)
-        pc+=il
+def owner(a): return _owner(entries, a, M)
+edges=partition_edges(M, entries)
 for site,(base,ents) in known_tables.items():     # indexed dispatch
     o=owner(site)
     for h in ents:
@@ -97,12 +69,7 @@ for base,run in found_tables:
         o=owner(r)
         for h in run:
             if h in ent and h!=o: edges[o].add(h)
-from collections import deque
-seen=set(VEC)&ent; dq=deque(seen)
-while dq:
-    v=dq.popleft()
-    for w in edges[v]:
-        if w not in seen: seen.add(w); dq.append(w)
+seen=reachable(edges, set(VEC)&ent)
 unreached=[e for e in entries if e not in seen]
 print(f"\ncall graph: nodes={len(entries)} edges={sum(len(v) for v in edges.values())}")
 print(f"reachable from 3 vectors: {len(seen)}/{len(entries)} ({100*len(seen)/len(entries):.0f}%)")

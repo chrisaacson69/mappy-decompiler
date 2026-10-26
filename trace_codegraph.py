@@ -10,50 +10,20 @@ the main loop advances. Log:
   * JSR/JMP edges    -> the call graph
   * indirect JMP targets (resolved at runtime -> the jump tables static sweep can't follow)
 
-The 6502 is emu-harness's shared core (emu_harness.cpu.m6502.cpu, MIGRATION.md row C), which now
-carries the 18 documented opcodes this script used to add in a subclass, and BRK / NMI with the
-real status byte. The disassembler's OPS table is the ISA spec.
+The 6502 is emu-harness's shared core (emu_harness.cpu.m6502.cpu, MIGRATION.md row C); the
+coverage recorder is emu-harness's cpu.m6502.coverage (row R), lifted from this script, and the
+bus is machines/nes/bus (its own NROM stub gave the same coverage, byte for byte).
 """
 import sys
 from pathlib import Path
 
 from emu_harness.cpu.m6502.cpu import CPU6502
-from emu_harness.cpu.m6502.disasm import MODE_LEN, OPS
+from emu_harness.cpu.m6502.coverage import trace_coverage
+from emu_harness.cpu.m6502.descent import Window
+from emu_harness.machines.nes.bus import Bus
 
 ROM = Path(__file__).parent / "Mappy (Japan).nes"
 NMI_VEC, RESET_VEC, IRQ_VEC = 0xFFFA, 0xFFFC, 0xFFFE
-
-
-class Mem:
-    """NROM-128 bus + minimal PPU/IO stubs for headless tracing."""
-    def __init__(self, rom):
-        self.ram = bytearray(0x800)
-        self.sram = bytearray(0x2000)
-        self.prg = rom[16:16 + 0x4000]   # $C000-$FFFF, mirrored to $8000
-        self.vaddr = 0; self._latch = None; self.ppu_inc = 1
-
-    def read(self, a):
-        a &= 0xFFFF
-        if a < 0x2000:            return self.ram[a & 0x7FF]
-        if 0x6000 <= a < 0x8000:  return self.sram[a - 0x6000]
-        if 0x8000 <= a <= 0xBFFF: return self.prg[a - 0x8000]
-        if 0xC000 <= a <= 0xFFFF: return self.prg[a - 0xC000]
-        if a == 0x2002:           return 0x80   # vblank set -> waits pass
-        if a == 0x2007:           return 0      # PPUDATA read stub
-        return 0                                 # $4016/$4017 etc -> no buttons
-
-    def write(self, a, v):
-        a &= 0xFFFF; v &= 0xFF
-        if a < 0x2000:             self.ram[a & 0x7FF] = v
-        elif 0x6000 <= a < 0x8000: self.sram[a - 0x6000] = v
-        elif a == 0x2000:          self.ppu_inc = 32 if (v & 4) else 1
-        elif a == 0x2006:
-            if self._latch is None: self._latch = v
-            else: self.vaddr = ((self._latch << 8) | v) & 0x3FFF; self._latch = None
-        elif a == 0x2007:          self.vaddr = (self.vaddr + self.ppu_inc) & 0x3FFF
-
-    def read_word(self, a):  return self.read(a) | (self.read(a + 1) << 8)
-    def write_word(self, a, v): self.write(a, v & 0xFF); self.write(a + 1, (v >> 8) & 0xFF)
 
 
 TracingCPU = CPU6502      # the name the rest of this script (and its readers) use
@@ -61,41 +31,14 @@ TracingCPU = CPU6502      # the name the rest of this script (and its readers) u
 
 def trace(frames=4000, frame_budget=12000, max_steps=80_000_000):
     rom = ROM.read_bytes()
-    mem = Mem(rom)
+    mem = Bus(rom)                    # NROM-128: the 16K at $8000 and $C000
     cpu = TracingCPU(mem)
     cpu.pc = mem.read_word(RESET_VEC); cpu.sp = 0xFD
-
-    code = bytearray(0x4000)          # PRG coverage: 1 = executed (CODE)
-    edges = {}                        # src_addr -> set of call/jump targets
-    indirect = {}                     # site_addr -> set of resolved targets (jump tables)
-    steps = 0; frame = 0; since_nmi = 0
-    in_prg = lambda a: 0xC000 <= a <= 0xFFFF or 0x8000 <= a <= 0xBFFF
-    norm = lambda a: (a & 0x3FFF)     # $8000/$C000 both -> same 16K
-
-    while frame < frames and steps < max_steps:
-        pc = cpu.pc
-        op = mem.read(pc)
-        ilen = 1 + MODE_LEN.get(OPS[op][1], 0) if op in OPS else 1
-        if in_prg(pc):
-            for k in range(ilen):
-                code[norm(pc + k)] = 1
-            if op == 0x20:    # JSR abs
-                edges.setdefault(norm(pc), set()).add(mem.read_word(pc + 1) & 0xFFFF)
-            elif op == 0x4C:  # JMP abs
-                edges.setdefault(norm(pc), set()).add(mem.read_word(pc + 1) & 0xFFFF)
-            elif op == 0x6C:  # JMP (abs) -- resolve at runtime
-                ptr = mem.read_word(pc + 1)
-                tgt = mem.read(ptr) | (mem.read((ptr & 0xFF00) | ((ptr + 1) & 0xFF)) << 8)
-                indirect.setdefault(norm(pc), set()).add(tgt & 0xFFFF)
-        try:
-            cpu.step()
-        except NotImplementedError as e:
-            print(f"[missing opcode] {e}  (op ${op:02X} at ${pc:04X})"); break
-        except Exception as e:
-            print(f"[halt] {type(e).__name__}: {e} at ${pc:04X}"); break
-        steps += 1; since_nmi += 1
-        if since_nmi >= frame_budget:
-            cpu.nmi(); since_nmi = 0; frame += 1
+    cov = trace_coverage(cpu, Window(rom[16:16 + 0x4000], 0xC000, mirrors=(0x8000,)), ticks=frames,
+                         tick_every=frame_budget, max_steps=max_steps)
+    if cov.halt:
+        print(cov.halt)
+    code, edges, indirect, steps, frame = cov.code, cov.edges, cov.indirect, cov.steps, cov.ticks
 
     covered = sum(code)
     print(f"steps={steps:,}  frames={frame}")

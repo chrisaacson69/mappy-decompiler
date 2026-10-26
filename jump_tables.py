@@ -17,13 +17,10 @@ This finds tables the demo never executed (bonus $E17A via the un-taken $DA29 si
 """
 import re
 
-from emu_harness.cpu.m6502.disasm import OPS
-from code_map import HERE, PRG, reach
+from emu_harness.passes.native import NativeMap, dispatch_tables
+from code_map import HERE, WIN
 
-def norm(a): return a & 0x3FFF
-def cpu(a):  return 0xC000 + norm(a)
 def in_code(a): return 0xC000 <= a <= 0xFFFF or 0x8000 <= a <= 0xBFFF
-def legal(a): return PRG[norm(a)] in OPS
 
 # seeds = dynamic targets + vectors
 seeds = {0xC2EF,0xC031,0xC304}
@@ -34,67 +31,11 @@ for line in open(HERE / "codegraph.txt"):
     if m and 'JMP' not in line:
         seeds.update(int(x[1:],16) for x in m.group(2).split() if in_code(int(x[1:],16)))
 
-code = bytearray((HERE / "coverage.bin").read_bytes())
-is_data = bytearray(0x4000)
-starts = {}           # instruction-start addr (norm) -> opcode
-ptr_of = {}           # JMP-(ind) site norm -> zp pointer operand
-
-def fixpoint_descend(seedset):
-    routines, st = reach(seedset, is_data, code)
-    for a in st:
-        n=norm(a); starts[n]=PRG[n]
-        if PRG[n]==0x6C:                       # JMP (ind) -- dispatch site
-            ptr_of[n]=PRG[norm(a+1)]|(PRG[norm(a+2)]<<8)
-    return routines
-
-def resolve_table(site_n):
-    """back-scan instruction starts before site for the indexed LDA feeding the pointer's
-    LOW byte (its STA target == the JMP pointer's low byte) -- that operand is the table base."""
-    ptr = ptr_of.get(site_n)
-    site = cpu(site_n)
-    cand = [cpu(a) for a in starts if 0 < (site - cpu(a)) <= 30]
-    loads = []   # (base, sta_target) for each indexed-abs load, nearest first
-    for a in sorted(cand, reverse=True):
-        op = PRG[norm(a)]
-        if op in (0xBD, 0xB9):                              # LDA abs,X / abs,Y
-            base = PRG[norm(a+1)] | (PRG[norm(a+2)] << 8)
-            sta_t = PRG[norm(a+4)] if PRG[norm(a+3)] == 0x85 else None  # STA zp after it
-            loads.append((base, sta_t))
-    if ptr is not None:                                     # prefer the low-byte (base) load
-        for base, sta_t in loads:
-            if sta_t == (ptr & 0xFF):
-                return base
-    return loads[0][0] if loads else None
-
-def read_table(base, max_entries=64):
-    ents=[]; a=base
-    for _ in range(max_entries):
-        if is_data[norm(a)] and a!=base: break
-        w=PRG[norm(a)]|(PRG[norm(a+1)]<<8)
-        if in_code(w) and legal(w):
-            ents.append(w); a+=2
-        else: break
-    return ents
-
-# ---- iterate: descend -> find sites -> resolve+seed tables -> repeat ----
-tables={}; known_sites=set()
-while True:
-    routines = fixpoint_descend(seeds)
-    new=False
-    for n,op in sorted(starts.items()):
-        if op==0x6C and n not in known_sites:
-            known_sites.add(n)
-            base=resolve_table(n)
-            if base is None: continue
-            ents=read_table(base)
-            if not ents: continue
-            tables[cpu(n)]=(base,ents)
-            for e in range(len(ents)): is_data[norm(base+2*e)]=is_data[norm(base+2*e+1)]=1
-            before=len(seeds); seeds.update(e for e in ents if in_code(e))
-            if len(seeds)>before: new=True
-    if not new: break
-
-routines = fixpoint_descend(seeds)
+M = NativeMap(WIN, bytearray((HERE / "coverage.bin").read_bytes()))
+code = M.code
+# ---- iterate: descend -> find sites -> resolve+seed tables -> repeat (emu_harness.passes.native) ----
+tables, known_sites, routines, _ = dispatch_tables(M, seeds)
+cpu = M.canon
 covered=sum(code)
 print(f"dispatch sites (JMP indirect): {len(known_sites)}")
 print(f"jump tables resolved          : {len(tables)}")
