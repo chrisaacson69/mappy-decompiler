@@ -1,0 +1,547 @@
+# Mappy call tree (call_graph.py): 275 routines, 535 edges (call 290, jmp 113, flows-into 195, dispatch 53, inline 18, task 1); reached from the vectors: 275/275. [kinds] mark every edge that is not a plain JSR.
+
+# RESET vector
+reset_cold_boot_init  $C031
+    vblank_synced_frame_update_loop  [flows-into]  $C06D
+        build_sprite_row_oam_shadow  $C0D0
+        swap_stack_pointer  $C146
+            handler_rts_noop  [flows-into]  $C14F
+        flush_vram_fill_buffer  $C150
+            flush_vram_readback_queue_and_restore_render  [flows-into]  $C177
+                ppu_enable_render  $C239
+            ppu_disable_render  $C241
+        read_and_decode_input  $C1C9
+            read_joypad  $C249
+        clear_both_attribute_tables  $C7C9
+            init_zp14_zp15_to_8  [flows-into]  $C7E2
+                emit_records_for_set_bits_in_bitmap  [flows-into]  $C7EA
+                    append_record_to_buffer  $C818
+        copy_var_record_index_flag2_to_0500  $D735
+            copy_var_record_to_0500_buffer  [jmp, flows-into]  $D77A
+        sound_command_dispatch  $F4F1
+            sound_engine_tick  [jmp, flows-into]  $F55A
+                advance_to_next_8byte_record_and_loop  [flows-into]  $F5B8
+                    run_object_animation_script  [jmp, flows-into]  $F606
+                        sub_F636  [flows-into]  $F636
+                            jump_table_dispatch_via_index  $F49F
+                            advance_to_next_8byte_record_and_loop  [jmp, flows-into]  (above)
+                            sub_F6D0  [inline]  $F6D0
+                                advance_to_next_8byte_record_and_loop  [jmp, flows-into]  (above)
+                            sub_F6DE  [inline]  $F6DE
+                                sub_F636  [jmp, flows-into]  (above)
+                                fetch_seq_byte_and_advance_index  $F80B
+                            sub_F6F0  [inline]  $F6F0
+                                sub_F636  [jmp, flows-into]  (above)
+                                fetch_seq_byte_and_advance_index  (above)
+                            sub_F702  [inline]  $F702
+                                sub_F636  [jmp, flows-into]  (above)
+                                fetch_seq_byte_and_advance_index  (above)
+                            sub_F714  [inline]  $F714
+                                sub_F636  [jmp, flows-into]  (above)
+                                fetch_seq_byte_and_advance_index  (above)
+                            sub_F71E  [inline]  $F71E
+                                sub_F636  [jmp, flows-into]  (above)
+                                fetch_seq_byte_and_advance_index  (above)
+                            sub_F728  [inline]  $F728
+                                sub_F636  [jmp, flows-into]  (above)
+                                fetch_seq_byte_and_advance_index  (above)
+                            sub_F732  [inline]  $F732
+                                sub_F636  [jmp, flows-into]  (above)
+                            sub_F73F  [inline]  $F73F
+                                sub_F636  [jmp, flows-into]  (above)
+                                sub_F7C2  [flows-into]  $F7C2
+                                    sub_F636  [jmp, flows-into]  (above)
+                                    fetch_seq_byte_and_advance_index  (above)
+                                fetch_seq_byte_and_advance_index  (above)
+                            sub_F743  [inline]  $F743
+                                sub_F636  [jmp, flows-into]  (above)
+                                sub_F7C2  [flows-into]  (above)
+                                fetch_seq_byte_and_advance_index  (above)
+                            sub_F746  [inline]  $F746
+                                sub_F636  [jmp, flows-into]  (above)
+                                sub_F7C2  [flows-into]  (above)
+                                fetch_seq_byte_and_advance_index  (above)
+                            sub_F75A  [inline]  $F75A
+                                sub_F636  [jmp, flows-into]  (above)
+                                sub_F7C2  [flows-into]  (above)
+                                fetch_seq_byte_and_advance_index  (above)
+                            sub_F75E  [inline]  $F75E
+                                sub_F636  [jmp, flows-into]  (above)
+                                sub_F7C2  [flows-into]  (above)
+                                fetch_seq_byte_and_advance_index  (above)
+                            sub_F761  [inline]  $F761
+                                sub_F636  [jmp, flows-into]  (above)
+                                sub_F7C2  [flows-into]  (above)
+                                fetch_seq_byte_and_advance_index  (above)
+                            sub_F775  [inline]  $F775
+                                sub_F636  [jmp, flows-into]  (above)
+                                sub_F7C2  [flows-into]  (above)
+                                fetch_seq_byte_and_advance_index  (above)
+                            sub_F779  [inline]  $F779
+                                sub_F636  [jmp, flows-into]  (above)
+                                sub_F7C2  [flows-into]  (above)
+                                fetch_seq_byte_and_advance_index  (above)
+                            sub_F77C  [inline]  $F77C
+                                sub_F636  [jmp, flows-into]  (above)
+                                sub_F7C2  [flows-into]  (above)
+                                fetch_seq_byte_and_advance_index  (above)
+                            sub_F7C2  [inline]  (above)
+                            fetch_seq_byte_and_advance_index  (above)
+                        set_ptr_from_word_table_by_id  $F7F4
+                        fetch_seq_byte_and_advance_index  (above)
+                    sub_F636  [flows-into]  (above)
+                    set_ptr_from_word_table_by_id  (above)
+                run_object_animation_script  [jmp, flows-into]  (above)
+                sub_F636  [flows-into]  (above)
+                set_ptr_from_word_table_by_id  (above)
+    switch_stack_and_jump_to_indexed_handler  $C128
+        init_stage_with_intro_animation_then_spawn  [task]  $C84F
+            extract_x_top2_bits_to_y  $C141
+                swap_stack_pointer  [flows-into]  (above)
+            ppu_enable_render  (above)
+            ppu_disable_render  (above)
+            play_intro_cutscene_sequence  [flows-into]  $C902
+                extract_x_top2_bits_to_y  (above)
+                stage_setup_and_play_loop  [flows-into]  $C99F
+                    extract_x_top2_bits_to_y  (above)
+                    ppu_enable_render  (above)
+                    ppu_disable_render  (above)
+                    play_intro_cutscene_sequence  [jmp, flows-into]  (above)
+                    clear_buffer_192_at_0400  $CAA7
+                    run_frame_game_logic_tick  $CB7B
+                        pump_pending_amount_then_step_entry_state  [jmp, flows-into]  $D5AB
+                            add_bcd_table_amount_n_times  $D4BE
+                                add_bcd_table_amount_to_buffer  $D4CA
+                                    bcd_add_packed_buffer  [jmp, flows-into]  $D502
+                            build_buffer_entry_unpack_nibbles  [jmp, flows-into]  $D5D9
+                                append_byte_to_0500_if_counter  $D629
+                            clamp_var32_to_min  $D694
+                            advance_record_index_and_refresh_entry  $D6AA
+                                load_record_via_ptr_table  $D4E5
+                                    bcd_add_packed_buffer  [flows-into]  (above)
+                                build_buffer_entry_unpack_nibbles  [jmp, flows-into]  (above)
+                        copy_active_var_record_when_phase_aligned  $D71C
+                            copy_var_record_index_flag2_to_0500  [flows-into]  (above)
+                            copy_var_record_to_0500_buffer  [jmp, flows-into]  (above)
+                        update_and_respawn_objects  $D8D8
+                            transform_object_coords_to_pixel_space  $C305
+                                data_or_unclear_c342  $C342
+                                    dispatch_object_draw_routine_by_index  [flows-into]  $C344
+                                        handler_rts_noop  [dispatch]  (above)
+                                        draw_two_tile_object  [dispatch]  $C37C
+                                            write_object_to_shadow_oam  [jmp, flows-into]  $C415
+                                                compute_obj_visibility_flag  $C465
+                                        dispatch_on_obj_flag_bit3  [dispatch]  $C3A7
+                                            dispatch_object_draw_routine_by_index  [jmp, flows-into]  (above)
+                                        compose_obj_field5_field7_index  [dispatch]  $C3C0
+                                            obj_field5_lookup_C47C  $C3B4
+                                            lookup_table_c480_to_zp12  [flows-into]  $C3D1
+                                                toggle_flag_if_field_positive  [flows-into]  $C3D7
+                                                    extract_top2_bits  [flows-into]  $C3E3
+                                                        emit_object_oam_step_pointers_8  [flows-into]  $C3EC
+                                                            write_object_oam_and_advance_pointer_8  [flows-into]  $C401
+                                                                write_object_to_oam_and_bump_count  [flows-into]  $C40F
+                                                                    write_object_to_shadow_oam  (above)
+                                        obj_field5_or10_lookup_c480_to_zp12  [dispatch]  $C4A8
+                                            obj_field5_lookup_C47C  (above)
+                                            lookup_table_c480_to_zp12  [jmp, flows-into]  (above)
+                                        compose_obj_anim_index_and_lookup  [dispatch]  $C4B0
+                                            obj_field5_lookup_C47C  (above)
+                                            lookup_table_c480_to_zp12  [jmp, flows-into]  (above)
+                                        build_sprite_attr_and_step_coords  [dispatch]  $C4C6
+                                            extract_top2_bits  [jmp, flows-into]  (above)
+                                        select_object_tile_param_by_type_flag  [dispatch]  $C4F5
+                                            extract_top2_bits  [jmp, flows-into]  (above)
+                                        test_bit3_of_record_field7  [dispatch]  $C510
+                                            lookup_field5_set_bits24_to_zp12  [flows-into]  $C518
+                                                obj_field5_lookup_C47C  (above)
+                                                lookup_table_c480_to_zp12  [jmp, flows-into]  (above)
+                                        lookup_field5_set_bits24_to_zp12  [dispatch]  (above)
+                                        draw_object_animated_sprite  [dispatch]  $C521
+                                            draw_object_pair_once  [flows-into]  $C540
+                                                draw_object_pair_advance_slot  [flows-into]  $C543
+                                                    draw_indexed_object_if_present  $C563
+                                                        write_object_to_shadow_oam  (above)
+                                        emit_object_oam_at_70_variant2  [dispatch]  $C5A3
+                                            emit_object_oam_step_pointers_8  [jmp, flows-into]  (above)
+                                        draw_2x2_metasprite_tile_69  [dispatch]  $C5B2
+                                            emit_object_oam_step_pointers_8  [jmp, flows-into]  (above)
+                                            write_object_oam_and_advance_pointer_8  (above)
+                                            write_object_to_oam_and_bump_count  (above)
+                                        build_object_sprite_attributes  [dispatch]  $C5F6
+                                            toggle_flag_if_field_positive  [jmp, flows-into]  (above)
+                                        draw_flagged_object_to_oam  [dispatch]  $C61E
+                                            write_object_to_shadow_oam  [jmp, flows-into]  (above)
+                                            ptr16_sub6_set_const  [flows-into]  $C63D
+                                                draw_object_tile_rows  [flows-into]  $C64C
+                                                    load_const_3  $C65C
+                                                        draw_object_tile_row  [flows-into]  $C65E
+                                                            write_object_to_shadow_oam  (above)
+                                                    draw_object_tile_row  [jmp, flows-into]  (above)
+                                            draw_object_tile_rows  (above)
+                                        draw_8_sprite_row_to_oam  [dispatch]  $C687
+                                            write_object_to_shadow_oam  (above)
+                                        select_threshold_ptr_then_toggle_flag  [dispatch]  $C6AC
+                                            toggle_flag_if_field_positive  [jmp, flows-into]  (above)
+                                        draw_object_by_animation_state  [dispatch]  $C6C1
+                                            toggle_flag_if_field_positive  [jmp, flows-into]  (above)
+                                            draw_2x2_metasprite_tile_69  [jmp, flows-into]  (above)
+                                            draw_object_and_advance_x8  [jmp, flows-into]  $E84D
+                                                write_object_to_shadow_oam  (above)
+                            update_object_state_vs_reference  $D939
+                                store_one_via_ptr  [jmp, flows-into]  $D9BC
+                            dispatch_object_state_handler_da42  $DA2C
+                                handler_rts_noop  [dispatch]  (above)
+                                update_object_proximity_collision_tick  [dispatch]  $DA70
+                                    set_obj_state_0b_after_align  [flows-into]  $DAA2
+                                        set_obj_fields_via_ptr  [flows-into]  $DAB3
+                                        align_obj_coord_to_target  $DEA6
+                                    init_entity_state_if_flag_clear  [flows-into]  $DAD8
+                                        add_bcd_table_amount_to_buffer  [jmp, flows-into]  (above)
+                                        reset_objects_except_persistent_types  [flows-into]  $DAEF
+                                            init_object_tables  $F4BF
+                                    obj_reset_fields_8_F  [jmp, flows-into]  $DB83
+                                    advance_object_state_counter  $DEE9
+                                        data_or_unclear_df09  [flows-into]  $DF09
+                                            move_object_clamp_and_flip_direction  [flows-into]  $DF0B
+                                                clear_flag_if_value_below_threshold  $D9F0
+                                                    set_field36_step_at_bounds_then_accumulate_dispatch  [flows-into]  $DA02
+                                                        add_field37_to_field36  [jmp, flows-into]  $DA17
+                                                advance_pos_if_in_bounds  $DF8A
+                                                append_computed_entry_to_buffer  [jmp, flows-into]  $DFCD
+                                        add_flag_conditioned_offset  $E018
+                                    find_adjacent_entity_to_ref_copy_attr  $E0B7
+                                    select_overlapping_target_object  [jmp, flows-into]  $E972
+                                        activate_object_check_collision_maybe_spawn  [flows-into]  $E9A4
+                                            check_subject_vs_object_list_collision  $EA05
+                                                jmp_indirect_zp_vector  $EA46
+                                            find_first_empty_slot  [jmp, flows-into]  $EE04
+                                        object_overlap_check  $E9B8
+                                    scan_objects_for_adjacent_contact_and_trigger  $EA90
+                                        activate_object_check_collision_maybe_spawn  (above)
+                                    advance_obj_pair_on_proximity  $F0B1
+                                        obj_state2_advance_on_proximity  [flows-into]  $F0B8
+                                            obj_proximity_trigger_with_timer  [jmp, flows-into]  $F06D
+                                                scan_ptr_buf_for_zero_terminator  [jmp, flows-into]  $C6FB
+                                                    decode_position_stream_to_collision_bitmaps  [jmp, flows-into]  $C702
+                                                        ppu_buffer_enqueue  $C78E
+                                                    ppu_buffer_enqueue  (above)
+                                            check_obj_near_point  $F0CE
+                                    check_two_obj_slots_for_hit  $F0E7
+                                        check_obj_adjacency_set_hit_flag  [flows-into]  $F0F0
+                                tick_object_timer_then_move_or_reset  [dispatch]  $DAC7
+                                    obj_reset_fields_8_F  [jmp, flows-into]  (above)
+                                    advance_object_subpixel_position_then_clamp  [jmp, flows-into]  $E03D
+                                        move_object_clamp_and_flip_direction  [jmp, flows-into]  (above)
+                                tick_obj_timer_field7_else_reset_to_state2  [dispatch]  $DB37
+                                    reset_obj_to_state2_and_arm_field  [jmp, flows-into]  $DD17
+                                        force_active_objects_to_state3  $E3DE
+                                            setup_obj_ptr_and_dispatch_scan  $E427
+                                                load_ptr_from_table_then_scan  [jmp, flows-into]  $E449
+                                                    scan_ptr_buf_for_zero_terminator  [jmp, flows-into]  (above)
+                                inc_counter_set_flag_at_threshold  [dispatch]  $DB45
+                                init_objects_if_inactive  [dispatch]  $DB55
+                                    init_object_tables  (above)
+                                delay_then_zero_struct_fields  [dispatch]  $DB7B
+                                    zero_struct_fields_4_and_15  [jmp, flows-into]  $DE6F
+                                trigger_entity_state_reset_on_proximity_or_type_else_scan_next  [dispatch]  $DB94
+                                    init_entity_state_if_flag_clear  [jmp, flows-into]  (above)
+                                    collect_object_award_score_and_spawn_popup  [flows-into]  $DBBA
+                                        add_bcd_table_amount_to_buffer  (above)
+                                        obj_state7_update_anim_and_snap_position  [flows-into]  $DC02
+                                            clear_flag_if_value_below_threshold  [jmp, flows-into]  (above)
+                                            obj_reset_fields_8_F  [jmp, flows-into]  (above)
+                                            set_obj_state_and_load_next_ptr  $E4A4
+                                    advance_pointer_by_flagged_offset_then_append_entry  $E06A
+                                        add_flag_conditioned_offset  (above)
+                                        append_entry_then_advance_state_and_tick  [jmp, flows-into]  $E0A0
+                                            append_computed_entry_to_buffer  (above)
+                                    check_two_coords_adjacent  $E102
+                                    find_object_at_coords  $E469
+                                obj_state7_update_anim_and_snap_position  [dispatch]  (above)
+                                resolve_entity_collision_movement  [dispatch]  $DC5C
+                                    init_entity_state_if_flag_clear  [jmp, flows-into]  (above)
+                                    obj_reset_fields_8_F  [jmp, flows-into]  (above)
+                                    flag_offset_plus_0x20  [jmp, flows-into]  $E084
+                                        add_flag_conditioned_offset  (above)
+                                        sub16_from_struct_field_at_offset2  [flows-into]  $E08A
+                                            append_entry_then_advance_state_and_tick  [flows-into]  (above)
+                                    check_two_coords_adjacent  (above)
+                                update_object_move_timer_then_advance  [dispatch]  $DCFE
+                                    set_field36_step_at_bounds_then_accumulate_dispatch  (above)
+                                    reset_obj_to_state2_and_arm_field  [flows-into]  (above)
+                                    reverse_obj_velocity_and_set_state  [jmp, flows-into]  $DD4F
+                                        set_obj_fields_via_ptr  [jmp, flows-into]  (above)
+                                    align_obj_coord_to_target  (above)
+                                    advance_object_subpixel_position_then_clamp  [jmp, flows-into]  (above)
+                                tick_obj_proximity_hit_and_countdown  [dispatch]  $DD62
+                                    set_obj_state_0b_after_align  [jmp, flows-into]  (above)
+                                    obj_reset_fields_8_F  [jmp, flows-into]  (above)
+                                    reset_obj_to_state2_and_arm_field  [jmp, flows-into]  (above)
+                                    data_or_unclear_df09  (above)
+                                    trigger_state_change_on_proximity  $E134
+                                    advance_obj_pair_on_proximity  (above)
+                                    check_two_obj_slots_for_hit  (above)
+                                dec_obj_timer_reload_state  [dispatch]  $DDA8
+                                tick_obj_timer_field7_else_reset_obj  [dispatch]  $DDC6
+                                    reset_obj_to_state2_and_arm_field  [jmp, flows-into]  (above)
+                                dec_timer_field7_if_nonzero  [dispatch]  $DDD4
+                                handle_entity_object_pickup_or_special_setup  [dispatch]  $DDE0
+                                    init_entity_state_if_flag_clear  [jmp, flows-into]  (above)
+                                    collect_object_award_score_and_spawn_popup  [jmp, flows-into]  (above)
+                                    reset_obj_to_state2_and_arm_field  [jmp, flows-into]  (above)
+                                    advance_pointer_by_flagged_offset_then_append_entry  (above)
+                                    find_object_at_coords  (above)
+                                countdown_timer_then_reset_obj_and_arm_field  [dispatch]  $DE25
+                                    reset_obj_to_state2_and_arm_field  [jmp, flows-into]  (above)
+                                tick_bonus_item_collect_or_timeout  [dispatch]  $DE2D
+                                    add_bcd_table_amount_to_buffer  [jmp, flows-into]  (above)
+                                    reset_obj_to_state2_and_arm_field  [jmp, flows-into]  (above)
+                                tick_timer_0427_reset_obj_when_idle  [dispatch]  $DE61
+                                    reset_obj_to_state2_and_arm_field  [jmp, flows-into]  (above)
+                                    zero_struct_fields_4_and_15  [flows-into]  (above)
+                                dec_obj_timer_reload_on_zero  [dispatch]  $DE7A
+                                obj_tick_timer7_then_reset_fields_8_F  [dispatch]  $DE98
+                                    obj_reset_fields_8_F  [jmp, flows-into]  (above)
+                                bare_return_stub  [dispatch]  $E19C
+                                collect_item_award_score_and_spawn_reward_object  [dispatch]  $E19D
+                                    add_bcd_table_amount_to_buffer  (above)
+                                    advance_pointer_by_flagged_offset_then_append_entry  (above)
+                                    init_state_vars  [flows-into]  $E18E
+                                        bare_return_stub  [flows-into]  (above)
+                                    update_obj_phase7_transition  [flows-into]  $E200
+                                        set_obj_state_and_load_next_ptr  (above)
+                                    find_object_at_coords  (above)
+                                update_obj_phase7_transition  [dispatch]  (above)
+                                object_state_transition_update  [dispatch]  $E230
+                                    flag_offset_plus_0x20  [jmp, flows-into]  (above)
+                                field8_in_range_49_59  [dispatch]  $E2A1
+                                    object_bounce_timer_reverse_or_advance  [flows-into]  $E2AC
+                                        advance_object_subpixel_position_then_clamp  [jmp, flows-into]  (above)
+                                object_bounce_timer_reverse_or_advance  [dispatch]  (above)
+                                tick_timer_clear_state_on_expiry  [dispatch]  $E2E0
+                                check_position_reached_and_reset_round  [dispatch]  $E2EE
+                                    init_state_vars  (above)
+                                    init_object_tables  (above)
+                                scan_table_if_code_in_range_then_advance_or_reset_counter  [dispatch]  $E339
+                                    sub16_from_struct_field_at_offset2  [jmp, flows-into]  (above)
+                                    scan_table_at_e537  $E456
+                                        load_ptr_from_table_then_scan  [jmp, flows-into]  (above)
+                        tick_all_subcounters_stride8  $E3FE
+                            tick_subcounter_decrement_on_rollover  $E410
+                                setup_obj_ptr_and_dispatch_scan  [flows-into]  (above)
+                        dispatch_all_objects_phase_handler  $F18F
+                            dispatch_object_phase_handler  $F1A5
+                                handler_rts_noop  [dispatch]  (above)
+                                check_object_reached_target_then_advance_phase  [dispatch]  $F1B9
+                                    init_object_record_load_data_and_scan  [flows-into]  $F1F1
+                                        load_record_via_ptr_table  (above)
+                                        load_indexed_ptr_then_scan_for_terminator  [jmp, flows-into]  $F250
+                                            scan_ptr_buf_for_zero_terminator  [jmp, flows-into]  (above)
+                                    on_object_reaching_target_reset_and_rescan  $F215
+                                        init_object_record_load_data_and_scan  [jmp, flows-into]  (above)
+                                    load_ptr_from_table_by_state_bit  $F233
+                                        load_indexed_ptr_then_scan_for_terminator  [flows-into]  (above)
+                    build_stage_screen_layout  $CD49
+                        extract_x_top2_bits_to_y  (above)
+                        ppu_enable_render  (above)
+                        ppu_disable_render  (above)
+                        ppu_clear_nametables  $CBF5
+                        ppu_run_draw_blocks  $CC15
+                        fill_attr_source_0170  [flows-into]  $CDB7
+                        setup_oam_params_and_emit_object_7c  $CDFF
+                            emit_object_oam_step_pointers_8  [jmp, flows-into]  (above)
+                        ppu_draw_blocks_b  $CF69
+                        ppu_draw_mansion_stamps  $D126
+                        draw_blocks_then_rebuild_buffer_entries  $D703
+                            ppu_run_draw_blocks  (above)
+                            build_buffer_entry_unpack_nibbles  [jmp, flows-into]  (above)
+                    run_scripted_screen_cutscene_sequence  $CE1A
+                        ppu_enable_render  (above)
+                        ppu_disable_render  (above)
+                        ppu_clear_nametables  (above)
+                        run_entry_state_sequence_120_frames  $CE94
+                            extract_x_top2_bits_to_y  (above)
+                            ptr16_sub6_set_const  (above)
+                            pump_pending_amount_then_step_entry_state  (above)
+                            copy_active_var_record_when_phase_aligned  (above)
+                        run_entry_state_pump_120_iterations  $CEBB
+                            extract_x_top2_bits_to_y  (above)
+                            pump_pending_amount_then_step_entry_state  (above)
+                            copy_active_var_record_when_phase_aligned  (above)
+                        load_ptr_descriptor_and_scan  $CECD
+                            scan_ptr_buf_for_zero_terminator  [jmp, flows-into]  (above)
+                        load_record_via_ptr_table  [jmp, flows-into]  (above)
+                        build_buffer_entry_unpack_nibbles  (above)
+                        draw_blocks_then_rebuild_buffer_entries  (above)
+                    load_record_and_advance_anim_counters  $D6E8
+                        load_record_via_ptr_table  (above)
+                    copy_active_var_record_when_phase_aligned  (above)
+                    init_struct_from_rom_template  $D80B
+                        set_two_zp_pointers  $D825
+                    init_ram_block_from_table  $D8C0
+                    build_object_record_block_and_dispatch  $E35B
+                        shl3_pack_zp_ptr16  $E3BD
+                        setup_obj_ptr_and_dispatch_scan  (above)
+                    spawn_objects_from_level_descriptor  $E5C5
+                        shl3_pack_zp_ptr16  (above)
+                        process_objects_in_state_two  [flows-into]  $E614
+                            load_ptr_from_state_index  $E72C
+                                load_string_ptr_by_state_and_scan  [flows-into]  $E747
+                                    scan_ptr_buf_for_zero_terminator  [jmp, flows-into]  (above)
+                    load_object_table_to_ram  $E862
+                        shl3_pack_zp_ptr16  (above)
+                        clear_low2_bits_per_object_record  [flows-into]  $E8B2
+                            load_y_from_table_x  $E8FF
+                                setup_ptrs_and_scan_zero_term  [flows-into]  $E902
+                                    scan_ptr_buf_for_zero_terminator  [jmp, flows-into]  (above)
+                    copy_16b_table_if_var_in_range  $EF17
+                    spawn_object_pair_for_state  $F001
+                        spawn_object_from_table_entry  [flows-into]  $F013
+                            shl3_pack_zp_ptr16  (above)
+                            obj_proximity_trigger_with_timer  (above)
+                    load_object_table_from_def  $F13A
+                        shl3_pack_zp_ptr16  (above)
+                    load_record_by_index  $F3C1
+                    init_object_tables  (above)
+                dispatch_stage_state_and_rebuild_screen  [jmp, flows-into]  $CA28
+                    extract_x_top2_bits_to_y  (above)
+                    ppu_enable_render  (above)
+                    ppu_disable_render  (above)
+                    init_stage_with_intro_animation_then_spawn  [jmp, flows-into]  (above)
+                    play_intro_cutscene_sequence  [jmp, flows-into]  (above)
+                    swap_double_buffers_toggle_flag  $CA81
+                    clear_buffer_192_at_0400  (above)
+                    redraw_var_records_at_7800_if_flag_set  $CAB4
+                        init_state_vars_and_pointer  [flows-into]  $CAC3
+                            redraw_var_records_loop_until_count_or_phase  [flows-into]  $CADA
+                                extract_x_top2_bits_to_y  (above)
+                                draw_fixed_glyph_string  $CB02
+                                    draw_glyph_and_advance_cursor  [flows-into]  $CB14
+                                        write_object_to_shadow_oam  (above)
+                                    draw_glyph_string_from_param_block  $CB3B
+                                        draw_glyph_and_advance_cursor  (above)
+                                init_ptr_1e_from_const  $CB31
+                                    draw_glyph_string_from_param_block  [flows-into]  (above)
+                                copy_active_var_record_when_phase_aligned  (above)
+                        redraw_var_records_loop_until_count_or_phase  [jmp, flows-into]  (above)
+                    init_state_vars_and_pointer  (above)
+                    init_ptr_1e_from_const  (above)
+                    run_frame_game_logic_update  $CB60
+                        pump_pending_amount_then_step_entry_state  [jmp, flows-into]  (above)
+                        copy_active_var_record_when_phase_aligned  (above)
+                        update_and_respawn_objects  (above)
+                        tick_all_subcounters_stride8  (above)
+                        update_all_active_objects  $E634
+                            dispatch_object_state_handler_e65a  $E64A
+                                handler_rts_noop  [dispatch]  (above)
+                                resolve_object_position_capture_and_score  [dispatch]  $E660
+                                    add_bcd_table_amount_n_times  (above)
+                                    reset_objects_except_persistent_types  (above)
+                                    load_string_entry10_with_flag80  $E70A
+                                        load_string_ptr_by_state_and_scan  [jmp, flows-into]  (above)
+                                    branch_on_state21_bits  $E71E
+                                        load_string_entry10_with_flag80  [flows-into]  (above)
+                                        load_ptr_from_state_index  [flows-into]  (above)
+                                    load_ptr_from_state_index  (above)
+                                    trigger_state_transition_on_position_match  $E757
+                                draw_object_and_tick_state_timer  [dispatch]  $E6FA
+                                    draw_composite_object_sprite  $E7F5
+                                        draw_object_and_advance_x8  [flows-into]  (above)
+                        update_all_objects_anim_and_phase  $E8CC
+                            load_y_from_table_x  [flows-into]  (above)
+                            setup_ptrs_and_scan_zero_term  [flows-into]  (above)
+                            advance_object_anim_timer_and_dispatch_phase  $E91D
+                                load_y_from_table_x  [flows-into]  (above)
+                                setup_ptrs_and_scan_zero_term  [jmp, flows-into]  (above)
+                                dispatch_on_masked_state_field  $E94D
+                        tick_object_group_04a0  $ED4E
+                            tick_object_state_collision_score  $ED65
+                                transform_object_coords_to_pixel_space  (above)
+                                add_bcd_table_amount_n_times  [jmp, flows-into]  (above)
+                                update_matching_object_state  [jmp, flows-into]  $ED1C
+                                advance_obj_state_if_matched  $EDE2
+                                add_byte_to_obj_word_if_active  $EE4D
+                                check_object_player_collision  $EE77
+                                accumulate_for_matching_objects  $EEC9
+                                    add_byte_to_word_if_active  $EEEB
+                        update_object_pair_state_at_a0_a8  $EF3F
+                            update_active_object_state_machine  [flows-into]  $EF4E
+                                transform_object_coords_to_pixel_space  [jmp, flows-into]  (above)
+                                check_object_collision_and_award_score  $EF9B
+                                    add_bcd_table_amount_to_buffer  (above)
+                        dispatch_obj0_state_then_fall_to_obj8  $F04D
+                            dispatch_obj_state  [flows-into]  $F054
+                                obj_proximity_trigger_with_timer  [jmp, flows-into]  (above)
+                                check_obj_near_point  (above)
+                    build_stage_screen_layout  (above)
+                    copy_active_var_record_when_phase_aligned  (above)
+                    build_object_record_block_and_dispatch  (above)
+                    process_objects_in_state_two  (above)
+                    clear_low2_bits_per_object_record  (above)
+                draw_fixed_glyph_string  (above)
+                draw_glyph_string_from_param_block  (above)
+                run_frame_game_logic_update  (above)
+                init_object_from_rom_template  $D7F1
+                    set_two_zp_pointers  (above)
+                init_object_record_row  $D846
+                    init_object_record_via_ptr  [flows-into]  $D894
+                advance_state_counter_to_60  $F2E6
+                    init_object_sequence_state  [jmp, flows-into]  $F323
+                        init_object_tables  (above)
+                    draw_vertical_sprite_column  $F383
+                        write_object_to_shadow_oam  (above)
+                    sub2_from_u16_counter  $F3B2
+                load_record_by_index  (above)
+                init_object_tables  (above)
+            swap_double_buffers_toggle_flag  (above)
+            clear_buffer_192_at_0400  (above)
+            setup_screen_layout  $CBB1
+                ppu_clear_nametables  (above)
+                ppu_run_draw_blocks  (above)
+                build_buffer_entry_unpack_nibbles  (above)
+            copy_5_bytes_table_to_ram_0490  $CD2B
+            transform_fixed_coord_90_04  $CD3E
+                transform_object_coords_to_pixel_space  [jmp, flows-into]  (above)
+            build_stage_screen_layout  (above)
+            animate_two_sprite_walkcycles_into_buffer  $D73E
+                copy_var_record_to_0500_buffer  [jmp, flows-into]  (above)
+            build_object_record_block_and_dispatch  (above)
+            spawn_objects_from_level_descriptor  (above)
+            load_object_table_to_ram  (above)
+            spawn_object_pair_for_state  (above)
+            init_object_tables  (above)
+            setup_stage_then_run_intro_frames  [jmp, flows-into]  $FF65
+                extract_x_top2_bits_to_y  (above)
+                ppu_enable_render  (above)
+                ppu_disable_render  (above)
+                init_stage_with_intro_animation_then_spawn  [jmp, flows-into]  (above)
+                clear_buffer_192_at_0400  (above)
+                run_frame_game_logic_update  (above)
+                build_stage_screen_layout  (above)
+                init_object_from_rom_template  (above)
+                init_object_record_row  (above)
+                build_object_record_block_and_dispatch  (above)
+                spawn_objects_from_level_descriptor  (above)
+                load_object_table_to_ram  (above)
+                spawn_object_pair_for_state  (above)
+                advance_state_counter_to_60  (above)
+                load_record_by_index  (above)
+    validate_magic_and_restore_state_vars  $C25C
+        copy_4_bytes_zp_to_ram  [flows-into]  $C297
+        pack_state_vars_into_zp_buffer  $C2B3
+            copy_4_bytes_absy_to_zpx  [flows-into]  $C2D5
+        clear_zeropage_from_20  $C2E5
+        swap_double_buffers_toggle_flag  (above)
+    init_apu_channels_and_frame_counter  $F4B5
+        init_object_tables  [flows-into]  (above)
+
+# NMI vector
+nmi_sound_tick  $C2EF
+    irq_rti_stub  [flows-into]  $C304
+    sound_command_dispatch  (above)
+
+# IRQ vector
+irq_rti_stub  (above)
+
+# not reached from a vector by any edge kind: 0

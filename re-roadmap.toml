@@ -39,10 +39,10 @@ evidence = ["rom_data.py", "rom_data.txt", "vars.toml", "var_xref.py", "obj_reco
 
 [phase.structure]
 status   = "done"
-gate     = "One call graph (call_graph.py on passes.callgraph, Tarjan SCC leaves-first; row H2). No VM, so no primitive table or round-trip to check."
-checked  = "2026-10-23"
-toolset  = "8d3f881"
-evidence = ["callgraph.dot", "bottom_up_order.txt", "call_graph.py"]
+gate     = "One typed call graph on discover's routines (call_graph.py on passes.callgraph.Graph): each routine walked by descent.flow with every other entry as a stop, never a span sweep. 275 routines, 535 edges: call 290, jmp 113, flows-into 195 (falls or branches into another entry; dead paths past an always-taken branch excluded by passes.native.dead_path), dispatch 53, inline 18, task 1. Reached from the vectors 275/275 (was 64%). 3 SCCs, all loops: the sound interpreter (21 entries, handlers jump back to $F636), draw dispatch, the game task's stage loop. Graded against Chris's hand tree from RESET/NMI/IRQ (31 parent-child pairs): 27 direct edges, 4 through one flows-into or loop head; two edge bugs it exposed were fixed in the library."
+checked  = "2026-10-26"
+toolset  = "2f252ef"
+evidence = ["call_graph.py", "call_tree.txt", "call_graph.json", "bottom_up_order.txt", "call_tree_page.py"]
 
 [phase.naming]
 status   = "partial"
@@ -156,7 +156,8 @@ status = "open"
 item   = "Call-graph reachability from the vectors is 175/275 (64%; $C06D, the frame loop, unreached: fall-through and RESET flow are not edges), and pointer_tables.py's pointer_runs adds 98 entries, mostly mid-routine, which splits the partition (14%). Neither feeds a written artifact yet; fix before the call graph is rebuilt."
 phase  = "structure"
 source = "discover revisit 2026-10-26"
-status = "open"
+status = "closed"
+closed = "2026-10-26: call_graph.py rebuilt on flows with typed edges; flows-into makes the frame loop $C06D and every other roll-into reachable (275/275). pointer_tables.py stays exploratory and feeds nothing."
 
 [[revisit]]
 item   = "labels.toml is not valid TOML (compact rows use ';' separators), so tomllib cannot read it and every consumer parses it by regex."
@@ -209,4 +210,4 @@ source = "data phase 2026-10-26 (from the polymorphic-fields revisit)"
 status = "open"
 
 [next]
-session = "structure: rebuild the call graph on the fixed discover (fall-through and RESET flow as edges, so $C06D the frame loop is reached; pointer_runs must not split routines), leaves-first order for the naming walk."
+session = "naming: bottom-up from bottom_up_order.txt (an SCC is one unit), then a top-down verify; the 10 open naming revisits first (sound engine names, the 18 handlers, shared and phantom variable names, dead code, fall-through entries, address keys). The call tree page shows each routine's callers for the top-down pass."
