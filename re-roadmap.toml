@@ -20,8 +20,8 @@ evidence = ["01-reset-and-frame-structure.md", "09-from-scratch-rederivation.md"
 status   = "done"
 gate     = "machines.nes.memory.Cart: mapper 0, PRG 16 KiB, no battery, vertical mirroring; vectors NMI $C2EF, RESET $C031, IRQ $C304 (same as ch1/ch9). One fixed PRG bank, so no windows to vote."
 checked  = "2026-10-26"
-toolset  = "aba120d"
-evidence = ["01-reset-and-frame-structure.md"]
+toolset  = "aa8fa5a"
+evidence = ["01-reset-and-frame-structure.md", "repo_header.bin", "repo_CHR_ROM.chr"]
 
 [phase.discover]
 status   = "partial"
@@ -125,7 +125,8 @@ closed = "2026-10-26: on the library (emu-harness dbaa486, PPUPort + Bus(ppu=));
 item   = "README gives CRC32 3F0E8E0A; our dump is 7354615C (whole file), 5D1301C5 (headerless), 25482CEB (PRG). Find which dump the chapters and the published disassembly describe."
 phase  = "recon"
 source = "build-tool trial 2026-10-26"
-status = "open"
+status = "closed"
+closed = "2026-10-26: same ROM. PRG (25482CEB) and CHR (B060AFC5) are byte-identical to the repo's; only the iNES header differs (ours NES 2.0, byte 7 = $08, byte 15 = $01; the repo's iNES 1.0, both $00). Our body under repo_header.bin gives 3F0E8E0A exactly. README now says so."
 
 [next]
-session = "recon: settle the README CRC32 (which dump the chapters and the published disassembly describe); then discover: regenerate coverage/codegraph on today's tracer without clobbering the curated jump_tables.txt, count walker conflicts, mark the 3 phantoms DATA."
+session = "discover: regenerate coverage/codegraph on today's tracer without clobbering the curated jump_tables.txt, count walker conflicts, mark the 3 phantoms DATA."

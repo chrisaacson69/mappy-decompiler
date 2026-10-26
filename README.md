@@ -19,7 +19,7 @@ created: 2026-04-26
 - **`raw/mappy_bank_FF.asm`** — full PRG bank disassembly in CA65 format. Per-line: code/data analysis flags, ROM offset, bank:address, original bytes, mnemonic, comment.
 - **`raw/mappy_bank_ram.inc`** — every zero-page address documented with all its uses + cross-referenced ROM offsets.
 - **`raw/mappy_bank_val.inc`** — named constants including the 16-byte object record format and the 23-state object state machine.
-- Source from [cyneprepou4uk/NES-Games-Disassembly](https://github.com/cyneprepou4uk/NES-Games-Disassembly/tree/main/Mappy), Japanese version, CRC32 `3F0E8E0A`.
+- Source from [cyneprepou4uk/NES-Games-Disassembly](https://github.com/cyneprepou4uk/NES-Games-Disassembly/tree/main/Mappy), Japanese version, CRC32 `3F0E8E0A`. That CRC is of the repo's iNES 1.0 file; our dump carries a NES 2.0 header (whole file `7354615C`) over **byte-identical PRG and CHR** (headerless `5D1301C5`, SHA1 `E22B95C6…6A2256B`), so the chapters and the disassembly describe the same ROM.
 
 ## Chapters
 
