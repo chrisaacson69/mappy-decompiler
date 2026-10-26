@@ -598,10 +598,10 @@ why = "Set during stage setup (init_stage_with_intro_animation_then_spawn `sta $
 
 [[var]]
 addr = "007B"
-name = "draw_data_ptr"
-role = "pointer"
-conf = "MED"
-why = "Tool flags it \"used as 16-bit POINTER low byte\" and it is dereferenced indirect-indexed: ppu_draw_blocks_b does `ora ($7b,x)` ($CFE4/$D017) and append_byte_to_0500_if_counter does `ora ($7a,x)` ($D675), so $7A/$7B is the 16-bit pointer pair ($7B = low byte). It is SET by spawn_objects_from_level_d"
+name = "round_items_remaining"
+role = "counter"
+conf = "HIGH"
+why = "Data phase 2026-10-26, from code only: $E5D1 reads the level descriptor's first byte (via $E798) into $81 and that >>3 into $7B, then marks each $0260 item record state 2; $E66D..$E680 compares an item's +5/+4 with the player's $0403/$0401 (obj_y_hi/obj_x_hi), decs $7B on a match, and at 0 ($E682) ends the round ($4F=1, player state 0). The old pointer reading came from var_xref decoding data blobs ($CFE4/$D017 are inside frameitem blocks). Was 'draw_data_ptr'. Earlier note: Tool flags it \"used as 16-bit POINTER low byte\" and it is dereferenced indirect-indexed: ppu_draw_blocks_b does `ora ($7b,x)` ($CFE4/$D017) and append_byte_to_0500_if_counter does `ora ($7a,x)` ($D675), so $7A/$7B is the 16-bit pointer pair ($7B = low byte). It is SET by spawn_objects_from_level_d"
 
 [[var]]
 addr = "007C"
@@ -919,69 +919,6 @@ conf = "MED"
 why = "All three accessors touch it as an indexed array base ($0300,x) — never as a scalar — so it is field 0 of an object/sprite table at $0300. It is written by spawn/stage-setup routines (init_stage_with_intro_animation_then_spawn $C8F1 sta $0300,x; setup_stage_then_run_intro_frames $FF8C sta $0300,x), "
 
 [[var]]
-addr = "0400"
-name = "obj_x"
-role = "obj_field"
-conf = "MED"
-why = "$0400 is base of an X-indexed object table (sta $0400,x in update_and_respawn_objects; clear_buffer_192_at_0400 zeroes 192 bytes). It is consumed almost entirely by spatial routines: check_two_coords_adjacent (sbc $0400), find_adjacent_entity_to_ref_copy_attr (lda $0400,x / sbc $0400), trigger_state"
-
-[[var]]
-addr = "0401"
-name = "obj_y"
-role = "obj_field"
-conf = "MED"
-why = "Indexed $04xx address ($0401,x and $0401,y) written/read by object routines — an object-table coordinate field. It is overwhelmingly compared against another coordinate in collision/proximity/adjacency math: sbc $0401 in check_two_coords_adjacent ($E124), check_obj_near_point ($F0D2), check_object_c"
-
-[[var]]
-addr = "0402"
-name = "obj_x"
-role = "obj_field"
-conf = "MED"
-why = "Accessed as an indexed $04xx object-table field: update_and_respawn_objects writes it with `sta $0402,x` (per-object slot, set during respawn), and check_object_collision_and_award_score reads it indexed `sbc $0402,x`. It's used in coordinate math — check_two_coords_adjacent does `sbc $0402` and the"
-
-[[var]]
-addr = "0403"
-name = "obj_x"
-role = "obj_field"
-conf = "MED"
-why = "Indexed array field ($0403,x / ,y) in the object table. Written per-object by update_and_respawn_objects (sta $0403,x). Read by a cluster of collision/proximity routines that treat it as a coordinate: check_object_collision_and_award_score (sbc $0403,x = distance diff), check_two_coords_adjacent / c"
-
-[[var]]
-addr = "0404"
-name = "obj_state"
-role = "obj_field"
-conf = "HIGH"
-why = "$0404 is consistently indexed (sta $0404,x / ,y; lda $0404,x / ,y) by the object-table routines, marking it a per-object array field. Its writers initialize and advance a discrete value: init_entity_state_if_flag_clear and init_objects_if_inactive set it on spawn; trigger_state_change_on_proximity, "
-
-[[var]]
-addr = "0406"
-name = "obj_attr"
-role = "obj_field"
-conf = "MED"
-why = "Indexed $04xx address accessed per-object via X/Y (lda $0406,x / sta $0406,x in find_adjacent_entity_to_ref_copy_attr; sta $0406,x in trigger_state_change_on_proximity; sta $0406,y in jmp_indirect_zp_vector), i.e. an object-table FIELD. The named accessors handle entity attributes/proximity-driven s"
-
-[[var]]
-addr = "0407"
-name = "obj_state"
-role = "obj_field"
-conf = "MED"
-why = "Accessed as a strided array ($0407,x / $0407,y) by many object routines: init_object_slots_strided, init_object_sequence_state, update_matching_object_state, check_object_collision_and_award_score, update_and_respawn_objects. Writers are dominated by state-setting routines — init_entity_state_if_fla"
-
-[[var]]
-addr = "040B"
-name = "obj_state"
-role = "obj_field"
-conf = "HIGH"
-why = "Every access is X-indexed at $040B,x inside object routines: init_object_slots_strided writes it across slots (sta $040b,x), and update_matching_object_state / advance_obj_state_if_matched / accumulate_for_matching_objects read it (lda $040b,x). The reader names (\"matching object state\", \"advance"
-
-[[var]]
-addr = "040F"
-name = "obj_state"
-role = "obj_field"
-conf = "MED"
-why = "obj_state field of the $0400 object table"
-
-[[var]]
 addr = "041F"
 name = "obj_state"
 role = "obj_field"
@@ -1060,10 +997,10 @@ why = "All 6 routines touch $0500 indexed (,x/,y), never as a 16-bit pointer or 
 
 [[var]]
 addr = "0600"
-name = "obj_state_table"
+name = "sound_trigger"
 role = "array"
-conf = "MED"
-why = "Touched almost exclusively as an indexed base ($0600,x), not a scalar: init_object_tables writes it (sta $0600,x), run_object_animation_script writes it (sta $0600,x), and sound_engine_tick both reads and writes it indexed (lda $0600,x at $F597/$F5A4). That makes $0600 the base of a parallel per-obj"
+conf = "HIGH"
+why = "Data phase 2026-10-26: 25 sound trigger slots $0600-$0618, one per voice. Game code stores #$01 (or game_phase) to a fixed slot per event ($C95B $0613 + $C95E $0614 = the game-start song, voices 19+20); sound_engine_tick scans $0600,x for x < 25 ($F597), clearing it when the voice's $F885 flag says one-shot ($F5B3); init ($F4BF) zeroes all 25 and their 8-byte voice states at $0619. Triggering one slot and running $F4F1 reads exactly that voice's stream (rom_data.py). Was 'obj_state_table'. Earlier note: Touched almost exclusively as an indexed base ($0600,x), not a scalar: init_object_tables writes it (sta $0600,x), run_object_animation_script writes it (sta $0600,x), and sound_engine_tick both reads and writes it indexed (lda $0600,x at $F597/$F5A4). That makes $0600 the base of a parallel per-obj"
 
 
 # === object record layout (16 bytes, base $0400 stride $10; via obj_record_ptr $1E) ===
@@ -1073,31 +1010,31 @@ why = "Touched almost exclusively as an indexed base ($0600,x), not a scalar: in
 offset = "00"
 name = "obj_x_lo"
 conf = "HIGH"
-why = "cited above"
+why = "cited above Proven 2026-10-26: the draw code reads +0/+1 minus camera_scroll_x ($28/$29), then +2/+3 unshifted, each <<3 keeping the high byte: 8.8 fixed point in 8-px tiles, X then Y. In the attract demo +2 wrapped 693 times with +3 stepping +-1 every time (+0/+1: 108 of 132; the rest are placements)."
 
 [[obj_field]]
 offset = "01"
 name = "obj_x_hi"
 conf = "HIGH"
-why = "Across ~28 routines this field is overwhelmingly used as a coordinate in distance/adjacency math: it is the subtrahend in 'sbc $0401' / 'cmp $0401' in check_two_coords_adjacent, check_obj_near_point, find_adjacent_entity"
+why = "Across ~28 routines this field is overwhelmingly used as a coordinate in distance/adjacency math: it is the subtrahend in 'sbc $0401' / 'cmp $0401' in check_two_coords_adjacent, check_obj_near_point, find_adjacent_entity Proven 2026-10-26: the draw code reads +0/+1 minus camera_scroll_x ($28/$29), then +2/+3 unshifted, each <<3 keeping the high byte: 8.8 fixed point in 8-px tiles, X then Y. In the attract demo +2 wrapped 693 times with +3 stepping +-1 every time (+0/+1: 108 of 132; the rest are placements)."
 
 [[obj_field]]
 offset = "02"
 name = "obj_y_lo"
-conf = "MED"
-why = "Field +02 is advanced additively each frame: advance_object_subpixel_position_then_clamp does adc ($1e),y / sta ($1e),y (accumulate a per-frame delta into the coordinate, then clamp), and advance_pointer_by_flagged_offse"
+conf = "HIGH"
+why = "Field +02 is advanced additively each frame: advance_object_subpixel_position_then_clamp does adc ($1e),y / sta ($1e),y (accumulate a per-frame delta into the coordinate, then clamp), and advance_pointer_by_flagged_offse Proven 2026-10-26: the draw code reads +0/+1 minus camera_scroll_x ($28/$29), then +2/+3 unshifted, each <<3 keeping the high byte: 8.8 fixed point in 8-px tiles, X then Y. In the attract demo +2 wrapped 693 times with +3 stepping +-1 every time (+0/+1: 108 of 132; the rest are placements)."
 
 [[obj_field]]
 offset = "03"
 name = "obj_y_hi"
-conf = "MED"
-why = "Field +03 is differenced, never compared to small constants — across ~25 routines it is read/subtracted as a coordinate (find_adjacent_entity, trigger_state_change_on_proximity, check_object_player_collision, check_objec"
+conf = "HIGH"
+why = "Field +03 is differenced, never compared to small constants — across ~25 routines it is read/subtracted as a coordinate (find_adjacent_entity, trigger_state_change_on_proximity, check_object_player_collision, check_objec Proven 2026-10-26: the draw code reads +0/+1 minus camera_scroll_x ($28/$29), then +2/+3 unshifted, each <<3 keeping the high byte: 8.8 fixed point in 8-px tiles, X then Y. In the attract demo +2 wrapped 693 times with +3 stepping +-1 every time (+0/+1: 108 of 132; the rest are placements)."
 
 [[obj_field]]
 offset = "04"
-name = "obj_state"
+name = "obj_draw_index"
 conf = "HIGH"
-why = "35 routines touch +04 and the naming/usage is saturated with state-machine semantics, not numeric/position math. Writers that set a new state: set_obj_state_and_load_next_ptr ($E4A8), reset_obj_to_state2_and_arm_field ($"
+why = "Proven by code + data (2026-10-26 data phase): the object draw ($C30C..) reads +0..+3, then jsr $C342 with Y=4: lda ($1E),y / and #$FE / tax / lda $C356,x -> jmp ($1C), the draw-routine dispatch (low bit to $15). Attract-demo values are even (00..20), as a word-table index is. Was 'obj_state'. Earlier note: 35 routines touch +04 and the naming/usage is saturated with state-machine semantics, not numeric/position math. Writers that set a new state: set_obj_state_and_load_next_ptr ($E4A8), reset_obj_to_state2_and_arm_field ($"
 
 [[obj_field]]
 offset = "05"
@@ -1119,39 +1056,39 @@ why = "HIGH"
 
 [[obj_field]]
 offset = "08"
-name = "obj_state"
-conf = "HIGH"
-why = "Read+written by the engine's state machine: object_state_transition_update reads then writes it ($E249 lda / $E261 sta); reset_obj_to_state2_and_arm_field sets it to a discrete state (2); obj_state7_update_anim_and_snap_"
+name = "field_8"
+conf = "LOW"
+why = "field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: Read+written by the engine's state machine: object_state_transition_update reads then writes it ($E249 lda / $E261 sta); reset_obj_to_state2_and_arm_field sets it to a discrete state (2); obj_state7_update_anim_and_snap_"
 
 [[obj_field]]
 offset = "09"
-name = "obj_state"
-conf = "MED"
-why = "Only 2 routines touch +09. It is WRITTEN by scan_objects_for_adjacent_contact_and_trigger (sta ($1e),y at $EA94 and $EADB — two distinct stores, i.e. set-on-contact vs reset branch) and READ by advance_object_state_count"
+name = "field_9"
+conf = "LOW"
+why = "field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: Only 2 routines touch +09. It is WRITTEN by scan_objects_for_adjacent_contact_and_trigger (sta ($1e),y at $EA94 and $EADB — two distinct stores, i.e. set-on-contact vs reset branch) and READ by advance_object_state_count"
 
 [[obj_field]]
 offset = "0A"
-name = "obj_timer"
-conf = "MED"
-why = "update_object_proximity_collision_tick does `dec $042a` (decrement once per tick), and tick_bonus_item_collect_or_timeout writes it via `sta $042a` (sets/reloads the countdown) — a routine literally named for collect-or-"
+name = "field_A"
+conf = "LOW"
+why = "field+N (data gate): was 'obj_timer', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: update_object_proximity_collision_tick does `dec $042a` (decrement once per tick), and tick_bonus_item_collect_or_timeout writes it via `sta $042a` (sets/reloads the countdown) — a routine literally named for collect-or-"
 
 [[obj_field]]
 offset = "0B"
-name = "obj_state"
-conf = "HIGH"
-why = "13 routines treat +0B as a discrete state/phase selector, not a counter. It's written by a cluster of state-transition routines (object_state_transition_update $E28D, update_obj_phase7_transition $E202, advance_obj_state"
+name = "field_B"
+conf = "LOW"
+why = "field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: 13 routines treat +0B as a discrete state/phase selector, not a counter. It's written by a cluster of state-transition routines (object_state_transition_update $E28D, update_obj_phase7_transition $E202, advance_obj_state"
 
 [[obj_field]]
 offset = "0C"
-name = "obj_x_sub"
+name = "field_C"
 conf = "LOW"
-why = "Only one routine touches +0C: advance_object_subpixel_position_then_clamp, which reads it via `lda ($1e),y` (Y=#$0C). A routine whose whole job is advancing subpixel position and clamping, reading this field as an input "
+why = "field+N (data gate): was 'obj_x_sub', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: Only one routine touches +0C: advance_object_subpixel_position_then_clamp, which reads it via `lda ($1e),y` (Y=#$0C). A routine whose whole job is advancing subpixel position and clamping, reading this field as an input "
 
 [[obj_field]]
 offset = "0D"
-name = "obj_state"
-conf = "HIGH"
-why = "Field is pure-write (no inc/dec/RMW): update_object_state_vs_reference stores to it twice ($D941/$D990 sta ($1e),y) after comparing against a reference, and every other accessor only reads it — resolve_entity_collision_m"
+name = "field_D"
+conf = "LOW"
+why = "field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven yet. Earlier note: Field is pure-write (no inc/dec/RMW): update_object_state_vs_reference stores to it twice ($D941/$D990 sta ($1e),y) after comparing against a reference, and every other accessor only reads it — resolve_entity_collision_m"
 
 [[obj_field]]
 offset = "0E"
@@ -1163,4 +1100,4 @@ why = "Only 3 routines touch +0E and the access pattern is bit-manipulation, not
 offset = "0F"
 name = "obj_state"
 conf = "HIGH"
-why = "x"
+why = "Proven by code + data (2026-10-26 data phase): $DA2C ldy #$0F / lda ($1E),y / tax / lda $DA42,x -> jmp ($1C), the object-state dispatch ($E17A in the bonus round). Attract-demo values are even, 00..22, inside the 23-entry table. The only offset that is the state. Was 'obj_state'. Earlier note: x"

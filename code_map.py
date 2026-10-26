@@ -28,6 +28,20 @@ def reach(seeds, is_data, code):
     return NativeMap(WIN, code, is_data, noreturn=INLINE_DISPATCH).reach(seeds)
 
 
+def instruction_starts():
+    """bytearray over PRG, 1 at each instruction start of discover's final walk (the
+    stored_pointers.py fixpoint: routines_full.txt + the vectors, tables as data). The one
+    answer to "is this byte an instruction?" for the passes that read code (var_xref, rom_data)."""
+    m = NativeMap(WIN, noreturn=INLINE_DISPATCH)
+    for line in table_lines():
+        p = line.split(); m.mark_data(int(p[1], 16), 2 * (len(p) - 2))
+    seeds = {0xC031, 0xC2EF, 0xC304} | {int(l.strip()[1:], 16) for l in open(HERE / "routines_full.txt")}
+    out = bytearray(0x4000)
+    for a in m.reach(seeds)[1]:
+        out[m.off(a)] = 1
+    return out
+
+
 def table_lines(data=True):
     """The lines of jump_tables.txt, then (with `data`) data_ptr_tables.txt."""
     for name in ("jump_tables.txt",) + (("data_ptr_tables.txt",) if data else ()):

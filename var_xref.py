@@ -17,7 +17,7 @@ CLI:
 """
 import re, sys, json, bisect
 from pathlib import Path
-from code_map import table_lines   # jump_tables.txt + data_ptr_tables.txt
+from code_map import instruction_starts, table_lines   # jump_tables.txt + data_ptr_tables.txt
 from emu_harness.cpu.m6502 import disasm as disasm6502     # pip install -e ../emu-harness (was koei-nes's alias)
 from emu_harness.cpu.m6502.disasm import IMP,ACC,IMM,ZP,ZPX,ZPY,ABS,ABX,ABY,IND,IZX,IZY,REL
 OPS, MODE_LEN = disasm6502.OPS, disasm6502.MODE_LEN
@@ -35,7 +35,13 @@ for l in (HERE/"labels.toml").read_text(encoding="utf-8").splitlines():
     if m: cur=int(m.group(1),16)
     m=re.search(r'name\s*=\s*"([^"]+)"',l)
     if m and cur is not None: LABELS[cur]=m.group(1); cur=None
-entries=sorted(set(LABELS)|{0xC031,0xC2EF,0xC304})
+# routines only: a kind = "data" label owns no code, and decoding its bytes invented accesses
+# ($7B's "pointer" uses were ora ($7b,x) inside frameitem blobs). Only discover's instruction
+# starts are decoded.
+DATA_LABELS={int(a,16) for a in re.findall(r'addr\s*=\s*"([0-9A-Fa-f]{4})"\s*\nname\s*=\s*"[^"]*"\s*\nkind\s*=\s*"data"',
+                                           (HERE/"labels.toml").read_text(encoding="utf-8"))}
+STARTS=instruction_starts()
+entries=sorted((set(LABELS)-DATA_LABELS)|{0xC031,0xC2EF,0xC304})
 is_data=bytearray(0x4000)
 for line in table_lines():
     p=line.split(); base=int(p[1],16)
@@ -61,7 +67,7 @@ for idx,e in enumerate(entries):
     pc=cpu(e)
     while pc<end:
         n=norm(pc)
-        if is_data[n]: pc+=1; continue
+        if is_data[n] or not STARTS[n]: pc+=1; continue
         op=PRG[n]
         if op not in OPS: pc+=1; continue
         mn,mode=OPS[op]; il=1+MODE_LEN.get(mode,0)

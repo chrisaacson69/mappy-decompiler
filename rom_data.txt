@@ -1,0 +1,128 @@
+## palhud  $CC15 / tbl $CC41
+  Y=00    23 B  $CC41-$CC42 $CC4B-$CC5F
+  Y=02   145 B  $CC43-$CC44 $CC60-$CCEE
+        $21EB  |1 PLAYER|
+        $222B  |2 PLAYERS|
+        $22E5  |© 1983 1984 NAMCO LTD.|
+        $2327  |ALL RIGHTS RESERVED|
+  Y=04    22 B  $CC45-$CC46 $CCEF-$CD02
+  Y=06    22 B  $CC47-$CC48 $CD03-$CD16
+  Y=08    22 B  $CC49-$CC4A $CD17-$CD2A
+## frame   $CF69 / tbl $CFA6
+  Y=00    43 B  $CFA6-$CFA7 $CFB2-$CFDA
+  Y=02    53 B  $CFA8-$CFA9 $CFDB-$D00D
+  Y=04    59 B  $CFAA-$CFAB $D00E-$D046
+  Y=06    53 B  $CFAC-$CFAD $D047-$D079
+  Y=08    77 B  $CFAE-$CFAF $D07A-$D0C4
+  Y=0A    99 B  $CFB0-$CFB1 $D0C5-$D125
+## mansion $D126 / tbl $D185
+  Y=00   185 B  $D185-$D186 $D193-$D1F4 $D351-$D35C $D36B-$D380 $D3B3-$D3DF $D410-$D415
+  Y=02   215 B  $D187-$D188 $D1F5-$D261 $D351-$D364 $D36F-$D380 $D3B3-$D3D0 $D3E0-$D3FD $D410-$D415
+  Y=04   248 B  $D189-$D18A $D262-$D2D8 $D351-$D364 $D381-$D3A0 $D3B3-$D3DF $D3FE-$D41B
+  Y=06   202 B  $D18B-$D18C $D2D9-$D36A $D3A1-$D3D0 $D410-$D415
+  Y=08     3 B  $D18D-$D18E $D350-$D350
+  Y=0A   111 B  $D18F-$D190 $D410-$D415 $D41C-$D482
+  Y=0C    61 B  $D191-$D192 $D483-$D4BD
+        $216A  |BONUS ROUND|
+        $226B  |STING ··S|
+        $22C9  |BEFORE   ENDS|
+## text    $CECD / tbl $CF08
+  Y=00    14 B  $CF08-$CF0B $CF1C-$CF25
+        $210C  |EARNINGS|
+  Y=04    24 B  $CF0C-$CF0F $CF26-$CF39
+  Y=08    18 B  $CF10-$CF13 $CF3A-$CF47
+  Y=0C    27 B  $CF14-$CF17 $CF48-$CF5E
+        $2286  |PERFECT GAME  ·  5000|
+  Y=10    14 B  $CF18-$CF1B $CF5F-$CF68
+        $230D  |TOTAL  ·|
+
+attract demo (4,000 frames from RESET): 1,017 data bytes read, 470 of them by no walker or table
+
+## sound: one voice triggered, 4,800 frames of the engine
+  voice  0 ($0600)    47 B  $F6AC-$F6AD $F843-$F846 $F849-$F84A $F853-$F854 $F885-$F89D $FE86-$FE91
+  voice  1 ($0601)   180 B  $F6AC-$F6AD $F6BA-$F6BD $F6C2-$F6C3 $F6C8-$F6C9 $F6CE-$F6CF $F83B-$F83E $F841-$F842 $F845-$F84C $F84F-$F852 $F855-$F856 $F885-$F89D $FE92-$FF0C
+  voice  2 ($0602)    65 B  $F6AC-$F6AD $F6B0-$F6B1 $F83F-$F840 $F845-$F846 $F849-$F84A $F84D-$F850 $F857-$F858 $F885-$F89D $FB13-$FB2A
+  voice  3 ($0603)    55 B  $F6AC-$F6AD $F6B8-$F6B9 $F847-$F84A $F84F-$F850 $F859-$F85A $F885-$F89D $FB2B-$FB3C
+  voice  4 ($0604)    61 B  $F6AC-$F6AD $F6B0-$F6B1 $F83F-$F840 $F845-$F846 $F84F-$F850 $F85B-$F85C $F885-$F89D $FB3D-$FB54
+  voice  5 ($0605)    41 B  $F6AC-$F6AD $F83B-$F83E $F85D-$F85E $F885-$F89D $FDBA-$FDC1
+  voice  6 ($0606)    75 B  $F6AC-$F6AD $F6B0-$F6B1 $F83B-$F852 $F85F-$F860 $F885-$F89D $FDA6-$FDB9
+  voice  7 ($0607)    38 B  $F6AC-$F6AD $F83F-$F840 $F861-$F862 $F885-$F89D $FD9F-$FDA5
+  voice  8 ($0608)    67 B  $F6AC-$F6AD $F83B-$F83C $F845-$F852 $F863-$F864 $F885-$F89D $FD89-$FD9E
+  voice  9 ($0609)    86 B  $F6AC-$F6AF $F6BE-$F6BF $F6C4-$F6C5 $F6CA-$F6CB $F6CE-$F6CF $F83B-$F83C $F83F-$F840 $F845-$F846 $F849-$F84A $F84F-$F850 $F865-$F866 $F885-$F89D $FD64-$FD88
+  voice 10 ($060A)    55 B  $F6AC-$F6AD $F6B0-$F6B1 $F83B-$F840 $F84F-$F852 $F867-$F868 $F885-$F89D $FD56-$FD63
+  voice 11 ($060B)    71 B  $F6AC-$F6AD $F6B0-$F6B1 $F83F-$F840 $F845-$F84A $F84F-$F850 $F869-$F86A $F885-$F89D $FD1A-$FD37
+  voice 12 ($060C)    56 B  $F6AC-$F6AD $F83B-$F83C $F83F-$F842 $F845-$F846 $F849-$F84A $F84F-$F850 $F86B-$F86C $F885-$F89D $FD38-$FD46
+  voice 13 ($060D)    52 B  $F6AC-$F6AD $F6B0-$F6B1 $F84D-$F852 $F86D-$F86E $F885-$F89D $FD47-$FD55
+  voice 14 ($060E)   215 B  $F6AC-$F6AD $F6B0-$F6B1 $F6BA-$F6BD $F6C2-$F6C3 $F6CE-$F6CF $F83B-$F83C $F83F-$F842 $F845-$F846 $F849-$F850 $F86F-$F870 $F885-$F89D $FB55-$FBF4
+  voice 15 ($060F)   175 B  $F6AC-$F6B1 $F6BE-$F6BF $F6C4-$F6C5 $F6CA-$F6CB $F6CE-$F6CF $F83B-$F846 $F849-$F84C $F84F-$F850 $F871-$F872 $F885-$F89D $FBF5-$FC68
+  voice 16 ($0610)   232 B  $F6AC-$F6AD $F6B8-$F6B9 $F6C0-$F6C1 $F6C6-$F6C7 $F6CC-$F6CF $F83B-$F842 $F845-$F846 $F849-$F84C $F84F-$F850 $F873-$F874 $F885-$F89D $FC69-$FD19
+  voice 17 ($0611)    65 B  $F6AC-$F6AD $F83B-$F83C $F83F-$F840 $F845-$F846 $F849-$F84A $F84D-$F850 $F875-$F876 $F885-$F89D $FE5A-$FE71
+  voice 18 ($0612)    59 B  $F6AC-$F6AD $F83B-$F83C $F83F-$F840 $F845-$F846 $F849-$F84A $F84F-$F850 $F877-$F878 $F885-$F89D $FE72-$FE85
+  voice 19 ($0613)   398 B  $F6B0-$F6B1 $F6BA-$F6BD $F6C2-$F6C3 $F6C8-$F6C9 $F6CE-$F6CF $F83B-$F84A $F84D-$F852 $F879-$F87A $F885-$F89D $F8B7-$F995 $F997-$FA08
+  voice 20 ($0614)   306 B  $F6B8-$F6B9 $F6C0-$F6C1 $F6C6-$F6C7 $F6CC-$F6CF $F83B-$F84A $F84D-$F852 $F87B-$F87C $F885-$F89D $FA14-$FAA8 $FAAA-$FB0B
+  voice 21 ($0615)   108 B  $F6AC-$F6AD $F83B-$F852 $F87D-$F87E $F885-$F89D $FDC2-$FDF8
+  voice 22 ($0616)    94 B  $F6AC-$F6AD $F83B-$F83C $F83F-$F846 $F849-$F84A $F84D-$F850 $F87F-$F880 $F885-$F89D $FDF9-$FE29
+  voice 23 ($0617)    85 B  $F6AC-$F6AD $F83B-$F83C $F841-$F842 $F845-$F846 $F84F-$F850 $F881-$F882 $F885-$F89D $FE2A-$FE59
+  voice 24 ($0618)   145 B  $F6AC-$F6AD $F6B0-$F6B1 $F6BA-$F6BB $F6BE-$F6BF $F6C4-$F6C5 $F6CA-$F6CB $F6CE-$F6CF $F83B-$F83E $F841-$F842 $F845-$F84C $F84F-$F850 $F883-$F89D $FF0D-$FF64
+
+non-code PRG 5,541 B; claimed by a run or a known table 3,996 B; unclaimed 1,545 B in 60 ranges: 602 B where code reads into the range (abs / abs,X / abs,Y), 943 B that no operand reaches
+  $C000-$C030     49 B  read at $DED2
+  $C123-$C127      5 B  read at $C0F6
+  $C259-$C25B      3 B  read at -
+  $C47D-$C47D      1 B  read at -
+  $C483-$C487      5 B  read at -
+  $C489-$C48B      3 B  read at -
+  $C48F-$C48F      1 B  read at -
+  $C491-$C492      2 B  read at -
+  $C498-$C49F      8 B  read at -
+  $C4A4-$C4A7      4 B  read at -
+  $C573-$C5A2     48 B  read at $C563
+  $CB8A-$CBB0     39 B  read at $C920 $C925 $CB02 $CB07 $CB31 $CB36
+  $CEE8-$CF07     32 B  read at -
+  $D536-$D5AA    117 B  read at $D4D2 $D4D7 $D4E5 $D4EA
+  $D642-$D643      2 B  read at -
+  $D646-$D647      2 B  read at -
+  $D64E-$D657     10 B  read at -
+  $D65D-$D666     10 B  read at -
+  $D67B-$D693     25 B  read at -
+  $D762-$D779     24 B  read at -
+  $D7AD-$D7B0      4 B  read at $D77A $D77F
+  $D7B3-$D7B4      2 B  read at -
+  $D7B7-$D7B8      2 B  read at -
+  $D7BB-$D7CC     18 B  read at -
+  $D7D3-$D7D8      6 B  read at -
+  $D7E1-$D7F0     16 B  read at -
+  $D83F-$D845      7 B  read at $D80E
+  $D8D3-$D8D7      5 B  read at $D8C2
+  $DB34-$DB35      2 B  read at -
+  $E332-$E338      7 B  read at $E321
+  $E4DD-$E4E0      4 B  read at -
+  $E4E2-$E4F0     15 B  read at -
+  $E4F3-$E4FE     12 B  read at -
+  $E504-$E544     65 B  read at $E389 $E38E $E42A $E42F $E456 $E45B
+  $E547-$E54A      4 B  read at -
+  $E54D-$E55E     18 B  read at -
+  $E561-$E566      6 B  read at -
+  $E57D-$E57E      2 B  read at -
+  $E5B5-$E5C4     16 B  read at -
+  $E788-$E797     16 B  read at -
+  $EA49-$EA8F     71 B  read at $EA0B $EA10
+  $EAFE-$EB1B     30 B  read at -
+  $EB3B-$EC4E    276 B  read at -
+  $EC51-$EC52      2 B  read at -
+  $EC55-$EC56      2 B  read at -
+  $EC59-$EC5A      2 B  read at -
+  $EC5D-$EC5E      2 B  read at -
+  $EC61-$EC70     16 B  read at -
+  $EC9E-$ED11    116 B  read at -
+  $EF2F-$EF3E     16 B  read at $EF24
+  $F041-$F04C     12 B  read at $F018 $F021
+  $F128-$F139     18 B  read at $F07B $F080
+  $F263-$F2E5    131 B  read at $F13C $F141 $F207 $F20C $F246 $F24B
+  $F3AA-$F3B1      8 B  read at $F318
+  $F3E5-$F49E    186 B  read at -
+  $F996-$F996      1 B  read at -
+  $FA09-$FA13     11 B  read at -
+  $FAA9-$FAA9      1 B  read at -
+  $FB0C-$FB12      7 B  read at -
+  $FFE6-$FFF9     20 B  read at -

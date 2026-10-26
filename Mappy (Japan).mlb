@@ -363,7 +363,7 @@ NesInternalRam:0075:current_record_index:[state] Set at stage init (init_stage_w
 NesInternalRam:0076:record_index:[counter] init_stage_with_intro_animation_then_spawn sets it at stage start ($C861 sta $76). advance_record_index_and_refresh_entry reads-then-writes 
 NesInternalRam:0077:ppu_block_src_ptr:[pointer] Dereferenced as a 16-bit pointer in ppu_draw_blocks_b via `ora ($77,x)` (x-indexed indirect at $CFEA and $D01D), confirming $0077 is the low
 NesInternalRam:007A:stage_number:[counter] Set during stage setup (init_stage_with_intro_animation_then_spawn `sta $7a`; setup_stage_then_run_intro_frames `sta $7a`), then INC'd along
-NesInternalRam:007B:draw_data_ptr:[pointer] Tool flags it "used as 16-bit POINTER low byte" and it is dereferenced indirect-indexed: ppu_draw_blocks_b does `ora ($7b,x)` ($CFE4/$D017) 
+NesInternalRam:007B:round_items_remaining:[counter] Data phase 2026-10-26, from code only: $E5D1 reads the level descriptor's first byte (via $E798) into $81 and that >>3 into $7B, then marks 
 NesInternalRam:007C:block_def_ptr_hi:[pointer] $7C is dereferenced as a 16-bit pointer in ppu_draw_blocks_b via `ora ($7b,x)` (twice) — so the pointer base is $7B (low) / $7C (high), maki
 NesInternalRam:007D:stage_index:[state] Not a pointer (no (zp),y deref, no P flag). Written by stage/level setup routines: init_stage_with_intro_animation_then_spawn ($C8C1 sta $7d
 NesInternalRam:0080:object_count:[counter] Three named object routines read it as a loop/upper bound via cpx: find_object_at_coords ($E49C cpx $80), force_active_objects_to_state3 ($E
@@ -409,15 +409,6 @@ NesInternalRam:02B4:obj_pos:[obj_field] Every access is base+,x indexed ([wi]/[r
 NesInternalRam:02B5:obj_x:[obj_field] Every access is indexed ($02b5,x), so this is a field in an object table (base $02B5, stride = entry size). load_object_table_to_ram writes 
 NesInternalRam:02B7:obj_contact_state:[obj_field] All three references are indexed by X ($02b7,x), marking this as a per-object array field, not a scalar. The two writers are object_overlap_
 NesInternalRam:0300:obj_state:[obj_field] All three accessors touch it as an indexed array base ($0300,x) — never as a scalar — so it is field 0 of an object/sprite table at $0300. I
-NesInternalRam:0400:obj_x:[obj_field] $0400 is base of an X-indexed object table (sta $0400,x in update_and_respawn_objects; clear_buffer_192_at_0400 zeroes 192 bytes). It is con
-NesInternalRam:0401:obj_y:[obj_field] Indexed $04xx address ($0401,x and $0401,y) written/read by object routines — an object-table coordinate field. It is overwhelmingly compare
-NesInternalRam:0402:obj_x:[obj_field] Accessed as an indexed $04xx object-table field: update_and_respawn_objects writes it with `sta $0402,x` (per-object slot, set during respaw
-NesInternalRam:0403:obj_x:[obj_field] Indexed array field ($0403,x / ,y) in the object table. Written per-object by update_and_respawn_objects (sta $0403,x). Read by a cluster of
-NesInternalRam:0404:obj_state:[obj_field] $0404 is consistently indexed (sta $0404,x / ,y; lda $0404,x / ,y) by the object-table routines, marking it a per-object array field. Its wr
-NesInternalRam:0406:obj_attr:[obj_field] Indexed $04xx address accessed per-object via X/Y (lda $0406,x / sta $0406,x in find_adjacent_entity_to_ref_copy_attr; sta $0406,x in trigge
-NesInternalRam:0407:obj_state:[obj_field] Accessed as a strided array ($0407,x / $0407,y) by many object routines: init_object_slots_strided, init_object_sequence_state, update_match
-NesInternalRam:040B:obj_state:[obj_field] Every access is X-indexed at $040B,x inside object routines: init_object_slots_strided writes it across slots (sta $040b,x), and update_matc
-NesInternalRam:040F:obj_state:[obj_field] obj_state field of the $0400 object table
 NesInternalRam:041F:obj_state:[obj_field] $041F sits in the $04xx object-table page and is only ever written (no reads/derefs/indexing shown), by three object/state-init routines: in
 NesInternalRam:0420:stamp_position_table:[array] Always indexed ($0420,x / $0420,y), never deref'd as a pointer, so it's an array base. check_position_reached_and_reset_round writes per-ind
 NesInternalRam:0421:target_compare_value:[coord] Only reads visible (no writer in xref). It is compared against, not stored: trigger_state_transition_on_position_match does `cmp $0421` ($E7
@@ -429,11 +420,20 @@ NesInternalRam:042F:stage_phase_state:[state] No pointer-deref (P) or index (i) 
 NesInternalRam:0490:obj_state_counter:[obj_field] $0490 is the base of an indexed array (sta/lda $0490,x in copy_5_bytes_table_to_ram_0490, advance_state_counter_to_60, draw_vertical_sprite_
 NesInternalRam:04A5:obj_state:[obj_field] Accessed indexed by Y (`lda $04a5,y` / `sta $04a5,y` at $EE06/$EE17) inside `find_first_empty_slot`, so it is a per-slot entry in an object 
 NesInternalRam:0500:vram_buffer:[buffer_cursor] All 6 routines touch $0500 indexed (,x/,y), never as a 16-bit pointer or flag — it is the base of an array, not a scalar. Writers are all en
-NesInternalRam:0600:obj_state_table:[array] Touched almost exclusively as an indexed base ($0600,x), not a scalar: init_object_tables writes it (sta $0600,x), run_object_animation_scri
+NesInternalRam:0600:sound_trigger:[array] Data phase 2026-10-26: 25 sound trigger slots $0600-$0618, one per voice. Game code stores #$01 (or game_phase) to a fixed slot per event ($
+NesInternalRam:0400:obj0_obj_x_lo:obj record +0 [HIGH] cited above Proven 2026-10-26: the draw code reads +0/+1 minus camera_scroll_x ($28/$29), then +2/+3
+NesInternalRam:0401:obj0_obj_x_hi:obj record +1 [HIGH] Across ~28 routines this field is overwhelmingly used as a coordinate in distance/adjacency math: it
+NesInternalRam:0402:obj0_obj_y_lo:obj record +2 [HIGH] Field +02 is advanced additively each frame: advance_object_subpixel_position_then_clamp does adc ($
+NesInternalRam:0403:obj0_obj_y_hi:obj record +3 [HIGH] Field +03 is differenced, never compared to small constants — across ~25 routines it is read/subtrac
+NesInternalRam:0404:obj0_obj_draw_index:obj record +4 [HIGH] Proven by code + data (2026-10-26 data phase): the object draw ($C30C..) reads +0..+3, then jsr $C34
 NesInternalRam:0405:obj0_obj_type:obj record +5 [HIGH] Touched by 16 routines that are overwhelmingly state-machine drivers: update_active_object_state_mac
-NesInternalRam:0408:obj0_obj_state:obj record +8 [HIGH] Read+written by the engine's state machine: object_state_transition_update reads then writes it ($E2
-NesInternalRam:0409:obj0_obj_state:obj record +9 [MED] Only 2 routines touch +09. It is WRITTEN by scan_objects_for_adjacent_contact_and_trigger (sta ($1e)
-NesInternalRam:040A:obj0_obj_timer:obj record +A [MED] update_object_proximity_collision_tick does `dec $042a` (decrement once per tick), and tick_bonus_it
-NesInternalRam:040C:obj0_obj_x_sub:obj record +C [LOW] Only one routine touches +0C: advance_object_subpixel_position_then_clamp, which reads it via `lda (
-NesInternalRam:040D:obj0_obj_state:obj record +D [HIGH] Field is pure-write (no inc/dec/RMW): update_object_state_vs_reference stores to it twice ($D941/$D9
+NesInternalRam:0406:obj0_obj_velocity:obj record +6 [MED] Field is read-modify-written via the `sbc ($1e),y`/`sta ($1e),y` (subtract-with-borrow) idiom in rev
+NesInternalRam:0407:obj0_obj_timer:obj record +7 [HIGH] HIGH
+NesInternalRam:0408:obj0_field_8:obj record +8 [LOW] field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven
+NesInternalRam:0409:obj0_field_9:obj record +9 [LOW] field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven
+NesInternalRam:040A:obj0_field_A:obj record +A [LOW] field+N (data gate): was 'obj_timer', a name other offsets share or a LOW guess; no code role proven
+NesInternalRam:040B:obj0_field_B:obj record +B [LOW] field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven
+NesInternalRam:040C:obj0_field_C:obj record +C [LOW] field+N (data gate): was 'obj_x_sub', a name other offsets share or a LOW guess; no code role proven
+NesInternalRam:040D:obj0_field_D:obj record +D [LOW] field+N (data gate): was 'obj_state', a name other offsets share or a LOW guess; no code role proven
 NesInternalRam:040E:obj0_obj_flags:obj record +E [MED] Only 3 routines touch +0E and the access pattern is bit-manipulation, not arithmetic or position mat
+NesInternalRam:040F:obj0_obj_state:obj record +F [HIGH] Proven by code + data (2026-10-26 data phase): $DA2C ldy #$0F / lda ($1E),y / tax / lda $DA42,x -> j

@@ -31,11 +31,11 @@ toolset  = "4eb3022"
 evidence = ["conflicts.txt", "jump_tables.txt", "data_ptr_tables.txt", "routines_full.txt", "coverage_full2.bin", "stored_pointers.py"]
 
 [phase.data]
-status   = "partial"
-gate     = "152 variables (var_xref) and the 16-byte object record at $0400 (obj_record = passes.native.field_census; row R identical). Not met: the record and vars.toml disagree on 9 bytes; known mislabels open."
+status   = "done"
+gate     = "Oracle lanes, all by running or reading the game's own code: strings = the 4 text writers run headless over every table index (rom_data.py; FONT checked twice: CHR atlas + ALL RIGHTS RESERVED in PRG); manual: none exists for this title; ROM data map: 3,996 of 5,541 non-code PRG bytes claimed by walker runs, the attract demo, the sound engine per voice (25 voices) and known tables; hot globals: var_xref now decodes discover's instruction starts only (570 of 1,715 old var-routine links were data read as code). Record schema: one template, offsets proven by code + the demo (x/y 8.8 pairs: carry test 693/693 and the draw code; +4 draw index, +F state, by their dispatch loads), the rest field+N; the 9 per-address duplicates dropped, .mlb has no conflicts."
 checked  = "2026-10-26"
-toolset  = "aba120d"
-evidence = ["vars.toml", "obj_record.py", "var_xref.py"]
+toolset  = "4eb3022"
+evidence = ["rom_data.py", "rom_data.txt", "vars.toml", "var_xref.py", "obj_record.py"]
 
 [phase.structure]
 status   = "done"
@@ -97,19 +97,22 @@ closed = "2026-10-26: 1 of 3 was a phantom, plus 1 not listed. $FA3F (made by th
 item   = "The $0400 object record contradicts vars.toml: vars.toml says $0401 = obj_y, the record says +1 = obj_x_hi (9 bytes disagree; the source of the 9 .mlb conflicts)."
 phase  = "data"
 source = "emu-harness MIGRATION.md row A"
-status = "open"
+status = "closed"
+closed = "2026-10-26: the template wins and is proven: +0/+1 X and +2/+3 Y as 8.8 pairs in 8-px tiles (attract demo: +2 wrapped 693 times, +3 stepped every time; the draw code at $C30C subtracts camera_scroll_x from +0/+1 only and shifts both <<3); cross-checked at $E66D (item x vs $0401, y vs $0403). The 9 per-address $0400-$040F entries (which had x and y swapped) are dropped; mappy_mlb writes 0 conflicts."
 
 [[revisit]]
 item   = "$7B is named draw_data_ptr but is the per-stage enemy counter (set $E5D8, dec $E660, tested $E682); then sweep the other role = pointer vars touched only by inc/dec/#imm."
 phase  = "data"
 source = "NOTES-open-threads.md (symbol-table cleanups)"
-status = "open"
+status = "closed"
+closed = "2026-10-26: neither name. $7B = round_items_remaining: set from the level descriptor's first byte >>3 ($E5D8), decremented when the player reaches an item ($E680), 0 ends the round ($E682). The pointer reading came from var_xref decoding frameitem blobs; that defect is fixed."
 
 [[revisit]]
 item   = "Polymorphic record fields (+4, +8..+E, +B = player velocity | cat door ref) need context-tagged names; one name per offset cannot hold them."
 phase  = "data"
 source = "09-from-scratch-rederivation.md (cross-cutting finding 1)"
-status = "open"
+status = "closed"
+closed = "2026-10-26: moved to naming (context names are naming work). Data phase left the unproven offsets as field_8..field_D and kept the 8 in-table per-address notes ($041F $0420 $0421 $0423 $0424 $0427 $042A $042F: slot 1/2 fields, and $0420,x/$0423,x index the table from slot 2) as evidence; see the naming revisit."
 
 [[revisit]]
 item   = "9 names carry an address key: fill_attr_source_0170, obj_field5_lookup_C47C, clear_buffer_192_at_0400, copy_5_bytes_table_to_ram_0490, copy_var_record_index_flag2_to_0500, scan_table_at_e537, tick_object_group_04a0, dispatch_object_state_handler_e65a / _da42. Rename by role (a RAM address that IS the role may stay)."
@@ -132,13 +135,13 @@ status = "closed"
 closed = "2026-10-26: same ROM. PRG (25482CEB) and CHR (B060AFC5) are byte-identical to the repo's; only the iNES header differs (ours NES 2.0, byte 7 = $08, byte 15 = $01; the repo's iNES 1.0, both $00). Our body under repo_header.bin gives 3F0E8E0A exactly. README now says so."
 
 [[revisit]]
-item   = "$C342 (lda ($1e),y then falls into the $C356 mode dispatch at $C344) and $DF09 (ldx #$04, falls into $DF0B) are fall-through entries still named data_or_unclear_c342 / _df09. Name each by role, as an alternate entry of the routine it falls into."
+item   = "$C342 (lda ($1e),y then falls into the $C356 draw-routine dispatch at $C344, with Y=4 = the record's obj_draw_index) and $DF09 (ldx #$04, falls into $DF0B) are fall-through entries still named data_or_unclear_c342 / _df09. Name each by role, as an alternate entry of the routine it falls into."
 phase  = "naming"
 source = "discover revisit 2026-10-26"
 status = "open"
 
 [[revisit]]
-item   = "19 discovered entries carry no label: the 18 animation-script opcode handlers in the $F6AC inline table ($F6D0..$F7C2, opcodes >= $E8, the bit-skip trios $F73F/$F743/$F746, $F75A.., $F775..) and $F636 (the script loop head they jump back to)."
+item   = "19 discovered entries carry no label: the 18 sound-stream opcode handlers in the $F6AC inline table ($F6D0..$F7C2, stream bytes >= $E8, called by the voice interpreter $F606; the bit-skip trios $F73F/$F743/$F746, $F75A.., $F775..) and $F636 (the interpreter loop head they jump back to)."
 phase  = "naming"
 source = "discover revisit 2026-10-26"
 status = "open"
@@ -165,7 +168,44 @@ status = "open"
 item   = "$C140 is one unreached byte ($3F) between the 1-entry $C13E table and extract_x_top2_bits_to_y ($C141). Identify it (padding, or a table the code never indexes past entry 0)."
 phase  = "data"
 source = "discover revisit 2026-10-26"
+status = "closed"
+closed = "2026-10-26: not padding. $C13E is one 3-byte task record [handler $C84F][stack slot $3F]: $C128 loads the pointer from $C13E,y/$C13F,y and ldx $C140,y saves SP to $00C1+$3F = $0100; its only caller ($C062) passes Y=0."
+
+[[revisit]]
+item   = "ROM data residue: 1,545 of 5,541 non-code PRG bytes unclaimed (rom_data.txt). 602 B lie in ranges code reads directly (reader known, extent bounded by neighbours); 943 B are mostly tails of tables whose heads were claimed ($EB3B.. after $EAFC, $F3E5.. after $F3DF, the $E4xx family): follow the pointers out of those heads, then gameplay runs (rounds 2-16, bonus) for what only play reads."
+phase  = "data"
+source = "data phase 2026-10-26"
+status = "open"
+
+[[revisit]]
+item   = "vars.toml: 22 names are shared by 69 addresses (obj_state x10, seq_data_ptr x6, obj_record_ptr x5 incl. $1C/$1D, the dispatch vector ...). Rename each by role from the fixed var_xref; a name two addresses share names neither."
+phase  = "naming"
+source = "data phase 2026-10-26"
+status = "open"
+
+[[revisit]]
+item   = "9 named variables have no access in discovered code (only the old data-as-code reading found them): $0008 $000A $000B $000C $0032 $0084 $008F $0091 $009D. Drop them. 5 more ($0002-$0006) are touched only by the dead routines at $CEE8/$CEFC."
+phase  = "naming"
+source = "data phase 2026-10-26"
+status = "open"
+
+[[revisit]]
+item   = "The sound engine is named as objects: init_object_tables ($F4BF) zeroes the 25 sound triggers and their 8-byte voice states ($0619+); run_object_animation_script ($F606) is the voice stream interpreter (its 18 $F6AC handlers are stream opcodes $E8+); scan_ptr_buf_for_zero_terminator ($C6FB) is a run-length text writer ([n][n tiles], [0][delta], [0][0]). $0600 is already renamed sound_trigger."
+phase  = "naming"
+source = "data phase 2026-10-26"
+status = "open"
+
+[[revisit]]
+item   = "$CEE8 and $CEFC are dead code: two zero-fill loops ($04-$07, $00-$03) that nothing references as a word, a mirrored word, an immediate pair or an RTS-trick address. Label them as dead routines, not data."
+phase  = "naming"
+source = "data phase 2026-10-26"
+status = "open"
+
+[[revisit]]
+item   = "Context names for the record's polymorphic offsets (+8..+D are field_N) and its absolute in-table references: $041F (slot 1 +F), $0420/$0421/$0423/$0424/$0427/$042A/$042F (slot 2; $0427/$042A a bonus-item timer; $0420,x and $0423,x index the table from slot 2)."
+phase  = "naming"
+source = "data phase 2026-10-26 (from the polymorphic-fields revisit)"
 status = "open"
 
 [next]
-session = "data (pure lane): reconcile the $0400 record with vars.toml (9 bytes), fix $7B (enemy counter, not draw_data_ptr) and sweep its kind, context-tagged names for the polymorphic fields; the gate is stale only if its tools changed."
+session = "data residue (the open data revisit: follow pointers out of the claimed table heads; decide whether gameplay runs belong here or in live) or, if Chris defers it, structure: rebuild the call graph on the fixed discover (reachability revisit)."
