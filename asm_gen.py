@@ -52,7 +52,7 @@ VECTORS={v:PRG[norm(v)]|PRG[norm(v+1)]<<8 for v in (NMI_VECTOR,RESET_VECTOR,IRQ_
 for v,t in VECTORS.items():
     TABLE[v]=FUNC.get(t,f"L_{t:04X}"); is_data[norm(v)]=is_data[norm(v+1)]=1
 
-entries=sorted(set(FUNC)|set(VECTORS.values()))
+entries=sorted(set(FUNC)|set(VECTORS.values())|{0xC000})   # $C000: the bytes before the first routine are emitted too
 end_of={e:(entries[i+1] if i+1<len(entries) else 0x10000) for i,e in enumerate(entries)}
 
 # coverage (code vs data)

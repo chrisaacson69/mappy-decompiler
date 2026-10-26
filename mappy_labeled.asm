@@ -2,6 +2,57 @@
 ; labels.toml + vars.toml + jump_tables.txt (from-scratch RE; no external labels).
 
 
+L_C000:
+    C000: 43          .byte $43
+    C001: 4F          .byte $4F
+    C002: 50          .byte $50
+    C003: 59          .byte $59
+    C004: 52          .byte $52
+    C005: 49          .byte $49
+    C006: 47          .byte $47
+    C007: 48          .byte $48
+    C008: 54          .byte $54
+    C009: 20          .byte $20
+    C00A: 31          .byte $31
+    C00B: 39          .byte $39
+    C00C: 38          .byte $38
+    C00D: 33          .byte $33
+    C00E: 20          .byte $20
+    C00F: 31          .byte $31
+    C010: 39          .byte $39
+    C011: 38          .byte $38
+    C012: 34          .byte $34
+    C013: 20          .byte $20
+    C014: 4E          .byte $4E
+    C015: 41          .byte $41
+    C016: 4D          .byte $4D
+    C017: 43          .byte $43
+    C018: 4F          .byte $4F
+    C019: 20          .byte $20
+    C01A: 4C          .byte $4C
+    C01B: 54          .byte $54
+    C01C: 44          .byte $44
+    C01D: 2E          .byte $2E
+    C01E: 41          .byte $41
+    C01F: 4C          .byte $4C
+    C020: 4C          .byte $4C
+    C021: 20          .byte $20
+    C022: 52          .byte $52
+    C023: 49          .byte $49
+    C024: 47          .byte $47
+    C025: 48          .byte $48
+    C026: 54          .byte $54
+    C027: 53          .byte $53
+    C028: 20          .byte $20
+    C029: 52          .byte $52
+    C02A: 45          .byte $45
+    C02B: 53          .byte $53
+    C02C: 45          .byte $45
+    C02D: 52          .byte $52
+    C02E: 56          .byte $56
+    C02F: 45          .byte $45
+    C030: 44          .byte $44
+
 reset_cold_boot_init:
     C031: 78          sei
     C032: D8          cld
