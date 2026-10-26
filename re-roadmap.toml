@@ -34,7 +34,7 @@ evidence = ["conflicts.txt", "jump_tables.txt", "data_ptr_tables.txt", "routines
 status   = "done"
 gate     = "Oracle lanes, all by running or reading the game's own code: strings = the 4 text writers run headless over every table index (rom_data.py; FONT checked twice: CHR atlas + ALL RIGHTS RESERVED in PRG); manual: none exists for this title; ROM data map: 3,996 of 5,541 non-code PRG bytes claimed by walker runs, the attract demo, the sound engine per voice (25 voices) and known tables; hot globals: var_xref now decodes discover's instruction starts only (570 of 1,715 old var-routine links were data read as code). Record schema: one template, offsets proven by code + the demo (x/y 8.8 pairs: carry test 693/693 and the draw code; +4 draw index, +F state, by their dispatch loads), the rest field+N; the 9 per-address duplicates dropped, .mlb has no conflicts."
 checked  = "2026-10-26"
-toolset  = "4eb3022"
+toolset  = "2f252ef"
 evidence = ["rom_data.py", "rom_data.txt", "vars.toml", "var_xref.py", "obj_record.py"]
 
 [phase.structure]
