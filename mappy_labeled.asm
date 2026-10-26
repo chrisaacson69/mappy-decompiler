@@ -490,7 +490,7 @@ draw_object:
 dispatch_object_draw_from_record:
     C342: B1 1E       lda (obj_record_ptr),y   ; $1E
 
-dispatch_object_draw_routine_by_index:
+dispatch_object_draw_by_anim:
     C344: 85 15       sta scratch_counter   ; $15
     C346: 29 FE       and #$fe
     C348: AA          tax
@@ -500,26 +500,26 @@ dispatch_object_draw_routine_by_index:
     C351: 85 1D       sta aux_ptr_hi   ; $1D
     C353: 6C 1C 00    jmp (aux_ptr)   ; $001C
     C356:            .word handler_rts_noop
-    C358:            .word compose_obj_field5_field7_index
+    C358:            .word draw_walk_cycle
     C35A:            .word draw_type_pose_10
-    C35C:            .word compose_obj_anim_index_and_lookup
-    C35E:            .word build_sprite_attr_and_step_coords
-    C360:            .word select_object_tile_param_by_type_flag
-    C362:            .word lookup_field5_set_bits24_to_zp12
-    C364:            .word test_bit3_of_record_field7
-    C366:            .word draw_object_animated_sprite
-    C368:            .word emit_object_oam_at_70_variant2
-    C36A:            .word draw_2x2_metasprite_tile_69
-    C36C:            .word build_object_sprite_attributes
-    C36E:            .word draw_flagged_object_to_oam
+    C35C:            .word draw_fall_bounce_pose
+    C35E:            .word draw_door_wave
+    C360:            .word draw_tile_3c_type1_flicker
+    C362:            .word draw_stunned_pose
+    C364:            .word draw_stunned_blinking
+    C366:            .word draw_wave_score
+    C368:            .word draw_slot2_still_pose
+    C36A:            .word draw_slot2_large_pose
+    C36C:            .word draw_player_death_animation
+    C36E:            .word draw_bonus_goal_object
     C370:            .word handler_rts_noop
     C372:            .word draw_8_sprite_row_to_oam
-    C374:            .word select_threshold_ptr_then_toggle_flag
-    C376:            .word draw_object_by_animation_state
-    C378:            .word draw_two_tile_object
-    C37A:            .word dispatch_on_obj_flag_bit3
+    C374:            .word draw_player_caught_pose
+    C376:            .word draw_knocked_out
+    C378:            .word draw_drop_stun_points
+    C37A:            .word draw_drop_recover_blink
 
-draw_two_tile_object:
+draw_drop_stun_points:
     C37C: A9 AE       lda #$ae
     C37E: 85 12       sta gfx_src_ptr   ; $12
     C380: A9 00       lda #$00
@@ -544,13 +544,13 @@ draw_two_tile_object:
 @C3A4:
     C3A4: 4C 15 C4    jmp write_sprite_to_oam   ; $C415
 
-dispatch_on_obj_flag_bit3:
+draw_drop_recover_blink:
     C3A7: A0 07       ldy #$07
     C3A9: B1 1E       lda (obj_record_ptr),y   ; $1E
     C3AB: 29 08       and #$08
     C3AD: F0 10       beq @C3BF   ; $C3BF
     C3AF: A9 06       lda #$06
-    C3B1: 4C 44 C3    jmp dispatch_object_draw_routine_by_index   ; $C344
+    C3B1: 4C 44 C3    jmp dispatch_object_draw_by_anim   ; $C344
 
 load_type_sprite_palette:
     C3B4: A0 05       ldy #$05
@@ -562,7 +562,7 @@ load_type_sprite_palette:
 @C3BF:
     C3BF: 60          rts
 
-compose_obj_field5_field7_index:
+draw_walk_cycle:
     C3C0: 20 B4 C3    jsr load_type_sprite_palette   ; $C3B4
     C3C3: 0A          asl a
     C3C4: 0A          asl a
@@ -741,7 +741,7 @@ draw_type_pose_10:
     C4AB: 09 10       ora #$10
     C4AD: 4C D1 C3    jmp load_metasprite_tile_base   ; $C3D1
 
-compose_obj_anim_index_and_lookup:
+draw_fall_bounce_pose:
     C4B0: 20 B4 C3    jsr load_type_sprite_palette   ; $C3B4
     C4B3: 0A          asl a
     C4B4: 0A          asl a
@@ -755,7 +755,7 @@ compose_obj_anim_index_and_lookup:
     C4C1: 05 12       ora gfx_src_ptr   ; $12
     C4C3: 4C D1 C3    jmp load_metasprite_tile_base   ; $C3D1
 
-build_sprite_attr_and_step_coords:
+draw_door_wave:
     C4C6: A5 21       lda frame_counter   ; $21
     C4C8: 4A          lsr a
     C4C9: 29 03       and #$03
@@ -783,7 +783,7 @@ build_sprite_attr_and_step_coords:
     C4F0: 85 16       sta sprite_y   ; $16
     C4F2: 4C E3 C3    jmp flip_bits_to_tile_xor   ; $C3E3
 
-select_object_tile_param_by_type_flag:
+draw_tile_3c_type1_flicker:
     C4F5: A9 3C       lda #$3c
     C4F7: 85 12       sta gfx_src_ptr   ; $12
     C4F9: A0 05       ldy #$05
@@ -800,20 +800,20 @@ select_object_tile_param_by_type_flag:
     C50B: 84 13       sty data_ptr_hi   ; $13
     C50D: 4C E3 C3    jmp flip_bits_to_tile_xor   ; $C3E3
 
-test_bit3_of_record_field7:
+draw_stunned_blinking:
     C510: A0 07       ldy #$07
     C512: B1 1E       lda (obj_record_ptr),y   ; $1E
     C514: 29 08       and #$08
     C516: D0 08       bne @C520   ; $C520
 
-lookup_field5_set_bits24_to_zp12:
+draw_stunned_pose:
     C518: 20 B4 C3    jsr load_type_sprite_palette   ; $C3B4
     C51B: 09 24       ora #$24
     C51D: 4C D1 C3    jmp load_metasprite_tile_base   ; $C3D1
 @C520:
     C520: 60          rts
 
-draw_object_animated_sprite:
+draw_wave_score:
     C521: A5 21       lda frame_counter   ; $21
     C523: 4A          lsr a
     C524: 29 03       and #$03
@@ -825,23 +825,23 @@ draw_object_animated_sprite:
     C530: 08          php
     C531: 0A          asl a
     C532: AA          tax
-    C533: 20 40 C5    jsr draw_object_pair_once   ; $C540
+    C533: 20 40 C5    jsr draw_two_score_columns   ; $C540
     C536: A2 28       ldx #$28
-    C538: 20 40 C5    jsr draw_object_pair_once   ; $C540
+    C538: 20 40 C5    jsr draw_two_score_columns   ; $C540
     C53B: 28          plp
     C53C: 10 24       bpl @C562   ; $C562
     C53E: A2 2C       ldx #$2c
 
-draw_object_pair_once:
-    C540: 20 43 C5    jsr draw_object_pair_advance_slot   ; $C543
+draw_two_score_columns:
+    C540: 20 43 C5    jsr draw_score_column   ; $C543
 
-draw_object_pair_advance_slot:
-    C543: 20 63 C5    jsr draw_indexed_object_if_present   ; $C563
+draw_score_column:
+    C543: 20 63 C5    jsr draw_score_tile_if_any   ; $C563
     C546: A5 16       lda sprite_y   ; $16
     C548: 18          clc
     C549: 69 08       adc #$08
     C54B: 85 16       sta sprite_y   ; $16
-    C54D: 20 63 C5    jsr draw_indexed_object_if_present   ; $C563
+    C54D: 20 63 C5    jsr draw_score_tile_if_any   ; $C563
     C550: A5 16       lda sprite_y   ; $16
     C552: 38          sec
     C553: E9 08       sbc #$08
@@ -855,7 +855,7 @@ draw_object_pair_advance_slot:
 @C562:
     C562: 60          rts
 
-draw_indexed_object_if_present:
+draw_score_tile_if_any:
     C563: BD 73 C5    lda $c573,x
     C566: F0 09       beq @C571   ; $C571
     C568: 85 12       sta gfx_src_ptr   ; $12
@@ -914,7 +914,7 @@ draw_indexed_object_if_present:
     C5A1: 58          .byte $58
     C5A2: 5C          .byte $5C
 
-emit_object_oam_at_70_variant2:
+draw_slot2_still_pose:
     C5A3: A9 02       lda #$02
     C5A5: 85 13       sta data_ptr_hi   ; $13
     C5A7: A9 70       lda #$70
@@ -923,7 +923,7 @@ emit_object_oam_at_70_variant2:
     C5AD: 85 14       sta scan_src_ptr   ; $14
     C5AF: 4C EC C3    jmp draw_metasprite_2x2   ; $C3EC
 
-draw_2x2_metasprite_tile_69:
+draw_slot2_large_pose:
     C5B2: A9 02       lda #$02
     C5B4: 85 13       sta data_ptr_hi   ; $13
     C5B6: A9 00       lda #$00
@@ -963,7 +963,7 @@ draw_2x2_metasprite_tile_69:
 @C5F3:
     C5F3: 4C EC C3    jmp draw_metasprite_2x2   ; $C3EC
 
-build_object_sprite_attributes:
+draw_player_death_animation:
     C5F6: A9 00       lda #$00
     C5F8: 85 13       sta data_ptr_hi   ; $13
     C5FA: A0 07       ldy #$07
@@ -987,47 +987,47 @@ build_object_sprite_attributes:
     C619: 85 12       sta gfx_src_ptr   ; $12
     C61B: 4C D7 C3    jmp apply_facing_flip   ; $C3D7
 
-draw_flagged_object_to_oam:
+draw_bonus_goal_object:
     C61E: A9 02       lda #$02
     C620: 85 13       sta data_ptr_hi   ; $13
     C622: A9 00       lda #$00
     C624: 85 14       sta scan_src_ptr   ; $14
     C626: A5 21       lda frame_counter   ; $21
     C628: 29 20       and #$20
-    C62A: F0 11       beq ptr16_sub6_set_const   ; $C63D
+    C62A: F0 11       beq draw_goal_block_dd   ; $C63D
     C62C: A9 E8       lda #$e8
     C62E: 85 12       sta gfx_src_ptr   ; $12
-    C630: 20 4C C6    jsr draw_object_tile_rows   ; $C64C
+    C630: 20 4C C6    jsr draw_tile_block_3x4   ; $C64C
     C633: A5 16       lda sprite_y   ; $16
     C635: 38          sec
     C636: E9 08       sbc #$08
     C638: 85 16       sta sprite_y   ; $16
     C63A: 4C 15 C4    jmp write_sprite_to_oam   ; $C415
 
-ptr16_sub6_set_const:
+draw_goal_block_dd:
     C63D: A9 DD       lda #$dd
     C63F: 85 12       sta gfx_src_ptr   ; $12
     C641: A5 10       lda src_ptr   ; $10
     C643: 38          sec
     C644: E9 06       sbc #$06
     C646: 85 10       sta src_ptr   ; $10
-    C648: B0 02       bcs draw_object_tile_rows   ; $C64C
+    C648: B0 02       bcs draw_tile_block_3x4   ; $C64C
     C64A: C6 11       dec zp_ptr_hi   ; $11
 
-draw_object_tile_rows:
+draw_tile_block_3x4:
     C64C: A9 03       lda #$03
     C64E: 85 18       sta scratch_loop_counter   ; $18
 @C650:
-    C650: 20 5C C6    jsr load_const_3   ; $C65C
+    C650: 20 5C C6    jsr draw_tile_row_of_3   ; $C65C
     C653: C6 18       dec scratch_loop_counter   ; $18
     C655: D0 F9       bne @C650   ; $C650
     C657: A9 02       lda #$02
-    C659: 4C 5E C6    jmp draw_object_tile_row   ; $C65E
+    C659: 4C 5E C6    jmp draw_tile_row   ; $C65E
 
-load_const_3:
+draw_tile_row_of_3:
     C65C: A9 03       lda #$03
 
-draw_object_tile_row:
+draw_tile_row:
     C65E: 85 17       sta draw_row_counter   ; $17
 @C660:
     C660: 20 15 C4    jsr write_sprite_to_oam   ; $C415
@@ -1077,7 +1077,7 @@ draw_8_sprite_row_to_oam:
     C6A9: D0 EC       bne @C697   ; $C697
     C6AB: 60          rts
 
-select_threshold_ptr_then_toggle_flag:
+draw_player_caught_pose:
     C6AC: A0 07       ldy #$07
     C6AE: B1 1E       lda (obj_record_ptr),y   ; $1E
     C6B0: C9 08       cmp #$08
@@ -1090,12 +1090,12 @@ select_threshold_ptr_then_toggle_flag:
     C6BC: 85 13       sta data_ptr_hi   ; $13
     C6BE: 4C D7 C3    jmp apply_facing_flip   ; $C3D7
 
-draw_object_by_animation_state:
+draw_knocked_out:
     C6C1: A5 1E       lda obj_record_ptr   ; $1E
     C6C3: C9 20       cmp #$20
     C6C5: 90 05       bcc @C6CC   ; $C6CC
     C6C7: D0 0E       bne @C6D7   ; $C6D7
-    C6C9: 4C B2 C5    jmp draw_2x2_metasprite_tile_69   ; $C5B2
+    C6C9: 4C B2 C5    jmp draw_slot2_large_pose   ; $C5B2
 @C6CC:
     C6CC: A9 A8       lda #$a8
     C6CE: 85 12       sta gfx_src_ptr   ; $12
@@ -1128,7 +1128,7 @@ draw_rle_text:
     C6FF: D0 16       bne @C717   ; $C717
     C701: C8          iny
 
-decode_position_stream_to_collision_bitmaps:
+draw_rle_text_step:
     C702: B1 12       lda (gfx_src_ptr),y   ; $12
     C704: F0 10       beq @C716   ; $C716
     C706: 10 02       bpl @C70A   ; $C70A
@@ -1214,7 +1214,7 @@ decode_position_stream_to_collision_bitmaps:
 @C787:
     C787: C6 16       dec sprite_y   ; $16
     C789: D0 94       bne @C71F   ; $C71F
-    C78B: 4C 02 C7    jmp decode_position_stream_to_collision_bitmaps   ; $C702
+    C78B: 4C 02 C7    jmp draw_rle_text_step   ; $C702
 
 ppu_buffer_enqueue:
     C78E: A5 2D       lda ppu_mask_shadow   ; $2D
@@ -2180,13 +2180,13 @@ build_stage_screen_layout:
     CD8A: 20 03 D7    jsr draw_hud   ; $D703
 @CD8D:
     CD8D: A0 08       ldy #$08
-    CD8F: 20 69 CF    jsr ppu_draw_blocks_b   ; $CF69
+    CD8F: 20 69 CF    jsr ppu_draw_rle_blocks   ; $CF69
     CD92: A6 1F       ldx obj_record_ptr_hi   ; $1F
     CD94: BC C0 CD    ldy $cdc0,x
     CD97: 20 15 CC    jsr ppu_run_draw_blocks   ; $CC15
     CD9A: A6 1F       ldx obj_record_ptr_hi   ; $1F
     CD9C: BC C1 CD    ldy $cdc1,x
-    CD9F: 20 69 CF    jsr ppu_draw_blocks_b   ; $CF69
+    CD9F: 20 69 CF    jsr ppu_draw_rle_blocks   ; $CF69
     CDA2: A6 1F       ldx obj_record_ptr_hi   ; $1F
     CDA4: BC C2 CD    ldy $cdc2,x
     CDA7: 20 26 D1    jsr ppu_draw_mansion_stamps   ; $D126
@@ -2352,7 +2352,7 @@ wait_120_frames_with_sprite:
     CEA7: 85 14       sta scan_src_ptr   ; $14
     CEA9: A9 02       lda #$02
     CEAB: 85 13       sta data_ptr_hi   ; $13
-    CEAD: 20 3D C6    jsr ptr16_sub6_set_const   ; $C63D
+    CEAD: 20 3D C6    jsr draw_goal_block_dd   ; $C63D
     CEB0: 20 1C D7    jsr blink_player_up_label   ; $D71C
     CEB3: 20 AB D5    jsr update_score   ; $D5AB
     CEB6: C6 0F       dec countdown_lo   ; $0F
@@ -2516,7 +2516,7 @@ dead_clear_zp_00_03:
     CF67: 8A          .byte $8A
     CF68: 00          .byte $00
 
-ppu_draw_blocks_b:
+ppu_draw_rle_blocks:
     CF69: B9 A6 CF    lda tbl_frameitem_ptr,y   ; $CFA6
     CF6C: 85 10       sta src_ptr   ; $10
     CF6E: B9 A7 CF    lda $cfa7,y
@@ -4700,7 +4700,7 @@ set_object_intent:
     D982: 4A          lsr a
     D983: A0 0D       ldy #$0d
     D985: B0 2E       bcs @D9B5   ; $D9B5
-    D987: 4C BC D9    jmp store_one_via_ptr   ; $D9BC
+    D987: 4C BC D9    jmp set_intent_right   ; $D9BC
 @D98A:
     D98A: A5 42       lda game_phase   ; $42
     D98C: F0 39       beq @D9C7   ; $D9C7
@@ -4722,7 +4722,7 @@ set_object_intent:
     D9A8: 90 ED       bcc @D997   ; $D997
     D9AA: AD 21 04    lda target_compare_value   ; $0421
     D9AD: C9 06       cmp #$06
-    D9AF: 90 0B       bcc store_one_via_ptr   ; $D9BC
+    D9AF: 90 0B       bcc set_intent_right   ; $D9BC
     D9B1: C9 34       cmp #$34
     D9B3: 90 0C       bcc @D9C1   ; $D9C1
 @D9B5:
@@ -4732,7 +4732,7 @@ set_object_intent:
 @D9BA:
     D9BA: 30 F9       bmi @D9B5   ; $D9B5
 
-store_one_via_ptr:
+set_intent_right:
     D9BC: A9 01       lda #$01
     D9BE: 91 1E       sta (obj_record_ptr),y   ; $1E
     D9C0: 60          rts

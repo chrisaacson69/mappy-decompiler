@@ -126,14 +126,14 @@ reset_cold_boot_init  $C031
                         update_and_respawn_objects  $D8D8
                             draw_object  $C305
                                 dispatch_object_draw_from_record  $C342
-                                    dispatch_object_draw_routine_by_index  [flows-into]  $C344
+                                    dispatch_object_draw_by_anim  [flows-into]  $C344
                                         handler_rts_noop  [dispatch]  (above)
-                                        draw_two_tile_object  [dispatch]  $C37C
+                                        draw_drop_stun_points  [dispatch]  $C37C
                                             write_sprite_to_oam  [jmp, flows-into]  $C415
                                                 sprite_attr_with_priority  $C465
-                                        dispatch_on_obj_flag_bit3  [dispatch]  $C3A7
-                                            dispatch_object_draw_routine_by_index  [jmp, flows-into]  (above)
-                                        compose_obj_field5_field7_index  [dispatch]  $C3C0
+                                        draw_drop_recover_blink  [dispatch]  $C3A7
+                                            dispatch_object_draw_by_anim  [jmp, flows-into]  (above)
+                                        draw_walk_cycle  [dispatch]  $C3C0
                                             load_type_sprite_palette  $C3B4
                                             load_metasprite_tile_base  [flows-into]  $C3D1
                                                 apply_facing_flip  [flows-into]  $C3D7
@@ -145,51 +145,51 @@ reset_cold_boot_init  $C031
                                         draw_type_pose_10  [dispatch]  $C4A8
                                             load_type_sprite_palette  (above)
                                             load_metasprite_tile_base  [jmp, flows-into]  (above)
-                                        compose_obj_anim_index_and_lookup  [dispatch]  $C4B0
+                                        draw_fall_bounce_pose  [dispatch]  $C4B0
                                             load_type_sprite_palette  (above)
                                             load_metasprite_tile_base  [jmp, flows-into]  (above)
-                                        build_sprite_attr_and_step_coords  [dispatch]  $C4C6
+                                        draw_door_wave  [dispatch]  $C4C6
                                             flip_bits_to_tile_xor  [jmp, flows-into]  (above)
-                                        select_object_tile_param_by_type_flag  [dispatch]  $C4F5
+                                        draw_tile_3c_type1_flicker  [dispatch]  $C4F5
                                             flip_bits_to_tile_xor  [jmp, flows-into]  (above)
-                                        test_bit3_of_record_field7  [dispatch]  $C510
-                                            lookup_field5_set_bits24_to_zp12  [flows-into]  $C518
+                                        draw_stunned_blinking  [dispatch]  $C510
+                                            draw_stunned_pose  [flows-into]  $C518
                                                 load_type_sprite_palette  (above)
                                                 load_metasprite_tile_base  [jmp, flows-into]  (above)
-                                        lookup_field5_set_bits24_to_zp12  [dispatch]  (above)
-                                        draw_object_animated_sprite  [dispatch]  $C521
-                                            draw_object_pair_once  [flows-into]  $C540
-                                                draw_object_pair_advance_slot  [flows-into]  $C543
-                                                    draw_indexed_object_if_present  $C563
+                                        draw_stunned_pose  [dispatch]  (above)
+                                        draw_wave_score  [dispatch]  $C521
+                                            draw_two_score_columns  [flows-into]  $C540
+                                                draw_score_column  [flows-into]  $C543
+                                                    draw_score_tile_if_any  $C563
                                                         write_sprite_to_oam  (above)
-                                        emit_object_oam_at_70_variant2  [dispatch]  $C5A3
+                                        draw_slot2_still_pose  [dispatch]  $C5A3
                                             draw_metasprite_2x2  [jmp, flows-into]  (above)
-                                        draw_2x2_metasprite_tile_69  [dispatch]  $C5B2
+                                        draw_slot2_large_pose  [dispatch]  $C5B2
                                             draw_metasprite_2x2  [jmp, flows-into]  (above)
                                             draw_sprite_pair  (above)
                                             write_sprite_next_tile  (above)
-                                        build_object_sprite_attributes  [dispatch]  $C5F6
+                                        draw_player_death_animation  [dispatch]  $C5F6
                                             apply_facing_flip  [jmp, flows-into]  (above)
-                                        draw_flagged_object_to_oam  [dispatch]  $C61E
+                                        draw_bonus_goal_object  [dispatch]  $C61E
                                             write_sprite_to_oam  [jmp, flows-into]  (above)
-                                            ptr16_sub6_set_const  [flows-into]  $C63D
-                                                draw_object_tile_rows  [flows-into]  $C64C
-                                                    load_const_3  $C65C
-                                                        draw_object_tile_row  [flows-into]  $C65E
+                                            draw_goal_block_dd  [flows-into]  $C63D
+                                                draw_tile_block_3x4  [flows-into]  $C64C
+                                                    draw_tile_row_of_3  $C65C
+                                                        draw_tile_row  [flows-into]  $C65E
                                                             write_sprite_to_oam  (above)
-                                                    draw_object_tile_row  [jmp, flows-into]  (above)
-                                            draw_object_tile_rows  (above)
+                                                    draw_tile_row  [jmp, flows-into]  (above)
+                                            draw_tile_block_3x4  (above)
                                         draw_8_sprite_row_to_oam  [dispatch]  $C687
                                             write_sprite_to_oam  (above)
-                                        select_threshold_ptr_then_toggle_flag  [dispatch]  $C6AC
+                                        draw_player_caught_pose  [dispatch]  $C6AC
                                             apply_facing_flip  [jmp, flows-into]  (above)
-                                        draw_object_by_animation_state  [dispatch]  $C6C1
+                                        draw_knocked_out  [dispatch]  $C6C1
                                             apply_facing_flip  [jmp, flows-into]  (above)
-                                            draw_2x2_metasprite_tile_69  [jmp, flows-into]  (above)
+                                            draw_slot2_large_pose  [jmp, flows-into]  (above)
                                             draw_sprite_advance_x  [jmp, flows-into]  $E84D
                                                 write_sprite_to_oam  (above)
                             set_object_intent  $D939
-                                store_one_via_ptr  [jmp, flows-into]  $D9BC
+                                set_intent_right  [jmp, flows-into]  $D9BC
                             dispatch_object_state  $DA2C
                                 handler_rts_noop  [dispatch]  (above)
                                 state02_walk  [dispatch]  $DA70
@@ -230,7 +230,7 @@ reset_cold_boot_init  $C031
                                         press_floor_trap  [flows-into]  $F0B8
                                             draw_floor_trap_frame  [jmp, flows-into]  $F06D
                                                 draw_rle_text  [jmp, flows-into]  $C6FB
-                                                    decode_position_stream_to_collision_bitmaps  [jmp, flows-into]  $C702
+                                                    draw_rle_text_step  [jmp, flows-into]  $C702
                                                         ppu_buffer_enqueue  $C78E
                                                     ppu_buffer_enqueue  (above)
                                             player_on_floor_trap  $F0CE
@@ -358,7 +358,7 @@ reset_cold_boot_init  $C031
                         fill_attr_map_run  [flows-into]  $CDB7
                         draw_bonus_intro_sprite  $CDFF
                             draw_metasprite_2x2  [jmp, flows-into]  (above)
-                        ppu_draw_blocks_b  $CF69
+                        ppu_draw_rle_blocks  $CF69
                         ppu_draw_mansion_stamps  $D126
                         draw_hud  $D703
                             ppu_run_draw_blocks  (above)
@@ -369,7 +369,7 @@ reset_cold_boot_init  $C031
                         ppu_clear_nametables  (above)
                         wait_120_frames_with_sprite  $CE94
                             yield_to_render_loop  (above)
-                            ptr16_sub6_set_const  (above)
+                            draw_goal_block_dd  (above)
                             update_score  (above)
                             blink_player_up_label  (above)
                         wait_120_frames  $CEBB

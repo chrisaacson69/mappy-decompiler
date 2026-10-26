@@ -7,16 +7,13 @@
 
 [[label]]
 addr = "C14F"; name = "handler_rts_noop"; kind = "leaf"; conf = "HIGH"; callers = 5
-why = "single RTS; appears as the no-op slot in 4 of the 6 dispatch tables"
-
+why = "Top-down 2026-10-26 (game thread, leaves): a lone RTS: the empty slot in the dispatch tables. Kept (name checked against the code). Earlier note: single RTS; appears as the no-op slot in 4 of the 6 dispatch tables"
 [[label]]
 addr = "C239"; name = "ppu_enable_render"; kind = "leaf"; conf = "HIGH"; callers = 7
-why = "LDX #$1E / STX $2001(PPUMASK) / STX $2D ; $1E = show bg+sprites; $2D = render-on shadow"
-
+why = "Top-down 2026-10-26 (game thread, leaves): PPUMASK = $1E and its shadow $2D. Kept (name checked against the code). Earlier note: LDX #$1E / STX $2001(PPUMASK) / STX $2D ; $1E = show bg+sprites; $2D = render-on shadow"
 [[label]]
 addr = "C241"; name = "ppu_disable_render"; kind = "leaf"; conf = "HIGH"; callers = 7
-why = "LDX #$00 / STX $2001(PPUMASK) / STX $2D ; mask=0 blanks screen (mirror of C239)"
-
+why = "Top-down 2026-10-26 (game thread, leaves): PPUMASK = 0 and its shadow $2D. Kept (name checked against the code). Earlier note: LDX #$00 / STX $2001(PPUMASK) / STX $2D ; mask=0 blanks screen (mirror of C239)"
 [[label]]
 addr = "C249"; name = "read_joypad"; kind = "leaf"; conf = "HIGH"; callers = 1
 why = "LDY #8 / LDA $4016,x / AND #3 / CMP #1 / ROR $10,x / loop ; 8-bit shift of pad into $10,x"
@@ -27,24 +24,19 @@ why = "IRQ vector target; single RTI — NROM has no IRQ source, so it's a stub"
 
 [[label]]
 addr = "C78E"; name = "ppu_buffer_enqueue"; kind = "leaf"; conf = "HIGH"; callers = 1
-why = "if $2D(render-on): append [addr_lo,addr_hi,count,data...] to $0500 buffer; else direct $2006/$2007"
-
+why = "Top-down 2026-10-26 (game thread, leaves): render on ($2D): append [address][count][tiles from ($12),Y] to the $0500 buffer; render off: write them straight to PPUADDR / PPUDATA. Kept (name checked against the code). Earlier note: if $2D(render-on): append [addr_lo,addr_hi,count,data...] to $0500 buffer; else direct $2006/$2007"
 [[label]]
 addr = "CBF5"; name = "ppu_clear_nametables"; kind = "leaf"; conf = "HIGH"; callers = 3
-why = "reset buffer idx $2A/$2B; set $2006=$2000; write $00 to $2007 in 8x256 loop = clear $2000-$27FF"
-
+why = "Top-down 2026-10-26 (game thread, leaves): both queue cursors $2A / $2B = 0; $2000-$27FF zeroed through PPUDATA. Kept (name checked against the code). Earlier note: reset buffer idx $2A/$2B; set $2006=$2000; write $00 to $2007 in 8x256 loop = clear $2000-$27FF"
 [[label]]
 addr = "CC15"; name = "ppu_run_draw_blocks"; kind = "leaf"; conf = "HIGH"; callers = 3
-why = "278b walker over [count][ppu_addr][data...] blocks -> PPUADDR/PPUDATA; the palette/HUD/template draw"
-
+why = "Top-down 2026-10-26 (game thread, leaves): list $CC41[Y]: [count][address lo][address hi][count bytes] blocks to PPUDATA, 0 ends. Kept (name checked against the code). Earlier note: 278b walker over [count][ppu_addr][data...] blocks -> PPUADDR/PPUDATA; the palette/HUD/template draw"
 [[label]]
-addr = "CF69"; name = "ppu_draw_blocks_b"; kind = "leaf"; conf = "MED"; callers = 1
-why = "PPUADDR/PPUDATA block walker using ptr $16/$17 (tbl_CFA6 family: fixed frame + item placement)"
-
+addr = "CF69"; name = "ppu_draw_rle_blocks"; kind = "leaf"; conf = "HIGH"; callers = 1
+why = "Top-down 2026-10-26 (game thread, leaves): list $CFA6[Y]: [rows][address lo][address hi], then per row runs of [count][tile] ending in 0, written straight to PPUDATA (render off); 0 ends the list. Was 'ppu_draw_blocks_b'. Earlier note: PPUADDR/PPUDATA block walker using ptr $16/$17 (tbl_CFA6 family: fixed frame + item placement)"
 [[label]]
 addr = "D126"; name = "ppu_draw_mansion_stamps"; kind = "leaf"; conf = "HIGH"; callers = 1
-why = "group=[count][data_ptr][N x ppu_addr]; stamps an RLE tile-run (runlen,tiles,signed-delta) at N addrs = mansion"
-
+why = "Top-down 2026-10-26 (game thread, leaves): list $D185[Y]: stamp records [repeat][tile source][targets ...] written straight to the PPU (the mansion walls and floors); used by build_stage_screen_layout and the bonus intro. Kept (name checked against the code). Earlier note: group=[count][data_ptr][N x ppu_addr]; stamps an RLE tile-run (runlen,tiles,signed-delta) at N addrs = mansion"
 [[label]]
 addr = "CDB7"; name = "fill_attr_map_run"; kind = "leaf"; conf = "HIGH"; callers = 1
 why = "Naming 2026-10-26: sta $0170,x / inx / dey: A into Y bytes of the attribute map at $0170+X, which clear_both_attribute_tables packs into $23C0/$27C0 (render_level runs this order). Was 'fill_attr_source_0170'. Earlier note: STA $0170,X / INX / DEY loop ; fills the $0170 attribute-bit source block consumed by the attr packer"
@@ -74,8 +66,7 @@ addr = "C146"
 name = "swap_stack_pointer"
 kind = "leaf"
 conf = "HIGH"
-why = "tsx/txa reads current SP into A, ldx $0100,y loads a saved value, sta $0100,y stores the old SP, txs installs the loaded value as new SP — an atomic SP swap with a slot in stack page indexed by Y (coroutine-style context switch)."
-
+why = "Top-down 2026-10-26 (game thread, leaves): TSX; the saved SP at $0100,Y is swapped with the current one; TXS. The thread switch. Kept (name checked against the code). Earlier note: tsx/txa reads current SP into A, ldx $0100,y loads a saved value, sta $0100,y stores the old SP, txs installs the loaded value as new SP — an atomic SP swap with a slot in stack page indexed by Y (coroutine-style context switch)."
 [[label]]
 addr = "C2D5"
 name = "copy_4_bytes_absy_to_zpx"
@@ -122,25 +113,22 @@ conf = "MED"
 why = "Top-down 2026-10-26 (game thread, draw): the attribute byte $13, with $20 (behind the background) added unless it is the bonus round or the sprite is low on screen (Y >= $40) or bit 0 of $15 is set. Was 'compute_obj_visibility_flag'. Earlier note: Reads state flag $7C and coords $15(LSR odd/even)/$16(cmp #$40 threshold), and on the active path loads $13 and ORs in bit5 (#$20) into A as a returned status; no hardware regs, pure RAM predicate."
 [[label]]
 addr = "C510"
-name = "test_bit3_of_record_field7"
+name = "draw_stunned_blinking"
 kind = "leaf"
-conf = "MED"
-why = "lda ($1e),y with y=7 reads field[7] of a zero-page pointer record, and #$08 masks bit 3, bne branches on it — a flag test."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): anim 0E: skipped while +7 bit 3 is set, else falls into draw_stunned_pose: the recovering cat blinks. Was 'test_bit3_of_record_field7'. Earlier note: lda ($1e),y with y=7 reads field[7] of a zero-page pointer record, and #$08 masks bit 3, bne branches on it — a flag test."
 [[label]]
 addr = "C63D"
-name = "ptr16_sub6_set_const"
+name = "draw_goal_block_dd"
 kind = "leaf"
-conf = "MED"
-why = "16-bit borrow chain: $10=$10-6 (sec/sbc #$06), bcs skips dec $11 (high byte) — decrements little-endian pointer $10/$11 by 6; also stores constant #$dd into $12."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): tile $DD at x - 6, falling into draw_tile_block_3x4. Also wait_120_frames_with_sprite's sprite. Was 'ptr16_sub6_set_const'. Earlier note: 16-bit borrow chain: $10=$10-6 (sec/sbc #$06), bcs skips dec $11 (high byte) — decrements little-endian pointer $10/$11 by 6; also stores constant #$dd into $12."
 [[label]]
 addr = "C65C"
-name = "load_const_3"
+name = "draw_tile_row_of_3"
 kind = "leaf"
-conf = "LOW"
-why = "Single instruction `lda #$03` (2 bytes) — loads constant 3 into A, no registers/RAM/branches; looks like a fragment or mid-routine slice, semantics indeterminate."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): A = 3, falling into draw_tile_row. Was 'load_const_3'. Earlier note: Single instruction `lda #$03` (2 bytes) — loads constant 3 into A, no registers/RAM/branches; looks like a fragment or mid-routine slice, semantics indeterminate."
 [[label]]
 addr = "C6FB"
 name = "draw_rle_text"
@@ -240,11 +228,10 @@ conf = "HIGH"
 why = "Bonus-round setup: slot 1 +0..+4 from $D8D3 (x 5, y $18, anim $18), state 0E (bonus_state0E_goal_object). Was 'init_ram_block_from_table'. Earlier note: ldx#0 / lda $d8d3,x / sta $0410,x / inx / cpx #5 / bne copies a 5-byte ROM table into RAM $0410-$0414, then lda #$0e / sta $041f sets one more field to a constant"
 [[label]]
 addr = "D9BC"
-name = "store_one_via_ptr"
+name = "set_intent_right"
 kind = "leaf"
-conf = "MED"
-why = "lda #$01; sta ($1e),y; rts — writes constant 1 through zero-page pointer ($1E/$1F) indexed by Y; no PPU/RAM specifics to fix semantics."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, leaves): +D = 1, an exit of set_object_intent (also $D9C1: +D = slot 2's direction $0426). Was 'store_one_via_ptr'. Earlier note: lda #$01; sta ($1e),y; rts — writes constant 1 through zero-page pointer ($1E/$1F) indexed by Y; no PPU/RAM specifics to fix semantics."
 [[label]]
 addr = "D9F0"
 name = "slot2_maybe_step_target_floor"
@@ -476,8 +463,7 @@ addr = "EA46"
 name = "jmp_indirect_zp_vector"
 kind = "leaf"
 conf = "HIGH"
-why = "Single instruction `jmp ($001c)` — an indirect jump through the zero-page pointer at $1C/$1D, i.e. a dispatch trampoline to a runtime-set address."
-
+why = "Top-down 2026-10-26 (game thread, leaves): JMP ($001C): the shared stub door_knock_back_objects calls after loading $EA49[kind]. Kept (name checked against the code). Earlier note: Single instruction `jmp ($001c)` — an indirect jump through the zero-page pointer at $1C/$1D, i.e. a dispatch trampoline to a runtime-set address."
 [[label]]
 addr = "ED1C"
 name = "end_door_wave"
@@ -606,11 +592,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, draw): screen X = (record +0/+1 - camera $28/$29) * 8 into $10/$11, screen Y = record +2/+3 * 8 into $16, then the draw routine by obj_draw_index (dispatch_object_draw_from_record, Y=4); returns with Z clear when sprites were written (compares the OAM cursor $2C). update_and_respawn_objects calls it per object. Was 'transform_object_coords_to_pixel_space'. Earlier note: Reads 16-bit X/Y from object record via ($1e),y, subtracts camera origin $28/$29, multiplies each by 8 (three asl $10/rol a), stores to $10/$11 and $16, preserving $2c; a world-relative coordinate ×8 scaling transform."
 [[label]]
 addr = "C3C0"
-name = "compose_obj_field5_field7_index"
+name = "draw_walk_cycle"
 kind = "routine"
-conf = "MED"
-why = "jsr obj_field5_lookup_C47C then asl a/asl a (×4) into $12, extracts 2-bit field from obj record byte ($1e),y=7 via lsr/lsr/and #$03, ora $12 — composes a packed index from a field-5 lookup plus a 2-bit object sub-field"
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): anim 02: pose = type*4 + (+7 >> 2 & 3), the walk frame from the +7 counter. Was 'compose_obj_field5_field7_index'. Earlier note: jsr obj_field5_lookup_C47C then asl a/asl a (×4) into $12, extracts 2-bit field from obj record byte ($1e),y=7 via lsr/lsr/and #$03, ora $12 — composes a packed index from a field-5 lookup plus a 2-bit object sub-field"
 [[label]]
 addr = "C415"
 name = "write_sprite_to_oam"
@@ -625,53 +610,46 @@ conf = "MED"
 why = "Top-down 2026-10-26 (game thread, draw): tile set (type | $10) through load_metasprite_tile_base: one of the per-type poses in the $C480 table. Replaces an address-keyed name. Was 'obj_field5_or10_lookup_c480_to_zp12'. Earlier note: jsr obj_field5_lookup_C47C gets A, ora #$10 forces bit4, then jmp lookup_table_c480_to_zp12 tail-calls the table-index-into-zp12 routine — a bit4-set variant of the lookup"
 [[label]]
 addr = "C4B0"
-name = "compose_obj_anim_index_and_lookup"
+name = "draw_fall_bounce_pose"
 kind = "routine"
-conf = "MED"
-why = "Builds composite index in $12 from obj_field5_lookup_C47C result (×4 via asl/asl + #$14 base) ora'd with 2-bit subfield from ($1e),y byte 7 (and #$0c, lsr,lsr), then tail-jmps lookup_table_c480_to_zp12."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): anim 06: pose = type*4 + $14 + (+7 & $0C) >> 2. Was 'compose_obj_anim_index_and_lookup'. Earlier note: Builds composite index in $12 from obj_field5_lookup_C47C result (×4 via asl/asl + #$14 base) ora'd with 2-bit subfield from ($1e),y byte 7 (and #$0c, lsr,lsr), then tail-jmps lookup_table_c480_to_zp12."
 [[label]]
 addr = "C4C6"
-name = "build_sprite_attr_and_step_coords"
+name = "draw_door_wave"
 kind = "routine"
-conf = "MED"
-why = "Derives a sprite attribute byte in $13 from $21's 2 bits, ORs in flip/palette bit $40 when obj+6 flag set, sets tile $12=#$50, steps Y($10/$11)-8 and X($16)+8, then jmp's extract_top2_bits to emit — per-tile metasprite OAM attr/coord setup."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): anim 08: tile $50, palette cycling with frame >> 1, mirrored by direction; two parts, the second 8 left and 8 down. Was 'build_sprite_attr_and_step_coords'. Earlier note: Derives a sprite attribute byte in $13 from $21's 2 bits, ORs in flip/palette bit $40 when obj+6 flag set, sets tile $12=#$50, steps Y($10/$11)-8 and X($16)+8, then jmp's extract_top2_bits to emit — per-tile metasprite OAM attr/coord setup."
 [[label]]
 addr = "C4F5"
-name = "select_object_tile_param_by_type_flag"
+name = "draw_tile_3c_type1_flicker"
 kind = "routine"
 conf = "MED"
-why = "Loads const #$3c into param $12, reads object field ($1e)+5; if it==1 and state flag $21 bit4 set picks #$41 else #$01 into param $13, then jmp extract_top2_bits — a parameterized dispatch selecting a tile/attr value by object type and a state flag."
-
+why = "Top-down 2026-10-26 (game thread, draw path): anim 0A: tile $3C, palette 1; type 1 flips its attribute ($41 / $01) every 16 frames. No store of anim $0A was found. Was 'select_object_tile_param_by_type_flag'. Earlier note: Loads const #$3c into param $12, reads object field ($1e)+5; if it==1 and state flag $21 bit4 set picks #$41 else #$01 into param $13, then jmp extract_top2_bits — a parameterized dispatch selecting a tile/attr value by object type and a state flag."
 [[label]]
 addr = "C518"
-name = "lookup_field5_set_bits24_to_zp12"
+name = "draw_stunned_pose"
 kind = "routine"
-conf = "MED"
-why = "jsr obj_field5_lookup_C47C gets a field-5 value, ora #$24 sets bits $24 on it, then jmp (tail-call) lookup_table_c480_to_zp12 uses it for the table write to zp12 — a thin index-adapter wrapper."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): anim 0C: pose $24 | type. Was 'lookup_field5_set_bits24_to_zp12'. Earlier note: jsr obj_field5_lookup_C47C gets a field-5 value, ora #$24 sets bits $24 on it, then jmp (tail-call) lookup_table_c480_to_zp12 uses it for the table write to zp12 — a thin index-adapter wrapper."
 [[label]]
 addr = "C5F6"
-name = "build_object_sprite_attributes"
+name = "draw_player_death_animation"
 kind = "routine"
-conf = "MED"
-why = "Reads ($1e)+7 object flag byte, asl/lsr-tests bits, masks palette bits (#$0c/#$04) and ORs OAM attribute high bits (#$80/#$90/#$c0) into $12/$13, then tail-jmps toggle_flag_if_field_positive."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): anim 16 (states 2A / 2C): pose $80 + (+7 & $0C) with flip $C0 on +7 bit 3, or $90 + ... once +7 bit 6 is set; the frame from the +7 counter. Was 'build_object_sprite_attributes'. Earlier note: Reads ($1e)+7 object flag byte, asl/lsr-tests bits, masks palette bits (#$0c/#$04) and ORs OAM attribute high bits (#$80/#$90/#$c0) into $12/$13, then tail-jmps toggle_flag_if_field_positive."
 [[label]]
 addr = "C6AC"
-name = "select_threshold_ptr_then_toggle_flag"
+name = "draw_player_caught_pose"
 kind = "routine"
-conf = "MED"
-why = "reads struct field ($1e)+7, cmp #$08 picks $98 vs $9c into ptr $12/$13 (hi=$00), then tail-jmps toggle_flag_if_field_positive — branch on threshold selects which target then delegates the flag toggle"
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): anim 1E (state 08): tile $98, or $9C once +7 >= 8. Was 'select_threshold_ptr_then_toggle_flag'. Earlier note: reads struct field ($1e)+7, cmp #$08 picks $98 vs $9c into ptr $12/$13 (hi=$00), then tail-jmps toggle_flag_if_field_positive — branch on threshold selects which target then delegates the flag toggle"
 [[label]]
 addr = "C702"
-name = "decode_position_stream_to_collision_bitmaps"
+name = "draw_rle_text_step"
 kind = "routine"
-conf = "MED"
-why = "Walks a ($12),y byte stream advancing a 16-bit cursor $10/$11 by signed deltas (terminator beq->rts), then derives a packed tile coord (asl/rol chain), masks a 2-bit value into the $0180,x array and a 1-bit flag into the $0170,x array (read-modify-write), enqueues PPU updates via ppu_buffer_enqueue, and loops over count $16 via jmp $c702."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, leaves): the body of draw_rle_text, entered after a 0 byte: [0][delta] moves the address by a signed delta, [0][0] ends; a run [n][n tiles] is queued (ppu_buffer_enqueue) and, unless $14 bit 7 is set, palette $14 is written into the attribute shadow $0180 for the run's cells and their bits set in attr_dirty_bitmap $0170. So $14 is the palette of what is drawn, and $80 leaves the attributes alone (doors, erases). Was 'decode_position_stream_to_collision_bitmaps'. Earlier note: Walks a ($12),y byte stream advancing a 16-bit cursor $10/$11 by signed deltas (terminator beq->rts), then derives a packed tile coord (asl/rol chain), masks a 2-bit value into the $0180,x array and a 1-bit flag into the $0170,x array (read-modify-write), enqueues PPU updates via ppu_buffer_enqueue, and loops over count $16 via jmp $c702."
 [[label]]
 addr = "C7C9"
 name = "flush_dirty_attribute_bytes"
@@ -956,25 +934,22 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, draw): write_sprite_to_oam, then the next tile ($12 + 1). Was 'write_object_to_oam_and_bump_count'. Earlier note: jsr write_object_to_shadow_oam then inc $12 — writes one object to shadow OAM and advances the per-object index/sprite counter at $12."
 [[label]]
 addr = "C563"
-name = "draw_indexed_object_if_present"
+name = "draw_score_tile_if_any"
 kind = "routine"
-conf = "MED"
-why = "Loads object id from table $C573,x; beq skips zero entries; sets param $12 and saves X in $17 then calls write_object_to_shadow_oam, restores X, inx/rts — emits one indexed object's sprite to shadow OAM."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): sprite $C573[X] unless it is 0; X + 1. Was 'draw_indexed_object_if_present'. Earlier note: Loads object id from table $C573,x; beq skips zero entries; sets param $12 and saves X in $17 then calls write_object_to_shadow_oam, restores X, inx/rts — emits one indexed object's sprite to shadow OAM."
 [[label]]
 addr = "C65E"
-name = "draw_object_tile_row"
+name = "draw_tile_row"
 kind = "routine"
-conf = "MED"
-why = "A-count→$17 loop calls write_object_to_shadow_oam per iter, advancing X-coord $10/$11 by +8 and tile $12 each pass; then rewinds $10 by $18 (3×8 row reset) and bumps Y $16 by +8 → blits a horizontal row of object tiles to shadow OAM and steps to next row."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): A sprites with consecutive tiles across, then x back 24 and y + 8. Was 'draw_object_tile_row'. Earlier note: A-count→$17 loop calls write_object_to_shadow_oam per iter, advancing X-coord $10/$11 by +8 and tile $12 each pass; then rewinds $10 by $18 (3×8 row reset) and bumps Y $16 by +8 → blits a horizontal row of object tiles to shadow OAM and steps to next row."
 [[label]]
 addr = "C687"
 name = "draw_8_sprite_row_to_oam"
 kind = "routine"
-conf = "MED"
-why = "Sets sprite params ($13=2,$14=0,$12=0xF4,$17=8 counter), loops 8x calling write_object_to_shadow_oam, advancing 16-bit pointer $10/$11 by 8 and incrementing tile/pos $12 each pass — emits a row of 8 sprites to shadow OAM."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): anim 1C (the title object): 8 sprites in a row, tiles $F4-$FB, palette 2. Kept (name checked against the code). Earlier note: Sets sprite params ($13=2,$14=0,$12=0xF4,$17=8 counter), loops 8x calling write_object_to_shadow_oam, advancing 16-bit pointer $10/$11 by 8 and incrementing tile/pos $12 each pass — emits a row of 8 sprites to shadow OAM."
 [[label]]
 addr = "CB14"
 name = "draw_sprite_glyph"
@@ -1123,18 +1098,16 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, draw): write_sprite_next_tile, X += 8, then falls into a second one. Was 'write_object_oam_and_advance_pointer_8'. Earlier note: Calls write_object_to_oam_and_bump_count, then advances 16-bit source pointer $10/$11 by 8 (lda $10/adc #$08/sta $10/bcc/inc $11) — emit one object's OAM then step to next 8-byte record."
 [[label]]
 addr = "C543"
-name = "draw_object_pair_advance_slot"
+name = "draw_score_column"
 kind = "routine"
-conf = "MED"
-why = "Calls draw_indexed_object_if_present twice — second after $16+=8 (X coord, then restored) drawing a horizontally-adjacent pair — then advances 16-bit pointer $10/$11 by 8 with bcc/inc $11 carry to the next slot."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): two stacked tiles from $C573[X], X + 1 (8 down), then x + 8. Was 'draw_object_pair_advance_slot'. Earlier note: Calls draw_indexed_object_if_present twice — second after $16+=8 (X coord, then restored) drawing a horizontally-adjacent pair — then advances 16-bit pointer $10/$11 by 8 with bcc/inc $11 carry to the next slot."
 [[label]]
 addr = "C64C"
-name = "draw_object_tile_rows"
+name = "draw_tile_block_3x4"
 kind = "routine"
-conf = "MED"
-why = "Sets loop counter $18=3, calls draw_object_tile_row 3x in a dec/bne loop, then lda #$02 + tail-jmp into draw_object_tile_row once more — draws a multi-row block of object tiles."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): 3 rows of 3 sprites then a row of 2, tiles counting up from $12. Was 'draw_object_tile_rows'. Earlier note: Sets loop counter $18=3, calls draw_object_tile_row 3x in a dec/bne loop, then lda #$02 + tail-jmp into draw_object_tile_row once more — draws a multi-row block of object tiles."
 [[label]]
 addr = "CB3B"
 name = "draw_sprite_text"
@@ -1271,18 +1244,16 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, draw): draw_sprite_pair, then X -= 8 and Y += 8 and falls into a second pair: a 16x16 object from four consecutive tiles. Was 'emit_object_oam_step_pointers_8'. Earlier note: jsr write_object_oam_and_advance_pointer_8 then 16-bit ptr $10/$11 -=8 (sbc#8/bcs/dec$11) and coord $16 +=8 (adc#8); one metasprite-tile blit advancing both cursors by 8"
 [[label]]
 addr = "C540"
-name = "draw_object_pair_once"
+name = "draw_two_score_columns"
 kind = "routine"
-conf = "MED"
-why = "Single instruction `jsr $C543 -> draw_object_pair_advance_slot`; a 3-byte trampoline that invokes the draw-pair routine exactly one time before returning."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): draw_score_column twice. Was 'draw_object_pair_once'. Earlier note: Single instruction `jsr $C543 -> draw_object_pair_advance_slot`; a 3-byte trampoline that invokes the draw-pair routine exactly one time before returning."
 [[label]]
 addr = "C61E"
-name = "draw_flagged_object_to_oam"
+name = "draw_bonus_goal_object"
 kind = "routine"
-conf = "MED"
-why = "Sets draw params ($13=2 rows,$14=0,$12=$E8 Y), tests bit5 of flag $21 (beq skips), calls draw_object_tile_rows, decrements X coord $16 by 8, tail-jmps write_object_to_shadow_oam — composes both object-draw callees to render a flag-gated multi-tile object into shadow OAM."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): anim 18 (slot 1, the bonus goal): every $20 frames alternates a tile $E8 block plus one sprite above with the $DD block (draw_goal_block_dd). Was 'draw_flagged_object_to_oam'. Earlier note: Sets draw params ($13=2 rows,$14=0,$12=$E8 Y), tests bit5 of flag $21 (beq skips), calls draw_object_tile_rows, decrements X coord $16 by 8, tail-jmps write_object_to_shadow_oam — composes both object-draw callees to render a flag-gated multi-tile object into shadow OAM."
 [[label]]
 addr = "CB02"
 name = "draw_player_number_text"
@@ -1329,25 +1300,22 @@ why = "Top-down 2026-10-26 (game thread, frame update): animate_bonus_target; re
 
 [[label]]
 addr = "C521"
-name = "draw_object_animated_sprite"
+name = "draw_wave_score"
 kind = "routine"
-conf = "MED"
-why = "Derives anim frame from global timer $21 (lsr/and #3 -> $13, $14=0), reads object byte ($1e),y=7 as tile-pair index (asl/tax) and calls draw_object_pair_once twice (X=index, X=#$28), with php/plp+bpl drawing an extra pair (X=#$2c) when bit7 set."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): anim 10: score tiles from $C573 by the wave's count (+7) and the fixed columns $28 / $2C, as stacked sprite pairs. Was 'draw_object_animated_sprite'. Earlier note: Derives anim frame from global timer $21 (lsr/and #3 -> $13, $14=0), reads object byte ($1e),y=7 as tile-pair index (asl/tax) and calls draw_object_pair_once twice (X=index, X=#$28), with php/plp+bpl drawing an extra pair (X=#$2c) when bit7 set."
 [[label]]
 addr = "C5A3"
-name = "emit_object_oam_at_70_variant2"
+name = "draw_slot2_still_pose"
 kind = "routine"
 conf = "MED"
-why = "Loads fixed params $13=#$02,$12=#$70,$14=#$00 into the zero-page arg block then tail-jmps to emit_object_oam_step_pointers_8 ($C3EC); a parameterized wrapper invoking OAM emit with preset coord/index."
-
+why = "Top-down 2026-10-26 (game thread, draw path): anim 12 / 13 (slot 2's landing pause, and sitting on an item): 2x2 metasprite $70, palette 2. Was 'emit_object_oam_at_70_variant2'. Earlier note: Loads fixed params $13=#$02,$12=#$70,$14=#$00 into the zero-page arg block then tail-jmps to emit_object_oam_step_pointers_8 ($C3EC); a parameterized wrapper invoking OAM emit with preset coord/index."
 [[label]]
 addr = "C5B2"
-name = "draw_2x2_metasprite_tile_69"
+name = "draw_slot2_large_pose"
 kind = "routine"
 conf = "MED"
-why = "Loads tile base $12=#$69, counter $13=#$02, attr $14=#$00, then walks position $10/$11 (X, 16-bit) and $16 (Y) by ±8px between four OAM emits via write_object_oam_and_advance_pointer_8 / write_object_to_oam_and_bump_count / emit_object_oam_step_pointers_8 — a 2x2 (16x16) metasprite."
-
+why = "Top-down 2026-10-26 (game thread, draw path): anim 14 / 15 (slot 2 scored), and slot 2 knocked out: tile $69 2x2 metasprite with pairs around it. Was 'draw_2x2_metasprite_tile_69'. Earlier note: Loads tile base $12=#$69, counter $13=#$02, attr $14=#$00, then walks position $10/$11 (X, 16-bit) and $16 (Y) by ±8px between four OAM emits via write_object_oam_and_advance_pointer_8 / write_object_to_oam_and_bump_count / emit_object_oam_step_pointers_8 — a 2x2 (16x16) metasprite."
 [[label]]
 addr = "CDFF"
 name = "draw_bonus_intro_sprite"
@@ -1376,11 +1344,10 @@ why = "Top-down 2026-10-26 (game thread, frame update): by +0 through $F1B5: 0 n
 
 [[label]]
 addr = "C6C1"
-name = "draw_object_by_animation_state"
+name = "draw_knocked_out"
 kind = "routine"
-conf = "MED"
-why = "Reads state var $1E, three-way branches (<$20/==$20/>$20), loads $12/$13 pointer-param pairs and dispatches to draw_2x2_metasprite_tile_69 / toggle_flag_if_field_positive / draw_object_and_advance_x8 per state, adjusting Y at $16."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): anim 20 (state 22): slot 1 tile $A8; slot 2 draw_slot2_large_pose; other cats tile $2C with the points sprites $AE $67 16 px above. Was 'draw_object_by_animation_state'. Earlier note: Reads state var $1E, three-way branches (<$20/==$20/>$20), loads $12/$13 pointer-param pairs and dispatches to draw_2x2_metasprite_tile_69 / toggle_flag_if_field_positive / draw_object_and_advance_x8 per state, adjusting Y at $16."
 [[label]]
 addr = "DD17"
 name = "land_on_floor"
@@ -1504,18 +1471,16 @@ conf = "HIGH"
 why = "Naming 2026-10-26 (bytes read whole after the discover fixes): reset's only call ($C062, Y=0): loads the task record $C13E,y (handler $C84F) into $1E/$1F, saves SP to $00C1+$C140,y = $0100, sets the new SP, jmp ($001E). The game task then runs on its own stack. Was 'switch_stack_and_jump_to_indexed_handler'. Earlier note: Loads handler ptr from table $C13E[y] into ZP vector $1E/$1F, saves current SP (tsx/txa) into per-index slot $00C1,x via $C140[y], then jmp ($001E) — a per-task stack-save + indirect dispatch (coroutine context switch)."
 [[label]]
 addr = "C344"
-name = "dispatch_object_draw_routine_by_index"
+name = "dispatch_object_draw_by_anim"
 kind = "routine"
 conf = "HIGH"
-why = "Stores index to $15, `and #$fe`+tax makes an even table offset, loads 16-bit pointer from table at $C356 into $1C/$1D, `jmp ($001c)`; table entries point to object draw/compose routines (compose_obj_anim_index, draw_object_animated_sprite, build_object_sprite_attributes, draw_object_by_animation_state)."
-
+why = "Top-down 2026-10-26 (game thread, draw path): A = anim (+4): bit 0 kept in $15, A & $FE indexes the 19 handlers at $C356. Was 'dispatch_object_draw_routine_by_index'. Earlier note: Stores index to $15, `and #$fe`+tax makes an even table offset, loads 16-bit pointer from table at $C356 into $1C/$1D, `jmp ($001c)`; table entries point to object draw/compose routines (compose_obj_anim_index, draw_object_animated_sprite, build_object_sprite_attributes, draw_object_by_animation_state)."
 [[label]]
 addr = "C3A7"
-name = "dispatch_on_obj_flag_bit3"
+name = "draw_drop_recover_blink"
 kind = "routine"
-conf = "MED"
-why = "Reads byte at offset 7 of struct via ptr ($1e), masks bit3 (and #$08); if set, loads param #$06 and tail-jmps to $C344, else falls to alternate path at $c3bf — selects a value by an object status bit then dispatches."
-
+conf = "HIGH"
+why = "Top-down 2026-10-26 (game thread, draw path): anim 24 (state 28): with +7 bit 3 set draws as anim 06 (draw_fall_bounce_pose), else nothing: blinking. Was 'dispatch_on_obj_flag_bit3'. Earlier note: Reads byte at offset 7 of struct via ptr ($1e), masks bit3 (and #$08); if set, loads param #$06 and tail-jmps to $C344, else falls to alternate path at $c3bf — selects a value by an object status bit then dispatches."
 [[label]]
 addr = "C84F"
 name = "title_screen"
@@ -1578,11 +1543,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread): builds round 1 ($7A = $7D = 0) and plays it on the demo script (demo_script_cursor $3D) until round_cleared, player_down, or a button, then jmp title_screen. The headless trace in discover runs exactly this. Was 'setup_stage_then_run_intro_frames'. Earlier note: Disables render (ppu_disable_render), clears $0400 buffer, builds screen layout (build_stage_screen_layout), builds OAM/sprites, spawns objects (spawn_objects_from_level_descriptor, load_object_table_to_ram, spawn_object_pair_for_state), re-enables render, copies shadow-OAM $0200→$0300, inits object records (init_object_from_rom_template/init_object_record_row), zeros state ($4b/$4f/$31/$3c/$3d) and seeds $040F object slots with #$02 — full stage/object setup."
 [[label]]
 addr = "C37C"
-name = "draw_two_tile_object"
+name = "draw_drop_stun_points"
 kind = "routine"
 conf = "MED"
-why = "$12=tile($AE, or $66 when $1E==$20), $13=3 palette; jsr write_object_to_shadow_oam, advance X +8, $12=$67, jmp write_object_to_shadow_oam = two-tile object draw (leading A9 AE byte mis-flagged as data, like $C141)"
-
+why = "Top-down 2026-10-26 (game thread, draw path): anim 22 (state 26): two sprites, $AE (slot 2: $66) and $67: the points shown for a cat stunned by a dropped object. Was 'draw_two_tile_object'. Earlier note: $12=tile($AE, or $66 when $1E==$20), $13=3 palette; jsr write_object_to_shadow_oam, advance X +8, $12=$67, jmp write_object_to_shadow_oam = two-tile object draw (leading A9 AE byte mis-flagged as data, like $C141)"
 [[label]]
 addr = "FFE1"
 name = "tbl_demo_input_script"
