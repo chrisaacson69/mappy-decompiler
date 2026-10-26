@@ -175,7 +175,8 @@ closed = "2026-10-26: not padding. $C13E is one 3-byte task record [handler $C84
 item   = "ROM data residue: 1,545 of 5,541 non-code PRG bytes unclaimed (rom_data.txt). 602 B lie in ranges code reads directly (reader known, extent bounded by neighbours); 943 B are mostly tails of tables whose heads were claimed ($EB3B.. after $EAFC, $F3E5.. after $F3DF, the $E4xx family): follow the pointers out of those heads, then gameplay runs (rounds 2-16, bonus) for what only play reads."
 phase  = "data"
 source = "data phase 2026-10-26"
-status = "open"
+status = "closed"
+closed = "2026-10-26: enough by the data phase's purpose (Chris): the code walk needs to know where data starts and what kind it is, then the code says what it means. Every residue range has a known reader or is the tail of a claimed table head; exact extents are left to the code walk and live runs."
 
 [[revisit]]
 item   = "vars.toml: 22 names are shared by 69 addresses (obj_state x10, seq_data_ptr x6, obj_record_ptr x5 incl. $1C/$1D, the dispatch vector ...). Rename each by role from the fixed var_xref; a name two addresses share names neither."
@@ -208,4 +209,4 @@ source = "data phase 2026-10-26 (from the polymorphic-fields revisit)"
 status = "open"
 
 [next]
-session = "data residue (the open data revisit: follow pointers out of the claimed table heads; decide whether gameplay runs belong here or in live) or, if Chris defers it, structure: rebuild the call graph on the fixed discover (reachability revisit)."
+session = "structure: rebuild the call graph on the fixed discover (fall-through and RESET flow as edges, so $C06D the frame loop is reached; pointer_runs must not split routines), leaves-first order for the naming walk."
