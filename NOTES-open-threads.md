@@ -23,7 +23,7 @@ created: 2026-06-26
 - **`mansion_block_08` ($D350).** `mansion_idx 8` is never selected by any round in
   `tbl_round_attributes` ($CDBF). Confirm whether it's a title/intro layout, a spare, or
   dead data. (Check non-`$CD49` callers of `ppu_draw_mansion_stamps` with `Y=8`.)
-- **Trampolines & blinking platforms are a DIFFERENT path.** They are *objects*, not
+- ~~**Trampolines & blinking platforms are a DIFFERENT path.**~~ **Resolved 2026-10-27** → [ch10](./10-build-tool-pass.md): the "blinking platforms" are floor traps (rounds 12-14, `spawn_floor_traps` $F001); trampolines load from `load_round_trampolines` ($E35B), items from `ptr_round_items` ($E798). Original note: They are *objects*, not
   nametable tiles, so they don't come from the `$CDBF`/`$CC41`/`$CFA6`/`$D185` tables.
   Source is the object-spawn side: `spawn_objects_from_level_descriptor` ($E5C5, level
   descriptor ptr at $E798/$E799) and `$F001` (`prepare_platform_data`; blinking platforms
@@ -33,13 +33,16 @@ created: 2026-06-26
 ## Attract / demo (chapter 6 region)
 
 - **What trips the demo exit: RESOLVED 2026-10-02, the mouse is caught** (state `$08`,
-  `$4B`=1, `$7B`=5 of 10; ch6). The earlier "stage-resolution" reading was wrong. Still
-  open: what `$7B` counts as it falls 10→5 (it reaching 0 raises `$4F` at `$E686`), via
+  `$4B`=1, `$7B`=5 of 10; ch6). The earlier "stage-resolution" reading was wrong. ~~Still
+  open: what `$7B` counts as it falls 10→5~~ **Resolved 2026-10-27** → [ch10](./10-build-tool-pass.md): `round_items_remaining`, the items left to take (it reaching 0 raises `$4F` at `$E686`), via
   `resolve_object_position_capture_and_score` ($E660).
 - **`inc $040E` = the door/trap action?** Input side RESOLVED: real play copies `$22`
   ("A or B pressed" history) into `$040E`, so the pulse is a one-frame A/B press, and the
-  script replays frame-exact through the pad (`demo_in_real_game.py`). Still open: what
-  reads `$040E` (player field $0E) and whether it drives the doors.
+  script replays frame-exact through the pad (`demo_in_real_game.py`). ~~Still open: what
+  reads `$040E` (player field $0E) and whether it drives the doors.~~ **Resolved 2026-10-27** → [ch10](./10-build-tool-pass.md): record field
+  +E is `obj_buttons`, a shift register of A/B presses (vars.toml `[[obj_field]]`); it does drive
+  the doors: `player_opens_nearest_door` ($E976) opens one only when `+E & 3 == 1` (pressed this
+  frame, not the last).
 
 - **Hidden state carried into a round = the frame-counter phase (measured 2026-10-02,
   `seed_test.py`).** Pressing Start at 7 different frames then playing identical in-round
@@ -47,16 +50,18 @@ created: 2026-06-26
   every frame, but cat records `$0430`-`$045F` diverge from about 1,700 frames in. At "live"
   the only lasting difference is `$21` (named `cur_obj_state`). It tracks the Start delay one
   for one (`$78`, `$79`, `$7A` for starts 60/61/62; `$9D` for 97), so it is a free-running
-  frame counter. No separate RNG found yet. Open: which cat routine reads `$21`, and is the
-  seed space really one byte (256 phases)?
+  frame counter. No separate RNG found yet. ~~Open: which cat routine reads `$21`, and is the
+  seed space really one byte (256 phases)?~~ **Resolved 2026-10-27** → [ch10](./10-build-tool-pass.md): `choose_cat_target_floor` takes bit 0 of
+  the ROM byte at `$C000 + frame_counter` (the copyright text and the code after it), so the
+  seed is the one-byte frame-counter phase.
 
 ## Symbol-table cleanups (from-scratch mislabels, pattern: pointer→counter)
 
-- **`$7B` rename.** Currently `draw_data_ptr` (pointer) but it's the per-stage enemy
+- ~~**`$7B` rename.**~~ **Resolved 2026-10-27** → [ch10](./10-build-tool-pass.md): renamed `round_items_remaining` (items, not enemies). Original note: Currently `draw_data_ptr` (pointer) but it's the per-stage enemy
   counter (set `$E5D8`, dec'd in `$E660`, tested at `$E682`). Same mislabel pattern we
   fixed for `$70`/`$B0` (p1_lives/p2_lives) and `$3D` (demo_script_cursor). Rename to
   `stage_object_count` (or similar) in `vars.toml` + regen.
-- **General sweep.** Worth a pass over the remaining `role = "pointer"` vars that are only
+- ~~**General sweep.**~~ **Resolved 2026-10-27** → [ch10](./10-build-tool-pass.md): variables round 2 rebuilt var_xref on decoded instructions only (570 links were data read as code); no shared names remain. Original note: Worth a pass over the remaining `role = "pointer"` vars that are only
   ever touched by `inc`/`dec`/`#imm` (never `(zp),y`) — they're likely counters mis-inferred
   from X-indexed indirects, as `$70` was from `ora ($6f,x)` at the data byte `$D213`.
 
