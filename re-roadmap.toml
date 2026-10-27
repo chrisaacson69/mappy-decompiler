@@ -234,7 +234,7 @@ status = "closed"
 closed = "2026-10-26: vblank_flag, frame_counter, paused (its sprites at $C123 spell PAUSE in the sprite table), pad_dir / pad_dir_changed, countdown_hi/lo, aux_ptr (the dispatch vector), voice_count, the sound pointers, attr_dirty_bitmap; record +8 = obj_bg_tile (proven by the readback queue's store at $C19D)."
 
 [next]
-session = "All nine phases done (2026-10-27; chapter 10 is the summary). Future work is Chris's call: deeper annotation (the cat AI, draw-block layouts field by field), the synthesizer against a Mesen audio recording, mansion_block_08, or the next title."
+session = "All nine phases done (2026-10-27; chapter 10 is the summary). Future work is Chris's call: deeper annotation (the cat AI, draw-block layouts field by field), the synthesizer against a Mesen audio recording, mansion_block_08, AI play (a speedrun TAS or a high-score / infinite run by direct control; NOTES-open-threads.md 'Future: AI play', building on mappy_search.py), or the next title."
 
 [[revisit]]
 item   = "$EA51-$EA8F (63 B) is live code shown as data: the player's state-10 write (Mesen write-watch, PC $EA7C) runs there. $EA05 loads $EA49[($02B1,x & 6)] into $1C/$1D and JSRs a shared JMP ($001C) stub at $EA46; the load sits 46 B before the JSR, out of dispatch_tables' back-scan."

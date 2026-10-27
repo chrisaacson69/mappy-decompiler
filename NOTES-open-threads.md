@@ -71,3 +71,30 @@ created: 2026-06-26
   demo `$FF65 @FFBC` flag-gated). `$D4CA` is the score gate, not the input gate.
 - Level data labeled: `tbl_round_attributes` + 3 pointer tables + 18 blocks.
 - `asm_gen.py` last-routine-body bug fixed (`$FF65`–`$FFFF` now emits).
+
+## Future: AI play (Chris, 2026-10-27)
+
+Two goals, two ways to drive the game:
+
+- **Goals.**
+  - A **speedrun**: past round 16 as fast as possible. Chris is checking the community's actual end point.
+  - A **high-score run**:
+    - Can every bonus be taken in every round?
+    - When does chasing in-round bonuses (item pairs, door waves, the coin) cost more than the round's end bonus?
+    - Since the rounds repeat, can the run go on for ever?
+- **Implementations.**
+  - A **TAS script**: an input log from power-on. Best for the speedrun, and RNG manipulation is in reach.
+  - **Direct control**, deciding each frame from state. Best for the high score, since an infinite run can't be one finite script.
+
+What exists and what the finished disassembly adds:
+- **Search.** `mappy_search.py` (2026-10-02, before naming) runs emu-harness's segment and beam search through Mesen. It clears round 1 with no deaths (3,292 frames; 2,399 frames robust across four Start phases), replay-verified from power-on.
+- **The repeat structure, from the code** (`advance_to_next_round` $D6E8):
+  - The layout is `stage_number & $0F`, so the 16 rounds repeat.
+  - The speed and difficulty row (`load_stage_params` $F3C1, 6 bytes by `stage_index`) climbs to `$1F`, then cycles `$1C-$1F` for ever.
+  - So after the first 28 rounds the game is periodic: the same 16 layouts against the same 4 difficulty rows. An infinite run is a finite set of round configurations, played again and again.
+- **The randomness is fully known.**
+  - The cats' only random bit is ROM byte `$C000 + frame_counter` (`choose_cat_target_floor`).
+  - The only hidden state carried into a round is the frame-counter phase (`seed_test.py`).
+  - So RNG manipulation means choosing *when* things happen. Whether a looping script can work turns on the frame counter: does each lap of the cycle take a frame count that brings `$21` back to the same phase, with the same object state?
+- **A forward model, proven.** `live_verify.py` shows the game's own per-object step, run headless on the library CPU, reproduces the real game step for step. A planner could look ahead with the game's own code rather than an approximation.
+- **Open:** extra-life thresholds and the lives cap (they bound the score run's margin), and how the score counter wraps.
