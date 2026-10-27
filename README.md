@@ -1,61 +1,42 @@
----
-status: active
-created: 2026-04-26
----
-# Mappy (Famicom / NES, 1984)
-> Namco arcade port. NROM-128 (16 KiB PRG + 8 KiB CHR). The cleanest possible "what NES NROM can do" baseline before we hit the mapper era.
+# mappy-decompiler — Mappy (Famicom, 1984)
 
-**Links:** [Game Annotation Series](../README.md), [PPU Reference](../../../research/nes/ppu-reference.md), [APU Reference](../../../research/nes/apu-reference.md), [Mappers Reference](../../../research/nes/mappers-reference.md), source: [`raw/mappy_bank_FF.asm`](../../../raw/mappy_bank_FF.asm), [`raw/mappy_bank_ram.inc`](../../../raw/mappy_bank_ram.inc), [`raw/mappy_bank_val.inc`](../../../raw/mappy_bank_val.inc)
+The working repo for reverse-engineering **Mappy** (Namco, Japan release; NROM-128: 16 KiB PRG +
+8 KiB CHR). It was the first title run through all nine gated phases of
+[emu-harness](https://github.com/chrisaacson69/emu-harness).
 
-## Why Mappy first
+**What was found is written up elsewhere.** The chapters (reset and frame structure through the
+build-tool pass) and the open-threads notes live in the
+[game-annotation](https://github.com/chrisaacson69/game-annotation/tree/main/mappy) series, where
+Mappy is paired with Adventure (Atari 2600). This repo holds the code, the symbol tables and the
+gates behind those chapters. Start with chapter 10 (*The build-tool pass*) for the summary.
 
-- **NROM-128.** Simplest cartridge — no bank switching, no IRQ, no expanded audio. The "what does the NES platform itself give you" baseline.
-- **Pre-mapper era (1984).** Before MMC1/3/5 reshaped what was possible. Lets us isolate "what the chips do" from "what the cartridge enables."
-- **Arcade port to home console** — Namco had to fit an arcade game (with sub-pixel positioning, smooth scrolling, multi-channel music) into 16 KiB. The compaction techniques are dense.
-- **Already partially annotated.** The cyneprepou4uk disassembly gives us cross-referenced RAM, named state machine constants, and the disassembler's "I don't know what this does" markers as starting points for our work.
+## Status
 
-## Source
+**All nine phases done (2026-10-27).** `py -3.14 -m emu_harness status mappy-decompiler` prints
+each phase's gate and evidence from `re-roadmap.toml`.
 
-- **`raw/mappy_bank_FF.asm`** — full PRG bank disassembly in CA65 format. Per-line: code/data analysis flags, ROM offset, bank:address, original bytes, mnemonic, comment.
-- **`raw/mappy_bank_ram.inc`** — every zero-page address documented with all its uses + cross-referenced ROM offsets.
-- **`raw/mappy_bank_val.inc`** — named constants including the 16-byte object record format and the 23-state object state machine.
-- Source from [cyneprepou4uk/NES-Games-Disassembly](https://github.com/cyneprepou4uk/NES-Games-Disassembly/tree/main/Mappy), Japanese version, CRC32 `3F0E8E0A`. That CRC is of the repo's iNES 1.0 file; our dump carries a NES 2.0 header (whole file `7354615C`) over **byte-identical PRG and CHR** (headerless `5D1301C5`, SHA1 `E22B95C6…6A2256B`), so the chapters and the disassembly describe the same ROM.
+| Artifact | What it is |
+|---|---|
+| `re-roadmap.toml` | phase status, gates, evidence; the numbers live here |
+| `labels.toml` | the code symbol table (473 labels) |
+| `vars.toml` | RAM variables (210) + the 16-field object-record template |
+| `mappy_labeled.asm` | the generated listing (`asm_gen.py`): names, layout comments, art from `listing_art.json` |
+| `Mappy (Japan).mlb` | Mesen labels (`mappy_mlb.py`); auto-loads next to the ROM |
+| `call_tree.html`, `call_graph.json` | the call graph (`call_graph.py`, `call_tree_page.py`) |
 
-## Chapters
+**Gates:** `cdl_gap.py` (CDL over real play: 0 executed bytes the listing doesn't decode),
+`sound_verify.py` (APU writes vs Mesen), `assets_verify.py --suite` (rendered rounds vs live VRAM),
+`live_verify.py --suite` (the game's per-object step over live RAM).
 
-1. [Reset and frame structure](./01-reset-and-frame-structure.md) — the NES startup sequence, NMI handler, main-loop polling pattern. The capability-shift contrast vs Adventure's hand-counted DoVSYNC.
-2. [The 16-byte object record & state machine](./02-object-records-and-states.md) — sub-pixel positioning, 23 states dispatched via indirect jump table, bonus-round dispatch swap, what changed when you have RAM to spend.
-3. [The PPU pipeline & background-as-sprites](./03-ppu-pipeline.md) — OAMDMA, dual buffers (write queue + VRAM read-back), the single-API enqueue with deferred/immediate dispatch, garbage NOPs as audio-timing safeguards, and Mappy's signature "items live in the nametable" trick.
-4. [Trampolines & physics](./04-trampolines-and-physics.md) — the bounce as a 6-state machine, tile-under-foot collision via VRAM read-back, the asymmetric "cats don't wear out trampolines" rule in 3 instructions, player-only fields decoded.
-5. [Cat AI & doors as weapons](./05-cat-ai.md) — small/fat cat types, the fat cat's "hide inside item" 2-second bonus window, multi-cat sound-wave combos via per-cat door reference, the byte-meaning dispatcher finding that re-frames "player-only" fields.
-6. [Game state & mode orchestration](./06-game-state.md) — the demo IS the game with replaced input, 16-round progression in 64 bytes, bonus-round dispatch swap, two-player swappable data blocks, the Namco copyright string as both legal notice AND title-screen render data. **Plus the Pac-Man design lineage.**
-7. [Music & sound engine](./07-music-engine.md) — 25-voice mixer feeding 4 hardware channels, voice slot order = priority rank, 4-bytes-per-channel direct register writes. **The engine is small because the APU's autonomous envelope/sweep/length-counter units do the work.**
-8. [Level data & bonus rounds](./08-level-data-and-bonus-rounds.md) — layered level data (palette, mansion, items, enemies, trampolines, blinking platforms), mansion-as-nametable, items-as-tiles, bonus rounds via dispatch swap, the engine-vs-content separation Namco pioneered in 1983.
-9. [The from-scratch re-derivation](./09-from-scratch-rederivation.md) — an independent reverse-engineering of the whole ROM from the bare binary + a 6502 emulator, **with the published disassembly forbidden as input**: all 258 functions + 152 variables + the object-record layout recovered, then chapters 1-8 revisited against it (what was confirmed, what uncertainties closed, where the byte-polymorphism showed up). Artifacts: `labels.toml`, `vars.toml`, `mappy_labeled.asm`, `Mappy (Japan).mlb`. *(Numbers as of June 2026; chapter 10 supersedes them.)*
-10. [The build-tool pass](./10-build-tool-pass.md) — the same ROM run through emu-harness's nine gated phases, each checked against something lower than the listing: a CDL over real play (0 undecoded executed bytes), Mesen's APU writes (14,045 identical), live VRAM and screenshots (4 round types exact, 240/240 rows), and the game's own per-object step over live RAM (425,547 steps identical, planted faults caught). Corrects chapters 7-9 (no object VM: `$F606` is the sound engine; "blinking platforms" are floor traps; the record's fields) and lists the library fixes Mappy forced.
+## Setup
 
-**Current artifacts** (all regenerated by the tools; `re-roadmap.toml` holds each gate's evidence): `labels.toml` (473 labels), `vars.toml` (210 variables + the 16-field record template), `mappy_labeled.asm` (asm_gen: names, layout comments, ASCII art from `listing_art.json`), `Mappy (Japan).mlb`; pictures via `render_assets.py OUT_DIR`, sounds via `sound_capture.py --wav DIR` (renders are ROM-derived and not committed); gates: `cdl_gap.py`, `sound_verify.py`, `assets_verify.py --suite`, `live_verify.py --suite`.
+- `py -3.14 -m pip install -e ../emu-harness` (the sibling convention: clone both side by side).
+- Supply your own ROM as `Mappy (Japan).nes` in this folder. ROMs, CHR, renders (`*.png`) and
+  emulator output (`_scratch/`) are gitignored: they are copyrighted or regenerable.
+- Pictures: `render_assets.py OUT_DIR`. Sounds: `sound_capture.py --wav DIR`.
 
-## The throughline question for every chapter
+## History
 
-Adventure's spine was *what tricks Robinett used to fit a world in 4 KB*. Mappy's spine is different:
-
-> **What does this code do that Adventure couldn't have?**
-
-Each chapter should make the storytelling-vs-logic shift visible — capability gained, capability still limited, and what programmers spent the new headroom on.
-
-## LLM-interpretation log axes (Mappy edition)
-
-Adventure's LLM log tracked three input types: structure, source comments, chip docs. Mappy adds a fourth — and clarifies a fifth:
-
-1. **Pure structure** — same as before
-2. **Disassembler's labels and cross-refs** — `vec_C031_RESET`, `ram_nmi_trigger_flag`, the documented state constants. These are *another* annotator's prior interpretation, not the original programmer's.
-3. **Chip docs** — PPU, APU, NROM mapper from `research/nes/`
-4. **Cumulative chapter knowledge** — same role as before, plus carrying lessons from Adventure
-5. **Where the disassembler's interpretation was right / wrong / suspicious** — explicit, per chapter
-
-The 5th axis is the discipline we owe when working over someone else's annotation. Trusting blindly is unwise; ignoring is wasteful; tracking the diff is the experiment.
-
-## Tags
-
-[6502](../../../tags/6502.md) · [assembly](../../../tags/assembly.md) · [reverse-engineering](../../../tags/reverse-engineering.md)
+Split out of `game-annotation/mappy/` on 2026-10-27 with its history (`git subtree split`), because
+emu-harness keeps each game's adapter in that game's own repo. Commit hashes written inside
+`re-roadmap.toml` as "game-annotation <hash>" refer to that repo's history, not this one.

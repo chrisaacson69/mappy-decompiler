@@ -1,0 +1,22 @@
+# === ROMs and copyrighted game binaries — NEVER commit ===
+*.nes
+*.rom
+*.bin
+*.chr
+*.a26
+*.int
+*.sfc
+*.smc
+*.zip
+
+# === ROM-derived render output (regenerate via the tools) — copyrighted imagery ===
+*.png
+
+# === Machine-local / editor / caches ===
+**/.claude/
+**/__pycache__/
+*.pyc
+.DS_Store
+
+# === Run output (emulator traces) ===
+_scratch/

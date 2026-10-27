@@ -1,4 +1,6 @@
-# re-roadmap.toml: where Mappy stands, read by `py -3.14 -m emu_harness status game-annotation/mappy`.
+# re-roadmap.toml: where Mappy stands, read by `py -3.14 -m emu_harness status mappy-decompiler`.
+# The chapters and open-threads notes live in the sibling game-annotation repo (mappy/); paths below
+# that start ../game-annotation/mappy/ point there.
 # Phases and gates: emu-harness PHASES.md. First filled 2026-10-26 from the chapters, the open-threads
 # notes and emu-harness MIGRATION.md (the build tool's first trial project).
 
@@ -7,21 +9,21 @@ name    = "Mappy (Japan)"
 track   = "native"
 machine = "nes"
 profile = ""
-entry   = ["README.md", "10-build-tool-pass.md", "09-from-scratch-rederivation.md", "NOTES-open-threads.md"]
+entry   = ["../game-annotation/mappy/README.md", "../game-annotation/mappy/10-build-tool-pass.md", "../game-annotation/mappy/09-from-scratch-rederivation.md", "../game-annotation/mappy/NOTES-open-threads.md"]
 
 [phase.classify]
 status   = "done"
 gate     = "Native, real-time: a vblank-synced frame loop ($C06D) driving word-table JMP (ind) dispatch (object states $DA42 x23, game mode $C356 x20). NROM-128 (mapper 0), so the static-runtime join is free."
 checked  = "2026-10-26"
 toolset  = "aba120d"
-evidence = ["01-reset-and-frame-structure.md", "09-from-scratch-rederivation.md"]
+evidence = ["../game-annotation/mappy/01-reset-and-frame-structure.md", "../game-annotation/mappy/09-from-scratch-rederivation.md"]
 
 [phase.recon]
 status   = "done"
 gate     = "machines.nes.memory.Cart: mapper 0, PRG 16 KiB, no battery, vertical mirroring; vectors NMI $C2EF, RESET $C031, IRQ $C304 (same as ch1/ch9). One fixed PRG bank, so no windows to vote."
 checked  = "2026-10-26"
 toolset  = "aa8fa5a"
-evidence = ["01-reset-and-frame-structure.md", "repo_header.bin", "repo_CHR_ROM.chr"]
+evidence = ["../game-annotation/mappy/01-reset-and-frame-structure.md", "repo_header.bin", "repo_CHR_ROM.chr"]
 
 [phase.discover]
 status   = "done"
@@ -103,14 +105,14 @@ closed = "2026-10-26: the template wins and is proven: +0/+1 X and +2/+3 Y as 8.
 [[revisit]]
 item   = "$7B is named draw_data_ptr but is the per-stage enemy counter (set $E5D8, dec $E660, tested $E682); then sweep the other role = pointer vars touched only by inc/dec/#imm."
 phase  = "data"
-source = "NOTES-open-threads.md (symbol-table cleanups)"
+source = "../game-annotation/mappy/NOTES-open-threads.md (symbol-table cleanups)"
 status = "closed"
 closed = "2026-10-26: neither name. $7B = round_items_remaining: set from the level descriptor's first byte >>3 ($E5D8), decremented when the player reaches an item ($E680), 0 ends the round ($E682). The pointer reading came from var_xref decoding frameitem blobs; that defect is fixed."
 
 [[revisit]]
 item   = "Polymorphic record fields (+4, +8..+E, +B = player velocity | cat door ref) need context-tagged names; one name per offset cannot hold them."
 phase  = "data"
-source = "09-from-scratch-rederivation.md (cross-cutting finding 1)"
+source = "../game-annotation/mappy/09-from-scratch-rederivation.md (cross-cutting finding 1)"
 status = "closed"
 closed = "2026-10-26: moved to naming (context names are naming work). Data phase left the unproven offsets as field_8..field_D and kept the 8 in-table per-address notes ($041F $0420 $0421 $0423 $0424 $0427 $042A $042F: slot 1/2 fields, and $0420,x/$0423,x index the table from slot 2) as evidence; see the naming revisit."
 
