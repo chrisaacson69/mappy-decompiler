@@ -25,13 +25,21 @@ ROM = (HERE / "Mappy (Japan).nes").read_bytes()
 VOICES, SOUND_INIT, SOUND_TICK, TRIGGER = 25, 0xF4B5, 0xF4F1, 0x0600
 FRAMES = 3600                   # 60 s: a voice still writing in its last 10 s is reported as looping
 CHANNELS = {0x4000: "pulse1", 0x4004: "pulse2", 0x4008: "triangle", 0x400C: "noise", 0x4010: "dmc"}
-# event -> the trigger voices its writer sets together (vars.toml snd_*: voice k = trigger $0600 + k)
+# event -> (the trigger voices its writer sets together, how many frames the game keeps writing them).
+# Voice k = trigger $0600 + k (vars.toml snd_*). The engine clears a trigger when its voice ends, so a
+# held trigger restarts it: holds were measured from the game's own writes (sound_verify's Mesen watch:
+# the door wave 119-148 frames, round music the whole round; HURRY 125 frames from the round-timer
+# census). "loop" = held for good: rendered as two of the loops find_loop finds.
 EVENTS = {
-    "voice_00": [0], "bonus_results": [1, 24], "extra_life": [2, 3, 4], "hurry": [5], "bonus_goal": [6],
-    "drop": [7], "collect": [8], "door_wave": [9], "trampoline": [10], "death": [11, 12, 13],
-    "bonus_intro": [14, 15, 16], "round_clear": [17, 18], "round_music": [19, 20], "game_over": [21, 22, 23],
+    "voice_00": ([0], 1), "bonus_results": ([1, 24], 1), "extra_life": ([2, 3, 4], 1), "hurry": ([5], 125),
+    "bonus_goal": ([6], 1), "drop": ([7], 1), "collect": ([8], 1), "door_wave": ([9], 123),
+    "trampoline": ([10], 1), "death": ([11, 12, 13], 1),
+    # triggered once at the bonus intro; it runs 2,446 frames, the intro (210) plus the bonus limit (2,220)
+    "bonus_round_music": ([14, 15, 16], 1),
+    "round_clear": ([17, 18], 1), "round_music": ([19, 20], "loop"), "game_over": ([21, 22, 23], 1),
 }
-TAIL, CAP = 120, 2700           # frames after the last value change; 45 s for the looping music
+CAP = 4000                      # frames: longer than any one-shot here (bonus_round_music, 2,446)
+LEAD, TAIL_S = 0.010, 0.3       # trim: seconds kept before the first and after the last sound
 
 
 class APULog(Bus):
@@ -55,18 +63,35 @@ def call(cpu, entry):
     cpu.run_until({0xFFFF}, max_steps=2_000_000)
 
 
-def capture(voice, frames=FRAMES):
+def capture(voice, frames=FRAMES, hold=1):
     """-> [(frame, addr, value)]: frame 0 is the init, frames 1.. one update_sound_frame each. `voice`
-    is one voice or a list triggered together."""
+    is one voice or a list triggered together; the triggers are written before each of the first
+    `hold` frames, as the game does for a held sound."""
     bus = APULog(ROM)
     cpu = CPU6502(bus)
     call(cpu, SOUND_INIT)
-    for v in (voice if isinstance(voice, list) else [voice]):
-        bus.ram[TRIGGER + v] = 1
+    voices = voice if isinstance(voice, list) else [voice]
     for f in range(1, frames + 1):
+        if f <= hold:
+            for v in voices:
+                bus.ram[TRIGGER + v] = 1
         bus.frame = f
         call(cpu, SOUND_TICK)
     return bus.writes
+
+
+def find_loop(stream, max_start=1500, max_period=4000):
+    """-> (start, period) of the first frame range that repeats exactly (every APU write, in order), or None."""
+    n = max(f for f, _, _ in stream)
+    seq = [[] for _ in range(n + 1)]
+    for f, a, v in stream:
+        if f:
+            seq[f].append((a, v))
+    for period in range(120, max_period):
+        for start in range(1, min(max_start, n - 2 * period)):
+            if all(seq[f] == seq[f + period] for f in range(start, start + period)):
+                return start, period
+    return None
 
 
 def channel(addr):
@@ -82,15 +107,24 @@ def last_change(stream):
 
 
 def render_events(out_dir):
-    from emu_harness.machines.nes.apu import APU, FRAME_CYCLES, frames_to_cycles, write_wav
+    import numpy as np
+    from emu_harness.machines.nes.apu import APU, CPU_HZ, FRAME_CYCLES, RATE, frames_to_cycles, write_wav
     out_dir.mkdir(parents=True, exist_ok=True)
-    for name, voices in EVENTS.items():
-        stream = capture(voices, CAP)
-        frames = min(last_change(stream) + TAIL, CAP)
+    for name, (voices, hold) in EVENTS.items():
+        if hold == "loop":
+            stream = capture(voices, 8000, hold=8000)
+            start, period = find_loop(stream)
+            frames, note = start + 2 * period, f"loop of {period} frames ({period * FRAME_CYCLES / CPU_HZ:.2f} s) from frame {start}, x2"
+        else:
+            stream = capture(voices, CAP, hold=hold)
+            frames, note = min(last_change(stream) + 60, CAP), f"held {hold} frame(s)"
         stream = [w for w in stream if w[0] <= frames]
-        samples = APU().render(frames_to_cycles(stream), frames * FRAME_CYCLES / 1_789_773)
-        write_wav(samples, out_dir / f"{name}.wav")
-        print(f"{name:14s} voices {str(voices):14s} {frames / 60:5.1f} s  peak {samples.max():.2f}")
+        x = APU().render(frames_to_cycles(stream), frames * FRAME_CYCLES / CPU_HZ)
+        live = np.flatnonzero(np.abs(np.diff(x)) > 1e-6)                # the samples where anything sounds
+        a = max(0, live[0] - int(LEAD * RATE))
+        b = len(x) if hold == "loop" else min(len(x), live[-1] + int(TAIL_S * RATE))
+        gain = write_wav(x[a:b], out_dir / f"{name}.wav", peak=0.89)   # -1 dBFS
+        print(f"{name:18s} voices {str(voices):13s} {(b - a) / RATE:5.2f} s  gain x{gain / 0.9:4.1f}  {note}")
 
 
 def main():
