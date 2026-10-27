@@ -10,7 +10,8 @@ jump-table bytes emit as `.word handler_name`; uncovered bytes emit as `.byte` d
 """
 import json, re, sys, bisect
 from pathlib import Path
-from code_map import table_lines, label_names, var_names   # tables; labels.toml / vars.toml via tomllib
+from code_map import table_lines, label_names, var_names, symbols   # tables; labels.toml / vars.toml via tomllib
+import tomllib
 from emu_harness.cpu.m6502 import disasm as disasm6502   # the shared 6502 tables (emu-harness rows B / A3)
 from emu_harness.cpu.m6502.cpu import NMI_VECTOR, RESET_VECTOR, IRQ_VECTOR
 OPS, MODE_LEN, fmt = disasm6502.OPS, disasm6502.MODE_LEN, disasm6502.fmt_operand
@@ -27,6 +28,61 @@ VAR=var_names()
 # listing_art.json (render_assets.py --art): ASCII art of each picture / draw handler's first pose, and
 # the decoded string of each text blob, printed as comments under its label
 ART=json.loads((HERE/"listing_art.json").read_text(encoding="utf-8")) if (HERE/"listing_art.json").exists() else {}
+
+
+def clean(why):
+    """A symbol's why, as a reader's description: the provenance prefix ('Data walk 2026-10-26: ') and the
+    rename history (' Was ...', ' Kept (...', ' Earlier note: ...') left out."""
+    # 'Data walk 2026-10-26: ', 'Variables round 2 (2026-10-26): ', 'Assets 2026-10-27 (render_assets.py ...): '
+    why = re.sub(r'^[^:]{0,90}?20\d\d-\d\d-\d\d\)?(?: \([^)]*\))?: ', '', why or '')
+    return re.split(r" (?:Was '|Kept \(name checked|Earlier note:)", why)[0].strip()
+
+
+def wrap(text, width=96):
+    words, lines, cur = text.split(), [], ""
+    for w in words:
+        if cur and len(cur) + 1 + len(w) > width:
+            lines.append(cur); cur = w
+        else:
+            cur = f"{cur} {w}" if cur else w
+    return lines + ([cur] if cur else [])
+
+
+# data labels: their description is the layout comment printed above the art
+DESC={int(e["addr"],16): clean(e.get("why","")) for e in symbols("label") if e.get("kind")=="data"}
+
+# the RAM structures, for the header: (title, base, stride, count, field source); every field's name and
+# meaning comes from vars.toml (the record's from its [[obj_field]] template), so the header cannot drift
+STRUCTS=[
+    ("object records: slot 0 Mappy, 1 the goal balloon / the coin, 2 Goro, 3-8 Meowkies", 0x0400, 16, "9", "obj_field"),
+    ("trampolines", 0x0200, 8, "trampoline_table_len / 8", None),
+    ("items (normal rounds) / balloons (bonus rounds)", 0x0260, 8, "item_table_len / 8", None),
+    ("doors", 0x02B0, 8, "door_table_len / 8", None),
+    ("door waves", 0x04A0, 8, "4", None),
+    ("floor traps (rounds 12-14)", 0x0090, 8, "2", None),
+    ("stage parameters (load_stage_params, from tbl_stage_params)", 0x0063, 6, "1", None),
+    ("round timer", 0x0060, 3, "1", None),
+    ("OAM shadow (one sprite per entry)", 0x0700, 4, "64", None),
+]
+
+
+def struct_header():
+    vdoc=tomllib.loads((HERE/"vars.toml").read_text(encoding="utf-8"))
+    vars_by={int(e["addr"],16): e for e in vdoc["var"]}
+    tmpl={int(f["offset"],16): f for f in vdoc.get("obj_field",[])}
+    out=["; ---- RAM structures (generated from vars.toml: each field's name and meaning) ----"]
+    for title, base, stride, count, src in STRUCTS:
+        out.append(f";")
+        out.append(f"; {title}: ${base:04X}, {stride} bytes each, x {count}")
+        for off in range(stride):
+            e = tmpl.get(off) if src == "obj_field" else vars_by.get(base + off)
+            if e is None:
+                continue
+            first = re.split(r"(?<=[.;])\s", clean(e.get("why","")), maxsplit=1)[0]
+            first = re.sub(r"^(?:record|trampoline|item|bonus target|balloon|door|door wave|slot \d) \+\w+:? ?", "", first)
+            first = "" if first.strip(" .") == "" else first
+            out.append(f";   +{off:X}  {e['name']:24s} {first[:84]}".rstrip())
+    return out
 # hardware register names
 HW={0x2000:"PPUCTRL",0x2001:"PPUMASK",0x2002:"PPUSTATUS",0x2003:"OAMADDR",0x2004:"OAMDATA",
     0x2005:"PPUSCROLL",0x2006:"PPUADDR",0x2007:"PPUDATA",0x4014:"OAMDMA",0x4015:"APUSTATUS",
@@ -83,9 +139,13 @@ def sym(a):
 out=[]
 out.append("; Mappy (Japan) PRG $C000-$FFFF  --  labeled disassembly, generated from")
 out.append("; labels.toml + vars.toml + jump_tables.txt (from-scratch RE; no external labels).\n")
+out += struct_header()
+out.append("")
 for e in entries:
     nm=FUNC.get(e, {0xC031:"reset_cold_boot_init",0xC2EF:"nmi_sound_tick",0xC304:"irq_rti_stub"}.get(e,f"L_{e:04X}"))
     out.append(f"\n{nm}:")
+    for line in wrap(DESC.get(e, "")):                # a data label's layout / meaning
+        out.append(f"    ; {line}")
     for line in ART.get(f"{e:04X}", []):              # render_assets.py --art: the picture, pose or text
         out.append(f"    ;   {line}".rstrip())
     pc=cpu(e); endpc=end_of[e] if end_of[e]>0xFFFF else cpu(end_of[e])  # last entry: 0x10000 must not cpu()-wrap to $C000

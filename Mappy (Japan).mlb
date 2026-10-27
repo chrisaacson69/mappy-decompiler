@@ -261,7 +261,7 @@ NesPrgRom:0C41:tbl_palhud_ptr:[HIGH] 5x 2-byte LE pointers to palhud_block_* dra
 NesPrgRom:0FA6:tbl_frameitem_ptr:[HIGH] 6x 2-byte LE pointers to frameitem_block_* blobs ($CFB2..$D0C5). Indexed by item_idx (round-attr byte2) and by a constant Y=8 (the fixed pla
 NesPrgRom:1185:tbl_mansion_ptr:[HIGH] 7x 2-byte LE pointers to mansion_block_* RLE stamp blobs ($D193..$D483). Indexed by mansion_idx (round-attr byte3), plus Y=$0C (bonus mansio
 NesPrgRom:0C4B:palhud_block_00:[HIGH] tbl_palhud_ptr[Y=0]; palhud_idx 0 (not selected by any round; title/HUD-header context per ch8). [count][ppu_addr_hi][ppu_addr_lo][tiles..][
-NesPrgRom:0C60:palhud_block_02:[HIGH] tbl_palhud_ptr[Y=2]; palhud_idx 2 (unused by rounds; palette-init context per ch8).
+NesPrgRom:0C60:palhud_block_02:[HIGH] Layout 2026-10-27: the title screen's draw blocks (ppu_run_draw_blocks entry 2, draw_title_screen): the background palette, the only sprite 
 NesPrgRom:0CEF:palhud_block_04:[HIGH] tbl_palhud_ptr[Y=4]; palhud_idx 4 -> rounds 0,2,4,6,8,10,12,14 (includes all bonus).
 NesPrgRom:0D03:palhud_block_06:[HIGH] tbl_palhud_ptr[Y=6]; palhud_idx 6 -> rounds 3,7,11,15.
 NesPrgRom:0D17:palhud_block_08:[HIGH] tbl_palhud_ptr[Y=8]; palhud_idx 8 -> rounds 1,5,9,13.
@@ -356,7 +356,7 @@ NesPrgRom:3263:tbl_balloon_pictures:[HIGH] Assets 2026-10-27 (render_assets.py d
 NesPrgRom:3277:ptr_popped_balloon_picture:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): word -> the popped balloon's erase picture. Was 'ptr_popped_target_picture'.
 NesPrgRom:327F:tbl_balloon_lists:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): balloon lists by is_bonus_round. Was 'tbl_bonus_target_lists'. Earlier note:
 NesPrgRom:33AA:hurry_sprite_record:[HIGH] Data walk 2026-10-26: 8 bytes copied to $0490 at the time limit: the HURRY sprite (tick_round_timer).
-NesPrgRom:33DF:tbl_stage_params:[HIGH] Data walk 2026-10-26: 6 bytes per stage_index into $63-$68 (load_stage_params).
+NesPrgRom:33DF:tbl_stage_params:[HIGH] Layout 2026-10-27: 6 bytes per stage_index (32 stages), copied to $63-$68 by load_stage_params: +0 player_speed, +1 cat_speed, +2 stun_time 
 NesPrgRom:383B:tbl_note_periods:[HIGH] Assets 2026-10-27: one chromatic octave, A1 to G#2, as 12 big-endian 11-bit APU periods ($07F2 = A1 55.0 Hz by f = CPU / (16 (t + 1))), all 
 NesPrgRom:3853:tbl_voice_stream_ptrs:[HIGH] Data walk 2026-10-26: stream pointer words by voice (load_voice_stream_ptr).
 NesPrgRom:3879:voice13_stream:[HIGH] Data walk 2026-10-26: word -> voice 13's stream (sound_streams_next_voice).
@@ -688,7 +688,7 @@ NesInternalRam:0403:obj_y:obj record +3 [HIGH] Variables round 2 (2026-10-26): r
 NesInternalRam:0404:obj_anim:obj record +4 [HIGH] Variables round 2 (2026-10-26): record +4: the draw handler index (dispatch_object_draw_by_anim); 0 
 NesInternalRam:0405:obj_type:obj record +5 [HIGH] Assets 2026-10-27: record +5 is the object type: 0 Mappy (the player), 1 the coin (the late chaser a
 NesInternalRam:0406:obj_dir:obj record +6 [HIGH] Variables round 2 (2026-10-26): record +6: 1 right, $FF left. Was 'obj_facing'. Top-down 2026-10-26:
-NesInternalRam:0407:obj_timer:obj record +7 [HIGH] HIGH
+NesInternalRam:0407:obj_timer:obj record +7 [HIGH] Layout 2026-10-27: record +7: the state's frame counter or timer (counts up in the walk, down in the
 NesInternalRam:0408:obj_tile:obj record +8 [HIGH] Variables round 2 (2026-10-26): record +8: the tile the render thread read back (queue_tile_read). W
 NesInternalRam:0409:obj_blocked:obj record +9 [HIGH] Variables round 2 (2026-10-26): record +9: 1 while a closed door stands in the walker's way (walker_
 NesInternalRam:040A:obj_target_floor:obj record +A [HIGH] Variables round 2 (2026-10-26): record +A: a cat's target floor row (choose_cat_target_floor); the s
@@ -696,4 +696,4 @@ NesInternalRam:040B:obj_vy_or_link:obj record +B [LOW] Variables round 2 (2026-1
 NesInternalRam:040C:obj_gravity:obj record +C [HIGH] Variables round 2 (2026-10-26): record +C: added to +B every hop frame (move_hop_arc): 9 at a hop. W
 NesInternalRam:040D:obj_intent:obj record +D [HIGH] Variables round 2 (2026-10-26): record +D: the direction to take at the next chance: the pad, the at
 NesInternalRam:040E:obj_buttons:obj record +E [MED] Variables round 2 (2026-10-26): record +E: the player's button history (set_object_intent). Was 'obj
-NesInternalRam:040F:obj_state:obj record +F [HIGH] Proven by code + data (2026-10-26 data phase): $DA2C ldy #$0F / lda ($1E),y / tax / lda $DA42,x -> j
+NesInternalRam:040F:obj_state:obj record +F [HIGH] Layout 2026-10-27: record +F: the state, an index into tbl_object_state_handlers ($DA42), or tbl_bon

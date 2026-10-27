@@ -1,8 +1,94 @@
 ; Mappy (Japan) PRG $C000-$FFFF  --  labeled disassembly, generated from
 ; labels.toml + vars.toml + jump_tables.txt (from-scratch RE; no external labels).
 
+; ---- RAM structures (generated from vars.toml: each field's name and meaning) ----
+;
+; object records: slot 0 Mappy, 1 the goal balloon / the coin, 2 Goro, 3-8 Meowkies: $0400, 16 bytes each, x 9
+;   +0  obj_x_frac               x fraction.
+;   +1  obj_x                    tile x.
+;   +2  obj_y_frac               y fraction.
+;   +3  obj_y                    tile row.
+;   +4  obj_anim                 the draw handler index (dispatch_object_draw_by_anim);
+;   +5  obj_type                 is the object type: 0 Mappy (the player), 1 the coin (the late chaser after HURRY),
+;   +6  obj_dir                  1 right, $FF left.
+;   +7  obj_timer                the state's frame counter or timer (counts up in the walk, down in the timed states)
+;   +8  obj_tile                 the tile the render thread read back (queue_tile_read).
+;   +9  obj_blocked              1 while a closed door stands in the walker's way (walker_meets_closed_door);
+;   +A  obj_target_floor         a cat's target floor row (choose_cat_target_floor);
+;   +B  obj_vy_or_link           vertical velocity in a hop (move_hop_arc), the trampoline index in a bounce, the car
+;   +C  obj_gravity              added to +B every hop frame (move_hop_arc): 9 at a hop.
+;   +D  obj_intent               the direction to take at the next chance: the pad, the attract script or the cat's c
+;   +E  obj_buttons              the player's button history (set_object_intent).
+;   +F  obj_state                the state, an index into tbl_object_state_handlers ($DA42), or tbl_bonus_state_handl
+;
+; trampolines: $0200, 8 bytes each, x trampoline_table_len / 8
+;   +0  tramp_bounce_anims       (8-byte records): bounce animations still to play (land_on_trampoline, animate_tramp
+;   +1  tramp_frame              the 10-frame bounce frame.
+;   +2  tramp_bounces_left       3 at load, -1 per player bounce, $80 broken;
+;   +3  tramp_pos_index          index into tbl_trampoline_addrs.
+;   +4  tramp_x                  tile x.
+;   +5  tramp_y                  tile row.
+;
+; items (normal rounds) / balloons (bonus rounds): $0260, 8 bytes each, x item_table_len / 8
+;   +0  item_state               item record +0: spawn_objects_from_level_descriptor sets 2 per item ($E5E1);
+;   +1  item_kind                kind 00-12 (picture by pair, address, score).
+;   +2  item_timer               60 frames of points after collection (show_item_points).
+;   +3  item_marked              set on the partner of the last item collected (it blinks and pays the streak).
+;   +4  item_x                   item record +4: compared with the player's obj_x_hi ($0401) at $E675 to detect a pic
+;   +5  item_y                   item record +5: compared with the player's obj_y_hi ($0403) at $E66D.
+;   +6  balloon_addr             its nametable address.
+;   +7  balloon_addr_hi          high byte.
+;
+; doors: $02B0, 8 bytes each, x door_table_len / 8
+;   +0  door_swinging            1 while the 5-frame swing runs (open_door, animate_door_swing).
+;   +1  door_kind                bit 1 open, bit 2 wave direction, bit 3 wave door;
+;   +2  door_addr                nametable address (draw_door_kind_y).
+;   +3  door_addr_hi             high byte.
+;   +4  door_x                   tile x.
+;   +5  door_y                   tile row.
+;   +6  door_swing_frame         0-4 during the swing.
+;   +7  door_opener              the record that opened it (0 = the player, who earns the knockback score).
+;
+; door waves: $04A0, 8 bytes each, x 4
+;   +0  wave_x_frac              (4 records of 8 at $04A0).
+;   +1  wave_x
+;   +2  wave_y_frac
+;   +3  wave_y
+;   +5  wave_state               0 idle, 1 moving, 2 score display.
+;   +6  wave_dir
+;
+; floor traps (rounds 12-14): $0090, 8 bytes each, x 2
+;   +0  floor_trap_state         the first trap's state ($98 the second): 2 armed, 3 pressed, 1 open, 0 gone.
+;   +2  floor_trap_addr          the trap's nametable address (draw_floor_trap_frame).
+;   +3  floor_trap_addr_hi       high byte.
+;   +4  floor_trap_x             tile x (player_on_floor_trap).
+;   +5  floor_trap_y             tile row.
+;   +6  floor_trap_timer         120 frames open (update_floor_trap).
+;
+; stage parameters (load_stage_params, from tbl_stage_params): $0063, 6 bytes each, x 1
+;   +0  player_speed             stage param byte 0: the player's x speed (object_speed);
+;   +1  cat_speed                stage param byte 1: the cats' x speed (object_speed).
+;   +2  stun_time                stage param byte 2: frames a door-knocked cat stays stunned, also the knockout and d
+;   +3  hurry_seconds            stage param byte 3: seconds until HURRY (tick_round_timer).
+;   +4  chaser_seconds           stage param byte 4: seconds after HURRY until slot 1 is released.
+;   +5  cat_slots_end            stage param byte 5: the record offset after the last cat ($60, $70, $80: 4-6 cats);
+;
+; round timer: $0060, 3 bytes each, x 1
+;   +0  round_timer_phase        0 counting, 1 HURRY, 2 counting again, 3 slot 1 released (tick_round_timer);
+;   +1  round_timer_frames       frames to 60 (tick_round_timer).
+;   +2  round_timer_seconds      seconds against the stage's two limits (tick_round_timer).
+;
+; OAM shadow (one sprite per entry): $0700, 4 bytes each, x 64
+;   +0  oam_shadow               the sprite page write_sprite_to_oam fills.
+;   +1  oam_tile                 OAM shadow +1 of each 4-byte sprite (write_sprite_to_oam).
+;   +2  oam_attr                 OAM shadow +2.
+;   +3  oam_x                    OAM shadow +3.
+
 
 rom_copyright_ascii:
+    ; ASCII 'COPYRIGHT 1983 1984 NAMCO LTD.ALL RIGHTS RESERVED' (49 bytes). choose_cat_target_floor
+    ; reads $C000 + frame_counter as its random bit, so the cats' coin flips come from this text and
+    ; the code after it.
     ;   "COPYRIGHT 1983 1984 NAMCO LTD.ALL RIGHTS RESERVED"
     C000: 43          .byte $43
     C001: 4F          .byte $4F
@@ -192,6 +278,8 @@ build_sprite_row_oam_shadow:
     C122: 60          rts
 
 txt_pause_sprites:
+    ; D0 D2 DC CF D4: PAUSE in the sprite pattern table, read by build_sprite_row_oam_shadow (proven
+    ; in the variables pass).
     C123: D0          .byte $D0
     C124: D2          .byte $D2
     C125: DC          .byte $DC
@@ -211,6 +299,8 @@ start_game_thread:
     C13B: 6C 1E 00    jmp (obj_record_ptr)   ; $001E
 
 game_thread_task:
+    ; one 3-byte task record [handler $C84F start_game_thread's body][stack slot $3F], read by
+    ; start_game_thread.
     C13E:            .word title_screen
     C140: 3F          .byte $3F
 
@@ -386,6 +476,8 @@ read_joypad:
     C257: 60          rts
 
 pad_lr_to_direction:
+    ; 00 FF 01 00: read_and_decode_input maps the pad's left/right bits to a direction (none, -1, +1,
+    ; both = none).
     C258: 00          .byte $00
     C259: FF          .byte $FF
     C25A: 01          .byte $01
@@ -559,6 +651,7 @@ dispatch_object_draw_by_anim:
     C353: 6C 1C 00    jmp (aux_ptr)   ; $001C
 
 tbl_draw_by_anim:
+    ; 19 handler words, indexed by anim & $FE (dispatch_object_draw_by_anim).
     C356:            .word handler_rts_noop
     C358:            .word draw_walk_cycle
     C35A:            .word draw_type_pose_10
@@ -746,6 +839,8 @@ write_sprite_to_oam:
     C454: 60          rts
 
 write_sprite_to_oam_data_c455:
+    ; 00 F0 20 D0 40 B0 60 90 ...: EORed with X by write_sprite_to_oam, indexed by the attribute's low
+    ; nibble.
     C455: 00          .byte $00
     C456: F0          .byte $F0
     C457: 20          .byte $20
@@ -781,12 +876,15 @@ sprite_attr_with_priority:
     C47B: 60          rts
 
 tbl_type_sprite_palette:
+    ; 00 02 02 01: the sprite palette per type (player 0, types 1 and 2 palette 2, cats 1),
+    ; load_type_sprite_palette.
     C47C: 00          .byte $00
     C47D: 02          .byte $02
     C47E: 02          .byte $02
     C47F: 01          .byte $01
 
 tbl_pose_tile_base:
+    ; first tile of each pose's metasprite, indexed by the pose number (load_metasprite_tile_base).
     C480: 04          .byte $04
     C481: 00          .byte $00
     C482: 04          .byte $04
@@ -1018,6 +1116,8 @@ draw_score_tile_if_any:
     C572: 60          rts
 
 tbl_wave_score_tiles:
+    ; sprite tiles, 0 = none, read by draw_score_tile_if_any for the door wave's score
+    ; (draw_wave_score).
     C573: 00          .byte $00
     C574: 00          .byte $00
     C575: 58          .byte $58
@@ -2041,10 +2141,12 @@ update_bonus_round_frame:
     CB87: 4C AB D5    jmp update_score   ; $D5AB
 
 ptr_player_text:
+    ; word -> $CB8C, the sprite text block PLAYER (draw_player_number_text).
     CB8A: 8C          .byte $8C
     CB8B: CB          .byte $CB
 
 spr_text_player:
+    ; [x 58 00][y 78][7] P L A Y E R blank, sprite glyphs (draw_sprite_text).
     ;   "PLAYER "
     CB8C: 58          .byte $58
     CB8D: 00          .byte $00
@@ -2059,10 +2161,12 @@ spr_text_player:
     CB96: 00          .byte $00
 
 ptr_game_over_text:
+    ; word -> $CB99 (draw_game_over_text).
     CB97: 99          .byte $99
     CB98: CB          .byte $CB
 
 spr_text_game_over:
+    ; [x 58 00][y 88][9] G A M E blank O V E R.
     ;   "GAME OVER"
     CB99: 58          .byte $58
     CB9A: 00          .byte $00
@@ -2079,10 +2183,12 @@ spr_text_game_over:
     CBA5: D5          .byte $D5
 
 ptr_ready_text:
+    ; word -> $CBA8 (play_round).
     CBA6: A8          .byte $A8
     CBA7: CB          .byte $CB
 
 spr_text_ready:
+    ; [x 60 00][y 88][5] R E A D Y.
     ;   "READY"
     CBA8: 60          .byte $60
     CBA9: 00          .byte $00
@@ -2126,6 +2232,8 @@ draw_title_screen:
     CBEC: 60          rts
 
 title_logo_row_addrs:
+    ; 4 nametable words $2107 $2127 $2147 $2167: the rows of the 20-tile title logo
+    ; (draw_title_screen).
     CBED: 07          .byte $07
     CBEE: 21          .byte $21
     CBEF: 27          .byte $27
@@ -2182,6 +2290,9 @@ ppu_run_draw_blocks:
     CC3F: F0 E0       beq @CC21   ; $CC21
 
 tbl_palhud_ptr:
+    ; 5x 2-byte LE pointers to palhud_block_* draw-command blobs ($CC4B/$CC60/$CCEF/$CD03/$CD17).
+    ; Indexed by palhud_idx (round-attr byte1) via ppu_run_draw_blocks ($CC15: lda $cc41,y).
+    ; Palette/HUD/title template layer.
     CC41:            .word palhud_block_00
     CC43:            .word palhud_block_02
     CC45:            .word palhud_block_04
@@ -2189,6 +2300,8 @@ tbl_palhud_ptr:
     CC49:            .word palhud_block_08
 
 palhud_block_00:
+    ; tbl_palhud_ptr[Y=0]; palhud_idx 0 (not selected by any round; title/HUD-header context per ch8).
+    ; [count][ppu_addr_hi][ppu_addr_lo][tiles..][0-term] blocks.
     CC4B: 11          .byte $11
     CC4C: 4B          .byte $4B
     CC4D: 20          .byte $20
@@ -2212,6 +2325,10 @@ palhud_block_00:
     CC5F: 00          .byte $00
 
 palhud_block_02:
+    ; the title screen's draw blocks (ppu_run_draw_blocks entry 2, draw_title_screen): the background
+    ; palette, the only sprite palette write in the game ($3F10), and the text 1 PLAYER, 2 PLAYERS,
+    ; (c) 1983 1984 NAMCO LTD., ALL RIGHTS RESERVED. Blocks are [count][address lo][address hi][count
+    ; bytes], 0 ends.
     ;   $21EB: "1 PLAYER"
     ;   $222B: "2 PLAYERS"
     ;   $22E5: "(c) 1983 1984 NAMCO LTD."
@@ -2361,6 +2478,7 @@ palhud_block_02:
     CCEE: 00          .byte $00
 
 palhud_block_04:
+    ; tbl_palhud_ptr[Y=4]; palhud_idx 4 -> rounds 0,2,4,6,8,10,12,14 (includes all bonus).
     CCEF: 10          .byte $10
     CCF0: 00          .byte $00
     CCF1: 3F          .byte $3F
@@ -2383,6 +2501,7 @@ palhud_block_04:
     CD02: 00          .byte $00
 
 palhud_block_06:
+    ; tbl_palhud_ptr[Y=6]; palhud_idx 6 -> rounds 3,7,11,15.
     CD03: 10          .byte $10
     CD04: 00          .byte $00
     CD05: 3F          .byte $3F
@@ -2405,6 +2524,7 @@ palhud_block_06:
     CD16: 00          .byte $00
 
 palhud_block_08:
+    ; tbl_palhud_ptr[Y=8]; palhud_idx 8 -> rounds 1,5,9,13.
     CD17: 10          .byte $10
     CD18: 00          .byte $00
     CD19: 3F          .byte $3F
@@ -2437,6 +2557,7 @@ init_namco_logo:
     CD38: 60          rts
 
 namco_logo_record:
+    ; 00 0C 00 14 1C: the namco logo at x $0C, row $14, anim $1C.
     CD39: 00          .byte $00
     CD3A: 0C          .byte $0C
     CD3B: 00          .byte $00
@@ -2508,6 +2629,11 @@ fill_attr_map_run:
     CDBE: 60          rts
 
 tbl_round_attributes:
+    ; Level-design-as-data: 16 rounds x 4 bytes [bonus, palhud_idx, item_idx, mansion_idx], read at
+    ; round*4 by build_stage_screen_layout ($CD56 lda $cdbf,x). byte0!=0 marks the bonus rounds
+    ; 2/6/10/14 (values $02/$04/$06/$08). bytes 1-3 are Y-offset selectors into
+    ; tbl_palhud_ptr/tbl_frameitem_ptr/tbl_mansion_ptr. Chapter 8's '64 bytes = the whole game's level
+    ; design'.
     CDBF: 00          .byte $00
     CDC0: 04          .byte $04
     CDC1: 00          .byte $00
@@ -2723,6 +2849,8 @@ dead_clear_zp_00_03:
     CF07: 60          .byte $60
 
 tbl_text_lines:
+    ; 4-byte records [nametable address][text pointer], indexed by draw_indexed_text_line: the bonus
+    ; results lines (EARNINGS / PERFECT GAME / TOTAL, decoded by rom_data.py).
     CF08: 0C          .byte $0C
     CF09: 21          .byte $21
     CF0A: 1C          .byte $1C
@@ -2745,6 +2873,8 @@ tbl_text_lines:
     CF1B: CF          .byte $CF
 
 text_line_00:
+    ; the target of tbl_text_lines at offset $00 (draw_indexed_text_line; Y 0-$10 by 4
+    ; (show_bonus_results)).
     ;   "EARNINGS"
     CF1C: 08          .byte $08
     CF1D: 0F          .byte $0F
@@ -2758,6 +2888,8 @@ text_line_00:
     CF25: 00          .byte $00
 
 text_line_04:
+    ; the target of tbl_text_lines at offset $04 (draw_indexed_text_line; Y 0-$10 by 4
+    ; (show_bonus_results)).
     ;   "oo"
     ;   "oo 200 x     ="
     CF26: 02          .byte $02
@@ -2782,6 +2914,8 @@ text_line_04:
     CF39: 00          .byte $00
 
 text_line_08:
+    ; the target of tbl_text_lines at offset $08 (draw_indexed_text_line; Y 0-$10 by 4
+    ; (show_bonus_results)).
     ;   "2000 x     ="
     CF3A: 0C          .byte $0C
     CF3B: 03          .byte $03
@@ -2799,6 +2933,8 @@ text_line_08:
     CF47: 00          .byte $00
 
 text_line_0c:
+    ; the target of tbl_text_lines at offset $0C (draw_indexed_text_line; Y 0-$10 by 4
+    ; (show_bonus_results)).
     ;   "PERFECT GAME  =  5000"
     CF48: 15          .byte $15
     CF49: 1A          .byte $1A
@@ -2825,6 +2961,8 @@ text_line_0c:
     CF5E: 00          .byte $00
 
 text_line_10:
+    ; the target of tbl_text_lines at offset $10 (draw_indexed_text_line; Y 0-$10 by 4
+    ; (show_bonus_results)).
     ;   "TOTAL  ="
     CF5F: 08          .byte $08
     CF60: 1E          .byte $1E
@@ -2878,6 +3016,9 @@ ppu_draw_rle_blocks:
     CFA5: 60          rts
 
 tbl_frameitem_ptr:
+    ; 6x 2-byte LE pointers to frameitem_block_* blobs ($CFB2..$D0C5). Indexed by item_idx (round-attr
+    ; byte2) and by a constant Y=8 (the fixed playfield frame) via ppu_draw_blocks_b ($CF69: lda
+    ; $cfa6,y). Frame + item-tile placement layer (items are nametable tiles).
     CFA6:            .word frameitem_block_00
     CFA8:            .word frameitem_block_02
     CFAA:            .word frameitem_block_04
@@ -2886,6 +3027,7 @@ tbl_frameitem_ptr:
     CFB0:            .word frameitem_block_0A
 
 frameitem_block_00:
+    ; tbl_frameitem_ptr[Y=0]; item_idx 0 -> rounds 0,1,15. Item tiles written into the nametable.
     CFB2: 01          .byte $01
     CFB3: A3          .byte $A3
     CFB4: 20          .byte $20
@@ -2929,6 +3071,7 @@ frameitem_block_00:
     CFDA: 00          .byte $00
 
 frameitem_block_02:
+    ; tbl_frameitem_ptr[Y=2]; item_idx 2 -> rounds 3,4,5.
     CFDB: 01          .byte $01
     CFDC: 93          .byte $93
     CFDD: 20          .byte $20
@@ -2982,6 +3125,7 @@ frameitem_block_02:
     D00D: 00          .byte $00
 
 frameitem_block_04:
+    ; tbl_frameitem_ptr[Y=4]; item_idx 4 -> rounds 7,8,9.
     D00E: 01          .byte $01
     D00F: 91          .byte $91
     D010: 20          .byte $20
@@ -3041,6 +3185,7 @@ frameitem_block_04:
     D046: 00          .byte $00
 
 frameitem_block_06:
+    ; tbl_frameitem_ptr[Y=6]; item_idx 6 -> rounds 11,12,13.
     D047: 01          .byte $01
     D048: 82          .byte $82
     D049: 20          .byte $20
@@ -3094,6 +3239,8 @@ frameitem_block_06:
     D079: 00          .byte $00
 
 frameitem_frame_fixed:
+    ; tbl_frameitem_ptr[Y=8]; the FIXED playfield frame, drawn EVERY round (CD8F ldy #$08). Not an
+    ; item set.
     D07A: 05          .byte $05
     D07B: 01          .byte $01
     D07C: 21          .byte $21
@@ -3171,6 +3318,7 @@ frameitem_frame_fixed:
     D0C4: 00          .byte $00
 
 frameitem_block_0A:
+    ; tbl_frameitem_ptr[Y=$0A]; item_idx $0A -> bonus rounds 2,6,10,14 (balloons).
     D0C5: 05          .byte $05
     D0C6: A2          .byte $A2
     D0C7: 20          .byte $20
@@ -3330,6 +3478,9 @@ ppu_draw_mansion_stamps:
     D184: 60          rts
 
 tbl_mansion_ptr:
+    ; 7x 2-byte LE pointers to mansion_block_* RLE stamp blobs ($D193..$D483). Indexed by mansion_idx
+    ; (round-attr byte3), plus Y=$0C (bonus mansion frame) via ppu_draw_mansion_stamps ($D126: lda
+    ; $d185,y). Mansion floor/wall/door structure layer.
     D185:            .word mansion_block_00
     D187:            .word mansion_block_02
     D189:            .word mansion_block_04
@@ -3339,6 +3490,8 @@ tbl_mansion_ptr:
     D191:            .word mansion_frame_bonus
 
 mansion_block_00:
+    ; tbl_mansion_ptr[Y=0]; mansion_idx 0 -> rounds 0,1,15. [count][data_ptr][N x ppu_addr] RLE
+    ; tile-stamp groups.
     D193: 04          .byte $04
     D194: 51          .byte $51
     D195: D3          .byte $D3
@@ -3439,6 +3592,7 @@ mansion_block_00:
     D1F4: 00          .byte $00
 
 mansion_block_02:
+    ; tbl_mansion_ptr[Y=2]; mansion_idx 2 -> rounds 3,4,5.
     D1F5: 08          .byte $08
     D1F6: 5D          .byte $5D
     D1F7: D3          .byte $D3
@@ -3550,6 +3704,7 @@ mansion_block_02:
     D261: 00          .byte $00
 
 mansion_block_04:
+    ; tbl_mansion_ptr[Y=4]; mansion_idx 4 -> rounds 7,8,9.
     D262: 02          .byte $02
     D263: 81          .byte $81
     D264: D3          .byte $D3
@@ -3671,6 +3826,7 @@ mansion_block_04:
     D2D8: 00          .byte $00
 
 mansion_block_06:
+    ; tbl_mansion_ptr[Y=6]; mansion_idx 6 -> rounds 11,12,13.
     D2D9: 08          .byte $08
     D2DA: 51          .byte $51
     D2DB: D3          .byte $D3
@@ -3792,6 +3948,8 @@ mansion_block_06:
     D34F: 27          .byte $27
 
 mansion_block_08:
+    ; tbl_mansion_ptr[Y=8]; mansion_idx 8 (not referenced by tbl_round_attributes; spare/title
+    ; layout).
     D350: 00          .byte $00
     D351: 02          .byte $02
     D352: 5C          .byte $5C
@@ -3998,6 +4156,7 @@ mansion_block_08:
     D41B: 00          .byte $00
 
 mansion_block_0A:
+    ; tbl_mansion_ptr[Y=$0A]; mansion_idx $0A -> bonus rounds 2,6,10,14 mansion.
     D41C: 05          .byte $05
     D41D: 67          .byte $67
     D41E: D4          .byte $D4
@@ -4103,6 +4262,7 @@ mansion_block_0A:
     D482: 00          .byte $00
 
 mansion_frame_bonus:
+    ; tbl_mansion_ptr[Y=$0C]; the bonus-round mansion frame (CD63 ldy #$0C).
     D483: 01          .byte $01
     D484: 93          .byte $93
     D485: D4          .byte $D4
@@ -4242,6 +4402,7 @@ bcd_add:
     D535: 60          rts
 
 tbl_bcd_add_records:
+    ; words -> records [zero-page target X][amount pointer][byte count], read by bcd_add_from_table.
     D536: 44          .byte $44
     D537: D5          .byte $D5
     D538: 48          .byte $48
@@ -4258,42 +4419,49 @@ tbl_bcd_add_records:
     D543: D5          .byte $D5
 
 bcd_add_record_00:
+    ; the target of tbl_bcd_add_records at offset $00 (bcd_add_from_table; Y up to $0C).
     D544: 76          .byte $76
     D545: 49          .byte $49
     D546: 00          .byte $00
     D547: 00          .byte $00
 
 bcd_add_record_02:
+    ; the target of tbl_bcd_add_records at offset $02 (bcd_add_from_table; Y up to $0C).
     D548: 70          .byte $70
     D549: 60          .byte $60
     D54A: D5          .byte $D5
     D54B: 00          .byte $00
 
 bcd_add_record_04:
+    ; the target of tbl_bcd_add_records at offset $04 (bcd_add_from_table; Y up to $0C).
     D54C: 77          .byte $77
     D54D: 60          .byte $60
     D54E: D5          .byte $D5
     D54F: 00          .byte $00
 
 bcd_add_record_06:
+    ; the target of tbl_bcd_add_records at offset $06 (bcd_add_from_table; Y up to $0C).
     D550: 50          .byte $50
     D551: 60          .byte $60
     D552: D5          .byte $D5
     D553: 00          .byte $00
 
 bcd_add_record_08:
+    ; the target of tbl_bcd_add_records at offset $08 (bcd_add_from_table; Y up to $0C).
     D554: 57          .byte $57
     D555: 67          .byte $67
     D556: D5          .byte $D5
     D557: 03          .byte $03
 
 bcd_add_record_0a:
+    ; the target of tbl_bcd_add_records at offset $0A (bcd_add_from_table; Y up to $0C).
     D558: 5F          .byte $5F
     D559: 54          .byte $54
     D55A: 00          .byte $00
     D55B: 03          .byte $03
 
 bcd_add_record_0c:
+    ; the target of tbl_bcd_add_records at offset $0C (bcd_add_from_table; Y up to $0C).
     D55C: 74          .byte $74
     D55D: 5C          .byte $5C
     D55E: 00          .byte $00
@@ -4301,10 +4469,13 @@ bcd_add_record_0c:
     D560: 01          .byte $01
 
 ptr_score_amounts:
+    ; word -> $D563: add_score_from_table adds ($D563 + Y), 4 BCD bytes, into the score at $71-$74.
     D561: 63          .byte $63
     D562: D5          .byte $D5
 
 tbl_score_amounts:
+    ; 4-byte BCD amounts by offset Y (the callers' Y: $08 a knocked-out cat, $3C a trampoline bounce,
+    ; $44 slot 2, ...).
     D563: 00          .byte $00
     D564: 00          .byte $00
     D565: 01          .byte $01
@@ -4468,6 +4639,7 @@ queue_digit_blank_leading_zero:
     D63F: 60          rts
 
 tbl_bcd_number_entries:
+    ; words -> [PPU address][zero-page source][byte count][flag] (queue_bcd_number).
     D640: 58          .byte $58
     D641: D6          .byte $D6
     D642: 5D          .byte $5D
@@ -4494,6 +4666,8 @@ tbl_bcd_number_entries:
     D657: D6          .byte $D6
 
 bcd_number_entry_00:
+    ; the target of tbl_bcd_number_entries at offset $00 (queue_bcd_number; ends at its first target
+    ; $D658).
     D658: 62          .byte $62
     D659: 20          .byte $20
     D65A: 71          .byte $71
@@ -4501,6 +4675,8 @@ bcd_number_entry_00:
     D65C: 06          .byte $06
 
 bcd_number_entry_02:
+    ; the target of tbl_bcd_number_entries at offset $02 (queue_bcd_number; ends at its first target
+    ; $D658).
     D65D: 74          .byte $74
     D65E: 20          .byte $20
     D65F: 71          .byte $71
@@ -4508,6 +4684,8 @@ bcd_number_entry_02:
     D661: 06          .byte $06
 
 bcd_number_entry_06:
+    ; the target of tbl_bcd_number_entries at offset $06 (queue_bcd_number; ends at its first target
+    ; $D658).
     D662: 62          .byte $62
     D663: 20          .byte $20
     D664: B1          .byte $B1
@@ -4515,6 +4693,8 @@ bcd_number_entry_06:
     D666: 06          .byte $06
 
 bcd_number_entry_04:
+    ; the target of tbl_bcd_number_entries at offset $04 (queue_bcd_number; ends at its first target
+    ; $D658).
     D667: 74          .byte $74
     D668: 20          .byte $20
     D669: B1          .byte $B1
@@ -4522,6 +4702,8 @@ bcd_number_entry_04:
     D66B: 06          .byte $06
 
 bcd_number_entry_08:
+    ; the target of tbl_bcd_number_entries at offset $08 (queue_bcd_number; ends at its first target
+    ; $D658).
     D66C: 6B          .byte $6B
     D66D: 20          .byte $20
     D66E: 44          .byte $44
@@ -4529,6 +4711,8 @@ bcd_number_entry_08:
     D670: 06          .byte $06
 
 bcd_number_entry_0a:
+    ; the target of tbl_bcd_number_entries at offset $0A (queue_bcd_number; ends at its first target
+    ; $D658).
     D671: 76          .byte $76
     D672: 20          .byte $20
     D673: 70          .byte $70
@@ -4536,6 +4720,8 @@ bcd_number_entry_0a:
     D675: 01          .byte $01
 
 bcd_number_entry_0c:
+    ; the target of tbl_bcd_number_entries at offset $0C (queue_bcd_number; ends at its first target
+    ; $D658).
     D676: 7A          .byte $7A
     D677: 20          .byte $20
     D678: 77          .byte $77
@@ -4543,6 +4729,8 @@ bcd_number_entry_0c:
     D67A: 01          .byte $01
 
 bcd_number_entry_0e:
+    ; the target of tbl_bcd_number_entries at offset $0E (queue_bcd_number; ends at its first target
+    ; $D658).
     D67B: 90          .byte $90
     D67C: 21          .byte $21
     D67D: 50          .byte $50
@@ -4550,6 +4738,8 @@ bcd_number_entry_0e:
     D67F: 01          .byte $01
 
 bcd_number_entry_10:
+    ; the target of tbl_bcd_number_entries at offset $10 (queue_bcd_number; ends at its first target
+    ; $D658).
     D680: 10          .byte $10
     D681: 22          .byte $22
     D682: 51          .byte $51
@@ -4557,6 +4747,8 @@ bcd_number_entry_10:
     D684: 01          .byte $01
 
 bcd_number_entry_12:
+    ; the target of tbl_bcd_number_entries at offset $12 (queue_bcd_number; ends at its first target
+    ; $D658).
     D685: 97          .byte $97
     D686: 21          .byte $21
     D687: 56          .byte $56
@@ -4564,6 +4756,8 @@ bcd_number_entry_12:
     D689: 02          .byte $02
 
 bcd_number_entry_14:
+    ; the target of tbl_bcd_number_entries at offset $14 (queue_bcd_number; ends at its first target
+    ; $D658).
     D68A: 17          .byte $17
     D68B: 22          .byte $22
     D68C: 5A          .byte $5A
@@ -4571,6 +4765,8 @@ bcd_number_entry_14:
     D68E: 02          .byte $02
 
 bcd_number_entry_16:
+    ; the target of tbl_bcd_number_entries at offset $16 (queue_bcd_number; ends at its first target
+    ; $D658).
     D68F: 15          .byte $15
     D690: 23          .byte $23
     D691: 5D          .byte $5D
@@ -4763,6 +4959,8 @@ queue_vram_packet:
     D7AC: 60          rts
 
 tbl_vram_packets:
+    ; 10 words -> [address][count][tiles]: 00/02 blanks, 04/06 1UP/2UP, 08-0E the menu cursor, 10/12
+    ; the dead switch's blank / 'N' (queue_vram_packet).
     D7AD: C1          .byte $C1
     D7AE: D7          .byte $D7
     D7AF: C7          .byte $C7
@@ -4785,6 +4983,8 @@ tbl_vram_packets:
     D7C0: D7          .byte $D7
 
 vram_packet_00:
+    ; the target of tbl_vram_packets at offset $00 (queue_vram_packet; ends at its first target
+    ; $D7C1).
     D7C1: 45          .byte $45
     D7C2: 20          .byte $20
     D7C3: 03          .byte $03
@@ -4793,6 +4993,8 @@ vram_packet_00:
     D7C6: 00          .byte $00
 
 vram_packet_02:
+    ; the target of tbl_vram_packets at offset $02 (queue_vram_packet; ends at its first target
+    ; $D7C1).
     D7C7: 45          .byte $45
     D7C8: 20          .byte $20
     D7C9: 03          .byte $03
@@ -4801,6 +5003,8 @@ vram_packet_02:
     D7CC: 00          .byte $00
 
 vram_packet_04:
+    ; the target of tbl_vram_packets at offset $04 (queue_vram_packet; ends at its first target
+    ; $D7C1).
     D7CD: 45          .byte $45
     D7CE: 20          .byte $20
     D7CF: 03          .byte $03
@@ -4809,6 +5013,8 @@ vram_packet_04:
     D7D2: AB          .byte $AB
 
 vram_packet_06:
+    ; the target of tbl_vram_packets at offset $06 (queue_vram_packet; ends at its first target
+    ; $D7C1).
     D7D3: 45          .byte $45
     D7D4: 20          .byte $20
     D7D5: 03          .byte $03
@@ -4817,36 +5023,48 @@ vram_packet_06:
     D7D8: AB          .byte $AB
 
 vram_packet_08:
+    ; the target of tbl_vram_packets at offset $08 (queue_vram_packet; ends at its first target
+    ; $D7C1).
     D7D9: E9          .byte $E9
     D7DA: 21          .byte $21
     D7DB: 01          .byte $01
     D7DC: AF          .byte $AF
 
 vram_packet_0c:
+    ; the target of tbl_vram_packets at offset $0C (queue_vram_packet; ends at its first target
+    ; $D7C1).
     D7DD: 29          .byte $29
     D7DE: 22          .byte $22
     D7DF: 01          .byte $01
     D7E0: 00          .byte $00
 
 vram_packet_0a:
+    ; the target of tbl_vram_packets at offset $0A (queue_vram_packet; ends at its first target
+    ; $D7C1).
     D7E1: E9          .byte $E9
     D7E2: 21          .byte $21
     D7E3: 01          .byte $01
     D7E4: 00          .byte $00
 
 vram_packet_0e:
+    ; the target of tbl_vram_packets at offset $0E (queue_vram_packet; ends at its first target
+    ; $D7C1).
     D7E5: 29          .byte $29
     D7E6: 22          .byte $22
     D7E7: 01          .byte $01
     D7E8: AF          .byte $AF
 
 vram_packet_10:
+    ; the target of tbl_vram_packets at offset $10 (queue_vram_packet; ends at its first target
+    ; $D7C1).
     D7E9: AC          .byte $AC
     D7EA: 21          .byte $21
     D7EB: 01          .byte $01
     D7EC: 00          .byte $00
 
 vram_packet_12:
+    ; the target of tbl_vram_packets at offset $12 (queue_vram_packet; ends at its first target
+    ; $D7C1).
     D7ED: AC          .byte $AC
     D7EE: 21          .byte $21
     D7EF: 01          .byte $01
@@ -4897,6 +5115,7 @@ reset_camera_and_point_at_player:
     D837: 60          rts
 
 player_record_template:
+    ; 00 34 00 1A 02 00 FF: x $34, y $1A, anim 2, type 0, facing left (init_player_record).
     D838: 00          .byte $00
     D839: 34          .byte $34
     D83A: 00          .byte $00
@@ -4906,6 +5125,7 @@ player_record_template:
     D83E: FF          .byte $FF
 
 bonus_player_template:
+    ; 00 35 00 0A 06 00 FF: x $35, y $0A, anim 6 (init_bonus_player).
     D83F: 00          .byte $00
     D840: 35          .byte $35
     D841: 00          .byte $00
@@ -4996,6 +5216,7 @@ init_bonus_goal_balloon:
     D8D2: 60          rts
 
 goal_balloon_template:
+    ; 00 05 00 18 18: x 5, row $18, anim $18 (draw_goal_balloon).
     D8D3: 00          .byte $00
     D8D4: 05          .byte $05
     D8D5: 00          .byte $00
@@ -5213,6 +5434,7 @@ dispatch_object_state:
     DA3F: 6C 1C 00    jmp (aux_ptr)   ; $001C
 
 tbl_object_state_handlers:
+    ; 23 handler words by state (dispatch_object_state).
     DA42:            .word handler_rts_noop
     DA44:            .word state02_walk
     DA46:            .word state04_hop_off_ledge
@@ -5350,6 +5572,9 @@ reset_objects_except_persistent_types:
     DB31: 4C CA D4    jmp add_score_from_table   ; $D4CA
 
 knockout_score_offsets:
+    ; catch_player_or_knock_out does ldy $DB33,x with X = the type (1-3; the player never gets there),
+    ; so its table starts at $DB34, the byte after the jmp whose operand is $DB33: $44, $44, $08 = the
+    ; tbl_score_amounts offsets for types 1, 2, 3.
     DB34: 44          .byte $44
     DB35: 44          .byte $44
     DB36: 08          .byte $08
@@ -6074,6 +6299,7 @@ queue_tile_read:
     E00F: 60          rts
 
 tile_read_offsets:
+    ; 4 (dx, dy) tile pairs by X = 0, 2, 4, 6 (queue_tile_read).
     E010: 01          .byte $01
     E011: 00          .byte $00
     E012: 02          .byte $02
@@ -6294,6 +6520,7 @@ player_knockback_pushes_cats:
     E179: 60          rts
 
 tbl_bonus_state_handlers:
+    ; 10 handler words by state in a bonus round.
     E17A:            .word handler_rts_noop
     E17C:            .word bonus_state02_fall
     E17E:            .word bonus_state04_ended
@@ -6541,6 +6768,7 @@ bonus_state0E_goal_balloon:
     E331: 60          rts
 
 released_goro_template:
+    ; slot 2 as Goro (type 2) at the goal balloon: x 5, row $18, anim 6, facing left.
     E332: 00          .byte $00
     E333: 05          .byte $05
     E334: 00          .byte $00
@@ -6782,6 +7010,8 @@ trampoline_bounce_step:
     E4CC: 60          rts
 
 trampoline_bounce_curve:
+    ; signed word offsets from the trampoline's row, one per bounce frame (trampoline_bounce_step;
+    ; find_trampoline_below reads the first).
     E4CD: 40          .byte $40
     E4CE: FE          .byte $FE
     E4CF: 80          .byte $80
@@ -6804,6 +7034,7 @@ trampoline_bounce_curve:
     E4E0: FE          .byte $FE
 
 tbl_round_trampoline_set:
+    ; per stage_number: which trampoline list (load_round_trampolines).
     E4E1: 00          .byte $00
     E4E2: 0A          .byte $0A
     E4E3: 08          .byte $08
@@ -6822,6 +7053,7 @@ tbl_round_trampoline_set:
     E4F0: 00          .byte $00
 
 tbl_trampoline_set_ptrs:
+    ; words -> [count][position indexes ...] (load_round_trampolines).
     E4F1: FF          .byte $FF
     E4F2: E4          .byte $E4
     E4F3: 0B          .byte $0B
@@ -6838,6 +7070,8 @@ tbl_trampoline_set_ptrs:
     E4FE: E5          .byte $E5
 
 trampoline_set_00:
+    ; the target of tbl_trampoline_set_ptrs at offset $00 (load_round_trampolines;
+    ; tbl_round_trampoline_set holds 0-$0C).
     E4FF: 20          .byte $20
     E500: 0E          .byte $0E
     E501: 14          .byte $14
@@ -6845,6 +7079,8 @@ trampoline_set_00:
     E503: 30          .byte $30
 
 trampoline_set_0a:
+    ; the target of tbl_trampoline_set_ptrs at offset $0A (load_round_trampolines;
+    ; tbl_round_trampoline_set holds 0-$0C).
     E504: 30          .byte $30
     E505: 0E          .byte $0E
     E506: 14          .byte $14
@@ -6854,6 +7090,8 @@ trampoline_set_0a:
     E50A: 22          .byte $22
 
 trampoline_set_02:
+    ; the target of tbl_trampoline_set_ptrs at offset $02 (load_round_trampolines;
+    ; tbl_round_trampoline_set holds 0-$0C).
     E50B: 30          .byte $30
     E50C: 04          .byte $04
     E50D: 08          .byte $08
@@ -6863,6 +7101,8 @@ trampoline_set_02:
     E511: 30          .byte $30
 
 trampoline_set_04:
+    ; the target of tbl_trampoline_set_ptrs at offset $04 (load_round_trampolines;
+    ; tbl_round_trampoline_set holds 0-$0C).
     E512: 30          .byte $30
     E513: 04          .byte $04
     E514: 0A          .byte $0A
@@ -6872,6 +7112,8 @@ trampoline_set_04:
     E518: 30          .byte $30
 
 trampoline_set_06:
+    ; the target of tbl_trampoline_set_ptrs at offset $06 (load_round_trampolines;
+    ; tbl_round_trampoline_set holds 0-$0C).
     E519: 38          .byte $38
     E51A: 02          .byte $02
     E51B: 0C          .byte $0C
@@ -6882,6 +7124,8 @@ trampoline_set_06:
     E520: 30          .byte $30
 
 trampoline_set_0c:
+    ; the target of tbl_trampoline_set_ptrs at offset $0C (load_round_trampolines;
+    ; tbl_round_trampoline_set holds 0-$0C).
     E521: 40          .byte $40
     E522: 02          .byte $02
     E523: 04          .byte $04
@@ -6893,6 +7137,8 @@ trampoline_set_0c:
     E529: 30          .byte $30
 
 trampoline_set_08:
+    ; the target of tbl_trampoline_set_ptrs at offset $08 (load_round_trampolines;
+    ; tbl_round_trampoline_set holds 0-$0C).
     E52A: 60          .byte $60
     E52B: 00          .byte $00
     E52C: 08          .byte $08
@@ -6908,6 +7154,7 @@ trampoline_set_08:
     E536: 2E          .byte $2E
 
 tbl_trampoline_addrs:
+    ; nametable address words by position index (load / draw / erase).
     E537: 04          .byte $04
     E538: 22          .byte $22
     E539: 02          .byte $02
@@ -6960,6 +7207,7 @@ tbl_trampoline_addrs:
     E568: 27          .byte $27
 
 tbl_trampoline_pictures:
+    ; words -> RLE pictures: the bounce frames and $14 the broken trampoline (draw_text_from_table).
     E569: 7F          .byte $7F
     E56A: E5          .byte $E5
     E56B: 8B          .byte $8B
@@ -6984,6 +7232,8 @@ tbl_trampoline_pictures:
     E57E: E5          .byte $E5
 
 trampoline_picture_00:
+    ; the target of tbl_trampoline_pictures at offsets $00, $0C (draw_text_from_table; frames 0-9, $14
+    ; broken).
     ;   ================================================================
     E57F: 04          .byte $04
     E580: 30          .byte $30
@@ -6999,6 +7249,8 @@ trampoline_picture_00:
     E58A: 00          .byte $00
 
 trampoline_picture_02:
+    ; the target of tbl_trampoline_pictures at offsets $02, $0A (draw_text_from_table; frames 0-9, $14
+    ; broken).
     ;   ========                                                ========
     ;           ==============                    ==============
     ;                         ====================
@@ -7010,6 +7262,8 @@ trampoline_picture_02:
     E590: 00          .byte $00
 
 trampoline_picture_04:
+    ; the target of tbl_trampoline_pictures at offsets $04, $08 (draw_text_from_table; frames 0-9, $14
+    ; broken).
     ;   ====                                                        ====
     ;       ====                                                ====
     ;           ======                                    ======
@@ -7023,6 +7277,8 @@ trampoline_picture_04:
     E596: 00          .byte $00
 
 trampoline_picture_06:
+    ; the target of tbl_trampoline_pictures at offset $06 (draw_text_from_table; frames 0-9, $14
+    ; broken).
     ;   ==                                                            ==
     ;     ==                                                        ==
     ;       ====                                                ====
@@ -7038,6 +7294,8 @@ trampoline_picture_06:
     E59C: 00          .byte $00
 
 trampoline_picture_0e:
+    ; the target of tbl_trampoline_pictures at offsets $0E, $12 (draw_text_from_table; frames 0-9, $14
+    ; broken).
     ;                         ====================
     ;           ==============                    ==============
     ;   ========                                                ========
@@ -7055,6 +7313,8 @@ trampoline_picture_0e:
     E5A8: 00          .byte $00
 
 trampoline_picture_10:
+    ; the target of tbl_trampoline_pictures at offset $10 (draw_text_from_table; frames 0-9, $14
+    ; broken).
     ;                           ================
     ;                 ==========                ==========
     ;           ======                                    ======
@@ -7074,6 +7334,8 @@ trampoline_picture_10:
     E5B4: 00          .byte $00
 
 trampoline_picture_14:
+    ; the target of tbl_trampoline_pictures at offset $14 (draw_text_from_table; frames 0-9, $14
+    ; broken).
     ;   ====                                                        ====
     ;       ==                                                    ==
     E5B5: 04          .byte $04
@@ -7181,6 +7443,7 @@ dispatch_item_state:
     E657: 6C 1C 00    jmp (aux_ptr)   ; $001C
 
 tbl_item_state_handlers:
+    ; 3 handler words by item state: 0 none, 2 player_collects_item, 4 show_item_points.
     E65A:            .word handler_rts_noop
     E65C:            .word player_collects_item
     E65E:            .word show_item_points
@@ -7342,6 +7605,8 @@ slot2_sits_on_item:
     E787: 60          rts
 
 unreferenced_e788:
+    ; 16 bytes, 02 02 00 02 four times, that no operand, pointer table or play run reaches
+    ; (data_frontier.py, rom_data.txt 'read at -'). Not named for a role.
     E788: 02          .byte $02
     E789: 02          .byte $02
     E78A: 00          .byte $00
@@ -7360,10 +7625,12 @@ unreferenced_e788:
     E797: 02          .byte $02
 
 ptr_round_items:
+    ; word -> $E79A, the one item descriptor every normal round uses (load_round_items).
     E798: 9A          .byte $9A
     E799: E7          .byte $E7
 
 round_items_descriptor:
+    ; $50 (10 items x 8 bytes), then the 10 kinds 00 02 ... 12.
     E79A: 50          .byte $50
     E79B: 00          .byte $00
     E79C: 02          .byte $02
@@ -7377,6 +7644,7 @@ round_items_descriptor:
     E7A4: 12          .byte $12
 
 tbl_item_addrs:
+    ; nametable address words by item kind (draw_at_item_address, load_round_items).
     E7A5: 52          .byte $52
     E7A6: 25          .byte $25
     E7A7: D8          .byte $D8
@@ -7399,6 +7667,7 @@ tbl_item_addrs:
     E7B8: 26          .byte $26
 
 tbl_item_pictures:
+    ; words -> RLE pictures, one per pair; entry 10 the erase (draw_item, erase_item).
     E7B9: C5          .byte $C5
     E7BA: E7          .byte $E7
     E7BB: CD          .byte $CD
@@ -7413,6 +7682,7 @@ tbl_item_pictures:
     E7C4: E7          .byte $E7
 
 item_picture_radio:
+    ; pair 0: a radio.
     ;     ============================
     ;   ==****************************==
     ;   ==**                        **==
@@ -7438,6 +7708,7 @@ item_picture_radio:
     E7CC: 00          .byte $00
 
 item_picture_tv:
+    ; pair 1: a television.
     ;   @@@@@@@@@@@@@@@@@@@@@@@@@@@@
     ;   @@                        @@
     ;   @@                  @@@@  @@
@@ -7463,6 +7734,7 @@ item_picture_tv:
     E7D4: 00          .byte $00
 
 item_picture_computer:
+    ; pair 2: a computer.
     ;     ============================
     ;     ==****************==========
     ;     ==**@@**@@@@@@****==  ==  ==
@@ -7487,6 +7759,7 @@ item_picture_computer:
     E7DC: 00          .byte $00
 
 item_picture_painting:
+    ; pair 3: a painting (the Mona Lisa).
     ;   %%%%%%%%%%%%%%%%%%%%%%%%
     ;   %%====================%%
     ;   %%====================%%
@@ -7512,6 +7785,7 @@ item_picture_painting:
     E7E4: 00          .byte $00
 
 item_picture_safe:
+    ; pair 4: a safe.
     ;   %%%%%%%%%%%%%%%%%%%%%%%%%%%%
     ;   %%========================%%
     ;   %%========================%%
@@ -7538,6 +7812,7 @@ item_picture_safe:
     E7EC: 00          .byte $00
 
 item_picture_erase:
+    ; the blank drawn over a collected item (erase_item).
     E7ED: 02          .byte $02
     E7EE: 00          .byte $00
     E7EF: 00          .byte $00
@@ -7897,6 +8172,7 @@ jmp_indirect_zp_vector:
     EA46: 6C 1C 00    jmp (aux_ptr)   ; $001C
 
 tbl_door_kind_knockback:
+    ; 4 handler words by door kind & 6, jumped through $EA46.
     EA49:            .word door_kind0_knock_back
     EA4B:            .word door_kind1_knock_back
     EA4D:            .word door_kind2_knock_back
@@ -8011,6 +8287,7 @@ walker_meets_closed_door:
     EAFB: 60          rts
 
 tbl_round_door_lists:
+    ; words by stage_number -> [count][kind, address ...] (load_round_doors).
     EAFC: 1C          .byte $1C
     EAFD: EB          .byte $EB
     EAFE: 3B          .byte $3B
@@ -8045,6 +8322,8 @@ tbl_round_door_lists:
     EB1B: EC          .byte $EC
 
 round_doors_00:
+    ; the target of tbl_round_door_lists at offset $00 (load_round_doors by stage_number*2; ends at
+    ; its first target $EB1C).
     EB1C: 50          .byte $50
     EB1D: 08          .byte $08
     EB1E: AC          .byte $AC
@@ -8078,6 +8357,8 @@ round_doors_00:
     EB3A: 26          .byte $26
 
 round_doors_02:
+    ; the target of tbl_round_door_lists at offset $02 (load_round_doors by stage_number*2; ends at
+    ; its first target $EB1C).
     EB3B: 50          .byte $50
     EB3C: 08          .byte $08
     EB3D: 2C          .byte $2C
@@ -8111,6 +8392,8 @@ round_doors_02:
     EB59: 25          .byte $25
 
 round_doors_06:
+    ; the target of tbl_round_door_lists at offset $06 (load_round_doors by stage_number*2; ends at
+    ; its first target $EB1C).
     EB5A: 40          .byte $40
     EB5B: 08          .byte $08
     EB5C: 2C          .byte $2C
@@ -8138,6 +8421,8 @@ round_doors_06:
     EB72: 26          .byte $26
 
 round_doors_08:
+    ; the target of tbl_round_door_lists at offset $08 (load_round_doors by stage_number*2; ends at
+    ; its first target $EB1C).
     EB73: 40          .byte $40
     EB74: 08          .byte $08
     EB75: AB          .byte $AB
@@ -8165,6 +8450,8 @@ round_doors_08:
     EB8B: 23          .byte $23
 
 round_doors_0a:
+    ; the target of tbl_round_door_lists at offset $0A (load_round_doors by stage_number*2; ends at
+    ; its first target $EB1C).
     EB8C: 48          .byte $48
     EB8D: 08          .byte $08
     EB8E: 2C          .byte $2C
@@ -8195,6 +8482,8 @@ round_doors_0a:
     EBA7: 26          .byte $26
 
 round_doors_0e:
+    ; the target of tbl_round_door_lists at offset $0E (load_round_doors by stage_number*2; ends at
+    ; its first target $EB1C).
     EBA8: 48          .byte $48
     EBA9: 08          .byte $08
     EBAA: AC          .byte $AC
@@ -8225,6 +8514,8 @@ round_doors_0e:
     EBC3: 25          .byte $25
 
 round_doors_10:
+    ; the target of tbl_round_door_lists at offset $10 (load_round_doors by stage_number*2; ends at
+    ; its first target $EB1C).
     EBC4: 40          .byte $40
     EBC5: 08          .byte $08
     EBC6: 2C          .byte $2C
@@ -8252,6 +8543,8 @@ round_doors_10:
     EBDC: 23          .byte $23
 
 round_doors_12:
+    ; the target of tbl_round_door_lists at offset $12 (load_round_doors by stage_number*2; ends at
+    ; its first target $EB1C).
     EBDD: 38          .byte $38
     EBDE: 0C          .byte $0C
     EBDF: AC          .byte $AC
@@ -8276,6 +8569,8 @@ round_doors_12:
     EBF2: 26          .byte $26
 
 round_doors_16:
+    ; the target of tbl_round_door_lists at offset $16 (load_round_doors by stage_number*2; ends at
+    ; its first target $EB1C).
     EBF3: 38          .byte $38
     EBF4: 08          .byte $08
     EBF5: 30          .byte $30
@@ -8300,6 +8595,8 @@ round_doors_16:
     EC08: 25          .byte $25
 
 round_doors_18:
+    ; the target of tbl_round_door_lists at offset $18 (load_round_doors by stage_number*2; ends at
+    ; its first target $EB1C).
     EC09: 40          .byte $40
     EC0A: 08          .byte $08
     EC0B: 30          .byte $30
@@ -8327,6 +8624,8 @@ round_doors_18:
     EC21: 25          .byte $25
 
 round_doors_1a:
+    ; the target of tbl_round_door_lists at offset $1A (load_round_doors by stage_number*2; ends at
+    ; its first target $EB1C).
     EC22: 20          .byte $20
     EC23: 08          .byte $08
     EC24: 35          .byte $35
@@ -8342,6 +8641,8 @@ round_doors_1a:
     EC2E: 22          .byte $22
 
 round_doors_1e:
+    ; the target of tbl_round_door_lists at offset $1E (load_round_doors by stage_number*2; ends at
+    ; its first target $EB1C).
     EC2F: 50          .byte $50
     EC30: 08          .byte $08
     EC31: BD          .byte $BD
@@ -8375,9 +8676,12 @@ round_doors_1e:
     EC4D: 26          .byte $26
 
 round_doors_04:
+    ; the target of tbl_round_door_lists at offsets $04, $0C, $14, $1C (load_round_doors by
+    ; stage_number*2; ends at its first target $EB1C).
     EC4E: 00          .byte $00
 
 tbl_door_pictures:
+    ; words -> RLE pictures by door kind / swing frame (draw_door_kind_y).
     EC4F: 71          .byte $71
     EC50: EC          .byte $EC
     EC51: C5          .byte $C5
@@ -8414,6 +8718,8 @@ tbl_door_pictures:
     EC70: ED          .byte $ED
 
 door_picture_00:
+    ; the target of tbl_door_pictures at offset $00 (draw_door_kind_y; ends at its first target
+    ; $EC71).
     ;   %%%%
     ;   %%%%
     ;   %%%%
@@ -8449,6 +8755,8 @@ door_picture_00:
     EC79: 00          .byte $00
 
 door_picture_04:
+    ; the target of tbl_door_pictures at offset $04 (draw_door_kind_y; ends at its first target
+    ; $EC71).
     ;       %%%%
     ;       %%%%
     ;       %%%%
@@ -8484,6 +8792,8 @@ door_picture_04:
     EC82: 00          .byte $00
 
 door_picture_08:
+    ; the target of tbl_door_pictures at offset $08 (draw_door_kind_y; ends at its first target
+    ; $EC71).
     ;   ++++++++
     ;   ++++++++
     ;   ++++++++
@@ -8519,6 +8829,8 @@ door_picture_08:
     EC8B: 00          .byte $00
 
 door_picture_0c:
+    ; the target of tbl_door_pictures at offset $0C (draw_door_kind_y; ends at its first target
+    ; $EC71).
     ;       ++++++++
     ;       ++++++++
     ;       ++++++++
@@ -8554,6 +8866,8 @@ door_picture_0c:
     EC94: 00          .byte $00
 
 door_picture_10:
+    ; the target of tbl_door_pictures at offset $10 (draw_door_kind_y; ends at its first target
+    ; $EC71).
     EC95: 01          .byte $01
     EC96: 52          .byte $52
     EC97: 1F          .byte $1F
@@ -8565,6 +8879,8 @@ door_picture_10:
     EC9D: 00          .byte $00
 
 door_picture_12:
+    ; the target of tbl_door_pictures at offset $12 (draw_door_kind_y; ends at its first target
+    ; $EC71).
     ;   ++%%++%%
     ;   ++%%++%%
     ;   ++%%++%%
@@ -8603,6 +8919,8 @@ door_picture_12:
     ECA9: 00          .byte $00
 
 door_picture_14:
+    ; the target of tbl_door_pictures at offset $14 (draw_door_kind_y; ends at its first target
+    ; $EC71).
     ;   ++%%++%%++%%%%++
     ;   ++%%++%%++%%++%%
     ;   ++%%++%%++%%++%%
@@ -8641,6 +8959,8 @@ door_picture_14:
     ECB5: 00          .byte $00
 
 door_picture_16:
+    ; the target of tbl_door_pictures at offset $16 (draw_door_kind_y; ends at its first target
+    ; $EC71).
     ;   ++%%++%%%%++%%%%++%%++%%
     ;   ++%%++%%%%++%%++%%%%++%%
     ;   ++%%++%%%%++++++%%++++%%
@@ -8682,6 +9002,8 @@ door_picture_16:
     ECC4: 00          .byte $00
 
 door_picture_02:
+    ; the target of tbl_door_pictures at offsets $02, $0A, $18 (draw_door_kind_y; ends at its first
+    ; target $EC71).
     ;   ++%%++%%%%++%%%%++%%++%%++%%%%++
     ;   ++%%++%%%%++%%++%%%%++%%++%%++%%
     ;   ++%%++%%%%++++++%%++++%%++%%++%%
@@ -8723,6 +9045,8 @@ door_picture_02:
     ECD3: 00          .byte $00
 
 door_picture_1a:
+    ; the target of tbl_door_pictures at offset $1A (draw_door_kind_y; ends at its first target
+    ; $EC71).
     ;   ++%%%%++
     ;   ++%%++%%
     ;   ++%%++%%
@@ -8763,6 +9087,8 @@ door_picture_1a:
     ECE1: 00          .byte $00
 
 door_picture_1c:
+    ; the target of tbl_door_pictures at offset $1C (draw_door_kind_y; ends at its first target
+    ; $EC71).
     ;   ++%%++%%++%%%%++
     ;   ++%%++%%++%%++%%
     ;   ++%%++%%++%%++%%
@@ -8803,6 +9129,8 @@ door_picture_1c:
     ECEF: 00          .byte $00
 
 door_picture_1e:
+    ; the target of tbl_door_pictures at offset $1E (draw_door_kind_y; ends at its first target
+    ; $EC71).
     ;   %%++%%%%++%%++%%++%%%%++
     ;   %%++%%++%%%%++%%++%%++%%
     ;   %%++++++%%++++%%++%%++%%
@@ -8846,6 +9174,8 @@ door_picture_1e:
     ED00: 00          .byte $00
 
 door_picture_06:
+    ; the target of tbl_door_pictures at offsets $06, $0E, $20 (draw_door_kind_y; ends at its first
+    ; target $EC71).
     ;   ++%%++%%%%++%%%%++%%++%%++%%%%++
     ;   ++%%++%%%%++%%++%%%%++%%++%%++%%
     ;   ++%%++%%%%++++++%%++++%%++%%++%%
@@ -9208,6 +9538,7 @@ load_bells:
     EF2E: 60          rts
 
 bells_template:
+    ; the two bells of rounds 8-10 (+4 anim $0A = draw_bell, +5 = 1 hanging).
     EF2F: 00          .byte $00
     EF30: 03          .byte $03
     EF31: 00          .byte $00
@@ -9369,6 +9700,7 @@ init_floor_trap:
     F040: 60          rts
 
 floor_trap_addrs:
+    ; nametable address words, 2 per round 12-14 (init_floor_trap).
     F041: 09          .byte $09
     F042: 22          .byte $22
     F043: 88          .byte $88
@@ -9507,6 +9839,7 @@ walker_over_open_trap_x:
     F127: 60          rts
 
 tbl_floor_trap_pictures:
+    ; 3 words -> open ($51 $51), pressed ($50 $50), floor ($4A $4A).
     F128: 2E          .byte $2E
     F129: F1          .byte $F1
     F12A: 32          .byte $32
@@ -9515,12 +9848,14 @@ tbl_floor_trap_pictures:
     F12D: F1          .byte $F1
 
 floor_trap_picture_00:
+    ; the target of tbl_floor_trap_pictures at offset $00 (draw_floor_trap_frame; X 0, 2, 4).
     F12E: 02          .byte $02
     F12F: 51          .byte $51
     F130: 51          .byte $51
     F131: 00          .byte $00
 
 floor_trap_picture_02:
+    ; the target of tbl_floor_trap_pictures at offset $02 (draw_floor_trap_frame; X 0, 2, 4).
     ;   ================================
     ;   ================================
     ;   ================================
@@ -9531,6 +9866,7 @@ floor_trap_picture_02:
     F135: 00          .byte $00
 
 floor_trap_picture_04:
+    ; the target of tbl_floor_trap_pictures at offset $04 (draw_floor_trap_frame; X 0, 2, 4).
     ;   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     ;   ++++++++++++++++++++++++++++++++
     ;   ++++++++++++++++++++++++++++++++
@@ -9613,6 +9949,7 @@ dispatch_balloon:
     F1B2: 6C 1C 00    jmp (aux_ptr)   ; $001C
 
 tbl_balloon_handlers:
+    ; 2 handler words: 0 popped, 2 balloon_live.
     F1B5:            .word handler_rts_noop
     F1B7:            .word balloon_live
 
@@ -9703,12 +10040,14 @@ draw_balloon:
     F260: 4C FB C6    jmp draw_rle_text   ; $C6FB
 
 tbl_balloon_pictures:
+    ; the red balloon's two frames.
     F263: 67          .byte $67
     F264: F2          .byte $F2
     F265: 6F          .byte $6F
     F266: F2          .byte $F2
 
 balloon_picture_00:
+    ; the red balloon, frame 1.
     ;           ==========
     ;       ================
     ;     ======@@@@==========
@@ -9734,6 +10073,7 @@ balloon_picture_00:
     F26E: 00          .byte $00
 
 balloon_picture_02:
+    ; the red balloon, frame 2.
     ;         ==========
     ;     ================
     ;     ======@@==========
@@ -9759,6 +10099,7 @@ balloon_picture_02:
     F276: 00          .byte $00
 
 ptr_popped_balloon_picture:
+    ; word -> the popped balloon's erase picture.
     F277: 79          .byte $79
     F278: F2          .byte $F2
     F279: 02          .byte $02
@@ -9769,6 +10110,7 @@ ptr_popped_balloon_picture:
     F27E: 00          .byte $00
 
 tbl_balloon_lists:
+    ; balloon lists by is_bonus_round.
     F27F: 00          .byte $00
     F280: 00          .byte $00
     F281: 89          .byte $89
@@ -9781,6 +10123,7 @@ tbl_balloon_lists:
     F288: F2          .byte $F2
 
 balloon_list_02:
+    ; the first bonus round's balloons.
     F289: 78          .byte $78
     F28A: D5          .byte $D5
     F28B: 24          .byte $24
@@ -9814,6 +10157,7 @@ balloon_list_02:
     F2A7: 20          .byte $20
 
 balloon_list_04:
+    ; the second bonus round's balloons.
     F2A8: 78          .byte $78
     F2A9: D5          .byte $D5
     F2AA: 24          .byte $24
@@ -9847,6 +10191,7 @@ balloon_list_04:
     F2C6: 20          .byte $20
 
 balloon_list_06:
+    ; the third and fourth bonus rounds' balloons (shared).
     F2C7: 78          .byte $78
     F2C8: D5          .byte $D5
     F2C9: 24          .byte $24
@@ -9986,6 +10331,7 @@ draw_hurry_sprite:
     F3A9: 60          rts
 
 hurry_sprite_record:
+    ; 8 bytes copied to $0490 at the time limit: the HURRY sprite (tick_round_timer).
     F3AA: F8          .byte $F8
     F3AB: 00          .byte $00
     F3AC: A0          .byte $A0
@@ -10026,6 +10372,9 @@ load_stage_params:
     F3DE: 60          rts
 
 tbl_stage_params:
+    ; 6 bytes per stage_index (32 stages), copied to $63-$68 by load_stage_params: +0 player_speed, +1
+    ; cat_speed, +2 stun_time (frames), +3 hurry_seconds, +4 chaser_seconds, +5 cat_slots_end ($60 /
+    ; $70 / $80 = 4, 5 or 6 cats). Every 4th entry is a bonus round's.
     F3DF: 20          .byte $20
     F3E0: 1C          .byte $1C
     F3E1: B4          .byte $B4
@@ -10778,6 +11127,9 @@ fetch_voice_stream_byte:
     F83A: 60          rts
 
 tbl_note_periods:
+    ; one chromatic octave, A1 to G#2, as 12 big-endian 11-bit APU periods ($07F2 = A1 55.0 Hz by f =
+    ; CPU / (16 (t + 1))), all within 3 cents of equal temperament except C#2 (+11). Higher notes come
+    ; from shifting these. Read by run_voice_stream.
     F83B: 07          .byte $07
     F83C: F2          .byte $F2
     F83D: 07          .byte $07
@@ -10804,6 +11156,7 @@ tbl_note_periods:
     F852: 36          .byte $36
 
 tbl_voice_stream_ptrs:
+    ; stream pointer words by voice (load_voice_stream_ptr).
     F853: 86          .byte $86
     F854: FE          .byte $FE
     F855: 92          .byte $92
@@ -10844,10 +11197,12 @@ tbl_voice_stream_ptrs:
     F878: FE          .byte $FE
 
 voice13_stream:
+    ; word -> voice 13's stream (sound_streams_next_voice).
     F879: B7          .byte $B7
     F87A: F8          .byte $F8
 
 voice14_stream:
+    ; word -> voice 14's stream (sound_streams_next_voice).
     F87B: 14          .byte $14
     F87C: FA          .byte $FA
     F87D: C2          .byte $C2
@@ -10860,6 +11215,7 @@ voice14_stream:
     F884: FF          .byte $FF
 
 sound_registers_next_voice_data_f885:
+    ; 25 bytes, one per voice, 0 or 1; a nonzero one is tested against its trigger.
     F885: 00          .byte $00
     F886: 00          .byte $00
     F887: 00          .byte $00
@@ -10887,6 +11243,7 @@ sound_registers_next_voice_data_f885:
     F89D: 00          .byte $00
 
 init_sound_voices_data_f89e:
+    ; 25 bytes, one per voice (01, or 04 for voices 19-20), copied to $06E2+.
     F89E: 01          .byte $01
     F89F: 01          .byte $01
     F8A0: 01          .byte $01
@@ -11518,6 +11875,8 @@ init_sound_voices_data_f89e:
     FB12: FA          .byte $FA
 
 voice_stream_04:
+    ; the target of tbl_voice_stream_ptrs at offset $04 (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FB13: 01          .byte $01
     FB14: 04          .byte $04
     FB15: 7F          .byte $7F
@@ -11544,6 +11903,8 @@ voice_stream_04:
     FB2A: E8          .byte $E8
 
 voice_stream_06:
+    ; the target of tbl_voice_stream_ptrs at offset $06 (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FB2B: 03          .byte $03
     FB2C: 23          .byte $23
     FB2D: 7F          .byte $7F
@@ -11564,6 +11925,8 @@ voice_stream_06:
     FB3C: E8          .byte $E8
 
 voice_stream_08:
+    ; the target of tbl_voice_stream_ptrs at offset $08 (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FB3D: 02          .byte $02
     FB3E: 04          .byte $04
     FB3F: 7F          .byte $7F
@@ -11590,6 +11953,8 @@ voice_stream_08:
     FB54: E8          .byte $E8
 
 voice_stream_1c:
+    ; the target of tbl_voice_stream_ptrs at offset $1C (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FB55: 01          .byte $01
     FB56: 07          .byte $07
     FB57: 7F          .byte $7F
@@ -11752,6 +12117,8 @@ voice_stream_1c:
     FBF4: 1A          .byte $1A
 
 voice_stream_1e:
+    ; the target of tbl_voice_stream_ptrs at offset $1E (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FBF5: 02          .byte $02
     FBF6: 07          .byte $07
     FBF7: 7F          .byte $7F
@@ -11870,6 +12237,8 @@ voice_stream_1e:
     FC68: E8          .byte $E8
 
 voice_stream_20:
+    ; the target of tbl_voice_stream_ptrs at offset $20 (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FC69: 03          .byte $03
     FC6A: 15          .byte $15
     FC6B: 7F          .byte $7F
@@ -12049,6 +12418,8 @@ voice_stream_20:
     FD19: E8          .byte $E8
 
 voice_stream_16:
+    ; the target of tbl_voice_stream_ptrs at offset $16 (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FD1A: 01          .byte $01
     FD1B: 05          .byte $05
     FD1C: 7F          .byte $7F
@@ -12081,6 +12452,8 @@ voice_stream_16:
     FD37: E8          .byte $E8
 
 voice_stream_18:
+    ; the target of tbl_voice_stream_ptrs at offset $18 (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FD38: 03          .byte $03
     FD39: 2A          .byte $2A
     FD3A: 7F          .byte $7F
@@ -12098,6 +12471,8 @@ voice_stream_18:
     FD46: E8          .byte $E8
 
 voice_stream_1a:
+    ; the target of tbl_voice_stream_ptrs at offset $1A (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FD47: 02          .byte $02
     FD48: 86          .byte $86
     FD49: 7F          .byte $7F
@@ -12115,6 +12490,8 @@ voice_stream_1a:
     FD55: E8          .byte $E8
 
 voice_stream_14:
+    ; the target of tbl_voice_stream_ptrs at offset $14 (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FD56: 02          .byte $02
     FD57: FF          .byte $FF
     FD58: 7F          .byte $7F
@@ -12131,6 +12508,8 @@ voice_stream_14:
     FD63: E8          .byte $E8
 
 voice_stream_12:
+    ; the target of tbl_voice_stream_ptrs at offset $12 (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FD64: 02          .byte $02
     FD65: DF          .byte $DF
     FD66: 7F          .byte $7F
@@ -12170,6 +12549,8 @@ voice_stream_12:
     FD88: E8          .byte $E8
 
 voice_stream_10:
+    ; the target of tbl_voice_stream_ptrs at offset $10 (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FD89: 02          .byte $02
     FD8A: CB          .byte $CB
     FD8B: 7F          .byte $7F
@@ -12194,6 +12575,8 @@ voice_stream_10:
     FD9E: E8          .byte $E8
 
 voice_stream_0e:
+    ; the target of tbl_voice_stream_ptrs at offset $0E (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FD9F: 02          .byte $02
     FDA0: 89          .byte $89
     FDA1: 7F          .byte $7F
@@ -12203,6 +12586,8 @@ voice_stream_0e:
     FDA5: E8          .byte $E8
 
 voice_stream_0c:
+    ; the target of tbl_voice_stream_ptrs at offset $0C (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FDA6: 02          .byte $02
     FDA7: 7F          .byte $7F
     FDA8: 7F          .byte $7F
@@ -12225,6 +12610,8 @@ voice_stream_0c:
     FDB9: E8          .byte $E8
 
 voice_stream_0a:
+    ; the target of tbl_voice_stream_ptrs at offset $0A (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FDBA: 01          .byte $01
     FDBB: 8F          .byte $8F
     FDBC: 7F          .byte $7F
@@ -12387,6 +12774,8 @@ voice_stream_0a:
     FE59: E8          .byte $E8
 
 voice_stream_22:
+    ; the target of tbl_voice_stream_ptrs at offset $22 (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FE5A: 01          .byte $01
     FE5B: 03          .byte $03
     FE5C: 7F          .byte $7F
@@ -12413,6 +12802,8 @@ voice_stream_22:
     FE71: E8          .byte $E8
 
 voice_stream_24:
+    ; the target of tbl_voice_stream_ptrs at offset $24 (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FE72: 02          .byte $02
     FE73: C4          .byte $C4
     FE74: 7F          .byte $7F
@@ -12447,6 +12838,8 @@ voice_stream_24:
     FE91: E8          .byte $E8
 
 voice_stream_02:
+    ; the target of tbl_voice_stream_ptrs at offset $02 (load_voice_stream_ptr by voice*2, voice 0
+    ; skipped (beq); ends at voice13_stream $F879).
     FE92: 01          .byte $01
     FE93: 05          .byte $05
     FE94: 7F          .byte $7F
@@ -12720,6 +13113,12 @@ attract_demo:
     FFDE: 4C 4F C8    jmp title_screen   ; $C84F
 
 tbl_demo_input_script:
+    ; Attract-mode (demo) input track. Read ONLY at $D9D3/$D9DC (lda $ffe1,x) by the demo-input
+    ; playback path (@D9C7), indexed by demo_script_cursor ($3D). RLE entries [direction | duration]
+    ; where duration = byte<<2 frames; held via $3C until expiry, then the next command is fetched.
+    ; Drives the player object when ram_demo_flag ($42)=0, fed through the SAME $D98A apply-input
+    ; routine as the live joypad. Resolves ch.6's open scripted-vs-AI question: it is a scripted
+    ; track, not runtime AI.
     FFE1: 85          .byte $85
     FFE2: 11          .byte $11
     FFE3: C8          .byte $C8
@@ -12747,6 +13146,9 @@ tbl_demo_input_script:
     FFF9: FF          .byte $FF
 
 cpu_interrupt_vectors:
+    ; 6502 hardware vectors: $FFFA=NMI -> nmi handler $C2EF, $FFFC=RESET -> reset_cold_boot_init
+    ; $C031, $FFFE=IRQ -> irq_rti_stub $C304. Labeled so tbl_demo_input_script ($FFE1) does not absorb
+    ; the vector bytes.
     FFFA:            .word nmi_count_vblank
     FFFC:            .word reset_cold_boot_init
     FFFE:            .word irq_rti_stub

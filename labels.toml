@@ -1655,8 +1655,7 @@ addr = "CC60"
 name = "palhud_block_02"
 kind = "data"
 conf = "HIGH"
-why = "tbl_palhud_ptr[Y=2]; palhud_idx 2 (unused by rounds; palette-init context per ch8)."
-
+why = "Layout 2026-10-27: the title screen's draw blocks (ppu_run_draw_blocks entry 2, draw_title_screen): the background palette, the only sprite palette write in the game ($3F10), and the text 1 PLAYER, 2 PLAYERS, (c) 1983 1984 NAMCO LTD., ALL RIGHTS RESERVED. Blocks are [count][address lo][address hi][count bytes], 0 ends. Kept (name checked against the code). Earlier note: tbl_palhud_ptr[Y=2]; palhud_idx 2 (unused by rounds; palette-init context per ch8)."
 [[label]]
 addr = "CCEF"
 name = "palhud_block_04"
@@ -2312,8 +2311,7 @@ addr = "F3DF"
 name = "tbl_stage_params"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26: 6 bytes per stage_index into $63-$68 (load_stage_params)."
-
+why = "Layout 2026-10-27: 6 bytes per stage_index (32 stages), copied to $63-$68 by load_stage_params: +0 player_speed, +1 cat_speed, +2 stun_time (frames), +3 hurry_seconds, +4 chaser_seconds, +5 cat_slots_end ($60 / $70 / $80 = 4, 5 or 6 cats). Every 4th entry is a bonus round's. Kept (name checked against the code). Earlier note: Data walk 2026-10-26: 6 bytes per stage_index into $63-$68 (load_stage_params)."
 [[label]]
 addr = "F83B"
 name = "tbl_note_periods"

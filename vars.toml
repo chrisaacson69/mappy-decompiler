@@ -1521,7 +1521,7 @@ why = "Variables round 2 (2026-10-26): record +6: 1 right, $FF left. Was 'obj_fa
 offset = "07"
 name = "obj_timer"
 conf = "HIGH"
-why = "HIGH"
+why = "Layout 2026-10-27: record +7: the state's frame counter or timer (counts up in the walk, down in the timed states). HIGH"
 
 [[obj_field]]
 offset = "08"
@@ -1569,4 +1569,4 @@ why = "Variables round 2 (2026-10-26): record +E: the player's button history (s
 offset = "0F"
 name = "obj_state"
 conf = "HIGH"
-why = "Proven by code + data (2026-10-26 data phase): $DA2C ldy #$0F / lda ($1E),y / tax / lda $DA42,x -> jmp ($1C), the object-state dispatch ($E17A in the bonus round). Attract-demo values are even, 00..22, inside the 23-entry table. The only offset that is the state. Was 'obj_state'. Earlier note: x"
+why = "Layout 2026-10-27: record +F: the state, an index into tbl_object_state_handlers ($DA42), or tbl_bonus_state_handlers ($E17A) in a bonus round. Proven by code + data (2026-10-26 data phase): $DA2C ldy #$0F / lda ($1E),y / tax / lda $DA42,x -> jmp ($1C), the object-state dispatch ($E17A in the bonus round). Attract-demo values are even, 00..22, inside the 23-entry table. The only offset that is the state. Was 'obj_state'. Earlier note: x"
