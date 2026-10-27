@@ -171,10 +171,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, draw path): anim 0E: skipped while +7 bit 3 is set, else falls into draw_stunned_pose: the recovering cat blinks. Was 'test_bit3_of_record_field7'. Earlier note: lda ($1e),y with y=7 reads field[7] of a zero-page pointer record, and #$08 masks bit 3, bne branches on it — a flag test."
 [[label]]
 addr = "C63D"
-name = "draw_goal_block_dd"
+name = "draw_goal_balloon_frame_dd"
 kind = "leaf"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, draw path): tile $DD at x - 6, falling into draw_tile_block_3x4. Also wait_120_frames_with_sprite's sprite. Was 'ptr16_sub6_set_const'. Earlier note: 16-bit borrow chain: $10=$10-6 (sec/sbc #$06), bcs skips dec $11 (high byte) — decrements little-endian pointer $10/$11 by 6; also stores constant #$dd into $12."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the balloon's $DD-tile frame at x - 6 (also the results screen's balloon icon). Was 'draw_goal_block_dd'. Earlier note: Top-down 2026-10-26 (game thread, draw path): tile $DD at x - 6, falling into draw_tile_block_3x4. Also wait_120_frames_with_sprite's sprite. Was 'ptr16_sub6_set_const'. Earlier note: 16-bit borrow chain: $10=$10-6 (sec/sbc #$06), bcs skips dec $11 (high byte) — decrements little-endian pointer $10/$11 by 6; also stores constant #$dd into $12."
 [[label]]
 addr = "C65C"
 name = "draw_tile_row_of_3"
@@ -226,10 +226,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, round setup): points $1E at the GAME OVER block ($CB97 -> $CB99) and falls into draw_sprite_text. Was 'init_ptr_1e_from_const'. Earlier note: Loads fixed ROM word $CB97/$CB98 (lo/hi) and stores into consecutive zero-page $1E/$1F, initializing a 16-bit pointer from a constant."
 [[label]]
 addr = "CD2B"
-name = "init_title_object"
+name = "init_namco_logo"
 kind = "leaf"
-conf = "MED"
-why = "Top-down 2026-10-26 (game thread, round setup): title_screen: record $0490 = 00 0C 00 14 1C (x $0C.00, y $14.00, anim $1C). Its picture is not checked. Was 'copy_5_bytes_table_to_ram_0490'. Earlier note: ldx#0; lda $cd39,x; sta $0490,x; inx; cpx #$05; bne — copies 5 bytes from ROM table $CD39 into RAM $0490..$0494."
+conf = "HIGH"
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): title_screen: the $0490 record = namco_logo_record. Was 'init_title_object'. Earlier note: Top-down 2026-10-26 (game thread, round setup): title_screen: record $0490 = 00 0C 00 14 1C (x $0C.00, y $14.00, anim $1C). Its picture is not checked. Was 'copy_5_bytes_table_to_ram_0490'. Earlier note: ldx#0; lda $cd39,x; sta $0490,x; inx; cpx #$05; bne — copies 5 bytes from ROM table $CD39 into RAM $0490..$0494."
 [[label]]
 addr = "D4E5"
 name = "bcd_add_from_table"
@@ -274,10 +274,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, round setup): type +5 = A, x fraction X*4+$20, x/y from item X ($0264/$0265), anim 2, state 0, +8 = $4B. Was 'init_object_record_via_ptr'. Earlier note: Writes multiple fields through indirect ptr ($1e),y at offsets 0,1,3,4,5,8,15 — computed type byte (X*4+$20), X-indexed coords from $0264/$0265,x, and constants $02/$4b/$00 — populating an object/sprite descriptor record."
 [[label]]
 addr = "D8C0"
-name = "init_bonus_goal_object"
+name = "init_bonus_goal_balloon"
 kind = "leaf"
 conf = "HIGH"
-why = "Bonus-round setup: slot 1 +0..+4 from $D8D3 (x 5, y $18, anim $18), state 0E (bonus_state0E_goal_object). Was 'init_ram_block_from_table'. Earlier note: ldx#0 / lda $d8d3,x / sta $0410,x / inx / cpx #5 / bne copies a 5-byte ROM table into RAM $0410-$0414, then lda #$0e / sta $041f sets one more field to a constant"
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): slot 1 = the goal balloon (x 5, row $18, anim $18), state 0E. Was 'init_bonus_goal_object'. Earlier note: Bonus-round setup: slot 1 +0..+4 from $D8D3 (x 5, y $18, anim $18), state 0E (bonus_state0E_goal_object). Was 'init_ram_block_from_table'. Earlier note: ldx#0 / lda $d8d3,x / sta $0410,x / inx / cpx #5 / bne copies a 5-byte ROM table into RAM $0410-$0414, then lda #$0e / sta $041f sets one more field to a constant"
 [[label]]
 addr = "D9BC"
 name = "set_intent_right"
@@ -386,10 +386,10 @@ conf = "HIGH"
 why = "State 1A: counts +7 down to 0 and holds; update_and_respawn_objects ($D8F8) then drops one such cat in at x $1D, y 6 as state 1C. Entered from end_door_wave with timer $3C. Trace (state_census.py, 3 play logs): 131-151 frames, -> 1C. Was 'dec_timer_field7_if_nonzero'. Earlier note: ldy #$07; lda ($1e),y; beq exit; sec/sbc #$01; sta ($1e),y — reads offset-7 field of struct via ZP pointer $1e and decrements it only if non-zero (floored countdown timer)."
 [[label]]
 addr = "DE7A"
-name = "state26_stunned_by_drop"
+name = "state26_stunned_by_bell"
 kind = "leaf"
 conf = "HIGH"
-why = "State 26, a cat hit by a dropped object (dropped_object_stuns_cats: anim $22, timer $65, y clamped to $19): counts +7 down, then anim $24, timer $40, state 28. Not reached in the 3 play logs. Was 'dec_obj_timer_reload_on_zero'. Earlier note: Decrements struct field ($1e)+7 (sec/sbc #1, sta); bne skips the reload, so on expiry it rewrites +$0f=$28, +4=$24, +7=$40 — a countdown timer that resets state on zero."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): a cat hit by a falling bell: counts +7 down, then anim $24, state 28. Was 'state26_stunned_by_drop'. Earlier note: State 26, a cat hit by a dropped object (dropped_object_stuns_cats: anim $22, timer $65, y clamped to $19): counts +7 down, then anim $24, timer $40, state 28. Not reached in the 3 play logs. Was 'dec_obj_timer_reload_on_zero'. Earlier note: Decrements struct field ($1e)+7 (sec/sbc #1, sta); bne skips the reload, so on expiry it rewrites +$0f=$28, +4=$24, +7=$40 — a countdown timer that resets state on zero."
 [[label]]
 addr = "DF8A"
 name = "scroll_camera_with_player"
@@ -548,10 +548,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, frame update): cat X ($0400,x +0/+1) += A, or -= A when the wave's +6 is negative. Was 'add_byte_to_word_if_active'. Earlier note: Stores A to $10, then if bit7 of ($1e),y[6] is clear does a 16-bit add: $0400,x += $10 with carry into $0401,x (clc/adc $10/sta, then adc #$00/sta) — 8-bit addend into a little-endian word counter, gated by a sign flag."
 [[label]]
 addr = "EF17"
-name = "load_dropped_objects"
+name = "load_bells"
 kind = "leaf"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, round setup): stage index 7-9 only (rounds 8-10): copies the 16-byte template $EF2F to $A0-$AF, the two dropped objects (update_dropped_objects). Was 'copy_16b_table_if_var_in_range'. Earlier note: Range-checks $7A (sec/sbc #$07/cmp #$03/bcs skip), then if in range copies 16 bytes from ROM table $EF2F into zero-page buffer $A0..$AF via indexed loop (ldx#0; lda $EF2F,x; sta $A0,x; cpx #$10; bne)."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): rounds 8-10 only: the two bell records at $A0 / $A8 from bells_template. Was 'load_dropped_objects'. Earlier note: Top-down 2026-10-26 (game thread, round setup): stage index 7-9 only (rounds 8-10): copies the 16-byte template $EF2F to $A0-$AF, the two dropped objects (update_dropped_objects). Was 'copy_16b_table_if_var_in_range'. Earlier note: Range-checks $7A (sec/sbc #$07/cmp #$03/bcs skip), then if in range copies 16 bytes from ROM table $EF2F into zero-page buffer $A0..$AF via indexed loop (ldx#0; lda $EF2F,x; sta $A0,x; cpx #$10; bne)."
 [[label]]
 addr = "F054"
 name = "update_floor_trap"
@@ -572,10 +572,10 @@ conf = "MED"
 why = "Top-down 2026-10-26 (game thread, frame update): trap X open (state 1), the walker 2 rows above, x on it within the fraction window ($40 / $C0): sound $0607, A = 0. Was 'check_obj_adjacency_set_hit_flag'. Earlier note: For active obj ($90,x==1) it subtracts ($1e)-record coords from $95,x/$94,x, gates on dY==2 & dX in {0,1} plus a $C0/$40 sub-pixel threshold, then sets flag $0607=1 on match — a position-proximity/collision test."
 [[label]]
 addr = "F233"
-name = "animate_bonus_target"
+name = "animate_balloon"
 kind = "leaf"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, frame update): once every 16 frames, staggered by the target's index: picture $F263[frame & $10] drawn. Was 'load_ptr_from_table_by_state_bit'. Earlier note: Bit4 of $21 (and #$10, lsr x3) indexes table $F263,y; reads 2-byte LE pointer into $12/$13; preceding lda $1b/lsr x3/eor $21/and #$0f/bne is a 4-bit field compare-guard."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): every 16 frames, staggered by index: the balloon's two frames. Was 'animate_bonus_target'. Earlier note: Top-down 2026-10-26 (game thread, frame update): once every 16 frames, staggered by the target's index: picture $F263[frame & $10] drawn. Was 'load_ptr_from_table_by_state_bit'. Earlier note: Bit4 of $21 (and #$10, lsr x3) indexes table $F263,y; reads 2-byte LE pointer into $12/$13; preceding lda $1b/lsr x3/eor $21/and #$0f/bne is a 4-bit field compare-guard."
 [[label]]
 addr = "F2E6"
 name = "tick_round_timer"
@@ -674,10 +674,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, draw path): anim 08: tile $50, palette cycling with frame >> 1, mirrored by direction; two parts, the second 8 left and 8 down. Was 'build_sprite_attr_and_step_coords'. Earlier note: Derives a sprite attribute byte in $13 from $21's 2 bits, ORs in flip/palette bit $40 when obj+6 flag set, sets tile $12=#$50, steps Y($10/$11)-8 and X($16)+8, then jmp's extract_top2_bits to emit — per-tile metasprite OAM attr/coord setup."
 [[label]]
 addr = "C4F5"
-name = "draw_tile_3c_type1_flicker"
+name = "draw_bell"
 kind = "routine"
-conf = "MED"
-why = "Top-down 2026-10-26 (game thread, draw path): anim 0A: tile $3C, palette 1; type 1 flips its attribute ($41 / $01) every 16 frames. No store of anim $0A was found. Was 'select_object_tile_param_by_type_flag'. Earlier note: Loads const #$3c into param $12, reads object field ($1e)+5; if it==1 and state flag $21 bit4 set picks #$41 else #$01 into param $13, then jmp extract_top2_bits — a parameterized dispatch selecting a tile/attr value by object type and a state flag."
+conf = "HIGH"
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): anim 0A: the gold bell (tile $3C, palette 1); it flickers while hanging (+5 = 1, attribute $41 / $01 every 16 frames). Was 'draw_tile_3c_type1_flicker'. Earlier note: Top-down 2026-10-26 (game thread, draw path): anim 0A: tile $3C, palette 1; type 1 flips its attribute ($41 / $01) every 16 frames. No store of anim $0A was found. Was 'select_object_tile_param_by_type_flag'. Earlier note: Loads const #$3c into param $12, reads object field ($1e)+5; if it==1 and state flag $21 bit4 set picks #$41 else #$01 into param $13, then jmp extract_top2_bits — a parameterized dispatch selecting a tile/attr value by object type and a state flag."
 [[label]]
 addr = "C518"
 name = "draw_stunned_pose"
@@ -813,10 +813,10 @@ conf = "HIGH"
 why = "Negates the direction +6, timer +7 = 6, start_hop with +B = 0: a step-off blocked by the floor tile returns into the shaft. Was 'reverse_obj_velocity_and_set_state'. Earlier note: Negates obj field +6 via lda #0;sec;sbc ($1e),y / sta ($1e),y (two's-complement flip of a signed velocity/direction), writes #$06 to field +7, then tail-jmps set_obj_fields_via_ptr with A=0."
 [[label]]
 addr = "DE98"
-name = "state28_drop_stun_recover"
+name = "state28_bell_stun_recover"
 kind = "routine"
 conf = "HIGH"
-why = "State 28: counts +7 ($40) down, then enter_fall. Not reached in the 3 play logs. Was 'obj_tick_timer7_then_reset_fields_8_F'. Earlier note: ldy #$07 / lda ($1e),y / sbc #$01 / sta ($1e),y decrements per-object timer field[7] via the $1e object pointer; bne keeps counting, on zero-expiry jmp obj_reset_fields_8_F resets the object's state fields."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): counts +7 ($40) down, then enter_fall. Was 'state28_drop_stun_recover'. Earlier note: State 28: counts +7 ($40) down, then enter_fall. Not reached in the 3 play logs. Was 'obj_tick_timer7_then_reset_fields_8_F'. Earlier note: ldy #$07 / lda ($1e),y / sbc #$01 / sta ($1e),y decrements per-object timer field[7] via the $1e object pointer; bne keeps counting, on zero-expiry jmp obj_reset_fields_8_F resets the object's state fields."
 [[label]]
 addr = "DEE9"
 name = "walk_step"
@@ -849,10 +849,10 @@ conf = "HIGH"
 why = "Bonus copy of state0A_trampoline_bounce: a broken trampoline ($0202 bit 7) -> fall (state 02); the trampoline's anim reaching 7 -> state 08; only the player wears it. Census (warped bonus runs): 7 frames, -> 08. Was 'update_obj_phase7_transition'. Earlier note: Indexes object struct via ($1e),y reads field[$0b]->X, calls set_obj_state_and_load_next_ptr, gates on $0201,x==7 and a timer, decrements $0202,x then rewrites struct fields[$08]=0,[$0f]=8,[$04]=6 — a per-object state/animation transition handler."
 [[label]]
 addr = "E2EE"
-name = "bonus_state0E_goal_object"
+name = "bonus_state0E_goal_balloon"
 kind = "routine"
 conf = "HIGH"
-why = "Bonus state 0E, slot 1 (absolute $041x): the player on its row with x 0-1 ahead -> inc $51, $5A = $20, sound $0606, clear slot 1, end_bonus_round, and release slot 2 as state 12 from the template at $E332 (x 5, y $18, anim 6, type 2, direction $FF). Census (warped bonus runs): slot 1 holds state 0E all round (1,133-1,439 frames) until reached; reached by warp: -> 00 and slot 2 -> 12. Was 'check_position_reached_and_reset_round'. Earlier note: Compares actor pos $0413/$0411 against target $0403/$0401 (within dist 2); on match calls init_object_tables + init_state_vars, sets flags $51/$5A/$0606, clears $0414/$041F/$042B, and copies a 7-byte seed table from $E332 to $0420 — a \"target reached -> reinit\" sequence."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): slot 1 in a bonus round is a blue balloon with Goro inside: Mappy reaching it ends the round and releases Goro (state 12). Was 'bonus_state0E_goal_object'. Earlier note: Bonus state 0E, slot 1 (absolute $041x): the player on its row with x 0-1 ahead -> inc $51, $5A = $20, sound $0606, clear slot 1, end_bonus_round, and release slot 2 as state 12 from the template at $E332 (x 5, y $18, anim 6, type 2, direction $FF). Census (warped bonus runs): slot 1 holds state 0E all round (1,133-1,439 frames) until reached; reached by warp: -> 00 and slot 2 -> 12. Was 'check_position_reached_and_reset_round'. Earlier note: Compares actor pos $0413/$0411 against target $0403/$0401 (within dist 2); on match calls init_object_tables + init_state_vars, sets flags $51/$5A/$0606, clears $0414/$041F/$042B, and copies a 7-byte seed table from $E332 to $0420 — a \"target reached -> reinit\" sequence."
 [[label]]
 addr = "E5C5"
 name = "load_round_items"
@@ -903,10 +903,10 @@ conf = "MED"
 why = "Top-down 2026-10-26 (game thread, frame update): update_floor_trap for $90 and $98. Was 'dispatch_obj0_state_then_fall_to_obj8'. Earlier note: ldy #$00 then jsr dispatch_obj_state runs object-state dispatch for object index 0, then ldy #$08 sets up the next object index and falls through to the following routine."
 [[label]]
 addr = "F13A"
-name = "load_bonus_targets"
+name = "load_balloons"
 kind = "routine"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, frame update): list $F27F[is_bonus_round]: its length in $53, targets left in $52 (length / 8), $50-$5F cleared; each target in the $0260 records: state 2, nametable address +6/+7, tile x/y +4/+5. Was 'load_object_table_from_def'. Earlier note: Indexes pointer-table $F27F/$F280 by $7C into ptr $1C/$1D; reads count byte (÷8 = entry count), clears $50/$51 + 12-byte block $54, then loops X+=8 bounded by $53 writing each def's 2 bytes ($10/$11) through shl3_pack_zp_ptr16 into a parallel object array at $0260(state=2)/$0264-$0267 — builds an 8-byte-stride object table from a selected data definition."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the bonus round's red balloons from tbl_balloon_lists[is_bonus_round]. Was 'load_bonus_targets'. Earlier note: Top-down 2026-10-26 (game thread, frame update): list $F27F[is_bonus_round]: its length in $53, targets left in $52 (length / 8), $50-$5F cleared; each target in the $0260 records: state 2, nametable address +6/+7, tile x/y +4/+5. Was 'load_object_table_from_def'. Earlier note: Indexes pointer-table $F27F/$F280 by $7C into ptr $1C/$1D; reads count byte (÷8 = entry count), clears $50/$51 + 12-byte block $54, then loops X+=8 bounded by $53 writing each def's 2 bytes ($10/$11) through shl3_pack_zp_ptr16 into a parallel object array at $0260(state=2)/$0264-$0267 — builds an 8-byte-stride object table from a selected data definition."
 # --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
 
 [[label]]
@@ -947,10 +947,10 @@ conf = "MED"
 why = "Top-down 2026-10-26 (game thread, frame update): walker_over_open_trap_x for $90, then $98; Z set when the walker at ($1E) is over an open trap, so state02_walk sends it into enter_fall: cats fall through too. Was 'check_two_obj_slots_for_hit'. Earlier note: Calls check_obj_adjacency_set_hit_flag with ldx #$00 then ldx #$08 (two object slots), beq short-circuits when first slot hits — a two-slot dispatch over the per-slot adjacency/hit check."
 [[label]]
 addr = "F250"
-name = "draw_bonus_target"
+name = "draw_balloon"
 kind = "routine"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, frame update): draw_rle_text of $12 at the target's address +6/+7. Was 'load_indexed_ptr_then_scan_for_terminator'. Earlier note: ldx $1b indexes a 16-bit pointer table at $0266/$0267 into ptr $10/$11, clears $14, then jmp (tail-call) to scan_ptr_buf_for_zero_terminator — sets up a selected buffer pointer and scans it for its zero terminator."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): draw_rle_text of the frame at the balloon's address. Was 'draw_bonus_target'. Earlier note: Top-down 2026-10-26 (game thread, frame update): draw_rle_text of $12 at the target's address +6/+7. Was 'load_indexed_ptr_then_scan_for_terminator'. Earlier note: ldx $1b indexes a 16-bit pointer table at $0266/$0267 into ptr $10/$11, clears $14, then jmp (tail-call) to scan_ptr_buf_for_zero_terminator — sets up a selected buffer pointer and scans it for its zero terminator."
 [[label]]
 addr = "F4F1"
 name = "update_sound_frame"
@@ -998,10 +998,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, draw path): A sprites with consecutive tiles across, then x back 24 and y + 8. Was 'draw_object_tile_row'. Earlier note: A-count→$17 loop calls write_object_to_shadow_oam per iter, advancing X-coord $10/$11 by +8 and tile $12 each pass; then rewinds $10 by $18 (3×8 row reset) and bumps Y $16 by +8 → blits a horizontal row of object tiles to shadow OAM and steps to next row."
 [[label]]
 addr = "C687"
-name = "draw_8_sprite_row_to_oam"
+name = "draw_namco_logo"
 kind = "routine"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, draw path): anim 1C (the title object): 8 sprites in a row, tiles $F4-$FB, palette 2. Kept (name checked against the code). Earlier note: Sets sprite params ($13=2,$14=0,$12=0xF4,$17=8 counter), loops 8x calling write_object_to_shadow_oam, advancing 16-bit pointer $10/$11 by 8 and incrementing tile/pos $12 each pass — emits a row of 8 sprites to shadow OAM."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): anim 1C: the 'namco' logo, 8 sprites $F4-$FB in a row. Was 'draw_8_sprite_row_to_oam'. Earlier note: Top-down 2026-10-26 (game thread, draw path): anim 1C (the title object): 8 sprites in a row, tiles $F4-$FB, palette 2. Kept (name checked against the code). Earlier note: Sets sprite params ($13=2,$14=0,$12=0xF4,$17=8 counter), loops 8x calling write_object_to_shadow_oam, advancing 16-bit pointer $10/$11 by 8 and incrementing tile/pos $12 each pass — emits a row of 8 sprites to shadow OAM."
 [[label]]
 addr = "CB14"
 name = "draw_sprite_glyph"
@@ -1016,10 +1016,10 @@ conf = "MED"
 why = "Top-down 2026-10-26 (game thread, round setup): title_screen's only layout call: clear the nametables, draw blocks entry 2, three BCD numbers (queue_bcd_number 0, 4, 8), then four rows of 20 tiles counting up from $B0 at $2107/$2127/$2147/$2167. Was 'setup_screen_layout'. Earlier note: Calls ppu_clear_nametables + ppu_run_draw_blocks + 3x build_buffer_entry_unpack_nibbles, then loops over a 4-entry PPU-address table ($CBED) writing 0x14 incrementing tiles via $2006/$2007 — composes the full screen/nametable layout."
 [[label]]
 addr = "CD3E"
-name = "draw_title_object"
+name = "draw_namco_logo_record"
 kind = "routine"
-conf = "MED"
-why = "Top-down 2026-10-26 (game thread, round setup): title_screen: draw_object on record $0490. Was 'transform_fixed_coord_90_04'. Earlier note: Loads constants #$90->$1E and #$04->$1F then jmp (tail-calls) transform_object_coords_to_pixel_space; a thin wrapper seeding a fixed coordinate pair into that routine's $1E/$1F inputs."
+conf = "HIGH"
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): title_screen: draw_object on the $0490 record (the namco logo). Was 'draw_title_object'. Earlier note: Top-down 2026-10-26 (game thread, round setup): title_screen: draw_object on record $0490. Was 'transform_fixed_coord_90_04'. Earlier note: Loads constants #$90->$1E and #$04->$1F then jmp (tail-calls) transform_object_coords_to_pixel_space; a thin wrapper seeding a fixed coordinate pair into that routine's $1E/$1F inputs."
 [[label]]
 addr = "D4BE"
 name = "add_score_n_times"
@@ -1079,7 +1079,7 @@ addr = "E427"
 name = "draw_trampoline"
 kind = "routine"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, round setup): trampoline X: screen address from $E537[+3]; broken (+2 bit 7) draws text entry $14, else the frame picked by +1 (the bounce animation). Was 'setup_obj_ptr_and_dispatch_scan'. Earlier note: Indexes object fields $0203,x/$0202,x/$0201,x: loads a 16-bit pointer from table $E537/$E538 into $10/$11, sets param $14 (0 if $0202,x negative, else its value) and Y=2*$0201,x, then jmp's to load_ptr_from_table_then_scan."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the palette passed is tramp_bounces_left, so a trampoline changes colour as it wears: green 3, blue 2, white 1; broken: entry $14 (its red edges). The frame is +1 (the bounce). Kept (name checked against the code). Earlier note: Top-down 2026-10-26 (game thread, round setup): trampoline X: screen address from $E537[+3]; broken (+2 bit 7) draws text entry $14, else the frame picked by +1 (the bounce animation). Was 'setup_obj_ptr_and_dispatch_scan'. Earlier note: Indexes object fields $0203,x/$0202,x/$0201,x: loads a 16-bit pointer from table $E537/$E538 into $10/$11, sets param $14 (0 if $0202,x negative, else its value) and Y=2*$0201,x, then jmp's to load_ptr_from_table_then_scan."
 [[label]]
 addr = "E456"
 name = "erase_first_trampoline"
@@ -1112,10 +1112,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, frame update): +0 = 1 starts the door's 5-frame swing (animate_door_swing toggles open/closed at its end); knock back the objects at it (door_knock_back_objects); a closed wave door ($02B1 bit 3 set, bit 1 clear) launches a door wave (find_first_empty_slot). Kept (name checked against the code). Earlier note: $02B0,x = 1 (open), knock back the objects at it (door_knock_back_objects); a door with $02B1 bit 3 set and bit 1 clear launches a door wave (find_first_empty_slot). Was 'activate_object_check_collision_maybe_spawn'. Earlier note: Sets state flag $02B0,x=1, calls check_subject_vs_object_list_collision, tests $02B1,x flags (and #$0a/eor #$08 = bit3 set & bit1 clear) then tail-jmps find_first_empty_slot to spawn, else branches to $e971."
 [[label]]
 addr = "EF9B"
-name = "dropped_object_stuns_cats"
+name = "bell_stuns_cats"
 kind = "routine"
 conf = "HIGH"
-why = "Cats (states < 16) within 1 in x and y of the falling object: +7 = $65, state 26, anim $22, y clamped to $19, score $08 ($44 for slot 2). Was 'check_object_collision_and_award_score'. Earlier note: Loops X=$20..$80 step $10 over 16-byte object records; for each active one ($040F,x<$16) does a ±1 16-bit X then Y overlap test of pointer ($1e) position vs record X/Y at $0400-$0403,x, and on a hit sets caught-state $040F,x=$26, $0404,x=$22, stores $65, clamps Y, and calls add_bcd_table_amount_to_buffer to award points."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): cats (states < 16) within 1 of the falling bell: stunned (state 26, anim $22), score $08 ($44 for Goro). Was 'dropped_object_stuns_cats'. Earlier note: Cats (states < 16) within 1 in x and y of the falling object: +7 = $65, state 26, anim $22, y clamped to $19, score $08 ($44 for slot 2). Was 'check_object_collision_and_award_score'. Earlier note: Loops X=$20..$80 step $10 over 16-byte object records; for each active one ($040F,x<$16) does a ±1 16-bit X then Y overlap test of pointer ($1e) position vs record X/Y at $0400-$0403,x, and on a hit sets caught-state $040F,x=$26, $0404,x=$22, stores $65, clamps Y, and calls add_bcd_table_amount_to_buffer to award points."
 [[label]]
 addr = "F013"
 name = "init_floor_trap"
@@ -1130,10 +1130,10 @@ conf = "MED"
 why = "Top-down 2026-10-26 (game thread, frame update): an armed trap (state 2) with the player standing on it -> state 3, pressed picture. Was 'obj_state2_advance_on_proximity'. Earlier note: Reads object state $0090,y; if state==2 and check_obj_near_point() matches, sets state=3 and tail-calls obj_proximity_trigger_with_timer with X=2 — a per-object state-machine transition gated on proximity."
 [[label]]
 addr = "F1F1"
-name = "pop_bonus_target"
+name = "pop_balloon"
 kind = "routine"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, frame update): sound $0608, state 0, targets left ($52) - 1, two score adds (tables 6, 8), erased with the picture at ($F277). Was 'init_object_record_load_data_and_scan'. Earlier note: Sets flag $0608=1, clears per-object slot $0260,x, decrements counter $52, loads two records via load_record_via_ptr_table (Y=6,8), seeds pointer $12/$13 from a ROM table ($F277/$F278), then tail-jumps to load_indexed_ptr_then_scan_for_terminator — an object/entity setup that loads records and kicks off a data scan."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): sound $0608, gone, balloons_left - 1, 200 points (the results screen's rate), erased. Was 'pop_bonus_target'. Earlier note: Top-down 2026-10-26 (game thread, frame update): sound $0608, state 0, targets left ($52) - 1, two score adds (tables 6, 8), erased with the picture at ($F277). Was 'init_object_record_load_data_and_scan'. Earlier note: Sets flag $0608=1, clears per-object slot $0260,x, decrements counter $52, loads two records via load_record_via_ptr_table (Y=6,8), seeds pointer $12/$13 from a ROM table ($F277/$F278), then tail-jumps to load_indexed_ptr_then_scan_for_terminator — an object/entity setup that loads records and kicks off a data scan."
 [[label]]
 addr = "F383"
 name = "draw_hurry_sprite"
@@ -1210,10 +1210,10 @@ conf = "HIGH"
 why = "Bonus state 0C (and the tail of bonus_state0A_walk_off): counts +7 down while moving; at 0 -> fall (state 02, anim 6). Census (warped bonus runs): 6 frames, dx +/-1, dy +1, -> 02. Was 'object_bounce_timer_reverse_or_advance'. Earlier note: Decrements timer field ($1e)+7; while nonzero tail-jumps to advance_object_subpixel_position_then_clamp; on zero, negates velocity field +6 (lda#0 sec sbc) and reloads phase fields +7/+0x0b/+0x0c/+0x0f/+4 — a direction-reversal/state-reset."
 [[label]]
 addr = "E339"
-name = "bonus_state12_released_cat_rises"
+name = "bonus_state12_goro_rises"
 kind = "routine"
 conf = "HIGH"
-why = "Bonus state 12, slot 2 (type 2, from bonus_state0E_goal_object): y -= $40 per frame ($E08A on +2/+3, a quarter row) until row < 6, then cleared. While its tile +8 is in $30-$48 it calls $E456 (queues $0500 text; a carried leftover). Census (warped bonus runs): 60 frames, dy -14 rows, -> 00. Was 'scan_table_if_code_in_range_then_advance_or_reset_counter'. Earlier note: Normalizes $0428 (sbc #$30) and if in range 0-24 calls scan_table_at_e537; then branches on $0423: if >=6 tail-calls sub16_from_struct_field_at_offset2 with A=#$40, else clears state vars $0424/$042F to 0."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): Goro, freed from the goal balloon, floats up a quarter row a frame and pops the balloons he meets (goro_pops_balloon). Was 'bonus_state12_released_cat_rises'. Earlier note: Bonus state 12, slot 2 (type 2, from bonus_state0E_goal_object): y -= $40 per frame ($E08A on +2/+3, a quarter row) until row < 6, then cleared. While its tile +8 is in $30-$48 it calls $E456 (queues $0500 text; a carried leftover). Census (warped bonus runs): 60 frames, dy -14 rows, -> 00. Was 'scan_table_if_code_in_range_then_advance_or_reset_counter'. Earlier note: Normalizes $0428 (sbc #$30) and if in range 0-24 calls scan_table_at_e537; then branches on $0423: if >=6 tail-calls sub16_from_struct_field_at_offset2 with A=#$40, else clears state vars $0424/$042F to 0."
 [[label]]
 addr = "E35B"
 name = "load_round_trampolines"
@@ -1258,10 +1258,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, frame update): +5: 0 idle. 1 moving: sound $0609, door_wave_catches_cats, carry_wave_cats, anim 8, x += stage param $63 + 8 by direction, draw; once draw_object reports it off screen: hide_wave_cats counts them, none -> end_door_wave, else +5 = 2 (score display: anim $10, direction reversed) and a score by the count. >= 2: drifts ($60) until it ends. Was 'tick_object_state_collision_score'. Earlier note: Reads obj state field ( y=5) at ($1e), dispatches on 0/1/>=2; in state 1 runs check_object_player_collision + accumulate_for_matching_objects, writes obj fields (states/velocity at y=4,5,6,7,1), moves via add_byte_to_obj_word_if_active/transform_object_coords_to_pixel_space, scans states with advance_obj_state_if_matched loop, and awards score via add_bcd_table_amount_n_times — a per-object state-machine tick with collision and scoring."
 [[label]]
 addr = "EF4E"
-name = "update_dropped_object"
+name = "update_bell"
 kind = "routine"
-conf = "MED"
-why = "+5 = 0 idle; 1: hangs until the player is on its row within 2 x, then +5 = 2 and sound $0607; >= 2: y fraction += $80 per frame (falls half a row) and dropped_object_stuns_cats. Was 'update_active_object_state_machine'. Earlier note: Reads object state byte ($1e),y at +5 and branches: state>=2 calls check_object_collision_and_award_score then advances pos (+2/+3 by $80) wrapping at $1c and re-renders via transform_object_coords_to_pixel_space; state<2 tests proximity to reference ($0403/$0401 within 2) and promotes state to 2 — a per-object motion/collision state-machine tick."
+conf = "HIGH"
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): +5 = 1: the bell hangs until Mappy is under it (row, x within 2), then +5 = 2 and sound $0607; >= 2: it falls half a row a frame and bell_stuns_cats. Was 'update_dropped_object'. Earlier note: +5 = 0 idle; 1: hangs until the player is on its row within 2 x, then +5 = 2 and sound $0607; >= 2: y fraction += $80 per frame (falls half a row) and dropped_object_stuns_cats. Was 'update_active_object_state_machine'. Earlier note: Reads object state byte ($1e),y at +5 and branches: state>=2 calls check_object_collision_and_award_score then advances pos (+2/+3 by $80) wrapping at $1c and re-renders via transform_object_coords_to_pixel_space; state<2 tests proximity to reference ($0403/$0401 within 2) and promotes state to 2 — a per-object motion/collision state-machine tick."
 [[label]]
 addr = "F001"
 name = "spawn_floor_traps"
@@ -1276,10 +1276,10 @@ conf = "MED"
 why = "Top-down 2026-10-26 (game thread, frame update): press_floor_trap for $90 and $98 (called from the walk and door-knockback states). Was 'advance_obj_pair_on_proximity'. Earlier note: ldy #$00 / jsr obj_state2_advance_on_proximity / ldy #$08 then falls through into $F0B8 — runs the shared proximity-advance handler twice with object indices 0 and 8."
 [[label]]
 addr = "F215"
-name = "released_cat_pops_target"
+name = "goro_pops_balloon"
 kind = "routine"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, frame update): slot 2 (the cat released by the goal) on a target: slot 2 cleared, the target popped. Was 'on_object_reaching_target_reset_and_rescan'. Earlier note: Compares object[x] coords ($0265,x==$0423 and $0264,x within 2 of $0421); on proximity match clears flags $042F/$0424 (#$00) and tail-jumps to init_object_record_load_data_and_scan ($F1F1)."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): rising Goro on a balloon: Goro leaves, the balloon pops (pop_balloon). Was 'released_cat_pops_target'. Earlier note: Top-down 2026-10-26 (game thread, frame update): slot 2 (the cat released by the goal) on a target: slot 2 cleared, the target popped. Was 'on_object_reaching_target_reset_and_rescan'. Earlier note: Compares object[x] coords ($0265,x==$0423 and $0264,x within 2 of $0421); on proximity match clears flags $042F/$0424 (#$00) and tail-jumps to init_object_record_load_data_and_scan ($F1F1)."
 [[label]]
 addr = "F323"
 name = "start_timer_phase_tune"
@@ -1302,10 +1302,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, draw path): draw_score_column twice. Was 'draw_object_pair_once'. Earlier note: Single instruction `jsr $C543 -> draw_object_pair_advance_slot`; a 3-byte trampoline that invokes the draw-pair routine exactly one time before returning."
 [[label]]
 addr = "C61E"
-name = "draw_bonus_goal_object"
+name = "draw_goal_balloon"
 kind = "routine"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, draw path): anim 18 (slot 1, the bonus goal): every $20 frames alternates a tile $E8 block plus one sprite above with the $DD block (draw_goal_block_dd). Was 'draw_flagged_object_to_oam'. Earlier note: Sets draw params ($13=2 rows,$14=0,$12=$E8 Y), tests bit5 of flag $21 (beq skips), calls draw_object_tile_rows, decrements X coord $16 by 8, tail-jmps write_object_to_shadow_oam — composes both object-draw callees to render a flag-gated multi-tile object into shadow OAM."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): anim 18: the blue balloon with Goro in it, alternating its two frames every $20 frames. Was 'draw_bonus_goal_object'. Earlier note: Top-down 2026-10-26 (game thread, draw path): anim 18 (slot 1, the bonus goal): every $20 frames alternates a tile $E8 block plus one sprite above with the $DD block (draw_goal_block_dd). Was 'draw_flagged_object_to_oam'. Earlier note: Sets draw params ($13=2 rows,$14=0,$12=$E8 Y), tests bit5 of flag $21 (beq skips), calls draw_object_tile_rows, decrements X coord $16 by 8, tail-jmps write_object_to_shadow_oam — composes both object-draw callees to render a flag-gated multi-tile object into shadow OAM."
 [[label]]
 addr = "CB02"
 name = "draw_player_number_text"
@@ -1338,16 +1338,16 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, frame update): update_door_wave for the 4 records $04A0-$04BF. Was 'tick_object_group_04a0'. Earlier note: Sets pointer $1E/$1F=$04A0, calls tick_object_state_collision_score per entry, advances $1E by stride 8 until $C0 (4 iterations) — loops the per-object tick over an object array."
 [[label]]
 addr = "EF3F"
-name = "update_dropped_objects"
-kind = "routine"
-conf = "MED"
-why = "Runs update_dropped_object on the two zero-page records $A0 and $A8. Was 'update_object_pair_state_at_a0_a8'. Earlier note: Sets 16-bit pointer $1E/$1F=$00A0, calls update_active_object_state_machine, then reloads $1E=$A8 to update the next object — drives the state machine over two fixed object pointers."
-[[label]]
-addr = "F1B9"
-name = "bonus_target_live"
+name = "update_bells"
 kind = "routine"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, frame update): animate_bonus_target; released_cat_pops_target; the player on it pops it (pop_bonus_target), and a player rising (bonus state 08) is turned into a fall (state 02). Was 'check_object_reached_target_then_advance_phase'. Earlier note: Indexes obj slot $1B into $0260/$0264/$0265 (state/X/Y), gates on state==2 and X/Y within dist<2 of target $0401/$0403, then on mode $040F==8 writes $0408=0,$040F=2,$0404=6 (phase transition); callees load_ptr_from_table_by_state_bit + on_object_reaching_target_reset_and_rescan."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): update_bell for $A0 and $A8. Was 'update_dropped_objects'. Earlier note: Runs update_dropped_object on the two zero-page records $A0 and $A8. Was 'update_object_pair_state_at_a0_a8'. Earlier note: Sets 16-bit pointer $1E/$1F=$00A0, calls update_active_object_state_machine, then reloads $1E=$A8 to update the next object — drives the state machine over two fixed object pointers."
+[[label]]
+addr = "F1B9"
+name = "balloon_live"
+kind = "routine"
+conf = "HIGH"
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): animate_balloon; goro_pops_balloon; Mappy touching it pops it (a rising Mappy starts falling). Was 'bonus_target_live'. Earlier note: Top-down 2026-10-26 (game thread, frame update): animate_bonus_target; released_cat_pops_target; the player on it pops it (pop_bonus_target), and a player rising (bonus state 08) is turned into a fall (state 02). Was 'check_object_reached_target_then_advance_phase'. Earlier note: Indexes obj slot $1B into $0260/$0264/$0265 (state/X/Y), gates on state==2 and X/Y within dist<2 of target $0401/$0403, then on mode $040F==8 writes $0408=0,$040F=2,$0404=6 (phase transition); callees load_ptr_from_table_by_state_bit + on_object_reaching_target_reset_and_rescan."
 # --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
 
 [[label]]
@@ -1388,10 +1388,10 @@ conf = "HIGH"
 why = "Naming 2026-10-26: ldy $0260,x indexes the 3-handler table $E65A (noop, resolve_object_position_capture_and_score, draw_object_and_tick_state_timer). $0260 is the item record: spawn_objects_from_level_descriptor sets it to 2 per item, and the pickup handler decrements round_items_remaining. Was 'dispatch_object_state_handler_e65a'. Earlier note: Loads per-object state index from $0260,x, fetches a 2-byte pointer from inline table $E65A (entries = handler_rts_noop $C14F, resolve_object_position... $E660, draw_object_and_tick... $E6FA) into $1C/$1D and jmp ($1C) — a state-indexed jump-table dispatcher."
 [[label]]
 addr = "F1A5"
-name = "dispatch_bonus_target"
+name = "dispatch_balloon"
 kind = "routine"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, frame update): by +0 through $F1B5: 0 none, 2 bonus_target_live. Was 'dispatch_object_phase_handler'. Earlier note: Indexes table $F1B5 by per-object phase $0260,x, loads 16-bit pointer into $1C/$1D, jmp ($1C); table entries are $C14F handler_rts_noop and $F1B9 check_object_reached_target_then_advance_phase — a phase-indexed jump-table dispatcher."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): by state through tbl_balloon_handlers: 0 popped, 2 balloon_live. Was 'dispatch_bonus_target'. Earlier note: Top-down 2026-10-26 (game thread, frame update): by +0 through $F1B5: 0 none, 2 bonus_target_live. Was 'dispatch_object_phase_handler'. Earlier note: Indexes table $F1B5 by per-object phase $0260,x, loads 16-bit pointer into $1C/$1D, jmp ($1C); table entries are $C14F handler_rts_noop and $F1B9 check_object_reached_target_then_advance_phase — a phase-indexed jump-table dispatcher."
 # --- merged from leaf-labeling workflow (agent names, behavior-derived) ---
 
 [[label]]
@@ -1414,10 +1414,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread): dispatch_item_state for each 8-byte item record, X = 0 .. item_table_len ($81) step 8. Was 'update_all_active_objects'. Earlier note: Loops index $1b from 0 by stride #$08 up to count $81, calling dispatch_object_state_handler each pass — a per-object update loop over an 8-byte-stride object table; beq $e649 skips when count is zero."
 [[label]]
 addr = "F18F"
-name = "update_bonus_targets"
+name = "update_balloons"
 kind = "routine"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, frame update): dispatch_bonus_target for each record up to $53. Was 'dispatch_all_objects_phase_handler'. Earlier note: Loops X from 0 by stride +8 (8-byte object slots) up to limit $53, storing index in $1B and calling dispatch_object_phase_handler each pass; early-out when $53==0 — iterates the object table running the per-object handler."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): dispatch_balloon for each balloon. Was 'update_bonus_targets'. Earlier note: Top-down 2026-10-26 (game thread, frame update): dispatch_bonus_target for each record up to $53. Was 'dispatch_all_objects_phase_handler'. Earlier note: Loops X from 0 by stride +8 (8-byte object slots) up to limit $53, storing index in $1B and calling dispatch_object_phase_handler each pass; early-out when $53==0 — iterates the object table running the per-object handler."
 [[label]]
 addr = "C141"
 name = "yield_to_render_loop"
@@ -1529,10 +1529,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread, draw path): A = anim (+4): bit 0 kept in $15, A & $FE indexes the 19 handlers at $C356. Was 'dispatch_object_draw_routine_by_index'. Earlier note: Stores index to $15, `and #$fe`+tax makes an even table offset, loads 16-bit pointer from table at $C356 into $1C/$1D, `jmp ($001c)`; table entries point to object draw/compose routines (compose_obj_anim_index, draw_object_animated_sprite, build_object_sprite_attributes, draw_object_by_animation_state)."
 [[label]]
 addr = "C3A7"
-name = "draw_drop_recover_blink"
+name = "draw_bell_recover_blink"
 kind = "routine"
 conf = "HIGH"
-why = "Top-down 2026-10-26 (game thread, draw path): anim 24 (state 28): with +7 bit 3 set draws as anim 06 (draw_fall_bounce_pose), else nothing: blinking. Was 'dispatch_on_obj_flag_bit3'. Earlier note: Reads byte at offset 7 of struct via ptr ($1e), masks bit3 (and #$08); if set, loads param #$06 and tail-jmps to $C344, else falls to alternate path at $c3bf — selects a value by an object status bit then dispatches."
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): anim 24 (state 28): the cat blinks (anim 06's pose on +7 bit 3). Was 'draw_drop_recover_blink'. Earlier note: Top-down 2026-10-26 (game thread, draw path): anim 24 (state 28): with +7 bit 3 set draws as anim 06 (draw_fall_bounce_pose), else nothing: blinking. Was 'dispatch_on_obj_flag_bit3'. Earlier note: Reads byte at offset 7 of struct via ptr ($1e), masks bit3 (and #$08); if set, loads param #$06 and tail-jmps to $C344, else falls to alternate path at $c3bf — selects a value by an object status bit then dispatches."
 [[label]]
 addr = "C84F"
 name = "title_screen"
@@ -1595,10 +1595,10 @@ conf = "HIGH"
 why = "Top-down 2026-10-26 (game thread): builds round 1 ($7A = $7D = 0) and plays it on the demo script (demo_script_cursor $3D) until round_cleared, player_down, or a button, then jmp title_screen. The headless trace in discover runs exactly this. Was 'setup_stage_then_run_intro_frames'. Earlier note: Disables render (ppu_disable_render), clears $0400 buffer, builds screen layout (build_stage_screen_layout), builds OAM/sprites, spawns objects (spawn_objects_from_level_descriptor, load_object_table_to_ram, spawn_object_pair_for_state), re-enables render, copies shadow-OAM $0200→$0300, inits object records (init_object_from_rom_template/init_object_record_row), zeros state ($4b/$4f/$31/$3c/$3d) and seeds $040F object slots with #$02 — full stage/object setup."
 [[label]]
 addr = "C37C"
-name = "draw_drop_stun_points"
+name = "draw_bell_stun_points"
 kind = "routine"
-conf = "MED"
-why = "Top-down 2026-10-26 (game thread, draw path): anim 22 (state 26): two sprites, $AE (slot 2: $66) and $67: the points shown for a cat stunned by a dropped object. Was 'draw_two_tile_object'. Earlier note: $12=tile($AE, or $66 when $1E==$20), $13=3 palette; jsr write_object_to_shadow_oam, advance X +8, $12=$67, jmp write_object_to_shadow_oam = two-tile object draw (leading A9 AE byte mis-flagged as data, like $C141)"
+conf = "HIGH"
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): anim 22 (state 26): the points over a cat a bell stunned: 300 ($AE $67), 1000 for Goro ($66 $67). Was 'draw_drop_stun_points'. Earlier note: Top-down 2026-10-26 (game thread, draw path): anim 22 (state 26): two sprites, $AE (slot 2: $66) and $67: the points shown for a cat stunned by a dropped object. Was 'draw_two_tile_object'. Earlier note: $12=tile($AE, or $66 when $1E==$20), $13=3 palette; jsr write_object_to_shadow_oam, advance X +8, $12=$67, jmp write_object_to_shadow_oam = two-tile object draw (leading A9 AE byte mis-flagged as data, like $C141)"
 [[label]]
 addr = "FFE1"
 name = "tbl_demo_input_script"
@@ -2072,11 +2072,10 @@ why = "Data walk 2026-10-26: 4 nametable words $2107 $2127 $2147 $2167: the rows
 
 [[label]]
 addr = "CD39"
-name = "title_object_record"
+name = "namco_logo_record"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26: 00 0C 00 14 1C: x $0C.00, y $14.00, anim $1C (init_title_object)."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): 00 0C 00 14 1C: the namco logo at x $0C, row $14, anim $1C. Was 'title_object_record'. Earlier note: Data walk 2026-10-26: 00 0C 00 14 1C: x $0C.00, y $14.00, anim $1C (init_title_object)."
 [[label]]
 addr = "CF08"
 name = "tbl_text_lines"
@@ -2135,11 +2134,10 @@ why = "Data walk 2026-10-26: 00 35 00 0A 06 00 FF: x $35, y $0A, anim 6 (init_bo
 
 [[label]]
 addr = "D8D3"
-name = "bonus_goal_template"
+name = "goal_balloon_template"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26: 00 05 00 18 18: x 5, y $18, anim $18 (init_bonus_goal_object)."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): 00 05 00 18 18: x 5, row $18, anim $18 (draw_goal_balloon). Was 'bonus_goal_template'. Earlier note: Data walk 2026-10-26: 00 05 00 18 18: x 5, y $18, anim $18 (init_bonus_goal_object)."
 [[label]]
 addr = "DA42"
 name = "tbl_object_state_handlers"
@@ -2163,11 +2161,10 @@ why = "Data walk 2026-10-26: 10 handler words by state in a bonus round."
 
 [[label]]
 addr = "E332"
-name = "released_cat_template"
+name = "released_goro_template"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26: 00 05 00 18 06 02 FF: slot 2 at x 5, y $18, anim 6, type 2, facing left (bonus_state0E_goal_object)."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): slot 2 as Goro (type 2) at the goal balloon: x 5, row $18, anim 6, facing left. Was 'released_cat_template'. Earlier note: Data walk 2026-10-26: 00 05 00 18 06 02 FF: slot 2 at x 5, y $18, anim 6, type 2, facing left (bonus_state0E_goal_object)."
 [[label]]
 addr = "E4CD"
 name = "trampoline_bounce_curve"
@@ -2261,11 +2258,10 @@ why = "Data walk 2026-10-26: words -> RLE pictures by door kind / swing frame (d
 
 [[label]]
 addr = "EF2F"
-name = "dropped_objects_template"
+name = "bells_template"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26: 16 bytes copied to $A0-$AF in rounds 8-10 (load_dropped_objects)."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the two bells of rounds 8-10 (+4 anim $0A = draw_bell, +5 = 1 hanging). Was 'dropped_objects_template'. Earlier note: Data walk 2026-10-26: 16 bytes copied to $A0-$AF in rounds 8-10 (load_dropped_objects)."
 [[label]]
 addr = "F041"
 name = "floor_trap_addrs"
@@ -2282,32 +2278,28 @@ why = "Data walk 2026-10-26: 3 words -> open ($51 $51), pressed ($50 $50), floor
 
 [[label]]
 addr = "F1B5"
-name = "tbl_bonus_target_handlers"
+name = "tbl_balloon_handlers"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26: 2 handler words: 0 none, 2 bonus_target_live."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): 2 handler words: 0 popped, 2 balloon_live. Was 'tbl_bonus_target_handlers'. Earlier note: Data walk 2026-10-26: 2 handler words: 0 none, 2 bonus_target_live."
 [[label]]
 addr = "F263"
-name = "tbl_bonus_target_pictures"
+name = "tbl_balloon_pictures"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26: 2 words -> the target's two animation frames (animate_bonus_target)."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the red balloon's two frames. Was 'tbl_bonus_target_pictures'. Earlier note: Data walk 2026-10-26: 2 words -> the target's two animation frames (animate_bonus_target)."
 [[label]]
 addr = "F277"
-name = "ptr_popped_target_picture"
+name = "ptr_popped_balloon_picture"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26: word -> the erase picture (pop_bonus_target)."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): word -> the popped balloon's erase picture. Was 'ptr_popped_target_picture'. Earlier note: Data walk 2026-10-26: word -> the erase picture (pop_bonus_target)."
 [[label]]
 addr = "F27F"
-name = "tbl_bonus_target_lists"
+name = "tbl_balloon_lists"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26: words by is_bonus_round -> [length][addresses ...] (load_bonus_targets)."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): balloon lists by is_bonus_round. Was 'tbl_bonus_target_lists'. Earlier note: Data walk 2026-10-26: words by is_bonus_round -> [length][addresses ...] (load_bonus_targets)."
 [[label]]
 addr = "F3AA"
 name = "hurry_sprite_record"
@@ -2701,46 +2693,40 @@ why = "Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictur
 
 [[label]]
 addr = "E7C5"
-name = "item_picture_00"
+name = "item_picture_radio"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $00 (draw_item (pairs 0-8) and erase_item ($0A))."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): pair 0: a radio. Was 'item_picture_00'. Earlier note: Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $00 (draw_item (pairs 0-8) and erase_item ($0A))."
 [[label]]
 addr = "E7CD"
-name = "item_picture_02"
+name = "item_picture_tv"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $02 (draw_item (pairs 0-8) and erase_item ($0A))."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): pair 1: a television. Was 'item_picture_02'. Earlier note: Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $02 (draw_item (pairs 0-8) and erase_item ($0A))."
 [[label]]
 addr = "E7D5"
-name = "item_picture_04"
+name = "item_picture_computer"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $04 (draw_item (pairs 0-8) and erase_item ($0A))."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): pair 2: a computer. Was 'item_picture_04'. Earlier note: Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $04 (draw_item (pairs 0-8) and erase_item ($0A))."
 [[label]]
 addr = "E7DD"
-name = "item_picture_06"
+name = "item_picture_painting"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $06 (draw_item (pairs 0-8) and erase_item ($0A))."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): pair 3: a painting (the Mona Lisa). Was 'item_picture_06'. Earlier note: Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $06 (draw_item (pairs 0-8) and erase_item ($0A))."
 [[label]]
 addr = "E7E5"
-name = "item_picture_08"
+name = "item_picture_safe"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $08 (draw_item (pairs 0-8) and erase_item ($0A))."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): pair 4: a safe. Was 'item_picture_08'. Earlier note: Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $08 (draw_item (pairs 0-8) and erase_item ($0A))."
 [[label]]
 addr = "E7ED"
-name = "item_picture_0a"
+name = "item_picture_erase"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $0A (draw_item (pairs 0-8) and erase_item ($0A))."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the blank drawn over a collected item (erase_item). Was 'item_picture_0a'. Earlier note: Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $0A (draw_item (pairs 0-8) and erase_item ($0A))."
 [[label]]
 addr = "EB1C"
 name = "round_doors_00"
@@ -2946,39 +2932,34 @@ why = "Data walk 2026-10-26 (pointer level): the target of tbl_floor_trap_pictur
 
 [[label]]
 addr = "F267"
-name = "bonus_target_picture_00"
+name = "balloon_picture_00"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_pictures at offset $00 (animate_bonus_target; frame & $10 >> 3)."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the red balloon, frame 1. Was 'bonus_target_picture_00'. Earlier note: Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_pictures at offset $00 (animate_bonus_target; frame & $10 >> 3)."
 [[label]]
 addr = "F26F"
-name = "bonus_target_picture_02"
+name = "balloon_picture_02"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_pictures at offset $02 (animate_bonus_target; frame & $10 >> 3)."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the red balloon, frame 2. Was 'bonus_target_picture_02'. Earlier note: Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_pictures at offset $02 (animate_bonus_target; frame & $10 >> 3)."
 [[label]]
 addr = "F289"
-name = "bonus_targets_02"
+name = "balloon_list_02"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_lists at offset $02 (load_bonus_targets by is_bonus_round (2-8; 0 has none))."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the first bonus round's balloons. Was 'bonus_targets_02'. Earlier note: Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_lists at offset $02 (load_bonus_targets by is_bonus_round (2-8; 0 has none))."
 [[label]]
 addr = "F2A8"
-name = "bonus_targets_04"
+name = "balloon_list_04"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_lists at offset $04 (load_bonus_targets by is_bonus_round (2-8; 0 has none))."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the second bonus round's balloons. Was 'bonus_targets_04'. Earlier note: Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_lists at offset $04 (load_bonus_targets by is_bonus_round (2-8; 0 has none))."
 [[label]]
 addr = "F2C7"
-name = "bonus_targets_06"
+name = "balloon_list_06"
 kind = "data"
 conf = "HIGH"
-why = "Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_lists at offsets $06, $08 (load_bonus_targets by is_bonus_round (2-8; 0 has none))."
-
+why = "Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the third and fourth bonus rounds' balloons (shared). Was 'bonus_targets_06'. Earlier note: Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_lists at offsets $06, $08 (load_bonus_targets by is_bonus_round (2-8; 0 has none))."
 [[label]]
 addr = "FB13"
 name = "voice_stream_04"

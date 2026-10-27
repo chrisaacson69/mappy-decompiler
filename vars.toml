@@ -402,31 +402,31 @@ why = "Top-down 2026-10-26 (game thread): set only by the item pickup when round
 
 [[var]]
 addr = "0050"
-name = "bonus_targets_popped"
+name = "balloons_popped"
 role = "bcd"
 conf = "HIGH"
-why = "Variables round 2 (2026-10-26): +1 per pop (bcd_add_record 06); shown at $2190 by show_bonus_results. Was 'obj_table_ptr'. Earlier note: data_or_unclear dereferences it as a 16-bit pointer via `eor ($50),y` (so $50=low byte, $51=high byte). The writer that sets it is load_object_table_from_def (`sta $50`), which loads an object-table definition, and load_record_by_index reads $50 as a table/record base (`ldy $50,x`). Together: a 16-b"
+why = "Assets 2026-10-27 (render_assets.py; Chris confirmed): +1 per popped balloon; shown on the results screen (200 points each). Was 'bonus_targets_popped'. Earlier note: Variables round 2 (2026-10-26): +1 per pop (bcd_add_record 06); shown at $2190 by show_bonus_results. Was 'obj_table_ptr'. Earlier note: data_or_unclear dereferences it as a 16-bit pointer via `eor ($50),y` (so $50=low byte, $51=high byte). The writer that sets it is load_object_table_from_def (`sta $50`), which loads an object-table definition, and load_record_by_index reads $50 as a table/record base (`ldy $50,x`). Together: a 16-b"
 
 [[var]]
 addr = "0051"
-name = "bonus_goals_reached"
+name = "goal_balloons_reached"
 role = "bcd"
 conf = "HIGH"
-why = "Variables round 2 (2026-10-26): +1 when the goal is reached (bonus_state0E_goal_object); shown at $2210. Was 'obj_def_ptr_hi'. Earlier note: Dereferenced as a 16-bit pointer in multiple routines: check_obj_adjacency_set_hit_flag ($F12F: eor ($51),y), fetch_seq_byte_and_advance_index ($F95A: adc ($51,x)), data_or_unclear ($FC56: eor ($51),y). Paired with $50: append_byte_to_0500_if_counter does ($50,x) and data_or_unclear also touches ($5"
+why = "Assets 2026-10-27 (render_assets.py; Chris confirmed): +1 when Mappy reaches the goal balloon; shown on the results screen (2000 each). Was 'bonus_goals_reached'. Earlier note: Variables round 2 (2026-10-26): +1 when the goal is reached (bonus_state0E_goal_object); shown at $2210. Was 'obj_def_ptr_hi'. Earlier note: Dereferenced as a 16-bit pointer in multiple routines: check_obj_adjacency_set_hit_flag ($F12F: eor ($51),y), fetch_seq_byte_and_advance_index ($F95A: adc ($51,x)), data_or_unclear ($FC56: eor ($51),y). Paired with $50: append_byte_to_0500_if_counter does ($50,x) and data_or_unclear also touches ($5"
 
 [[var]]
 addr = "0052"
-name = "bonus_targets_left"
+name = "balloons_left"
 role = "counter"
 conf = "HIGH"
-why = "Variables round 2 (2026-10-26): targets not yet popped; 0 with the goal reached gives PERFECT (show_bonus_results). Was 'object_def_ptr'. Earlier note: $52 is repeatedly dereferenced as a 16-bit pointer: ora ($52,x) in scan_objects_for_adjacent_contact_and_trigger, adc ($52,x) in fetch_seq_byte_and_advance_index, eor ($52),y in data_or_unclear; its +1 high byte $51 is also deref'd (eor ($51),y in check_obj_adjacency_set_hit_flag) — confirming $52 i"
+why = "Assets 2026-10-27 (render_assets.py; Chris confirmed): red balloons not yet popped; 0 with the goal reached gives PERFECT GAME (5000). Was 'bonus_targets_left'. Earlier note: Variables round 2 (2026-10-26): targets not yet popped; 0 with the goal reached gives PERFECT (show_bonus_results). Was 'object_def_ptr'. Earlier note: $52 is repeatedly dereferenced as a 16-bit pointer: ora ($52,x) in scan_objects_for_adjacent_contact_and_trigger, adc ($52,x) in fetch_seq_byte_and_advance_index, eor ($52),y in data_or_unclear; its +1 high byte $51 is also deref'd (eor ($51),y in check_obj_adjacency_set_hit_flag) — confirming $52 i"
 
 [[var]]
 addr = "0053"
-name = "bonus_target_table_len"
+name = "balloon_table_len"
 role = "count"
 conf = "HIGH"
-why = "Variables round 2 (2026-10-26): 8 x the number of targets (load_bonus_targets, update_bonus_targets). Was 'object_def_ptr'. Earlier note: $0053 is dereferenced as a 16-bit pointer (flagged P): trigger_state_transition_on_position_match does `and ($53,x)` ($E7B6) and scan_objects_for_adjacent_contact_and_trigger does `ora ($53,x)` ($EC83/$EC89) — indirect loads through the $53/$54 pair. The writer load_object_table_from_def sets it (`s"
+why = "Assets 2026-10-27 (render_assets.py; Chris confirmed): 8 x the number of balloons. Was 'bonus_target_table_len'. Earlier note: Variables round 2 (2026-10-26): 8 x the number of targets (load_bonus_targets, update_bonus_targets). Was 'object_def_ptr'. Earlier note: $0053 is dereferenced as a 16-bit pointer (flagged P): trigger_state_transition_on_position_match does `and ($53,x)` ($E7B6) and scan_objects_for_adjacent_contact_and_trigger does `ora ($53,x)` ($EC83/$EC89) — indirect loads through the $53/$54 pair. The writer load_object_table_from_def sets it (`s"
 
 [[var]]
 addr = "0054"
@@ -437,10 +437,10 @@ why = "Variables round 2 (2026-10-26): $54-$5F, cleared by load_bonus_targets: t
 
 [[var]]
 addr = "005A"
-name = "bonus_goal_points"
+name = "goal_balloon_points"
 role = "bcd"
 conf = "MED"
-why = "Variables round 2 (2026-10-26): 2 BCD bytes shown at $2217; the goal sets $20 (bonus_state0E_goal_object). Was 'ppu_block_src_ptr'. Earlier note: Flagged P and dereferenced as a 16-bit indexed-indirect pointer in ppu_draw_blocks_b ($CFBB/$CFC1: `ora ($5a,x)`), so $005A is a pointer low byte (its +1 is the high byte). The consumer is a PPU block-drawing routine, so it points at block/tile source data. It is set by check_position_reached_and_re"
+why = "Assets 2026-10-27 (render_assets.py; Chris confirmed): 2 BCD bytes: the goal balloon's points on the results screen. Was 'bonus_goal_points'. Earlier note: Variables round 2 (2026-10-26): 2 BCD bytes shown at $2217; the goal sets $20 (bonus_state0E_goal_object). Was 'ppu_block_src_ptr'. Earlier note: Flagged P and dereferenced as a 16-bit indexed-indirect pointer in ppu_draw_blocks_b ($CFBB/$CFC1: `ora ($5a,x)`), so $005A is a pointer low byte (its +1 is the high byte). The consumer is a PPU block-drawing routine, so it points at block/tile source data. It is set by check_position_reached_and_re"
 
 [[var]]
 addr = "0060"
@@ -640,10 +640,10 @@ why = "Variables round 2 (2026-10-26): 120 frames open (update_floor_trap). Was 
 
 [[var]]
 addr = "00A0"
-name = "dropped_objects"
+name = "bells"
 role = "array"
 conf = "HIGH"
-why = "Variables round 2 (2026-10-26): two 8-byte records, $A0 and $A8 (load_dropped_objects, update_dropped_object). Was 'block_data_ptr'. Earlier note: Flagged as 16-bit pointer low byte (P) and dereferenced indirect-indexed by ppu_draw_blocks_b ($CFC6: ora ($a0,x)) and append_computed_entry_to_buffer ($E017: ora ($a0,x)) — both consume it as the source address of block/table data. It is set indexed by copy_16b_table_if_var_in_range ($EF27: sta $a0"
+why = "Assets 2026-10-27 (render_assets.py; Chris confirmed): the two bell records of rounds 8-10, $A0 and $A8 (load_bells, update_bell). Was 'dropped_objects'. Earlier note: Variables round 2 (2026-10-26): two 8-byte records, $A0 and $A8 (load_dropped_objects, update_dropped_object). Was 'block_data_ptr'. Earlier note: Flagged as 16-bit pointer low byte (P) and dereferenced indirect-indexed by ppu_draw_blocks_b ($CFC6: ora ($a0,x)) and append_computed_entry_to_buffer ($E017: ora ($a0,x)) — both consume it as the source address of block/table data. It is set indexed by copy_16b_table_if_var_in_range ($EF27: sta $a0"
 
 [[var]]
 addr = "00B0"
@@ -973,10 +973,10 @@ why = "Variables round 2 (2026-10-26): the second magic byte."
 
 [[var]]
 addr = "0056"
-name = "bonus_target_points"
+name = "balloon_points"
 role = "bcd"
 conf = "MED"
-why = "Variables round 2 (2026-10-26): 2 BCD bytes shown at $2197 (bcd_number_entry 12)."
+why = "Assets 2026-10-27 (render_assets.py; Chris confirmed): 2 BCD bytes: the balloons' points on the results screen. Was 'bonus_target_points'. Earlier note: Variables round 2 (2026-10-26): 2 BCD bytes shown at $2197 (bcd_number_entry 12)."
 
 [[var]]
 addr = "005D"
@@ -1050,17 +1050,17 @@ why = "Variables round 2 (2026-10-26): item +2: 60 frames of points after collec
 
 [[var]]
 addr = "0266"
-name = "target_addr"
+name = "balloon_addr"
 role = "obj_field"
 conf = "HIGH"
-why = "Variables round 2 (2026-10-26): bonus target +6: its nametable address (load_bonus_targets, draw_bonus_target)."
+why = "Assets 2026-10-27 (render_assets.py; Chris confirmed): balloon +6: its nametable address. Was 'target_addr'. Earlier note: Variables round 2 (2026-10-26): bonus target +6: its nametable address (load_bonus_targets, draw_bonus_target)."
 
 [[var]]
 addr = "0267"
-name = "target_addr_hi"
+name = "balloon_addr_hi"
 role = "obj_field"
 conf = "HIGH"
-why = "Variables round 2 (2026-10-26): bonus target +7: high byte."
+why = "Assets 2026-10-27 (render_assets.py; Chris confirmed): balloon +7: high byte. Was 'target_addr_hi'. Earlier note: Variables round 2 (2026-10-26): bonus target +7: high byte."
 
 [[var]]
 addr = "02B2"
@@ -1509,7 +1509,7 @@ why = "Variables round 2 (2026-10-26): record +4: the draw handler index (dispat
 offset = "05"
 name = "obj_type"
 conf = "HIGH"
-why = "Touched by 16 routines that are overwhelmingly state-machine drivers: update_active_object_state_machine ($EF50 r + $EF73/$EF96 w — reads field, branches, writes new discrete values), update_matching_object_state (w $ED2"
+why = "Assets 2026-10-27: record +5 is the object type: 0 Mappy (the player), 1 the coin (the late chaser after HURRY), 2 Goro (slot 2, the red cat), 3 the Meowkies (the pink cats); seen in render_assets.py's sprites, named by Chris. Touched by 16 routines that are overwhelmingly state-machine drivers: update_active_object_state_machine ($EF50 r + $EF73/$EF96 w — reads field, branches, writes new discrete values), update_matching_object_state (w $ED2"
 
 [[obj_field]]
 offset = "06"

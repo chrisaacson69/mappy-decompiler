@@ -128,10 +128,10 @@ reset_cold_boot_init  $C031
                                 dispatch_object_draw_from_record  $C342
                                     dispatch_object_draw_by_anim  [flows-into]  $C344
                                         handler_rts_noop  [dispatch]  (above)
-                                        draw_drop_stun_points  [dispatch]  $C37C
+                                        draw_bell_stun_points  [dispatch]  $C37C
                                             write_sprite_to_oam  [jmp, flows-into]  $C415
                                                 sprite_attr_with_priority  $C465
-                                        draw_drop_recover_blink  [dispatch]  $C3A7
+                                        draw_bell_recover_blink  [dispatch]  $C3A7
                                             dispatch_object_draw_by_anim  [jmp, flows-into]  (above)
                                         draw_walk_cycle  [dispatch]  $C3C0
                                             load_type_sprite_palette  $C3B4
@@ -150,7 +150,7 @@ reset_cold_boot_init  $C031
                                             load_metasprite_tile_base  [jmp, flows-into]  (above)
                                         draw_door_wave  [dispatch]  $C4C6
                                             flip_bits_to_tile_xor  [jmp, flows-into]  (above)
-                                        draw_tile_3c_type1_flicker  [dispatch]  $C4F5
+                                        draw_bell  [dispatch]  $C4F5
                                             flip_bits_to_tile_xor  [jmp, flows-into]  (above)
                                         draw_stunned_blinking  [dispatch]  $C510
                                             draw_stunned_pose  [flows-into]  $C518
@@ -170,16 +170,16 @@ reset_cold_boot_init  $C031
                                             write_sprite_next_tile  (above)
                                         draw_player_death_animation  [dispatch]  $C5F6
                                             apply_facing_flip  [jmp, flows-into]  (above)
-                                        draw_bonus_goal_object  [dispatch]  $C61E
+                                        draw_goal_balloon  [dispatch]  $C61E
                                             write_sprite_to_oam  [jmp, flows-into]  (above)
-                                            draw_goal_block_dd  [flows-into]  $C63D
+                                            draw_goal_balloon_frame_dd  [flows-into]  $C63D
                                                 draw_tile_block_3x4  [flows-into]  $C64C
                                                     draw_tile_row_of_3  $C65C
                                                         draw_tile_row  [flows-into]  $C65E
                                                             write_sprite_to_oam  (above)
                                                     draw_tile_row  [jmp, flows-into]  (above)
                                             draw_tile_block_3x4  (above)
-                                        draw_8_sprite_row_to_oam  [dispatch]  $C687
+                                        draw_namco_logo  [dispatch]  $C687
                                             write_sprite_to_oam  (above)
                                         draw_player_caught_pose  [dispatch]  $C6AC
                                             apply_facing_flip  [jmp, flows-into]  (above)
@@ -307,8 +307,8 @@ reset_cold_boot_init  $C031
                                 state20_slot2_scored  [dispatch]  $DE61
                                     land_on_floor  [jmp, flows-into]  (above)
                                     clear_object  [flows-into]  (above)
-                                state26_stunned_by_drop  [dispatch]  $DE7A
-                                state28_drop_stun_recover  [dispatch]  $DE98
+                                state26_stunned_by_bell  [dispatch]  $DE7A
+                                state28_bell_stun_recover  [dispatch]  $DE98
                                     enter_fall  [jmp, flows-into]  (above)
                                 bonus_state04_ended  [dispatch]  $E19C
                                 bonus_state02_fall  [dispatch]  $E19D
@@ -327,28 +327,28 @@ reset_cold_boot_init  $C031
                                         move_hop_arc  [jmp, flows-into]  (above)
                                 bonus_state0C_rebound  [dispatch]  (above)
                                 bonus_state10_slot3_timeout  [dispatch]  $E2E0
-                                bonus_state0E_goal_object  [dispatch]  $E2EE
+                                bonus_state0E_goal_balloon  [dispatch]  $E2EE
                                     end_bonus_round  (above)
                                     init_sound_voices  (above)
-                                bonus_state12_released_cat_rises  [dispatch]  $E339
+                                bonus_state12_goro_rises  [dispatch]  $E339
                                     move_up_by_a  [jmp, flows-into]  (above)
                                     erase_first_trampoline  $E456
                                         draw_text_from_table  [jmp, flows-into]  (above)
                         animate_trampolines  $E3FE
                             animate_trampoline  $E410
                                 draw_trampoline  [flows-into]  (above)
-                        update_bonus_targets  $F18F
-                            dispatch_bonus_target  $F1A5
+                        update_balloons  $F18F
+                            dispatch_balloon  $F1A5
                                 handler_rts_noop  [dispatch]  (above)
-                                bonus_target_live  [dispatch]  $F1B9
-                                    pop_bonus_target  [flows-into]  $F1F1
+                                balloon_live  [dispatch]  $F1B9
+                                    pop_balloon  [flows-into]  $F1F1
                                         bcd_add_from_table  (above)
-                                        draw_bonus_target  [jmp, flows-into]  $F250
+                                        draw_balloon  [jmp, flows-into]  $F250
                                             draw_rle_text  [jmp, flows-into]  (above)
-                                    released_cat_pops_target  $F215
-                                        pop_bonus_target  [jmp, flows-into]  (above)
-                                    animate_bonus_target  $F233
-                                        draw_bonus_target  [flows-into]  (above)
+                                    goro_pops_balloon  $F215
+                                        pop_balloon  [jmp, flows-into]  (above)
+                                    animate_balloon  $F233
+                                        draw_balloon  [flows-into]  (above)
                     build_stage_screen_layout  $CD49
                         yield_to_render_loop  (above)
                         ppu_enable_render  (above)
@@ -369,7 +369,7 @@ reset_cold_boot_init  $C031
                         ppu_clear_nametables  (above)
                         wait_120_frames_with_sprite  $CE94
                             yield_to_render_loop  (above)
-                            draw_goal_block_dd  (above)
+                            draw_goal_balloon_frame_dd  (above)
                             update_score  (above)
                             blink_player_up_label  (above)
                         wait_120_frames  $CEBB
@@ -386,7 +386,7 @@ reset_cold_boot_init  $C031
                     blink_player_up_label  (above)
                     init_bonus_player  $D80B
                         reset_camera_and_point_at_player  $D825
-                    init_bonus_goal_object  $D8C0
+                    init_bonus_goal_balloon  $D8C0
                     load_round_trampolines  $E35B
                         ppu_addr_to_tile_xy  $E3BD
                         draw_trampoline  (above)
@@ -402,12 +402,12 @@ reset_cold_boot_init  $C031
                             draw_door  $E8FF
                                 draw_door_kind_y  [flows-into]  $E902
                                     draw_rle_text  [jmp, flows-into]  (above)
-                    load_dropped_objects  $EF17
+                    load_bells  $EF17
                     spawn_floor_traps  $F001
                         init_floor_trap  [flows-into]  $F013
                             ppu_addr_to_tile_xy  (above)
                             draw_floor_trap_frame  (above)
-                    load_bonus_targets  $F13A
+                    load_balloons  $F13A
                         ppu_addr_to_tile_xy  (above)
                     load_stage_params  $F3C1
                     init_sound_voices  (above)
@@ -472,10 +472,10 @@ reset_cold_boot_init  $C031
                                 door_wave_catches_cats  $EE77
                                 carry_wave_cats  $EEC9
                                     move_cat_x_by_wave_direction  $EEEB
-                        update_dropped_objects  $EF3F
-                            update_dropped_object  [flows-into]  $EF4E
+                        update_bells  $EF3F
+                            update_bell  [flows-into]  $EF4E
                                 draw_object  [jmp, flows-into]  (above)
-                                dropped_object_stuns_cats  $EF9B
+                                bell_stuns_cats  $EF9B
                                     add_score_from_table  (above)
                         update_floor_traps  $F04D
                             update_floor_trap  [flows-into]  $F054
@@ -507,8 +507,8 @@ reset_cold_boot_init  $C031
                 ppu_clear_nametables  (above)
                 ppu_run_draw_blocks  (above)
                 queue_bcd_number  (above)
-            init_title_object  $CD2B
-            draw_title_object  $CD3E
+            init_namco_logo  $CD2B
+            draw_namco_logo_record  $CD3E
                 draw_object  [jmp, flows-into]  (above)
             build_stage_screen_layout  (above)
             title_menu_cursor  $D73E

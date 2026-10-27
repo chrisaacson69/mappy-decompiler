@@ -21,7 +21,7 @@ NesPrgRom:03D7:apply_facing_flip:[HIGH] Top-down 2026-10-26 (game thread, draw):
 NesPrgRom:03E3:flip_bits_to_tile_xor:[HIGH] Top-down 2026-10-26 (game thread, draw): $14 = the attribute's flip bits (bits 7-6 -> 1-0); write_sprite_to_oam xors the tile with it, so a 
 NesPrgRom:0465:sprite_attr_with_priority:[MED] Top-down 2026-10-26 (game thread, draw): the attribute byte $13, with $20 (behind the background) added unless it is the bonus round or the 
 NesPrgRom:0510:draw_stunned_blinking:[HIGH] Top-down 2026-10-26 (game thread, draw path): anim 0E: skipped while +7 bit 3 is set, else falls into draw_stunned_pose: the recovering cat 
-NesPrgRom:063D:draw_goal_block_dd:[HIGH] Top-down 2026-10-26 (game thread, draw path): tile $DD at x - 6, falling into draw_tile_block_3x4. Also wait_120_frames_with_sprite's sprite
+NesPrgRom:063D:draw_goal_balloon_frame_dd:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the balloon's $DD-tile frame at x - 6 (also the results screen's balloon ico
 NesPrgRom:065C:draw_tile_row_of_3:[HIGH] Top-down 2026-10-26 (game thread, draw path): A = 3, falling into draw_tile_row. Was 'load_const_3'. Earlier note: Single instruction `lda #
 NesPrgRom:06FB:draw_rle_text:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): walks ($12): [n][n tiles] written at the screen position $10/$11 (via $C78E),
 NesPrgRom:07E2:init_zp14_zp15_to_8:[MED] lda #$08 / sta $14 then lda #$08 / sta $15 — writes the constant 8 into two consecutive zero-page bytes, no HW regs or loop
@@ -30,7 +30,7 @@ NesPrgRom:0A81:swap_player_state:[HIGH] Naming 2026-10-26, top-down (render thre
 NesPrgRom:0AA7:clear_object_tables:[HIGH] Naming 2026-10-26: zeroes $0400-$04BF: the 9 sixteen-byte object records ($0400-$048F, the strided loops stop at $90) and the block after th
 NesPrgRom:0AC3:game_over:[HIGH] Top-down 2026-10-26 (game thread, flows): sound $0615-$0617, game_phase = 0, then show_game_over for $1A4 (420) frames. handle_player_caught
 NesPrgRom:0B31:draw_game_over_text:[HIGH] Top-down 2026-10-26 (game thread, round setup): points $1E at the GAME OVER block ($CB97 -> $CB99) and falls into draw_sprite_text. Was 'ini
-NesPrgRom:0D2B:init_title_object:[MED] Top-down 2026-10-26 (game thread, round setup): title_screen: record $0490 = 00 0C 00 14 1C (x $0C.00, y $14.00, anim $1C). Its picture is n
+NesPrgRom:0D2B:init_namco_logo:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): title_screen: the $0490 record = namco_logo_record. Was 'init_title_object'.
 NesPrgRom:14E5:bcd_add_from_table:[HIGH] Top-down 2026-10-26 (game thread): record Y of the table $D536: [destination X][source pointer][length], then bcd_add_packed_buffer. Used fo
 NesPrgRom:1502:bcd_add:[HIGH] Top-down 2026-10-26 (game thread, flows): packed BCD: ($12),Y added into zero page X, Y and X counting down, the carry kept across bytes. Wa
 NesPrgRom:1629:queue_digit_blank_leading_zero:[HIGH] Top-down 2026-10-26 (game thread, flows): a 0 digit while $15 > 0 is queued as tile 0 (blank) and $15 - 1; any other digit is queued as tile
@@ -38,7 +38,7 @@ NesPrgRom:1694:update_high_score:[HIGH] Top-down 2026-10-26 (game thread): if th
 NesPrgRom:177A:queue_vram_packet:[HIGH] Naming 2026-10-26: copies packet Y of the table $D7AD ([addr hi][addr lo][n][n bytes]) into the VRAM queue $0500 at the cursor $2A. Was 'cop
 NesPrgRom:1825:reset_camera_and_point_at_player:[HIGH] Top-down 2026-10-26 (game thread, flows): camera $1C00, $1E/$1F = $0400 (the player's record), Y = 0. Shared by init_player_record and init_
 NesPrgRom:1894:init_cat_record:[HIGH] Top-down 2026-10-26 (game thread, round setup): type +5 = A, x fraction X*4+$20, x/y from item X ($0264/$0265), anim 2, state 0, +8 = $4B. W
-NesPrgRom:18C0:init_bonus_goal_object:[HIGH] Bonus-round setup: slot 1 +0..+4 from $D8D3 (x 5, y $18, anim $18), state 0E (bonus_state0E_goal_object). Was 'init_ram_block_from_table'. E
+NesPrgRom:18C0:init_bonus_goal_balloon:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): slot 1 = the goal balloon (x 5, row $18, anim $18), state 0E. Was 'init_bonu
 NesPrgRom:19BC:set_intent_right:[HIGH] Top-down 2026-10-26 (game thread, leaves): +D = 1, an exit of set_object_intent (also $D9C1: +D = slot 2's direction $0426). Was 'store_one_
 NesPrgRom:19F0:slot2_maybe_step_target_floor:[HIGH] Top-down 2026-10-26 (game thread, physics): slot 2 at a wall (x < 6 or >= $34), or with flag $35 set (cleared here): slot2_step_target_floor
 NesPrgRom:1AB3:start_hop:[HIGH] Shared entry of state 04: +B = A, +C = 9, state 04, anim 4. Was 'set_obj_fields_via_ptr'. Earlier note: stores incoming A at ($1e)+11, then 
@@ -56,7 +56,7 @@ NesPrgRom:34B5:init_apu_channels_and_frame_counter:[HIGH] Writes #$0F to APU $40
 NesPrgRom:34BF:init_sound_voices:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): zeroes the 25 sound triggers $0600-$0618 and each voice record's first byte a
 NesPrgRom:355A:sound_registers_next_voice:[MED] Naming 2026-10-26 (bytes read whole after the discover fixes): the register pass's loop tail inside update_sound_frame: next 8-byte voice re
 NesPrgRom:1DD4:state1A_respawn_wait:[HIGH] State 1A: counts +7 down to 0 and holds; update_and_respawn_objects ($D8F8) then drops one such cat in at x $1D, y 6 as state 1C. Entered fr
-NesPrgRom:1E7A:state26_stunned_by_drop:[HIGH] State 26, a cat hit by a dropped object (dropped_object_stuns_cats: anim $22, timer $65, y clamped to $19): counts +7 down, then anim $24, t
+NesPrgRom:1E7A:state26_stunned_by_bell:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): a cat hit by a falling bell: counts +7 down, then anim $24, state 28. Was 's
 NesPrgRom:1F8A:scroll_camera_with_player:[HIGH] Top-down 2026-10-26 (game thread, physics): player only: while its x is in $0F-$2A, the camera ($28/$29) moves with it by A, clamped to $000
 NesPrgRom:1FCD:queue_tile_read:[HIGH] Top-down 2026-10-26 (game thread, physics): nametable address of the tile at the object's x/y + the offset pair $E010[X], queued with the re
 NesPrgRom:2018:object_speed:[HIGH] Top-down 2026-10-26 (game thread, physics): A = the object's x speed: the player (type 0) stage param $63; types 1-2 $64 + 4; cats (3+) $64;
@@ -83,11 +83,11 @@ NesPrgRom:2E04:launch_door_wave:[HIGH] Top-down 2026-10-26 (game thread, flows):
 NesPrgRom:2E4D:move_record_x_by_direction:[HIGH] Top-down 2026-10-26 (game thread, frame update): +0/+1 of the 8-byte record at ($1E) += A, or -= A when +6 is negative. Was 'add_byte_to_obj
 NesPrgRom:2E77:door_wave_catches_cats:[HIGH] For the current $04A0 wave: each visible cat not already in states 16-1B, on its row within 2 tiles (direction-adjusted): +B = wave id, +7 =
 NesPrgRom:2EEB:move_cat_x_by_wave_direction:[HIGH] Top-down 2026-10-26 (game thread, frame update): cat X ($0400,x +0/+1) += A, or -= A when the wave's +6 is negative. Was 'add_byte_to_word_i
-NesPrgRom:2F17:load_dropped_objects:[HIGH] Top-down 2026-10-26 (game thread, round setup): stage index 7-9 only (rounds 8-10): copies the 16-byte template $EF2F to $A0-$AF, the two dr
+NesPrgRom:2F17:load_bells:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): rounds 8-10 only: the two bell records at $A0 / $A8 from bells_template. Was
 NesPrgRom:3054:update_floor_trap:[MED] Top-down 2026-10-26 (game thread, frame update): state 2: armed, blinks every 4th frame. 3 (pressed, see press_floor_traps): the player step
 NesPrgRom:30CE:player_on_floor_trap:[MED] Top-down 2026-10-26 (game thread, frame update): the player's x within 0-1 of the trap and its row 2 above: Z set (A = 2); else A = $FF. Was
 NesPrgRom:30F0:walker_over_open_trap_x:[MED] Top-down 2026-10-26 (game thread, frame update): trap X open (state 1), the walker 2 rows above, x on it within the fraction window ($40 / $
-NesPrgRom:3233:animate_bonus_target:[HIGH] Top-down 2026-10-26 (game thread, frame update): once every 16 frames, staggered by the target's index: picture $F263[frame & $10] drawn. Wa
+NesPrgRom:3233:animate_balloon:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): every 16 frames, staggered by index: the balloon's two frames. Was 'animate_
 NesPrgRom:32E6:tick_round_timer:[HIGH] Second pass 2026-10-26 (Chris named the sprite): phase $60: 0 counts seconds ($61 frames to 60, $62 seconds) to $66, then HURRY: the sprite 
 NesPrgRom:33B2:scroll_hurry_sprite_left:[HIGH] Second pass 2026-10-26 (Chris named the sprite): $0490/$0491 -= 2: HURRY crosses right to left; tick_round_timer ends phase 1 when x goes ne
 NesPrgRom:37F4:load_voice_stream_ptr:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): $F2/$F3 = the voice's stream base from the 25-word table $F853 (voices $13/$1
@@ -103,7 +103,7 @@ NesPrgRom:0415:write_sprite_to_oam:[HIGH] Top-down 2026-10-26 (game thread, draw
 NesPrgRom:04A8:draw_type_pose_10:[MED] Top-down 2026-10-26 (game thread, draw): tile set (type | $10) through load_metasprite_tile_base: one of the per-type poses in the $C480 tab
 NesPrgRom:04B0:draw_fall_bounce_pose:[HIGH] Top-down 2026-10-26 (game thread, draw path): anim 06: pose = type*4 + $14 + (+7 & $0C) >> 2. Was 'compose_obj_anim_index_and_lookup'. Earli
 NesPrgRom:04C6:draw_door_wave:[HIGH] Top-down 2026-10-26 (game thread, draw path): anim 08: tile $50, palette cycling with frame >> 1, mirrored by direction; two parts, the seco
-NesPrgRom:04F5:draw_tile_3c_type1_flicker:[MED] Top-down 2026-10-26 (game thread, draw path): anim 0A: tile $3C, palette 1; type 1 flips its attribute ($41 / $01) every 16 frames. No store
+NesPrgRom:04F5:draw_bell:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): anim 0A: the gold bell (tile $3C, palette 1); it flickers while hanging (+5 
 NesPrgRom:0518:draw_stunned_pose:[HIGH] Top-down 2026-10-26 (game thread, draw path): anim 0C: pose $24 | type. Was 'lookup_field5_set_bits24_to_zp12'. Earlier note: jsr obj_field5
 NesPrgRom:05F6:draw_player_death_animation:[HIGH] Top-down 2026-10-26 (game thread, draw path): anim 16 (states 2A / 2C): pose $80 + (+7 & $0C) with flip $C0 on +7 bit 3, or $90 + ... once +
 NesPrgRom:06AC:draw_player_caught_pose:[HIGH] Top-down 2026-10-26 (game thread, draw path): anim 1E (state 08): tile $98, or $9C once +7 >= 8. Was 'select_threshold_ptr_then_toggle_flag'
@@ -126,13 +126,13 @@ NesPrgRom:1B55:state2A_wait_then_start_tune:[MED] State 2A, player only, after s
 NesPrgRom:1B7B:state2C_wait_tune:[MED] State 2C, player only: counts $0407 up to $80, then zero_struct_fields_4_and_15 (state 00). Trace (state_census.py, 3 play logs): 128 frames
 NesPrgRom:1C02:state0A_trampoline_bounce:[HIGH] State 0A, on a trampoline (index in +B, records at $0200). Trampoline $0202 bit 7 -> enter_fall (through it); its anim $0201 reaching 7 laun
 NesPrgRom:1D4F:bounce_back_into_shaft:[HIGH] Negates the direction +6, timer +7 = 6, start_hop with +B = 0: a step-off blocked by the floor tile returns into the shaft. Was 'reverse_obj
-NesPrgRom:1E98:state28_drop_stun_recover:[HIGH] State 28: counts +7 ($40) down, then enter_fall. Not reached in the 3 play logs. Was 'obj_tick_timer7_then_reset_fields_8_F'. Earlier note: 
+NesPrgRom:1E98:state28_bell_stun_recover:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): counts +7 ($40) down, then enter_fall. Was 'state28_drop_stun_recover'. Earl
 NesPrgRom:1EE9:walk_step:[HIGH] Top-down 2026-10-26 (game thread, physics): the player takes its pad direction (+D -> +6); +7 += 1; unless blocked by a door (+9), move at o
 NesPrgRom:1F0B:move_x_turn_at_walls:[HIGH] Top-down 2026-10-26 (game thread, physics): scroll_camera_with_player, then x += / -= A by direction +6. Right wall (x $38): x frac 0, +8 = 
 NesPrgRom:2084:rise_step:[HIGH] Top-down 2026-10-26 (game thread, physics): object_speed + $20, falling into move_up_by_a. Was 'flag_offset_plus_0x20'. Earlier note: jsr ad
 NesPrgRom:20A0:queue_tile_read_then_tick:[HIGH] Top-down 2026-10-26 (game thread, physics): queue_tile_read (X = offset), then turn_and_tick at $E0A3: a set intent +D becomes the direction
 NesPrgRom:2200:bonus_state06_trampoline_bounce:[HIGH] Bonus copy of state0A_trampoline_bounce: a broken trampoline ($0202 bit 7) -> fall (state 02); the trampoline's anim reaching 7 -> state 08;
-NesPrgRom:22EE:bonus_state0E_goal_object:[HIGH] Bonus state 0E, slot 1 (absolute $041x): the player on its row with x 0-1 ahead -> inc $51, $5A = $20, sound $0606, clear slot 1, end_bonus_
+NesPrgRom:22EE:bonus_state0E_goal_balloon:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): slot 1 in a bonus round is a blue balloon with Goro inside: Mappy reaching i
 NesPrgRom:25C5:load_round_items:[HIGH] Top-down 2026-10-26 (game thread, round setup): the descriptor at ($E798) = $E79A: $50 (8 bytes x 10 items), then kinds 00, 02 ... 12. Every
 NesPrgRom:2614:draw_round_items:[HIGH] Top-down 2026-10-26 (game thread, round setup): every item in state 2 (uncollected): clear its match flag and draw_item. Was 'process_object
 NesPrgRom:2747:draw_at_item_address:[HIGH] Top-down 2026-10-26 (game thread, round setup): draw_rle_text at the item's own nametable address $E7A5[kind]. Was 'load_string_ptr_by_state
@@ -141,14 +141,14 @@ NesPrgRom:2902:draw_door_kind_y:[HIGH] Top-down 2026-10-26 (game thread, round s
 NesPrgRom:2972:player_opens_nearest_door:[HIGH] On a fresh press (record +E & 3 = 1), collects doors in reach (add_door_if_in_reach) and opens the nearest (open_door). Was 'select_overlapp
 NesPrgRom:2A05:door_knock_back_objects:[HIGH] For each active object (slot 1 excluded, not in state 16) on the door's row: X delta to the door, dispatched by door kind ($02B1 & 6) throug
 NesPrgRom:304D:update_floor_traps:[MED] Top-down 2026-10-26 (game thread, frame update): update_floor_trap for $90 and $98. Was 'dispatch_obj0_state_then_fall_to_obj8'. Earlier not
-NesPrgRom:313A:load_bonus_targets:[HIGH] Top-down 2026-10-26 (game thread, frame update): list $F27F[is_bonus_round]: its length in $53, targets left in $52 (length / 8), $50-$5F cl
+NesPrgRom:313A:load_balloons:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the bonus round's red balloons from tbl_balloon_lists[is_bonus_round]. Was '
 NesPrgRom:23FE:animate_trampolines:[HIGH] Top-down 2026-10-26 (game thread, frame update): animate_trampoline for each record up to $80. Was 'tick_all_subcounters_stride8'. Earlier n
 NesPrgRom:2449:draw_text_from_table:[HIGH] Naming 2026-10-26: text pointer from the word table $E569,y into $12/$13, then jmp draw_rle_text. Was 'load_ptr_from_table_then_scan'. Earli
 NesPrgRom:2862:load_round_doors:[HIGH] Top-down 2026-10-26 (game thread, round setup): $EAFC[stage] -> count in $83, then per 8-byte door at $02B0: +0 = 0 (closed), +6 = 0, +1 kin
 NesPrgRom:2EC9:carry_wave_cats:[HIGH] Top-down 2026-10-26 (game thread, frame update): cats in state 16 carried by this wave (+B = wave) move with it ($63 + 8). Was 'accumulate_f
 NesPrgRom:306D:draw_floor_trap_frame:[MED] Top-down 2026-10-26 (game thread, frame update): draw_rle_text of $F128[X] at the trap's address: X 0 open ($51 $51), 2 pressed ($50 $50), 4
 NesPrgRom:30E7:walker_over_open_trap:[MED] Top-down 2026-10-26 (game thread, frame update): walker_over_open_trap_x for $90, then $98; Z set when the walker at ($1E) is over an open t
-NesPrgRom:3250:draw_bonus_target:[HIGH] Top-down 2026-10-26 (game thread, frame update): draw_rle_text of $12 at the target's address +6/+7. Was 'load_indexed_ptr_then_scan_for_ter
+NesPrgRom:3250:draw_balloon:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): draw_rle_text of the frame at the balloon's address. Was 'draw_bonus_target'
 NesPrgRom:34F1:update_sound_frame:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): the per-frame sound entry (render loop $C0A1 and the NMI $C2F9): for each voi
 NesPrgRom:006D:render_loop:[HIGH] Naming 2026-10-26, top-down (render thread): the main-context thread (Chris: the render loop draws at vblank; the game engine runs when it i
 NesPrgRom:025C:validate_magic_and_restore_state_vars:[MED] Gates on magic sentinel ($3E==$5A && $3F==$A5, else bails to $C2A7), conditionally swap_double_buffers_toggle_flag, then pack_state_vars_int
@@ -156,10 +156,10 @@ NesPrgRom:02EF:nmi_count_vblank:[HIGH] Naming 2026-10-26, top-down (render threa
 NesPrgRom:040F:write_sprite_next_tile:[HIGH] Top-down 2026-10-26 (game thread, draw): write_sprite_to_oam, then the next tile ($12 + 1). Was 'write_object_to_oam_and_bump_count'. Earlie
 NesPrgRom:0563:draw_score_tile_if_any:[HIGH] Top-down 2026-10-26 (game thread, draw path): sprite $C573[X] unless it is 0; X + 1. Was 'draw_indexed_object_if_present'. Earlier note: Loa
 NesPrgRom:065E:draw_tile_row:[HIGH] Top-down 2026-10-26 (game thread, draw path): A sprites with consecutive tiles across, then x back 24 and y + 8. Was 'draw_object_tile_row'.
-NesPrgRom:0687:draw_8_sprite_row_to_oam:[HIGH] Top-down 2026-10-26 (game thread, draw path): anim 1C (the title object): 8 sprites in a row, tiles $F4-$FB, palette 2. Kept (name checked a
+NesPrgRom:0687:draw_namco_logo:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): anim 1C: the 'namco' logo, 8 sprites $F4-$FB in a row. Was 'draw_8_sprite_ro
 NesPrgRom:0B14:draw_sprite_glyph:[HIGH] Top-down 2026-10-26 (game thread, round setup): a nonzero glyph is one sprite (palette 2) at $10/$11, y $16; then x += 8 (0 is a space). Was
 NesPrgRom:0BB1:draw_title_screen:[MED] Top-down 2026-10-26 (game thread, round setup): title_screen's only layout call: clear the nametables, draw blocks entry 2, three BCD number
-NesPrgRom:0D3E:draw_title_object:[MED] Top-down 2026-10-26 (game thread, round setup): title_screen: draw_object on record $0490. Was 'transform_fixed_coord_90_04'. Earlier note: 
+NesPrgRom:0D3E:draw_namco_logo_record:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): title_screen: draw_object on the $0490 record (the namco logo). Was 'draw_ti
 NesPrgRom:14BE:add_score_n_times:[HIGH] Top-down 2026-10-26 (game thread): add_score_from_table with amount index A, $18 times. Was 'add_bcd_table_amount_n_times'. Earlier note: St
 NesPrgRom:16AA:award_extra_life:[HIGH] Top-down 2026-10-26 (game thread): when the score passes the next threshold ($72 against $76) and the cap ($48) is not reached: bumps the co
 NesPrgRom:1703:draw_hud:[MED] Top-down 2026-10-26 (game thread, round setup): draw blocks entry 0, then queue_bcd_number entries 8, $A, $C and 0. Called by build_stage_sc
@@ -169,16 +169,16 @@ NesPrgRom:1C5C:state0C_rise:[HIGH] State 0C, rising up a shaft. Player touching 
 NesPrgRom:203D:move_hop_arc:[HIGH] Top-down 2026-10-26 (game thread, physics): +B (vertical velocity) += +C (gravity); y (+2/+3) += 2 * +B, signed; then move_x_turn_at_walls a
 NesPrgRom:206A:fall_step:[HIGH] Top-down 2026-10-26 (game thread, physics): y += object_speed + $20; on a row change queue_tile_read (offset 4), then turn_and_tick. Was 'ad
 NesPrgRom:2230:bonus_state08_rise:[HIGH] Bonus copy of state0C_rise: at a floor row (y >= 8, y&3 in 1..2) with +D set: step off, timer $21 (33), +B = $E0, +C = 2, state 0A. Top reac
-NesPrgRom:2427:draw_trampoline:[HIGH] Top-down 2026-10-26 (game thread, round setup): trampoline X: screen address from $E537[+3]; broken (+2 bit 7) draws text entry $14, else th
+NesPrgRom:2427:draw_trampoline:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the palette passed is tramp_bounces_left, so a trampoline changes colour as 
 NesPrgRom:2456:erase_first_trampoline:[MED] Top-down 2026-10-26 (game thread, physics): text entry $14 (the broken-trampoline picture) queued at trampoline position $E537[0]. Called by
 NesPrgRom:270A:erase_item:[HIGH] Top-down 2026-10-26 (game thread, round setup): entry 10 of $E7B9 with $14 = $80, at the item's address (after player_collects_item). Was 'l
 NesPrgRom:284D:draw_sprite_advance_x:[HIGH] Top-down 2026-10-26 (game thread, physics): one sprite at $10/$11, then x += 8. Was 'draw_object_and_advance_x8'. Earlier note: Zeros $14/$1
 NesPrgRom:291D:animate_door_swing:[HIGH] Top-down 2026-10-26 (game thread, frame update): a swinging door (+0 set) steps +6 through 5 frames (picture from door_swing_frame); then +0
 NesPrgRom:29A4:open_door:[HIGH] Top-down 2026-10-26 (game thread, frame update): +0 = 1 starts the door's 5-frame swing (animate_door_swing toggles open/closed at its end);
-NesPrgRom:2F9B:dropped_object_stuns_cats:[HIGH] Cats (states < 16) within 1 in x and y of the falling object: +7 = $65, state 26, anim $22, y clamped to $19, score $08 ($44 for slot 2). Wa
+NesPrgRom:2F9B:bell_stuns_cats:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): cats (states < 16) within 1 of the falling bell: stunned (state 26, anim $22
 NesPrgRom:3013:init_floor_trap:[MED] Top-down 2026-10-26 (game thread, frame update): state 2 (armed), nametable address +2/+3, tile x/y +4/+5, drawn (draw_floor_trap_frame). Wa
 NesPrgRom:30B8:press_floor_trap:[MED] Top-down 2026-10-26 (game thread, frame update): an armed trap (state 2) with the player standing on it -> state 3, pressed picture. Was 'ob
-NesPrgRom:31F1:pop_bonus_target:[HIGH] Top-down 2026-10-26 (game thread, frame update): sound $0608, state 0, targets left ($52) - 1, two score adds (tables 6, 8), erased with the
+NesPrgRom:31F1:pop_balloon:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): sound $0608, gone, balloons_left - 1, 200 points (the results screen's rate)
 NesPrgRom:3383:draw_hurry_sprite:[HIGH] Second pass 2026-10-26 (Chris named the sprite): the HURRY sprite of tick_round_timer's phase 1: copies the $0490 record to $10-$17 and draw
 NesPrgRom:0401:draw_sprite_pair:[HIGH] Top-down 2026-10-26 (game thread, draw): write_sprite_next_tile, X += 8, then falls into a second one. Was 'write_object_oam_and_advance_poi
 NesPrgRom:0543:draw_score_column:[HIGH] Top-down 2026-10-26 (game thread, draw path): two stacked tiles from $C573[X], X + 1 (8 down), then x + 8. Was 'draw_object_pair_advance_slo
@@ -191,7 +191,7 @@ NesPrgRom:1CFE:state0E_step_onto_floor:[HIGH] State 0E: timer 16 moving off the 
 NesPrgRom:1DE0:state1C_respawn_drop:[HIGH] State 1C, a cat dropping in from the top (frozen while player_down or round_cleared). Lands on a floor tile: slot 2 -> state 24 (anim $12, $
 NesPrgRom:219D:bonus_state02_fall:[HIGH] Bonus state 02, the player falling. A floor tile under foot (+8 in $49-$4F) or y >= $1C -> end_bonus_round (in a bonus round a fall ends the
 NesPrgRom:22AC:bonus_state0C_rebound:[HIGH] Bonus state 0C (and the tail of bonus_state0A_walk_off): counts +7 down while moving; at 0 -> fall (state 02, anim 6). Census (warped bonus 
-NesPrgRom:2339:bonus_state12_released_cat_rises:[HIGH] Bonus state 12, slot 2 (type 2, from bonus_state0E_goal_object): y -= $40 per frame ($E08A on +2/+3, a quarter row) until row < 6, then clea
+NesPrgRom:2339:bonus_state12_goro_rises:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): Goro, freed from the goal balloon, floats up a quarter row a frame and pops 
 NesPrgRom:235B:load_round_trampolines:[HIGH] Top-down 2026-10-26 (game thread, round setup): set $E4E1[stage] -> $E4F1 pointer: count in $80, then per 8-byte record at $0200: +0 = 0, +1
 NesPrgRom:23DE:restore_trampolines:[HIGH] Top-down 2026-10-26 (game thread, physics): every unbroken trampoline back to 3 bounces, redrawn. land_on_floor calls it when the player lan
 NesPrgRom:2660:player_collects_item:[HIGH] Top-down 2026-10-26 (game thread, round setup): per item: slot2_sits_on_item first, then the player on its row with x within 2 collects it: 
@@ -199,32 +199,32 @@ NesPrgRom:27F5:draw_item_points_sprites:[MED] Top-down 2026-10-26 (game thread, 
 NesPrgRom:28CC:update_doors:[HIGH] Top-down 2026-10-26 (game thread, frame update): animate_door_swing for each door; then one door per frame (frame & 3) that is a closed wave
 NesPrgRom:2A90:walker_meets_closed_door:[HIGH] Walking object at a closed door ($02B0 = 0, $02B1 bit 1 clear) on its row, in its facing direction: marks +9 (blocked) and the door's $02B7.
 NesPrgRom:2D65:update_door_wave:[HIGH] Top-down 2026-10-26 (game thread, frame update): +5: 0 idle. 1 moving: sound $0609, door_wave_catches_cats, carry_wave_cats, anim 8, x += st
-NesPrgRom:2F4E:update_dropped_object:[MED] +5 = 0 idle; 1: hangs until the player is on its row within 2 x, then +5 = 2 and sound $0607; >= 2: y fraction += $80 per frame (falls half 
+NesPrgRom:2F4E:update_bell:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): +5 = 1: the bell hangs until Mappy is under it (row, x within 2), then +5 = 
 NesPrgRom:3001:spawn_floor_traps:[MED] Top-down 2026-10-26 (game thread, frame update): stage index 11-13 only (rounds 12-14): two floor traps at $90 / $98 from the nametable addr
 NesPrgRom:30B1:press_floor_traps:[MED] Top-down 2026-10-26 (game thread, frame update): press_floor_trap for $90 and $98 (called from the walk and door-knockback states). Was 'adv
-NesPrgRom:3215:released_cat_pops_target:[HIGH] Top-down 2026-10-26 (game thread, frame update): slot 2 (the cat released by the goal) on a target: slot 2 cleared, the target popped. Was '
+NesPrgRom:3215:goro_pops_balloon:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): rising Goro on a balloon: Goro leaves, the balloon pops (pop_balloon). Was '
 NesPrgRom:3323:start_timer_phase_tune:[MED] Top-down 2026-10-26 (game thread, round setup): init_sound_voices, then sound triggers $06F5 / $06F6 = 3. Entered at both of tick_round_time
 NesPrgRom:03EC:draw_metasprite_2x2:[HIGH] Top-down 2026-10-26 (game thread, draw): draw_sprite_pair, then X -= 8 and Y += 8 and falls into a second pair: a 16x16 object from four con
 NesPrgRom:0540:draw_two_score_columns:[HIGH] Top-down 2026-10-26 (game thread, draw path): draw_score_column twice. Was 'draw_object_pair_once'. Earlier note: Single instruction `jsr $C
-NesPrgRom:061E:draw_bonus_goal_object:[HIGH] Top-down 2026-10-26 (game thread, draw path): anim 18 (slot 1, the bonus goal): every $20 frames alternates a tile $E8 block plus one sprite
+NesPrgRom:061E:draw_goal_balloon:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): anim 18: the blue balloon with Goro in it, alternating its two frames every 
 NesPrgRom:0B02:draw_player_number_text:[HIGH] Top-down 2026-10-26 (game thread, round setup): sprite text 'PLAYER ' from the block at ($CB8A), then the digit tile $D6 + game_state_flags 
 NesPrgRom:1A17:slot2_add_floor_step:[HIGH] Top-down 2026-10-26 (game thread, physics): $36 += $37. Was 'add_field37_to_field36'. Earlier note: $DA17 does $36 += $37; rts (8-bit accumu
 NesPrgRom:1A70:state02_walk:[HIGH] State 02, walking a floor (player, cats). Player: caught by a walking cat ($E0B7); a closed door in the path blocks it or is opened by a cat
 NesPrgRom:26FA:show_item_points:[HIGH] Top-down 2026-10-26 (game thread, flows): a collected item (state 4): draw_item_points_sprites until its timer +2 ($3C = 60 frames) runs out
 NesPrgRom:2D4E:update_door_waves:[HIGH] Top-down 2026-10-26 (game thread, frame update): update_door_wave for the 4 records $04A0-$04BF. Was 'tick_object_group_04a0'. Earlier note:
-NesPrgRom:2F3F:update_dropped_objects:[MED] Runs update_dropped_object on the two zero-page records $A0 and $A8. Was 'update_object_pair_state_at_a0_a8'. Earlier note: Sets 16-bit poin
-NesPrgRom:31B9:bonus_target_live:[HIGH] Top-down 2026-10-26 (game thread, frame update): animate_bonus_target; released_cat_pops_target; the player on it pops it (pop_bonus_target)
+NesPrgRom:2F3F:update_bells:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): update_bell for $A0 and $A8. Was 'update_dropped_objects'. Earlier note: Run
+NesPrgRom:31B9:balloon_live:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): animate_balloon; goro_pops_balloon; Mappy touching it pops it (a rising Mapp
 NesPrgRom:0521:draw_wave_score:[HIGH] Top-down 2026-10-26 (game thread, draw path): anim 10: score tiles from $C573 by the wave's count (+7) and the fixed columns $28 / $2C, as s
 NesPrgRom:05A3:draw_slot2_still_pose:[MED] Top-down 2026-10-26 (game thread, draw path): anim 12 / 13 (slot 2's landing pause, and sitting on an item): 2x2 metasprite $70, palette 2. 
 NesPrgRom:05B2:draw_slot2_large_pose:[MED] Top-down 2026-10-26 (game thread, draw path): anim 14 / 15 (slot 2 scored), and slot 2 knocked out: tile $69 2x2 metasprite with pairs aroun
 NesPrgRom:0DFF:draw_bonus_intro_sprite:[MED] Top-down 2026-10-26 (game thread, round setup): one 2x2 metasprite (tile $CB, palette 2) at x $7C, y $AA; the bonus intro's only drawing. Wa
 NesPrgRom:1A02:slot2_step_target_floor:[HIGH] Top-down 2026-10-26 (game thread, physics): slot 2's target row $36 patrols the floors: the step $37 becomes +4 at row 9 and -4 at row $19, 
 NesPrgRom:264A:dispatch_item_state:[HIGH] Naming 2026-10-26: ldy $0260,x indexes the 3-handler table $E65A (noop, resolve_object_position_capture_and_score, draw_object_and_tick_stat
-NesPrgRom:31A5:dispatch_bonus_target:[HIGH] Top-down 2026-10-26 (game thread, frame update): by +0 through $F1B5: 0 none, 2 bonus_target_live. Was 'dispatch_object_phase_handler'. Earl
+NesPrgRom:31A5:dispatch_balloon:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): by state through tbl_balloon_handlers: 0 popped, 2 balloon_live. Was 'dispat
 NesPrgRom:06C1:draw_knocked_out:[HIGH] Top-down 2026-10-26 (game thread, draw path): anim 20 (state 22): slot 1 tile $A8; slot 2 draw_slot2_large_pose; other cats tile $2C with th
 NesPrgRom:1D17:land_on_floor:[HIGH] Shared entry of state 02: y fraction 0, y row aligned (&$FC|2), +8 = $4B (a floor tile), state 02, anim 2; the player landing also runs forc
 NesPrgRom:2634:update_items:[HIGH] Top-down 2026-10-26 (game thread): dispatch_item_state for each 8-byte item record, X = 0 .. item_table_len ($81) step 8. Was 'update_all_ac
-NesPrgRom:318F:update_bonus_targets:[HIGH] Top-down 2026-10-26 (game thread, frame update): dispatch_bonus_target for each record up to $53. Was 'dispatch_all_objects_phase_handler'. 
+NesPrgRom:318F:update_balloons:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): dispatch_balloon for each balloon. Was 'update_bonus_targets'. Earlier note:
 NesPrgRom:0141:yield_to_render_loop:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): tsx / txa / and #$C0 / tay: the exchange slot from the caller's stack quarter
 NesPrgRom:0ADA:show_game_over:[HIGH] Top-down 2026-10-26 (game thread, flows): per frame: PLAYER n (2-player game), GAME OVER, the blinking 1UP/2UP; ends on a fresh press (joypa
 NesPrgRom:0D49:build_stage_screen_layout:[HIGH] Top-down 2026-10-26 (game thread, round setup): clear nametables, draw_hud; is_bonus_round from tbl_round_attributes[stage] byte 0. A bonus 
@@ -242,7 +242,7 @@ NesPrgRom:1A2C:dispatch_object_state:[HIGH] Naming 2026-10-26: ldy #$0F / lda ($
 NesPrgRom:0031:reset_cold_boot_init:[HIGH] sei/cld/ldx#$5f/txs stack init, zeros PPUCTRL/MASK, polls PPUSTATUS warmup, clears 2KB RAM via ($00),y loop ($01=7 pages), calls validate_ma
 NesPrgRom:0128:start_game_thread:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): reset's only call ($C062, Y=0): loads the task record $C13E,y (handler $C84F)
 NesPrgRom:0344:dispatch_object_draw_by_anim:[HIGH] Top-down 2026-10-26 (game thread, draw path): A = anim (+4): bit 0 kept in $15, A & $FE indexes the 19 handlers at $C356. Was 'dispatch_obje
-NesPrgRom:03A7:draw_drop_recover_blink:[HIGH] Top-down 2026-10-26 (game thread, draw path): anim 24 (state 28): with +7 bit 3 set draws as anim 06 (draw_fall_bounce_pose), else nothing: 
+NesPrgRom:03A7:draw_bell_recover_blink:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): anim 24 (state 28): the cat blinks (anim 06's pose on +7 bit 3). Was 'draw_d
 NesPrgRom:084F:title_screen:[HIGH] Top-down 2026-10-26 (game thread): the game thread's entry (start_game_thread's task record). game_phase = 0, sound reset, player 1 restored
 NesPrgRom:0902:play_round:[HIGH] Top-down 2026-10-26 (game thread): a round: loads the round record and the player, a 60-frame intro drawing the glyph strings, every object 
 NesPrgRom:099F:next_round:[HIGH] Top-down 2026-10-26 (game thread): advances to the next round and builds it. A normal round jmp play_round; when is_bonus_round ($7C) it run
@@ -253,7 +253,7 @@ NesPrgRom:18D8:update_and_respawn_objects:[HIGH] Top-down 2026-10-26 (game threa
 NesPrgRom:35B8:sound_streams_next_voice:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): the stream pass's loop tail: next voice record, and the return point of every
 NesPrgRom:3606:start_voice_stream:[HIGH] Naming 2026-10-26 (bytes read whole after the discover fixes): a triggered voice starts: reads the stream header into the record (+0 channel
 NesPrgRom:3F65:attract_demo:[HIGH] Top-down 2026-10-26 (game thread): builds round 1 ($7A = $7D = 0) and plays it on the demo script (demo_script_cursor $3D) until round_clear
-NesPrgRom:037C:draw_drop_stun_points:[MED] Top-down 2026-10-26 (game thread, draw path): anim 22 (state 26): two sprites, $AE (slot 2: $66) and $67: the points shown for a cat stunned
+NesPrgRom:037C:draw_bell_stun_points:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): anim 22 (state 26): the points over a cat a bell stunned: 300 ($AE $67), 100
 NesPrgRom:3FE1:tbl_demo_input_script:[HIGH] Attract-mode (demo) input track. Read ONLY at $D9D3/$D9DC (lda $ffe1,x) by the demo-input playback path (@D9C7), indexed by demo_script_curs
 NesPrgRom:3FFA:cpu_interrupt_vectors:[HIGH] 6502 hardware vectors: $FFFA=NMI -> nmi handler $C2EF, $FFFC=RESET -> reset_cold_boot_init $C031, $FFFE=IRQ -> irq_rti_stub $C304. Labeled s
 NesPrgRom:0DBF:tbl_round_attributes:[HIGH] Level-design-as-data: 16 rounds x 4 bytes [bonus, palhud_idx, item_idx, mansion_idx], read at round*4 by build_stage_screen_layout ($CD56 ld
@@ -321,7 +321,7 @@ NesPrgRom:0B99:spr_text_game_over:[HIGH] Data walk 2026-10-26: [x 58 00][y 88][9
 NesPrgRom:0BA6:ptr_ready_text:[HIGH] Data walk 2026-10-26: word -> $CBA8 (play_round).
 NesPrgRom:0BA8:spr_text_ready:[HIGH] Data walk 2026-10-26: [x 60 00][y 88][5] R E A D Y.
 NesPrgRom:0BED:title_logo_row_addrs:[HIGH] Data walk 2026-10-26: 4 nametable words $2107 $2127 $2147 $2167: the rows of the 20-tile title logo (draw_title_screen).
-NesPrgRom:0D39:title_object_record:[HIGH] Data walk 2026-10-26: 00 0C 00 14 1C: x $0C.00, y $14.00, anim $1C (init_title_object).
+NesPrgRom:0D39:namco_logo_record:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): 00 0C 00 14 1C: the namco logo at x $0C, row $14, anim $1C. Was 'title_objec
 NesPrgRom:0F08:tbl_text_lines:[HIGH] Data walk 2026-10-26: 4-byte records [nametable address][text pointer], indexed by draw_indexed_text_line: the bonus results lines (EARNINGS
 NesPrgRom:1536:tbl_bcd_add_records:[HIGH] Data walk 2026-10-26: words -> records [zero-page target X][amount pointer][byte count], read by bcd_add_from_table.
 NesPrgRom:1561:ptr_score_amounts:[HIGH] Data walk 2026-10-26: word -> $D563: add_score_from_table adds ($D563 + Y), 4 BCD bytes, into the score at $71-$74.
@@ -330,11 +330,11 @@ NesPrgRom:1640:tbl_bcd_number_entries:[HIGH] Data walk 2026-10-26: words -> [PPU
 NesPrgRom:17AD:tbl_vram_packets:[HIGH] Data walk 2026-10-26: 10 words -> [address][count][tiles]: 00/02 blanks, 04/06 1UP/2UP, 08-0E the menu cursor, 10/12 the dead switch's blank
 NesPrgRom:1838:player_record_template:[HIGH] Data walk 2026-10-26: 00 34 00 1A 02 00 FF: x $34, y $1A, anim 2, type 0, facing left (init_player_record).
 NesPrgRom:183F:bonus_player_template:[HIGH] Data walk 2026-10-26: 00 35 00 0A 06 00 FF: x $35, y $0A, anim 6 (init_bonus_player).
-NesPrgRom:18D3:bonus_goal_template:[HIGH] Data walk 2026-10-26: 00 05 00 18 18: x 5, y $18, anim $18 (init_bonus_goal_object).
+NesPrgRom:18D3:goal_balloon_template:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): 00 05 00 18 18: x 5, row $18, anim $18 (draw_goal_balloon). Was 'bonus_goal_
 NesPrgRom:1A42:tbl_object_state_handlers:[HIGH] Data walk 2026-10-26: 23 handler words by state (dispatch_object_state).
 NesPrgRom:2010:tile_read_offsets:[HIGH] Data walk 2026-10-26: 4 (dx, dy) tile pairs by X = 0, 2, 4, 6 (queue_tile_read).
 NesPrgRom:217A:tbl_bonus_state_handlers:[HIGH] Data walk 2026-10-26: 10 handler words by state in a bonus round.
-NesPrgRom:2332:released_cat_template:[HIGH] Data walk 2026-10-26: 00 05 00 18 06 02 FF: slot 2 at x 5, y $18, anim 6, type 2, facing left (bonus_state0E_goal_object).
+NesPrgRom:2332:released_goro_template:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): slot 2 as Goro (type 2) at the goal balloon: x 5, row $18, anim 6, facing le
 NesPrgRom:24CD:trampoline_bounce_curve:[HIGH] Data walk 2026-10-26: signed word offsets from the trampoline's row, one per bounce frame (trampoline_bounce_step; find_trampoline_below rea
 NesPrgRom:24E1:tbl_round_trampoline_set:[HIGH] Data walk 2026-10-26: per stage_number: which trampoline list (load_round_trampolines).
 NesPrgRom:24F1:tbl_trampoline_set_ptrs:[HIGH] Data walk 2026-10-26: words -> [count][position indexes ...] (load_round_trampolines).
@@ -348,13 +348,13 @@ NesPrgRom:27B9:tbl_item_pictures:[HIGH] Data walk 2026-10-26: words -> RLE pictu
 NesPrgRom:2A49:tbl_door_kind_knockback:[HIGH] Data walk 2026-10-26: 4 handler words by door kind & 6, jumped through $EA46.
 NesPrgRom:2AFC:tbl_round_door_lists:[HIGH] Data walk 2026-10-26: words by stage_number -> [count][kind, address ...] (load_round_doors).
 NesPrgRom:2C4F:tbl_door_pictures:[HIGH] Data walk 2026-10-26: words -> RLE pictures by door kind / swing frame (draw_door_kind_y).
-NesPrgRom:2F2F:dropped_objects_template:[HIGH] Data walk 2026-10-26: 16 bytes copied to $A0-$AF in rounds 8-10 (load_dropped_objects).
+NesPrgRom:2F2F:bells_template:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the two bells of rounds 8-10 (+4 anim $0A = draw_bell, +5 = 1 hanging). Was 
 NesPrgRom:3041:floor_trap_addrs:[HIGH] Data walk 2026-10-26: nametable address words, 2 per round 12-14 (init_floor_trap).
 NesPrgRom:3128:tbl_floor_trap_pictures:[HIGH] Data walk 2026-10-26: 3 words -> open ($51 $51), pressed ($50 $50), floor ($4A $4A).
-NesPrgRom:31B5:tbl_bonus_target_handlers:[HIGH] Data walk 2026-10-26: 2 handler words: 0 none, 2 bonus_target_live.
-NesPrgRom:3263:tbl_bonus_target_pictures:[HIGH] Data walk 2026-10-26: 2 words -> the target's two animation frames (animate_bonus_target).
-NesPrgRom:3277:ptr_popped_target_picture:[HIGH] Data walk 2026-10-26: word -> the erase picture (pop_bonus_target).
-NesPrgRom:327F:tbl_bonus_target_lists:[HIGH] Data walk 2026-10-26: words by is_bonus_round -> [length][addresses ...] (load_bonus_targets).
+NesPrgRom:31B5:tbl_balloon_handlers:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): 2 handler words: 0 popped, 2 balloon_live. Was 'tbl_bonus_target_handlers'. 
+NesPrgRom:3263:tbl_balloon_pictures:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the red balloon's two frames. Was 'tbl_bonus_target_pictures'. Earlier note:
+NesPrgRom:3277:ptr_popped_balloon_picture:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): word -> the popped balloon's erase picture. Was 'ptr_popped_target_picture'.
+NesPrgRom:327F:tbl_balloon_lists:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): balloon lists by is_bonus_round. Was 'tbl_bonus_target_lists'. Earlier note:
 NesPrgRom:33AA:hurry_sprite_record:[HIGH] Data walk 2026-10-26: 8 bytes copied to $0490 at the time limit: the HURRY sprite (tick_round_timer).
 NesPrgRom:33DF:tbl_stage_params:[HIGH] Data walk 2026-10-26: 6 bytes per stage_index into $63-$68 (load_stage_params).
 NesPrgRom:383B:tbl_note_periods:[HIGH] Assets 2026-10-27: one chromatic octave, A1 to G#2, as 12 big-endian 11-bit APU periods ($07F2 = A1 55.0 Hz by f = CPU / (16 (t + 1))), all 
@@ -411,12 +411,12 @@ NesPrgRom:2597:trampoline_picture_06:[HIGH] Data walk 2026-10-26 (pointer level)
 NesPrgRom:259D:trampoline_picture_0e:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offsets $0E, $12 (draw_text_from_table; frames 0-9, $14 broke
 NesPrgRom:25A9:trampoline_picture_10:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offset $10 (draw_text_from_table; frames 0-9, $14 broken).
 NesPrgRom:25B5:trampoline_picture_14:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_trampoline_pictures at offset $14 (draw_text_from_table; frames 0-9, $14 broken).
-NesPrgRom:27C5:item_picture_00:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $00 (draw_item (pairs 0-8) and erase_item ($0A)).
-NesPrgRom:27CD:item_picture_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $02 (draw_item (pairs 0-8) and erase_item ($0A)).
-NesPrgRom:27D5:item_picture_04:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $04 (draw_item (pairs 0-8) and erase_item ($0A)).
-NesPrgRom:27DD:item_picture_06:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $06 (draw_item (pairs 0-8) and erase_item ($0A)).
-NesPrgRom:27E5:item_picture_08:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $08 (draw_item (pairs 0-8) and erase_item ($0A)).
-NesPrgRom:27ED:item_picture_0a:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_item_pictures at offset $0A (draw_item (pairs 0-8) and erase_item ($0A)).
+NesPrgRom:27C5:item_picture_radio:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): pair 0: a radio. Was 'item_picture_00'. Earlier note: Data walk 2026-10-26 (
+NesPrgRom:27CD:item_picture_tv:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): pair 1: a television. Was 'item_picture_02'. Earlier note: Data walk 2026-10
+NesPrgRom:27D5:item_picture_computer:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): pair 2: a computer. Was 'item_picture_04'. Earlier note: Data walk 2026-10-2
+NesPrgRom:27DD:item_picture_painting:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): pair 3: a painting (the Mona Lisa). Was 'item_picture_06'. Earlier note: Dat
+NesPrgRom:27E5:item_picture_safe:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): pair 4: a safe. Was 'item_picture_08'. Earlier note: Data walk 2026-10-26 (p
+NesPrgRom:27ED:item_picture_erase:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the blank drawn over a collected item (erase_item). Was 'item_picture_0a'. E
 NesPrgRom:2B1C:round_doors_00:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $00 (load_round_doors by stage_number*2; ends at its firs
 NesPrgRom:2B3B:round_doors_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $02 (load_round_doors by stage_number*2; ends at its firs
 NesPrgRom:2B5A:round_doors_06:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_round_door_lists at offset $06 (load_round_doors by stage_number*2; ends at its firs
@@ -446,11 +446,11 @@ NesPrgRom:2D01:door_picture_06:[HIGH] Data walk 2026-10-26 (pointer level): the 
 NesPrgRom:312E:floor_trap_picture_00:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_floor_trap_pictures at offset $00 (draw_floor_trap_frame; X 0, 2, 4).
 NesPrgRom:3132:floor_trap_picture_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_floor_trap_pictures at offset $02 (draw_floor_trap_frame; X 0, 2, 4).
 NesPrgRom:3136:floor_trap_picture_04:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_floor_trap_pictures at offset $04 (draw_floor_trap_frame; X 0, 2, 4).
-NesPrgRom:3267:bonus_target_picture_00:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_pictures at offset $00 (animate_bonus_target; frame & $10 >> 3).
-NesPrgRom:326F:bonus_target_picture_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_pictures at offset $02 (animate_bonus_target; frame & $10 >> 3).
-NesPrgRom:3289:bonus_targets_02:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_lists at offset $02 (load_bonus_targets by is_bonus_round (2-8; 0 has n
-NesPrgRom:32A8:bonus_targets_04:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_lists at offset $04 (load_bonus_targets by is_bonus_round (2-8; 0 has n
-NesPrgRom:32C7:bonus_targets_06:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_bonus_target_lists at offsets $06, $08 (load_bonus_targets by is_bonus_round (2-8; 0
+NesPrgRom:3267:balloon_picture_00:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the red balloon, frame 1. Was 'bonus_target_picture_00'. Earlier note: Data 
+NesPrgRom:326F:balloon_picture_02:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the red balloon, frame 2. Was 'bonus_target_picture_02'. Earlier note: Data 
+NesPrgRom:3289:balloon_list_02:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the first bonus round's balloons. Was 'bonus_targets_02'. Earlier note: Data
+NesPrgRom:32A8:balloon_list_04:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the second bonus round's balloons. Was 'bonus_targets_04'. Earlier note: Dat
+NesPrgRom:32C7:balloon_list_06:[HIGH] Assets 2026-10-27 (render_assets.py draws it; Chris confirmed): the third and fourth bonus rounds' balloons (shared). Was 'bonus_targets_06'
 NesPrgRom:3B13:voice_stream_04:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $04 (load_voice_stream_ptr by voice*2, voice 0 skipped (
 NesPrgRom:3B2B:voice_stream_06:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $06 (load_voice_stream_ptr by voice*2, voice 0 skipped (
 NesPrgRom:3B3D:voice_stream_08:[HIGH] Data walk 2026-10-26 (pointer level): the target of tbl_voice_stream_ptrs at offset $08 (load_voice_stream_ptr by voice*2, voice 0 skipped (
@@ -528,12 +528,12 @@ NesInternalRam:004C:respawn_slot:[index] Top-down 2026-10-26 (game thread): upda
 NesInternalRam:004D:respawn_tick:[counter] Top-down 2026-10-26 (game thread): counts up each frame in update_and_respawn_objects until respawn_interval, then resets. Was 'object_recor
 NesInternalRam:004E:respawn_interval:[count] Top-down 2026-10-26 (game thread): the frame count between respawn checks (update_and_respawn_objects cmp $4E). Was 'block_data_ptr_hi'. Ear
 NesInternalRam:004F:round_cleared:[flag] Top-down 2026-10-26 (game thread): set only by the item pickup when round_items_remaining reaches 0 ($E686); play_round and next_round leave
-NesInternalRam:0050:bonus_targets_popped:[bcd] Variables round 2 (2026-10-26): +1 per pop (bcd_add_record 06); shown at $2190 by show_bonus_results. Was 'obj_table_ptr'. Earlier note: dat
-NesInternalRam:0051:bonus_goals_reached:[bcd] Variables round 2 (2026-10-26): +1 when the goal is reached (bonus_state0E_goal_object); shown at $2210. Was 'obj_def_ptr_hi'. Earlier note:
-NesInternalRam:0052:bonus_targets_left:[counter] Variables round 2 (2026-10-26): targets not yet popped; 0 with the goal reached gives PERFECT (show_bonus_results). Was 'object_def_ptr'. Ea
-NesInternalRam:0053:bonus_target_table_len:[count] Variables round 2 (2026-10-26): 8 x the number of targets (load_bonus_targets, update_bonus_targets). Was 'object_def_ptr'. Earlier note: $0
+NesInternalRam:0050:balloons_popped:[bcd] Assets 2026-10-27 (render_assets.py; Chris confirmed): +1 per popped balloon; shown on the results screen (200 points each). Was 'bonus_targ
+NesInternalRam:0051:goal_balloons_reached:[bcd] Assets 2026-10-27 (render_assets.py; Chris confirmed): +1 when Mappy reaches the goal balloon; shown on the results screen (2000 each). Was 
+NesInternalRam:0052:balloons_left:[counter] Assets 2026-10-27 (render_assets.py; Chris confirmed): red balloons not yet popped; 0 with the goal reached gives PERFECT GAME (5000). Was '
+NesInternalRam:0053:balloon_table_len:[count] Assets 2026-10-27 (render_assets.py; Chris confirmed): 8 x the number of balloons. Was 'bonus_target_table_len'. Earlier note: Variables rou
 NesInternalRam:0054:bonus_tallies:[array] Variables round 2 (2026-10-26): $54-$5F, cleared by load_bonus_targets: the bonus results' numbers. Was 'object_table_ptr'. Earlier note: To
-NesInternalRam:005A:bonus_goal_points:[bcd] Variables round 2 (2026-10-26): 2 BCD bytes shown at $2217; the goal sets $20 (bonus_state0E_goal_object). Was 'ppu_block_src_ptr'. Earlier 
+NesInternalRam:005A:goal_balloon_points:[bcd] Assets 2026-10-27 (render_assets.py; Chris confirmed): 2 BCD bytes: the goal balloon's points on the results screen. Was 'bonus_goal_points'
 NesInternalRam:0060:round_timer_phase:[state] Variables round 2 (2026-10-26): 0 counting, 1 HURRY, 2 counting again, 3 slot 1 released (tick_round_timer); past 0 cats run faster (object_
 NesInternalRam:0061:round_timer_frames:[counter] Variables round 2 (2026-10-26): frames to 60 (tick_round_timer). Was 'seq_data_ptr'. Earlier note: Dereferenced as a 16-bit pointer in fetch
 NesInternalRam:0062:round_timer_seconds:[counter] Variables round 2 (2026-10-26): seconds against the stage's two limits (tick_round_timer). Was 'seq_data_ptr'. Earlier note: $0062 is derefe
@@ -562,7 +562,7 @@ NesInternalRam:0093:floor_trap_addr_hi:[pointer] Variables round 2 (2026-10-26):
 NesInternalRam:0094:floor_trap_x:[position] Variables round 2 (2026-10-26): tile x (player_on_floor_trap). Was 'obj_pos_field'. Earlier note: Accessed as an indexed object-table field 
 NesInternalRam:0095:floor_trap_y:[position] Variables round 2 (2026-10-26): tile row. Was 'obj_x'. Earlier note: Always accessed indexed into an object table ($95,x and $0095,y), never
 NesInternalRam:0096:floor_trap_timer:[counter] Variables round 2 (2026-10-26): 120 frames open (update_floor_trap). Was 'scratch_bitshift'. Earlier note: No 16-bit deref ((zp),y) anywhere
-NesInternalRam:00A0:dropped_objects:[array] Variables round 2 (2026-10-26): two 8-byte records, $A0 and $A8 (load_dropped_objects, update_dropped_object). Was 'block_data_ptr'. Earlier
+NesInternalRam:00A0:bells:[array] Assets 2026-10-27 (render_assets.py; Chris confirmed): the two bell records of rounds 8-10, $A0 and $A8 (load_bells, update_bell). Was 'drop
 NesInternalRam:00B0:p2_lives:[counter] Player-2 lives (base of the P2 state block $B0-$EF) — the mirror of p1_lives ($70), exchanged with it in swap_double_buffers_toggle_flag. Ne
 NesInternalRam:00C1:thread_sp_slot:[array] Variables 2026-10-26 (fixed var_xref: real instructions only): start_game_thread stores the stack pointer at $00C1+$3F = $0100, the cell swa
 NesInternalRam:00F0:voice_rec_ptr:[pointer] Variables 2026-10-26 (fixed var_xref: real instructions only): points at the current voice's 8-byte record ($0619 + 8k); every sound routine
@@ -609,7 +609,7 @@ NesInternalRam:0044:hi_score:[bcd] Top-down 2026-10-26 (game thread): the high s
 NesInternalRam:002E:cats_cant_catch:[flag] Variables round 2 (2026-10-26): walking_cat_touches_player does nothing while it is set; only the dead routine at $D762 toggles it (an unrea
 NesInternalRam:003E:warm_boot_magic:[flag] Variables round 2 (2026-10-26): written by reset_cold_boot_init, checked by validate_magic_and_restore_state_vars.
 NesInternalRam:003F:warm_boot_magic_2:[flag] Variables round 2 (2026-10-26): the second magic byte.
-NesInternalRam:0056:bonus_target_points:[bcd] Variables round 2 (2026-10-26): 2 BCD bytes shown at $2197 (bcd_number_entry 12).
+NesInternalRam:0056:balloon_points:[bcd] Assets 2026-10-27 (render_assets.py; Chris confirmed): 2 BCD bytes: the balloons' points on the results screen. Was 'bonus_target_points'. E
 NesInternalRam:005D:bonus_total:[bcd] Variables round 2 (2026-10-26): 3 BCD bytes shown at $2315 (bcd_number_entry 16), added to the score by show_bonus_results.
 NesInternalRam:005E:bonus_total_mid:[bcd] Variables round 2 (2026-10-26): the middle byte of bonus_total: show_bonus_results copies the goal points in and adds $50 for PERFECT.
 NesInternalRam:0066:hurry_seconds:[counter] Variables round 2 (2026-10-26): stage param byte 3: seconds until HURRY (tick_round_timer).
@@ -620,8 +620,8 @@ NesInternalRam:0180:attr_shadow:[array] Variables round 2 (2026-10-26): the attr
 NesInternalRam:0203:tramp_pos_index:[obj_field] Variables round 2 (2026-10-26): trampoline +3: index into tbl_trampoline_addrs.
 NesInternalRam:0204:tramp_x:[obj_field] Variables round 2 (2026-10-26): trampoline +4: tile x.
 NesInternalRam:0262:item_timer:[obj_field] Variables round 2 (2026-10-26): item +2: 60 frames of points after collection (show_item_points).
-NesInternalRam:0266:target_addr:[obj_field] Variables round 2 (2026-10-26): bonus target +6: its nametable address (load_bonus_targets, draw_bonus_target).
-NesInternalRam:0267:target_addr_hi:[obj_field] Variables round 2 (2026-10-26): bonus target +7: high byte.
+NesInternalRam:0266:balloon_addr:[obj_field] Assets 2026-10-27 (render_assets.py; Chris confirmed): balloon +6: its nametable address. Was 'target_addr'. Earlier note: Variables round 2
+NesInternalRam:0267:balloon_addr_hi:[obj_field] Assets 2026-10-27 (render_assets.py; Chris confirmed): balloon +7: high byte. Was 'target_addr_hi'. Earlier note: Variables round 2 (2026-10
 NesInternalRam:02B2:door_addr:[obj_field] Variables round 2 (2026-10-26): door +2: nametable address (draw_door_kind_y).
 NesInternalRam:02B3:door_addr_hi:[obj_field] Variables round 2 (2026-10-26): door +3: high byte.
 NesInternalRam:02B6:door_swing_frame:[obj_field] Variables round 2 (2026-10-26): door +6: 0-4 during the swing.
@@ -686,7 +686,7 @@ NesInternalRam:0401:obj_x:obj record +1 [HIGH] Variables round 2 (2026-10-26): r
 NesInternalRam:0402:obj_y_frac:obj record +2 [HIGH] Variables round 2 (2026-10-26): record +2: y fraction. Was 'obj_y_lo'. Field +02 is advanced additiv
 NesInternalRam:0403:obj_y:obj record +3 [HIGH] Variables round 2 (2026-10-26): record +3: tile row. Was 'obj_y_hi'. Field +03 is differenced, never
 NesInternalRam:0404:obj_anim:obj record +4 [HIGH] Variables round 2 (2026-10-26): record +4: the draw handler index (dispatch_object_draw_by_anim); 0 
-NesInternalRam:0405:obj_type:obj record +5 [HIGH] Touched by 16 routines that are overwhelmingly state-machine drivers: update_active_object_state_mac
+NesInternalRam:0405:obj_type:obj record +5 [HIGH] Assets 2026-10-27: record +5 is the object type: 0 Mappy (the player), 1 the coin (the late chaser a
 NesInternalRam:0406:obj_dir:obj record +6 [HIGH] Variables round 2 (2026-10-26): record +6: 1 right, $FF left. Was 'obj_facing'. Top-down 2026-10-26:
 NesInternalRam:0407:obj_timer:obj record +7 [HIGH] HIGH
 NesInternalRam:0408:obj_tile:obj record +8 [HIGH] Variables round 2 (2026-10-26): record +8: the tile the render thread read back (queue_tile_read). W

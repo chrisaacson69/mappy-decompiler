@@ -563,22 +563,22 @@ tbl_draw_by_anim:
     C35A:            .word draw_type_pose_10
     C35C:            .word draw_fall_bounce_pose
     C35E:            .word draw_door_wave
-    C360:            .word draw_tile_3c_type1_flicker
+    C360:            .word draw_bell
     C362:            .word draw_stunned_pose
     C364:            .word draw_stunned_blinking
     C366:            .word draw_wave_score
     C368:            .word draw_slot2_still_pose
     C36A:            .word draw_slot2_large_pose
     C36C:            .word draw_player_death_animation
-    C36E:            .word draw_bonus_goal_object
+    C36E:            .word draw_goal_balloon
     C370:            .word handler_rts_noop
-    C372:            .word draw_8_sprite_row_to_oam
+    C372:            .word draw_namco_logo
     C374:            .word draw_player_caught_pose
     C376:            .word draw_knocked_out
-    C378:            .word draw_drop_stun_points
-    C37A:            .word draw_drop_recover_blink
+    C378:            .word draw_bell_stun_points
+    C37A:            .word draw_bell_recover_blink
 
-draw_drop_stun_points:
+draw_bell_stun_points:
     C37C: A9 AE       lda #$ae
     C37E: 85 12       sta draw_tile_or_src   ; $12
     C380: A9 00       lda #$00
@@ -603,7 +603,7 @@ draw_drop_stun_points:
 @C3A4:
     C3A4: 4C 15 C4    jmp write_sprite_to_oam   ; $C415
 
-draw_drop_recover_blink:
+draw_bell_recover_blink:
     C3A7: A0 07       ldy #$07
     C3A9: B1 1E       lda (obj_record_ptr),y   ; $1E
     C3AB: 29 08       and #$08
@@ -848,7 +848,7 @@ draw_door_wave:
     C4F0: 85 16       sta sprite_y   ; $16
     C4F2: 4C E3 C3    jmp flip_bits_to_tile_xor   ; $C3E3
 
-draw_tile_3c_type1_flicker:
+draw_bell:
     C4F5: A9 3C       lda #$3c
     C4F7: 85 12       sta draw_tile_or_src   ; $12
     C4F9: A0 05       ldy #$05
@@ -1054,14 +1054,14 @@ draw_player_death_animation:
     C619: 85 12       sta draw_tile_or_src   ; $12
     C61B: 4C D7 C3    jmp apply_facing_flip   ; $C3D7
 
-draw_bonus_goal_object:
+draw_goal_balloon:
     C61E: A9 02       lda #$02
     C620: 85 13       sta draw_attr_or_src_hi   ; $13
     C622: A9 00       lda #$00
     C624: 85 14       sta draw_palette   ; $14
     C626: A5 21       lda frame_counter   ; $21
     C628: 29 20       and #$20
-    C62A: F0 11       beq draw_goal_block_dd   ; $C63D
+    C62A: F0 11       beq draw_goal_balloon_frame_dd   ; $C63D
     C62C: A9 E8       lda #$e8
     C62E: 85 12       sta draw_tile_or_src   ; $12
     C630: 20 4C C6    jsr draw_tile_block_3x4   ; $C64C
@@ -1071,7 +1071,7 @@ draw_bonus_goal_object:
     C638: 85 16       sta sprite_y   ; $16
     C63A: 4C 15 C4    jmp write_sprite_to_oam   ; $C415
 
-draw_goal_block_dd:
+draw_goal_balloon_frame_dd:
     C63D: A9 DD       lda #$dd
     C63F: 85 12       sta draw_tile_or_src   ; $12
     C641: A5 10       lda draw_pos   ; $10
@@ -1121,7 +1121,7 @@ draw_tile_row:
     C684: 85 16       sta sprite_y   ; $16
     C686: 60          rts
 
-draw_8_sprite_row_to_oam:
+draw_namco_logo:
     C687: A9 02       lda #$02
     C689: 85 13       sta draw_attr_or_src_hi   ; $13
     C68B: A9 00       lda #$00
@@ -1425,12 +1425,12 @@ title_screen:
     C883: A9 00       lda #$00
     C885: 85 28       sta camera_x_lo   ; $28
     C887: 85 29       sta camera_x   ; $29
-    C889: 20 2B CD    jsr init_title_object   ; $CD2B
+    C889: 20 2B CD    jsr init_namco_logo   ; $CD2B
     C88C: A9 F0       lda #$f0
     C88E: 85 0F       sta countdown_lo   ; $0F
 @C890:
     C890: 20 41 C1    jsr yield_to_render_loop   ; $C141
-    C893: 20 3E CD    jsr draw_title_object   ; $CD3E
+    C893: 20 3E CD    jsr draw_namco_logo_record   ; $CD3E
     C896: EA          nop
     C897: EA          nop
     C898: EA          nop
@@ -1582,15 +1582,15 @@ next_round:
     C9BD: 20 C5 E5    jsr load_round_items   ; $E5C5
     C9C0: 20 62 E8    jsr load_round_doors   ; $E862
     C9C3: 20 01 F0    jsr spawn_floor_traps   ; $F001
-    C9C6: 20 17 EF    jsr load_dropped_objects   ; $EF17
+    C9C6: 20 17 EF    jsr load_bells   ; $EF17
     C9C9: 20 39 C2    jsr ppu_enable_render   ; $C239
     C9CC: 4C 02 C9    jmp play_round   ; $C902
 @C9CF:
     C9CF: 20 C1 F3    jsr load_stage_params   ; $F3C1
-    C9D2: 20 3A F1    jsr load_bonus_targets   ; $F13A
+    C9D2: 20 3A F1    jsr load_balloons   ; $F13A
     C9D5: 20 39 C2    jsr ppu_enable_render   ; $C239
     C9D8: 20 0B D8    jsr init_bonus_player   ; $D80B
-    C9DB: 20 C0 D8    jsr init_bonus_goal_object   ; $D8C0
+    C9DB: 20 C0 D8    jsr init_bonus_goal_balloon   ; $D8C0
     C9DE: A9 00       lda #$00
     C9E0: 85 4B       sta player_down   ; $4B
     C9E2: 85 4F       sta round_cleared   ; $4F
@@ -1813,7 +1813,7 @@ update_round_frame:
     CB60: 20 FE E3    jsr animate_trampolines   ; $E3FE
     CB63: 20 D8 D8    jsr update_and_respawn_objects   ; $D8D8
     CB66: 20 4E ED    jsr update_door_waves   ; $ED4E
-    CB69: 20 3F EF    jsr update_dropped_objects   ; $EF3F
+    CB69: 20 3F EF    jsr update_bells   ; $EF3F
     CB6C: 20 34 E6    jsr update_items   ; $E634
     CB6F: 20 CC E8    jsr update_doors   ; $E8CC
     CB72: 20 4D F0    jsr update_floor_traps   ; $F04D
@@ -1823,7 +1823,7 @@ update_round_frame:
 update_bonus_round_frame:
     CB7B: 20 FE E3    jsr animate_trampolines   ; $E3FE
     CB7E: 20 D8 D8    jsr update_and_respawn_objects   ; $D8D8
-    CB81: 20 8F F1    jsr update_bonus_targets   ; $F18F
+    CB81: 20 8F F1    jsr update_balloons   ; $F18F
     CB84: 20 1C D7    jsr blink_player_up_label   ; $D71C
     CB87: 4C AB D5    jmp update_score   ; $D5AB
 
@@ -2206,24 +2206,24 @@ palhud_block_08:
     CD29: 13          .byte $13
     CD2A: 00          .byte $00
 
-init_title_object:
+init_namco_logo:
     CD2B: A2 00       ldx #$00
 @CD2D:
-    CD2D: BD 39 CD    lda title_object_record,x   ; $CD39
+    CD2D: BD 39 CD    lda namco_logo_record,x   ; $CD39
     CD30: 9D 90 04    sta hurry_x,x   ; $0490
     CD33: E8          inx
     CD34: E0 05       cpx #$05
     CD36: D0 F5       bne @CD2D   ; $CD2D
     CD38: 60          rts
 
-title_object_record:
+namco_logo_record:
     CD39: 00          .byte $00
     CD3A: 0C          .byte $0C
     CD3B: 00          .byte $00
     CD3C: 14          .byte $14
     CD3D: 1C          .byte $1C
 
-draw_title_object:
+draw_namco_logo_record:
     CD3E: A9 90       lda #$90
     CD40: 85 1E       sta obj_record_ptr   ; $1E
     CD42: A9 04       lda #$04
@@ -2396,10 +2396,10 @@ show_bonus_results:
     CE58: A0 14       ldy #$14
     CE5A: 20 D9 D5    jsr queue_bcd_number   ; $D5D9
     CE5D: 20 94 CE    jsr wait_120_frames_with_sprite   ; $CE94
-    CE60: A5 5A       lda bonus_goal_points   ; $5A
+    CE60: A5 5A       lda goal_balloon_points   ; $5A
     CE62: 85 5E       sta bonus_total_mid   ; $5E
     CE64: F0 10       beq @CE76   ; $CE76
-    CE66: A5 52       lda bonus_targets_left   ; $52
+    CE66: A5 52       lda balloons_left   ; $52
     CE68: D0 0C       bne @CE76   ; $CE76
     CE6A: A0 0C       ldy #$0c
     CE6C: 20 CD CE    jsr draw_indexed_text_line   ; $CECD
@@ -2435,7 +2435,7 @@ wait_120_frames_with_sprite:
     CEA7: 85 14       sta draw_palette   ; $14
     CEA9: A9 02       lda #$02
     CEAB: 85 13       sta draw_attr_or_src_hi   ; $13
-    CEAD: 20 3D C6    jsr draw_goal_block_dd   ; $C63D
+    CEAD: 20 3D C6    jsr draw_goal_balloon_frame_dd   ; $C63D
     CEB0: 20 1C D7    jsr blink_player_up_label   ; $D71C
     CEB3: 20 AB D5    jsr update_score   ; $D5AB
     CEB6: C6 0F       dec countdown_lo   ; $0F
@@ -4757,10 +4757,10 @@ init_cat_record:
     D8BD: 91 1E       sta (obj_record_ptr),y   ; $1E
     D8BF: 60          rts
 
-init_bonus_goal_object:
+init_bonus_goal_balloon:
     D8C0: A2 00       ldx #$00
 @D8C2:
-    D8C2: BD D3 D8    lda bonus_goal_template,x   ; $D8D3
+    D8C2: BD D3 D8    lda goal_balloon_template,x   ; $D8D3
     D8C5: 9D 10 04    sta slot1_x_frac,x   ; $0410
     D8C8: E8          inx
     D8C9: E0 05       cpx #$05
@@ -4769,7 +4769,7 @@ init_bonus_goal_object:
     D8CF: 8D 1F 04    sta slot1_state   ; $041F
     D8D2: 60          rts
 
-bonus_goal_template:
+goal_balloon_template:
     D8D3: 00          .byte $00
     D8D4: 05          .byte $05
     D8D5: 00          .byte $00
@@ -5006,8 +5006,8 @@ tbl_object_state_handlers:
     DA62:            .word state20_slot2_scored
     DA64:            .word state22_knocked_out
     DA66:            .word state24_slot2_landing_pause
-    DA68:            .word state26_stunned_by_drop
-    DA6A:            .word state28_drop_stun_recover
+    DA68:            .word state26_stunned_by_bell
+    DA6A:            .word state28_bell_stun_recover
     DA6C:            .word state2A_wait_then_start_tune
     DA6E:            .word state2C_wait_tune
 
@@ -5601,7 +5601,7 @@ clear_object:
 @DE79:
     DE79: 60          rts
 
-state26_stunned_by_drop:
+state26_stunned_by_bell:
     DE7A: A0 07       ldy #$07
     DE7C: B1 1E       lda (obj_record_ptr),y   ; $1E
     DE7E: 38          sec
@@ -5620,7 +5620,7 @@ state26_stunned_by_drop:
 @DE97:
     DE97: 60          rts
 
-state28_drop_stun_recover:
+state28_bell_stun_recover:
     DE98: A0 07       ldy #$07
     DE9A: B1 1E       lda (obj_record_ptr),y   ; $1E
     DE9C: 38          sec
@@ -6075,9 +6075,9 @@ tbl_bonus_state_handlers:
     E182:            .word bonus_state08_rise
     E184:            .word bonus_state0A_walk_off
     E186:            .word bonus_state0C_rebound
-    E188:            .word bonus_state0E_goal_object
+    E188:            .word bonus_state0E_goal_balloon
     E18A:            .word bonus_state10_slot3_timeout
-    E18C:            .word bonus_state12_released_cat_rises
+    E18C:            .word bonus_state12_goro_rises
 
 end_bonus_round:
     E18E: A9 00       lda #$00
@@ -6281,7 +6281,7 @@ bonus_state10_slot3_timeout:
 @E2ED:
     E2ED: 60          rts
 
-bonus_state0E_goal_object:
+bonus_state0E_goal_balloon:
     E2EE: AD 13 04    lda slot1_y   ; $0413
     E2F1: CD 03 04    cmp obj_y   ; $0403
     E2F4: D0 3B       bne @E331   ; $E331
@@ -6290,9 +6290,9 @@ bonus_state0E_goal_object:
     E2FA: ED 01 04    sbc obj_x   ; $0401
     E2FD: C9 02       cmp #$02
     E2FF: B0 30       bcs @E331   ; $E331
-    E301: E6 51       inc bonus_goals_reached   ; $51
+    E301: E6 51       inc goal_balloons_reached   ; $51
     E303: A9 20       lda #$20
-    E305: 85 5A       sta bonus_goal_points   ; $5A
+    E305: 85 5A       sta goal_balloon_points   ; $5A
     E307: 20 BF F4    jsr init_sound_voices   ; $F4BF
     E30A: A9 01       lda #$01
     E30C: 8D 06 06    sta snd_bonus_goal   ; $0606
@@ -6304,7 +6304,7 @@ bonus_state0E_goal_object:
     E31C: 8D 2F 04    sta slot2_state   ; $042F
     E31F: A2 00       ldx #$00
 @E321:
-    E321: BD 32 E3    lda released_cat_template,x   ; $E332
+    E321: BD 32 E3    lda released_goro_template,x   ; $E332
     E324: 9D 20 04    sta slot2_x_frac,x   ; $0420
     E327: E8          inx
     E328: E0 07       cpx #$07
@@ -6314,7 +6314,7 @@ bonus_state0E_goal_object:
 @E331:
     E331: 60          rts
 
-released_cat_template:
+released_goro_template:
     E332: 00          .byte $00
     E333: 05          .byte $05
     E334: 00          .byte $00
@@ -6323,7 +6323,7 @@ released_cat_template:
     E337: 02          .byte $02
     E338: FF          .byte $FF
 
-bonus_state12_released_cat_rises:
+bonus_state12_goro_rises:
     E339: AD 28 04    lda slot2_tile   ; $0428
     E33C: 38          sec
     E33D: E9 30       sbc #$30
@@ -7160,7 +7160,7 @@ tbl_item_pictures:
     E7C3: ED          .byte $ED
     E7C4: E7          .byte $E7
 
-item_picture_00:
+item_picture_radio:
     E7C5: 02          .byte $02
     E7C6: 8C          .byte $8C
     E7C7: 8D          .byte $8D
@@ -7170,7 +7170,7 @@ item_picture_00:
     E7CB: 8F          .byte $8F
     E7CC: 00          .byte $00
 
-item_picture_02:
+item_picture_tv:
     E7CD: 02          .byte $02
     E7CE: 90          .byte $90
     E7CF: 91          .byte $91
@@ -7180,7 +7180,7 @@ item_picture_02:
     E7D3: 93          .byte $93
     E7D4: 00          .byte $00
 
-item_picture_04:
+item_picture_computer:
     E7D5: 02          .byte $02
     E7D6: 94          .byte $94
     E7D7: 95          .byte $95
@@ -7190,7 +7190,7 @@ item_picture_04:
     E7DB: 97          .byte $97
     E7DC: 00          .byte $00
 
-item_picture_06:
+item_picture_painting:
     E7DD: 02          .byte $02
     E7DE: 98          .byte $98
     E7DF: 99          .byte $99
@@ -7200,7 +7200,7 @@ item_picture_06:
     E7E3: 9B          .byte $9B
     E7E4: 00          .byte $00
 
-item_picture_08:
+item_picture_safe:
     E7E5: 02          .byte $02
     E7E6: 9C          .byte $9C
     E7E7: 9D          .byte $9D
@@ -7210,7 +7210,7 @@ item_picture_08:
     E7EB: 9F          .byte $9F
     E7EC: 00          .byte $00
 
-item_picture_0a:
+item_picture_erase:
     E7ED: 02          .byte $02
     E7EE: 00          .byte $00
     E7EF: 00          .byte $00
@@ -8575,7 +8575,7 @@ move_cat_x_by_wave_direction:
     EF13: 9D 01 04    sta obj_x,x   ; $0401
     EF16: 60          rts
 
-load_dropped_objects:
+load_bells:
     EF17: A5 7A       lda stage_number   ; $7A
     EF19: 38          sec
     EF1A: E9 07       sbc #$07
@@ -8584,15 +8584,15 @@ load_dropped_objects:
     EF20: B0 0C       bcs @EF2E   ; $EF2E
     EF22: A2 00       ldx #$00
 @EF24:
-    EF24: BD 2F EF    lda dropped_objects_template,x   ; $EF2F
-    EF27: 95 A0       sta dropped_objects,x   ; $A0
+    EF24: BD 2F EF    lda bells_template,x   ; $EF2F
+    EF27: 95 A0       sta bells,x   ; $A0
     EF29: E8          inx
     EF2A: E0 10       cpx #$10
     EF2C: D0 F6       bne @EF24   ; $EF24
 @EF2E:
     EF2E: 60          rts
 
-dropped_objects_template:
+bells_template:
     EF2F: 00          .byte $00
     EF30: 03          .byte $03
     EF31: 00          .byte $00
@@ -8610,22 +8610,22 @@ dropped_objects_template:
     EF3D: 00          .byte $00
     EF3E: 00          .byte $00
 
-update_dropped_objects:
+update_bells:
     EF3F: A9 A0       lda #$a0
     EF41: 85 1E       sta obj_record_ptr   ; $1E
     EF43: A9 00       lda #$00
     EF45: 85 1F       sta obj_record_ptr_hi   ; $1F
-    EF47: 20 4E EF    jsr update_dropped_object   ; $EF4E
+    EF47: 20 4E EF    jsr update_bell   ; $EF4E
     EF4A: A9 A8       lda #$a8
     EF4C: 85 1E       sta obj_record_ptr   ; $1E
 
-update_dropped_object:
+update_bell:
     EF4E: A0 05       ldy #$05
     EF50: B1 1E       lda (obj_record_ptr),y   ; $1E
     EF52: F0 DA       beq @EF2E   ; $EF2E
     EF54: C9 02       cmp #$02
     EF56: 90 20       bcc @EF78   ; $EF78
-    EF58: 20 9B EF    jsr dropped_object_stuns_cats   ; $EF9B
+    EF58: 20 9B EF    jsr bell_stuns_cats   ; $EF9B
     EF5B: A0 02       ldy #$02
     EF5D: B1 1E       lda (obj_record_ptr),y   ; $1E
     EF5F: 18          clc
@@ -8661,7 +8661,7 @@ update_dropped_object:
 @EF98:
     EF98: 4C 05 C3    jmp draw_object   ; $C305
 
-dropped_object_stuns_cats:
+bell_stuns_cats:
     EF9B: A2 20       ldx #$20
 @EF9D:
     EF9D: BD 0F 04    lda obj_state,x   ; $040F
@@ -8917,23 +8917,23 @@ floor_trap_picture_04:
     F138: 4A          .byte $4A
     F139: 00          .byte $00
 
-load_bonus_targets:
+load_balloons:
     F13A: A4 7C       ldy is_bonus_round   ; $7C
-    F13C: B9 7F F2    lda tbl_bonus_target_lists,y   ; $F27F
+    F13C: B9 7F F2    lda tbl_balloon_lists,y   ; $F27F
     F13F: 85 1C       sta aux_ptr   ; $1C
     F141: B9 80 F2    lda $f280,y
     F144: 85 1D       sta aux_ptr_hi   ; $1D
     F146: A0 00       ldy #$00
     F148: B1 1C       lda (aux_ptr),y   ; $1C
     F14A: C8          iny
-    F14B: 85 53       sta bonus_target_table_len   ; $53
+    F14B: 85 53       sta balloon_table_len   ; $53
     F14D: 4A          lsr a
     F14E: 4A          lsr a
     F14F: 4A          lsr a
-    F150: 85 52       sta bonus_targets_left   ; $52
+    F150: 85 52       sta balloons_left   ; $52
     F152: A9 00       lda #$00
-    F154: 85 50       sta bonus_targets_popped   ; $50
-    F156: 85 51       sta bonus_goals_reached   ; $51
+    F154: 85 50       sta balloons_popped   ; $50
+    F156: 85 51       sta goal_balloons_reached   ; $51
     F158: A2 00       ldx #$00
 @F15A:
     F15A: 95 54       sta bonus_tallies,x   ; $54
@@ -8947,11 +8947,11 @@ load_bonus_targets:
     F168: B1 1C       lda (aux_ptr),y   ; $1C
     F16A: C8          iny
     F16B: 85 10       sta draw_pos   ; $10
-    F16D: 9D 66 02    sta target_addr,x   ; $0266
+    F16D: 9D 66 02    sta balloon_addr,x   ; $0266
     F170: B1 1C       lda (aux_ptr),y   ; $1C
     F172: C8          iny
     F173: 85 11       sta draw_pos_hi   ; $11
-    F175: 9D 67 02    sta target_addr_hi,x   ; $0267
+    F175: 9D 67 02    sta balloon_addr_hi,x   ; $0267
     F178: 20 BD E3    jsr ppu_addr_to_tile_xy   ; $E3BD
     F17B: A5 10       lda draw_pos   ; $10
     F17D: 9D 64 02    sta item_x,x   ; $0264
@@ -8961,41 +8961,41 @@ load_bonus_targets:
     F186: 18          clc
     F187: 69 08       adc #$08
     F189: AA          tax
-    F18A: E4 53       cpx bonus_target_table_len   ; $53
+    F18A: E4 53       cpx balloon_table_len   ; $53
     F18C: D0 D5       bne @F163   ; $F163
     F18E: 60          rts
 
-update_bonus_targets:
-    F18F: A5 53       lda bonus_target_table_len   ; $53
+update_balloons:
+    F18F: A5 53       lda balloon_table_len   ; $53
     F191: F0 11       beq @F1A4   ; $F1A4
     F193: A2 00       ldx #$00
 @F195:
     F195: 86 1B       stx cur_obj_index   ; $1B
-    F197: 20 A5 F1    jsr dispatch_bonus_target   ; $F1A5
+    F197: 20 A5 F1    jsr dispatch_balloon   ; $F1A5
     F19A: A5 1B       lda cur_obj_index   ; $1B
     F19C: 18          clc
     F19D: 69 08       adc #$08
     F19F: AA          tax
-    F1A0: E4 53       cpx bonus_target_table_len   ; $53
+    F1A0: E4 53       cpx balloon_table_len   ; $53
     F1A2: D0 F1       bne @F195   ; $F195
 @F1A4:
     F1A4: 60          rts
 
-dispatch_bonus_target:
+dispatch_balloon:
     F1A5: BC 60 02    ldy item_state,x   ; $0260
-    F1A8: B9 B5 F1    lda tbl_bonus_target_handlers,y   ; $F1B5
+    F1A8: B9 B5 F1    lda tbl_balloon_handlers,y   ; $F1B5
     F1AB: 85 1C       sta aux_ptr   ; $1C
     F1AD: B9 B6 F1    lda $f1b6,y
     F1B0: 85 1D       sta aux_ptr_hi   ; $1D
     F1B2: 6C 1C 00    jmp (aux_ptr)   ; $001C
 
-tbl_bonus_target_handlers:
+tbl_balloon_handlers:
     F1B5:            .word handler_rts_noop
-    F1B7:            .word bonus_target_live
+    F1B7:            .word balloon_live
 
-bonus_target_live:
-    F1B9: 20 33 F2    jsr animate_bonus_target   ; $F233
-    F1BC: 20 15 F2    jsr released_cat_pops_target   ; $F215
+balloon_live:
+    F1B9: 20 33 F2    jsr animate_balloon   ; $F233
+    F1BC: 20 15 F2    jsr goro_pops_balloon   ; $F215
     F1BF: A6 1B       ldx cur_obj_index   ; $1B
     F1C1: BD 60 02    lda item_state,x   ; $0260
     F1C4: C9 02       cmp #$02
@@ -9010,7 +9010,7 @@ bonus_target_live:
     F1D9: B0 39       bcs @F214   ; $F214
     F1DB: AD 0F 04    lda obj_state   ; $040F
     F1DE: C9 08       cmp #$08
-    F1E0: D0 0F       bne pop_bonus_target   ; $F1F1
+    F1E0: D0 0F       bne pop_balloon   ; $F1F1
     F1E2: A9 00       lda #$00
     F1E4: 8D 08 04    sta obj_tile   ; $0408
     F1E7: A9 02       lda #$02
@@ -9018,25 +9018,25 @@ bonus_target_live:
     F1EC: A9 06       lda #$06
     F1EE: 8D 04 04    sta obj_anim   ; $0404
 
-pop_bonus_target:
+pop_balloon:
     F1F1: A9 01       lda #$01
     F1F3: 8D 08 06    sta snd_collect   ; $0608
     F1F6: A9 00       lda #$00
     F1F8: 9D 60 02    sta item_state,x   ; $0260
-    F1FB: C6 52       dec bonus_targets_left   ; $52
+    F1FB: C6 52       dec balloons_left   ; $52
     F1FD: A0 06       ldy #$06
     F1FF: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
     F202: A0 08       ldy #$08
     F204: 20 E5 D4    jsr bcd_add_from_table   ; $D4E5
-    F207: AD 77 F2    lda ptr_popped_target_picture   ; $F277
+    F207: AD 77 F2    lda ptr_popped_balloon_picture   ; $F277
     F20A: 85 12       sta draw_tile_or_src   ; $12
     F20C: AD 78 F2    lda $f278
     F20F: 85 13       sta draw_attr_or_src_hi   ; $13
-    F211: 4C 50 F2    jmp draw_bonus_target   ; $F250
+    F211: 4C 50 F2    jmp draw_balloon   ; $F250
 @F214:
     F214: 60          rts
 
-released_cat_pops_target:
+goro_pops_balloon:
     F215: BD 65 02    lda item_y,x   ; $0265
     F218: CD 23 04    cmp slot2_y   ; $0423
     F21B: D0 F7       bne @F214   ; $F214
@@ -9048,9 +9048,9 @@ released_cat_pops_target:
     F228: A9 00       lda #$00
     F22A: 8D 2F 04    sta slot2_state   ; $042F
     F22D: 8D 24 04    sta slot2_anim   ; $0424
-    F230: 4C F1 F1    jmp pop_bonus_target   ; $F1F1
+    F230: 4C F1 F1    jmp pop_balloon   ; $F1F1
 
-animate_bonus_target:
+animate_balloon:
     F233: A5 1B       lda cur_obj_index   ; $1B
     F235: 4A          lsr a
     F236: 4A          lsr a
@@ -9064,28 +9064,28 @@ animate_bonus_target:
     F243: 4A          lsr a
     F244: 4A          lsr a
     F245: A8          tay
-    F246: B9 63 F2    lda tbl_bonus_target_pictures,y   ; $F263
+    F246: B9 63 F2    lda tbl_balloon_pictures,y   ; $F263
     F249: 85 12       sta draw_tile_or_src   ; $12
     F24B: B9 64 F2    lda $f264,y
     F24E: 85 13       sta draw_attr_or_src_hi   ; $13
 
-draw_bonus_target:
+draw_balloon:
     F250: A6 1B       ldx cur_obj_index   ; $1B
-    F252: BD 66 02    lda target_addr,x   ; $0266
+    F252: BD 66 02    lda balloon_addr,x   ; $0266
     F255: 85 10       sta draw_pos   ; $10
-    F257: BD 67 02    lda target_addr_hi,x   ; $0267
+    F257: BD 67 02    lda balloon_addr_hi,x   ; $0267
     F25A: 85 11       sta draw_pos_hi   ; $11
     F25C: A9 00       lda #$00
     F25E: 85 14       sta draw_palette   ; $14
     F260: 4C FB C6    jmp draw_rle_text   ; $C6FB
 
-tbl_bonus_target_pictures:
+tbl_balloon_pictures:
     F263: 67          .byte $67
     F264: F2          .byte $F2
     F265: 6F          .byte $6F
     F266: F2          .byte $F2
 
-bonus_target_picture_00:
+balloon_picture_00:
     F267: 02          .byte $02
     F268: 28          .byte $28
     F269: 29          .byte $29
@@ -9095,7 +9095,7 @@ bonus_target_picture_00:
     F26D: 2B          .byte $2B
     F26E: 00          .byte $00
 
-bonus_target_picture_02:
+balloon_picture_02:
     F26F: 02          .byte $02
     F270: 2C          .byte $2C
     F271: 2D          .byte $2D
@@ -9105,7 +9105,7 @@ bonus_target_picture_02:
     F275: 2F          .byte $2F
     F276: 00          .byte $00
 
-ptr_popped_target_picture:
+ptr_popped_balloon_picture:
     F277: 79          .byte $79
     F278: F2          .byte $F2
     F279: 02          .byte $02
@@ -9115,7 +9115,7 @@ ptr_popped_target_picture:
     F27D: 02          .byte $02
     F27E: 00          .byte $00
 
-tbl_bonus_target_lists:
+tbl_balloon_lists:
     F27F: 00          .byte $00
     F280: 00          .byte $00
     F281: 89          .byte $89
@@ -9127,7 +9127,7 @@ tbl_bonus_target_lists:
     F287: C7          .byte $C7
     F288: F2          .byte $F2
 
-bonus_targets_02:
+balloon_list_02:
     F289: 78          .byte $78
     F28A: D5          .byte $D5
     F28B: 24          .byte $24
@@ -9160,7 +9160,7 @@ bonus_targets_02:
     F2A6: C5          .byte $C5
     F2A7: 20          .byte $20
 
-bonus_targets_04:
+balloon_list_04:
     F2A8: 78          .byte $78
     F2A9: D5          .byte $D5
     F2AA: 24          .byte $24
@@ -9193,7 +9193,7 @@ bonus_targets_04:
     F2C5: C5          .byte $C5
     F2C6: 20          .byte $20
 
-bonus_targets_06:
+balloon_list_06:
     F2C7: 78          .byte $78
     F2C8: D5          .byte $D5
     F2C9: 24          .byte $24
