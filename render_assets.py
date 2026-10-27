@@ -221,6 +221,29 @@ def listing_art():
         n = ROM[16 + addr - 0xC000 + 3]                 # [x lo][x hi][y][count][glyphs]
         glyphs = ROM[16 + addr - 0xC000 + 4:16 + addr - 0xC000 + 4 + n]
         art[f"{addr:04X}"] = ['"' + ''.join(SPRITE_FONT.get(g, " " if g == 0 else "?") for g in glyphs) + '"']
+    # the draw-block lists (ppu_run_draw_blocks entries: title screen, HUD, round templates): run each
+    # and decode the text rows it writes into the nametables; rows that are not text are left out
+    for k in range(0, 10, 2):
+        target = ROM[16 + 0xCC41 + k - 0xC000] | ROM[16 + 0xCC41 + k + 1 - 0xC000] << 8
+        port, _, cpu = machine()
+        port.vram[0x2000:0x2800] = bytes([SENTINEL]) * 0x800
+        call(cpu, RUN_DRAW_BLOCKS, y=k)
+        lines = []
+        for page in (0x2000, 0x2400):
+            for r in range(30):
+                row = port.vram[page + 32 * r:page + 32 * r + 32]
+                cells = [(c, t) for c, t in enumerate(row) if t != SENTINEL]
+                if cells and all(t in FONT for _, t in cells) and any(t for _, t in cells):
+                    c0 = cells[0][0]
+                    text = "".join(FONT[t] for _, t in cells).strip()
+                    if text:
+                        lines.append(f'${page + 32 * r + c0:04X}: "{text}"')
+        if lines:
+            art[f"{target:04X}"] = lines
+    # the ASCII copyright at $C000 (read by choose_cat_target_floor as random bits)
+    end = next(a for a in range(0xC000, 0xC031) if not 0x20 <= ROM[16 + a - 0xC000] < 0x7F) \
+        if any(not 0x20 <= ROM[16 + a - 0xC000] < 0x7F for a in range(0xC000, 0xC031)) else 0xC031   # $C031 is code (SEI)
+    art["C000"] = ['"' + ROM[16:16 + end - 0xC000].decode("ascii") + '"']
     handlers = {}                                       # tbl_draw_by_anim: anim -> handler address
     for k in range(19):
         a = 0xC356 + 2 * k

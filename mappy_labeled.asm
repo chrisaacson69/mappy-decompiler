@@ -3,6 +3,7 @@
 
 
 rom_copyright_ascii:
+    ;   "COPYRIGHT 1983 1984 NAMCO LTD.ALL RIGHTS RESERVED"
     C000: 43          .byte $43
     C001: 4F          .byte $4F
     C002: 50          .byte $50
@@ -2211,6 +2212,10 @@ palhud_block_00:
     CC5F: 00          .byte $00
 
 palhud_block_02:
+    ;   $21EB: "1 PLAYER"
+    ;   $222B: "2 PLAYERS"
+    ;   $22E5: "(c) 1983 1984 NAMCO LTD."
+    ;   $2327: "ALL RIGHTS RESERVED"
     CC60: 20          .byte $20
     CC61: 00          .byte $00
     CC62: 3F          .byte $3F

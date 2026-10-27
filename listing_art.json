@@ -510,6 +510,15 @@
  "CBA8": [
   "\"READY\""
  ],
+ "CC60": [
+  "$21EB: \"1 PLAYER\"",
+  "$222B: \"2 PLAYERS\"",
+  "$22E5: \"(c) 1983 1984 NAMCO LTD.\"",
+  "$2327: \"ALL RIGHTS RESERVED\""
+ ],
+ "C000": [
+  "\"COPYRIGHT 1983 1984 NAMCO LTD.ALL RIGHTS RESERVED\""
+ ],
  "C3C0": [
   "(first pose: slot 0 type 0 +7=00)",
   "    %%%%            %%%%",
