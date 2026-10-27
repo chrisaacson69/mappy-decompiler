@@ -97,4 +97,11 @@ What exists and what the finished disassembly adds:
   - The only hidden state carried into a round is the frame-counter phase (`seed_test.py`).
   - So RNG manipulation means choosing *when* things happen. Whether a looping script can work turns on the frame counter: does each lap of the cycle take a frame count that brings `$21` back to the same phase, with the same object state?
 - **A forward model, proven.** `live_verify.py` shows the game's own per-object step, run headless on the library CPU, reproduces the real game step for step. A planner could look ahead with the game's own code rather than an approximation.
-- **Open:** extra-life thresholds and the lives cap (they bound the score run's margin), and how the score counter wraps.
+- **Extra lives** (`award_extra_life` $D6AA, after every score update; title_screen sets `next_extra_life` 02, `extra_life_step` 07, cap $FF).
+  - The schedule is 20,000 points, then 70,000 and every 70,000 after: 140,000, 210,000 ... 980,000. That is **15 extra lives in all**.
+  - The first award resets the threshold to 0 before adding the step, so the second one comes at 70,000, not 90,000.
+  - The 980,000 award's BCD carry sets `extra_lives_awarded` to the cap, so there are none after it.
+  - The lives counter pins at 99.
+  - Verified by running the routine headless over every score from 0 to 1,990,000.
+- **The score wraps.** It is 8 BCD digits (`$71-$74`, read live: `00 00 36 40` = 3,640 on screen), and `bcd_add` drops the final carry. Verified headless: 99,999,990 + 50 → 40. The high score keeps its maximum (`update_high_score` copies only a larger score).
+- **What that means for an infinite run.** Score buys lives only until 980,000. From then on every death is permanent, so "infinite" means a **deathless** loop through the periodic rounds. Points matter only for pushing the high score toward 99,999,990, the true ceiling. Bonus rounds help reach 980,000 sooner (they buy the 15 lives' margin), then add points per minute and nothing else.
