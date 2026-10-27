@@ -8,7 +8,7 @@ names) + jump_tables.txt (the 6 dispatch tables). Per line:
 Function entries get `name:` anchors; intra-routine branch/jmp targets get `@addr:` locals;
 jump-table bytes emit as `.word handler_name`; uncovered bytes emit as `.byte` data.
 """
-import re, sys, bisect
+import json, re, sys, bisect
 from pathlib import Path
 from code_map import table_lines, label_names, var_names   # tables; labels.toml / vars.toml via tomllib
 from emu_harness.cpu.m6502 import disasm as disasm6502   # the shared 6502 tables (emu-harness rows B / A3)
@@ -24,6 +24,9 @@ def cpu(a):  return 0xC000+norm(a)
 # names
 FUNC=label_names()
 VAR=var_names()
+# listing_art.json (render_assets.py --art): ASCII art of each picture / draw handler's first pose, and
+# the decoded string of each text blob, printed as comments under its label
+ART=json.loads((HERE/"listing_art.json").read_text(encoding="utf-8")) if (HERE/"listing_art.json").exists() else {}
 # hardware register names
 HW={0x2000:"PPUCTRL",0x2001:"PPUMASK",0x2002:"PPUSTATUS",0x2003:"OAMADDR",0x2004:"OAMDATA",
     0x2005:"PPUSCROLL",0x2006:"PPUADDR",0x2007:"PPUDATA",0x4014:"OAMDMA",0x4015:"APUSTATUS",
@@ -83,6 +86,8 @@ out.append("; labels.toml + vars.toml + jump_tables.txt (from-scratch RE; no ext
 for e in entries:
     nm=FUNC.get(e, {0xC031:"reset_cold_boot_init",0xC2EF:"nmi_sound_tick",0xC304:"irq_rti_stub"}.get(e,f"L_{e:04X}"))
     out.append(f"\n{nm}:")
+    for line in ART.get(f"{e:04X}", []):              # render_assets.py --art: the picture, pose or text
+        out.append(f"    ;   {line}".rstrip())
     pc=cpu(e); endpc=end_of[e] if end_of[e]>0xFFFF else cpu(end_of[e])  # last entry: 0x10000 must not cpu()-wrap to $C000
     while pc<endpc:
         a=pc

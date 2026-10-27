@@ -18,13 +18,20 @@ Grounding: nothing is redrawn by hand. The CPU, bus, PPU port and renderers are 
     and the sprite palette only the title's block writes ($3F10, entry 2; rounds keep it).
 
   py -3.14 mappy/render_assets.py OUT_DIR      -> pictures.png, sprites.png, and one PNG per picture
+  py -3.14 mappy/render_assets.py --art        -> listing_art.json: {address: comment lines} for asm_gen,
+                                                  ASCII art of each picture and of each draw handler's
+                                                  first pose, and the decoded string of each text blob
 """
+import json
 import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw
 
 from code_map import label_names
+from data_pointers import TABLES    # the pointer tables and their reader-proven counts
+PICTURE_STEMS = {"item_picture", "door_picture", "trampoline_picture", "floor_trap_picture",
+                 "bonus_target_picture", "text_line"}
 from emu_harness.cpu.m6502.cpu import CPU6502
 from emu_harness.machines.nes import ppu
 from emu_harness.machines.nes.bus import Bus
@@ -97,19 +104,24 @@ def draw_picture(addr, pal, nt=None):
 def picture_jobs():
     """[(label, address, palette, nametable)] for every picture blob, plus the trampoline's wear colours.
     Text lines are drawn at their own record's address (tbl_text_lines: [address][text pointer])."""
-    jobs = []
-    rec = {(ROM[16 + a - 0xC000 + 2] | ROM[16 + a - 0xC000 + 3] << 8): ROM[16 + a - 0xC000] | ROM[16 + a - 0xC000 + 1] << 8
-           for a in range(0xCF08, 0xCF08 + 20, 4)}
-    for addr, name in sorted(label_names().items()):
-        stem, _, off = name.rpartition("_")
-        if stem in ("item_picture", "door_picture", "trampoline_picture", "floor_trap_picture",
-                    "bonus_target_picture", "text_line") and len(off) == 2:
-            off = int(off, 16)
+    jobs, names = [], label_names()
+    word = lambda a: ROM[16 + a - 0xC000] | ROM[16 + a - 0xC000 + 1] << 8
+    for _, base, n, stride, woff, stem, _ in TABLES:     # by address: the pointer tables data_pointers walks
+        if stem not in PICTURE_STEMS:
+            continue
+        seen = set()
+        for k in range(n):
+            off, addr = stride * k, word(base + stride * k + woff)
+            if addr in seen:
+                continue
+            seen.add(addr)
+            name = names.get(addr, f"{stem}_{off:02x}")
             if stem == "trampoline_picture":
                 for left in ((0,) if off == 0x14 else (3, 2, 1)):
                     jobs.append((f"{name} (bounces left {left})" if off != 0x14 else f"{name} (broken)", addr, left, None))
             else:
-                jobs.append((name, addr, picture_palette(stem, off), rec.get(addr) if stem == "text_line" else None))
+                nt = word(base + stride * k) if stem == "text_line" else None   # [address][text pointer]
+                jobs.append((name, addr, picture_palette(stem, off), nt))
     return jobs
 
 
@@ -151,6 +163,81 @@ def sprite_jobs():
     return out
 
 
+RAMP = " .:-=+*#%@"                  # dark -> bright: the backdrop is black, so bright reads as ink
+FONT = {0x00: " "} | {0x01 + i: str(i) for i in range(10)} | {0x0B + i: chr(65 + i) for i in range(26)} \
+       | {0x25: ".", 0x26: "(c)"}                                   # rom_data.FONT, the background font
+FONT |= {0x8A: "=", 0x8B: "x"} | {t: "o" for t in range(0x28, 0x2C)}  # the results screen's = and x (by count
+                                                                   # against its render), the balloon icon
+SPRITE_FONT = dict(zip([0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, 0xDB, 0xCA],
+                       "PLAYER12GMOVD"))                             # read from mappy.chr, 2026-10-26
+
+
+def ascii_art(img, bg_rgb):
+    """A PIL image -> lines: cropped to its ink, brightness mapped onto RAMP. Narrow art doubles each
+    pixel across (characters are about twice as tall as wide); tall art halves its rows."""
+    px = img.convert("RGB").load()
+    ink = [(x, y) for y in range(img.height) for x in range(img.width) if px[x, y] != bg_rgb]
+    if not ink:
+        return []
+    x0, x1 = min(x for x, _ in ink), max(x for x, _ in ink)
+    y0, y1 = min(y for _, y in ink), max(y for _, y in ink)
+    wide = 2 if x1 - x0 < 32 else 1
+    step = 2 if y1 - y0 >= 24 else 1
+    lines = []
+    for y in range(y0, y1 + 1, step):
+        row = ""
+        for x in range(x0, x1 + 1):
+            vals = [px[x, yy] for yy in range(y, min(y + step, y1 + 1))]
+            lum = max(0.0 if v == bg_rgb else (0.3 * v[0] + 0.59 * v[1] + 0.11 * v[2]) / 255 for v in vals)
+            c = " " if lum == 0 else RAMP[1 + min(len(RAMP) - 2, int(lum * (len(RAMP) - 1)))]
+            row += c * wide
+        lines.append(row.rstrip())
+    return lines
+
+
+def text_of(cv, font):
+    """A canvas of glyph tiles -> its rows as strings (an unknown glyph is shown as '?')."""
+    rows = [cv.tiles[r * cv.cols:(r + 1) * cv.cols] for r in range(cv.rows)]
+    return [''.join(font.get(t, "?") for t in row).rstrip() for row in rows]
+
+
+def listing_art():
+    """{'$ADDR': [comment lines]}: pictures as art, text blobs as strings, draw handlers as their first pose."""
+    bg, spr = palettes()
+    black = tuple(ppu.NES_MASTER_FCEUX[bg[0] & 0x3F])
+    art = {}
+    for title, addr, pal, nt in picture_jobs():
+        if "bounces left" in title and "(bounces left 3)" not in title:
+            continue                                    # one colour per trampoline frame is enough
+        cv = draw_picture(addr, pal, nt)
+        if cv is None:
+            continue
+        key = f"{addr:04X}"
+        if title.startswith("text_line"):
+            art[key] = [f'"{s}"' for s in text_of(cv, FONT) if s]
+        else:
+            art[key] = ascii_art(cv.render(CHR, bg, scale=1, master=ppu.NES_MASTER_FCEUX), black)
+    for name, addr in ((n, a) for a, n in label_names().items() if n.startswith("spr_text_")):
+        n = ROM[16 + addr - 0xC000 + 3]                 # [x lo][x hi][y][count][glyphs]
+        glyphs = ROM[16 + addr - 0xC000 + 4:16 + addr - 0xC000 + 4 + n]
+        art[f"{addr:04X}"] = ['"' + ''.join(SPRITE_FONT.get(g, " " if g == 0 else "?") for g in glyphs) + '"']
+    handlers = {}                                       # tbl_draw_by_anim: anim -> handler address
+    for k in range(19):
+        a = 0xC356 + 2 * k
+        handlers[2 * k] = ROM[16 + a - 0xC000] | ROM[16 + a - 0xC000 + 1] << 8
+    done = set()
+    for title, oam in sprite_jobs():
+        anim = int(title.split()[1], 16)
+        h = handlers.get(anim & 0xFE)
+        if h is None or h in done:
+            continue
+        done.add(h)
+        im = ppu.render_sprites(CHR, oam, spr, Image.new("RGB", (96, 96), black), chr_base=0x1000,
+                                master=ppu.NES_MASTER_FCEUX)
+        art[f"{h:04X}"] = [f"(first pose: {title.split(':', 1)[1].strip()})"] + ascii_art(im, black)
+    return art
+
+
 def sheet(items, cell_w, cell_h, cols=6, label_h=12):
     rows = (len(items) + cols - 1) // cols
     img = Image.new("RGB", (cols * cell_w, rows * (cell_h + label_h)), (40, 40, 40))
@@ -185,4 +272,9 @@ def main(out):
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1]) if len(sys.argv) > 1 else HERE / "_scratch" / "pictures")
+    if "--art" in sys.argv:
+        art = listing_art()
+        (HERE / "listing_art.json").write_text(json.dumps(art, indent=1), encoding="utf-8")
+        print(f"wrote listing_art.json: {len(art)} entries, {sum(len(v) for v in art.values())} lines")
+    else:
+        main(Path(sys.argv[1]) if len(sys.argv) > 1 else HERE / "_scratch" / "pictures")
