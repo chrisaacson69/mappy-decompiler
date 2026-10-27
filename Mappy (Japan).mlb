@@ -357,7 +357,7 @@ NesPrgRom:3277:ptr_popped_target_picture:[HIGH] Data walk 2026-10-26: word -> th
 NesPrgRom:327F:tbl_bonus_target_lists:[HIGH] Data walk 2026-10-26: words by is_bonus_round -> [length][addresses ...] (load_bonus_targets).
 NesPrgRom:33AA:hurry_sprite_record:[HIGH] Data walk 2026-10-26: 8 bytes copied to $0490 at the time limit: the HURRY sprite (tick_round_timer).
 NesPrgRom:33DF:tbl_stage_params:[HIGH] Data walk 2026-10-26: 6 bytes per stage_index into $63-$68 (load_stage_params).
-NesPrgRom:383B:tbl_note_periods:[HIGH] Data walk 2026-10-26: 11-bit APU period words ($07F2, $0780, $0714 ...) read by run_voice_stream.
+NesPrgRom:383B:tbl_note_periods:[HIGH] Assets 2026-10-27: one chromatic octave, A1 to G#2, as 12 big-endian 11-bit APU periods ($07F2 = A1 55.0 Hz by f = CPU / (16 (t + 1))), all 
 NesPrgRom:3853:tbl_voice_stream_ptrs:[HIGH] Data walk 2026-10-26: stream pointer words by voice (load_voice_stream_ptr).
 NesPrgRom:3879:voice13_stream:[HIGH] Data walk 2026-10-26: word -> voice 13's stream (sound_streams_next_voice).
 NesPrgRom:387B:voice14_stream:[HIGH] Data walk 2026-10-26: word -> voice 14's stream (sound_streams_next_voice).
