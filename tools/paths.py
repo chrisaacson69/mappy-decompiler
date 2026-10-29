@@ -5,10 +5,17 @@ the same from any cwd and a layout change is an edit to this file alone.
 """
 from pathlib import Path
 
+from emu_harness.roms import find_rom
+
 ROOT = Path(__file__).resolve().parents[1]      # the project root (this file is in tools/)
 
-ROM = ROOT / "Mappy (Japan).nes"
-MLB = ROOT / "Mappy (Japan).mlb"                # Mesen auto-loads it beside the ROM it opens
+# The ROM is in the machine's ROM store (emu-harness config.toml `roms`), else this repo, and must be
+# this dump: whole-file SHA-1 below; CRC32 7354615C whole, headerless SHA-1 E22B95C6...6A2256B
+# (game-annotation mappy/README.md: the published disassembly's PRG and CHR, byte for byte).
+ROM_NAME = "Mappy (Japan).nes"
+ROM_SHA1 = "b808a6a7aee80097406c5fba7867018b7748d36e"
+ROM = find_rom(ROM_NAME, ROM_SHA1, fallback=[ROOT], missing_ok=True)
+MLB = ROOT / "Mappy (Japan).mlb"                # committed; mappy_mlb.py copies it beside the ROM for Mesen
 LABELS = ROOT / "labels.toml"
 VARS = ROOT / "vars.toml"
 

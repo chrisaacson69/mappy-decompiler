@@ -6,7 +6,8 @@ Reads Mappy's own registry schema ([[...]] blocks); locating and writing are emu
 (machines.nes.memory.locate, backends.mesen.labels), so the file is in Mesen's own export format.
 Mappy is NROM-128 (16K mirrored); the cartridge facts come from the ROM header.
 Object-record fields are written onto the $0400 base object (object 0) as the record template.
-Output: "Mappy (Japan).mlb" beside the ROM, so Mesen auto-loads it by basename.
+Output: "Mappy (Japan).mlb" at the repo root (committed), and a copy beside the ROM in the ROM store,
+where Mesen auto-loads it by basename.
 """
 import re
 import tomllib
@@ -49,5 +50,9 @@ for b in sorted(vdoc.get("obj_field", []), key=lambda f: int(f["offset"],16)):
 out=MLB
 problems=write_mlb(lines, out)
 print(f"wrote {out.name}: {nf} functions (NesPrgRom), {nv} variables, {no} obj-record fields")
+if ROM.parent.resolve() != out.parent.resolve() and ROM.exists():
+    import shutil                                   # Mesen 2 auto-loads a .mlb beside the ROM it opens
+    shutil.copyfile(out, ROM.with_suffix(".mlb"))
+    print(f"copied -> {ROM.with_suffix('.mlb')} (beside the ROM, for Mesen)")
 print(f"total {len(lines)-len(problems)} labels")
 for p in problems: print("  dropped:", p)

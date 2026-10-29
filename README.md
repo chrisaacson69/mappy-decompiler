@@ -38,9 +38,12 @@ play logs in `traces/` (gitignored; `tools/mappy_search.py` writes them).
 ## Setup
 
 - `py -3.14 -m pip install -e ../emu-harness` (the sibling convention: clone both side by side).
-- Supply your own ROM as `Mappy (Japan).nes` in this folder. ROMs, CHR, renders (`*.png`), rendered
-  sound (`assets/sound/`), captures (`traces/`) and `_scratch/` are gitignored: they are copyrighted
-  or regenerable.
+- Supply your own ROM as `Mappy (Japan).nes` in the machine's ROM store (emu-harness `config.toml`,
+  `roms`; this folder works as a fallback). `tools/paths.py` finds it with `emu_harness.roms.find_rom`
+  and checks the dump: whole-file SHA-1 `b808a6a7aee80097406c5fba7867018b7748d36e` (CRC32 `7354615C`).
+  `tools/mappy_mlb.py` copies the `.mlb` beside it, where Mesen auto-loads it.
+- ROMs, CHR, renders (`*.png`), rendered sound (`assets/sound/`), captures (`traces/`) and `_scratch/`
+  are gitignored: they are copyrighted or regenerable.
 - Pictures: `tools/render_assets.py [OUT_DIR]` (default `assets/pictures/`); rounds:
   `tools/render_level.py 0 1 ...` (`assets/rounds/`). Sounds: `tools/sound_capture.py --wav DIR`.
 
