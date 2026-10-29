@@ -16,8 +16,8 @@ At a frame after a round has loaded (default: round 1 of the tas60 log, before a
      written in vblank ($C1A7) and the camera scroll mid-frame ($C092); the split scanline is measured
      on Mesen (the store's cycle distance from the NMI) and handed to the library as a split.
 
-  py -3.14 mappy/assets_verify.py [--log L] [--frame F] [--poke F:AA=VV ...] [--renderer-only]
-  py -3.14 mappy/assets_verify.py --suite     the gate: every SUITE run exact, and a planted fault (one
+  py -3.14 tools/assets_verify.py [--log L] [--frame F] [--poke F:AA=VV ...] [--renderer-only]
+  py -3.14 tools/assets_verify.py --suite     the gate: every SUITE run exact, and a planted fault (one
                                               picture byte changed in the headless ROM) caught
 """
 import argparse

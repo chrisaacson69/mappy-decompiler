@@ -6,8 +6,8 @@ gets a provenance name <stem>_<offset>, where offset is the value the reader ind
 record for tbl_text_lines). A target shared by several offsets is named once, at the first, and its
 `why` lists them all. Targets already labelled are left alone.
 
-  py -3.14 mappy/data_pointers.py          -> print the batch
-  py -3.14 mappy/data_pointers.py --write  -> write _scratch/batch_data_pointers.py for apply_names.py
+  py -3.14 tools/data_pointers.py          -> print the batch
+  py -3.14 tools/data_pointers.py --write  -> write _scratch/batch_data_pointers.py for apply_names.py
 """
 import re
 import sys

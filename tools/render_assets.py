@@ -17,8 +17,8 @@ Grounding: nothing is redrawn by hand. The CPU, bus, PPU port and renderers are 
   * Palettes: the background palette a round load writes ($3F00, ppu_run_draw_blocks entry 4, round 1)
     and the sprite palette only the title's block writes ($3F10, entry 2; rounds keep it).
 
-  py -3.14 mappy/render_assets.py OUT_DIR      -> pictures.png, sprites.png, and one PNG per picture
-  py -3.14 mappy/render_assets.py --art        -> listing_art.json: {address: comment lines} for asm_gen,
+  py -3.14 tools/render_assets.py OUT_DIR      -> pictures.png, sprites.png, and one PNG per picture
+  py -3.14 tools/render_assets.py --art        -> listing_art.json: {address: comment lines} for asm_gen,
                                                   ASCII art of each picture and of each draw handler's
                                                   first pose, and the decoded string of each text blob
 """

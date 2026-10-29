@@ -8,8 +8,8 @@ already sits there. Read operands only; the bytes come from the ROM, the code fr
 A base and base+1 read by the same routine (a word table read as lo/hi) are one element. A base 1-3 bytes
 past a data label (no code between) is that label's field (label+N), not a gap: the walk is done at 0.
 
-  py -3.14 mappy/data_frontier.py            -> unlabeled elements, by base
-  py -3.14 mappy/data_frontier.py --all      -> labeled ones too
+  py -3.14 tools/data_frontier.py            -> unlabeled elements, by base
+  py -3.14 tools/data_frontier.py --all      -> labeled ones too
 """
 import re
 import sys

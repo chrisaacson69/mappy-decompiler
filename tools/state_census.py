@@ -12,7 +12,7 @@ every count is keyed by table. --poke FRAME:ADDR=VAL writes a CPU byte before th
 e.g. 130:7A=01 sets stage_number in round 1, so clearing it enters the round-3 bonus round); a
 poked run is evidence for what the handlers do, not for how the game reaches them.
 
-  py -3.14 mappy/state_census.py <input log> [<input log> ...] [--poke F:AA=VV ...] [--idle N]
+  py -3.14 tools/state_census.py <input log> [<input log> ...] [--poke F:AA=VV ...] [--idle N]
 """
 import argparse
 import sys

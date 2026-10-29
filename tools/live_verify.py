@@ -13,10 +13,10 @@ Headless (emu-harness cpu.m6502 over machines.nes.bus), each "before" is loaded,
 with the live stack pointer and runs to the next $D8E0 / $D8F4; the RAM must then equal the "after",
 byte for byte, except the stack page ($0100-$01FF: only return addresses differ).
 
-  py -3.14 mappy/live_verify.py <input log> [--poke F:AA=VV ...] [--idle N] [--fault]
+  py -3.14 tools/live_verify.py <input log> [--poke F:AA=VV ...] [--idle N] [--fault]
     --fault plants one changed instruction in the headless ROM (walk_step's frame counter +1 -> +2,
     $DEFC); the check must then fail.
-  py -3.14 mappy/live_verify.py --suite
+  py -3.14 tools/live_verify.py --suite
     the gate: every run in SUITE identical, the planted fault caught, and every reachable state seen
     (normal 02-2C, bonus 00-12 except 10, which no instruction writes).
 """

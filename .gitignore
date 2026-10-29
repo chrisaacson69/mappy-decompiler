@@ -18,5 +18,9 @@
 *.pyc
 .DS_Store
 
-# === Run output (emulator traces) ===
+# === Rendered game audio: Namco's music, regenerated from the ROM (tools/sound_capture.py --wav) ===
+assets/sound/
+
+# === Captures: play logs, Mesen watches / CDL / RAM dumps, read caches (traces/), and working scratch ===
+traces/
 _scratch/

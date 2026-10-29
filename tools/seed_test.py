@@ -6,7 +6,7 @@ start gives the same per-frame RAM from "live" onward, the round is a pure funct
 in-round inputs: one seed, nothing to overfit and nothing to manipulate. If not, report the
 first frame and the bytes that differ.
 
-  py -3.14 mappy/seed_test.py <search log> [--prefix 124] [--starts 60 61 62 97 300 1000 2000]
+  py -3.14 tools/seed_test.py <search log> [--prefix 124] [--starts 60 61 62 97 300 1000 2000]
 """
 from __future__ import annotations
 

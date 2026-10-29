@@ -11,7 +11,7 @@ Plays an input log on Mesen and records, in CPU-cycle order:
 Then replays the game's writes and calls, in the same order, into the engine on the headless CPU
 (the library's sound.tap on a Bus) and compares the two APU streams write for write.
 
-  py -3.14 mappy/sound_verify.py <input log> [--idle N]
+  py -3.14 tools/sound_verify.py <input log> [--idle N]
 """
 import argparse
 import sys
@@ -24,14 +24,14 @@ from emu_harness.machines.nes.bus import Bus
 from emu_harness.machines.nes.sound import Recorder, tap
 from sound_capture import ROM, call
 
-from paths import ROM, TRACES
+from paths import ROM as ROM_FILE, TRACES
 ENGINE = (0xF49F, 0xF83D)          # Mesen's PC is after the store: allow the last store's length
 INIT_APU, INIT_VOICES, TICK = 0xF4B5, 0xF4BF, 0xF4F1
 
 
 def record(log, idle):
     paths = {k: (TRACES / f"sv_{k}.watch").resolve() for k in ("ram", "zp", "apu", "init", "voices", "tick")}
-    with NES(ROM) as m:
+    with NES(ROM_FILE) as m:
         masks = [m.mask_from_names(f) for f in read_input_log(log)] + [0] * idle
         m.watch("write", 0x0600, 0x06FF, paths["ram"], regs=True)
         m.watch("write", 0x00F0, 0x00FF, paths["zp"], regs=True)

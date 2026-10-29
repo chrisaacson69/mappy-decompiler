@@ -15,8 +15,8 @@ RAM used (ch6 + measured 2026-10-02 by demo_in_real_game.py):
   |+4 - $0401| < 2 ($E660). Verified against the pickup frames of the demo replay.
 Pad (read_and_decode_input $C1C9): only Left/Right (movement) and A/B (door action) matter.
 
-  TAS for one phase:   py -3.14 mappy/mappy_search.py --starts 60 --restarts 3
-  phase-robust run:    py -3.14 mappy/mappy_search.py --starts 60 61 97 300 --restarts 2
+  TAS for one phase:   py -3.14 tools/mappy_search.py --starts 60 --restarts 3
+  phase-robust run:    py -3.14 tools/mappy_search.py --starts 60 61 97 300 --restarts 2
   beam search:         add --beam 8 [--per-node 8]
 """
 from __future__ import annotations

@@ -7,7 +7,7 @@ definition; the gate wants none.
 Found the one hole the static pipeline had (2026-10-26): $EA51-$EA8F, the door-knockback handlers
 behind the shared JMP ($001C) stub at $EA46.
 
-  py -3.14 mappy/cdl_gap.py <input log> [<input log> ...]   (logs from power-on, e.g. _scratch/mappy_*.txt)
+  py -3.14 tools/cdl_gap.py <input log> [<input log> ...]   (logs from power-on, e.g. traces/mappy_*.txt)
 """
 import re
 import sys

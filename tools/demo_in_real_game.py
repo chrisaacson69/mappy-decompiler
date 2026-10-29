@@ -16,7 +16,7 @@ both/neither->$00) into movement $040D every frame, and $22 (an "A or B pressed"
 register) into $040E; the demo's `inc $040E` pulse equals a one-frame A press. An action
 command does not touch movement, so the previous direction stays held.
 
-  py -3.14 mappy/demo_in_real_game.py [--offsets -2 -1 0 1 2] [--bytes 25]
+  py -3.14 tools/demo_in_real_game.py [--offsets -2 -1 0 1 2] [--bytes 25]
 """
 from __future__ import annotations
 
