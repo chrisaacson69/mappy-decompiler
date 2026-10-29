@@ -12,7 +12,7 @@ gates behind those chapters. Start with chapter 10 (*The build-tool pass*) for t
 
 ## Status
 
-**All nine phases done (2026-10-27).** `py -3.14 -m emu_harness status mappy-decompiler` prints
+**All nine phases done (2026-10-29; Documentation, the ninth, gated that day).** `py -3.14 -m emu_harness status mappy-decompiler` prints
 each phase's gate and evidence from `re-roadmap.toml`.
 
 | Artifact | What it is |
