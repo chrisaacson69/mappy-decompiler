@@ -9,7 +9,7 @@ Plays an input log on Mesen and records, in CPU-cycle order:
     update_sound_frame ($F4F1), whoever calls them (the main loop, the NMI on a lag frame, the game);
   * every write to the APU registers ($4000-$4017): the reference stream.
 Then replays the game's writes and calls, in the same order, into the engine on the headless CPU
-(sound_capture.APULog) and compares the two APU streams write for write.
+(the library's sound.tap on a Bus) and compares the two APU streams write for write.
 
   py -3.14 mappy/sound_verify.py <input log> [--idle N]
 """
@@ -20,7 +20,9 @@ from pathlib import Path
 from emu_harness.backends.mesen.client import read_watch
 from emu_harness.cpu.m6502.cpu import CPU6502
 from emu_harness.machines.nes import NES, read_input_log
-from sound_capture import APULog, ROM, call
+from emu_harness.machines.nes.bus import Bus
+from emu_harness.machines.nes.sound import Recorder, tap
+from sound_capture import ROM, call
 
 HERE = Path(__file__).resolve().parent
 SCRATCH = HERE / "_scratch"
@@ -64,7 +66,8 @@ def main():
     events.sort(key=lambda e: e[0])
 
     ref = [(r["address"], r["value"]) for r in w["apu"] if r["address"] not in (0x4014, 0x4016)]
-    bus = APULog(ROM)
+    rec = Recorder()
+    bus = tap(Bus(ROM), rec)
     cpu = CPU6502(bus)
     counts = {"poke": 0, "init": 0, "voices": 0, "tick": 0}
     for _, kind, payload in events:
@@ -73,7 +76,7 @@ def main():
             bus.ram[payload[0]] = payload[1]
         else:
             call(cpu, {"init": INIT_APU, "voices": INIT_VOICES, "tick": TICK}[kind])
-    got = [(a_, v) for _, a_, v in bus.writes]
+    got = [(a_, v) for _, a_, v in rec.writes]
 
     print(f"replayed {counts}")
     print(f"APU writes: Mesen {len(ref):,}, headless {len(got):,}")
