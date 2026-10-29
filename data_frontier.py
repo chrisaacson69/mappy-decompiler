@@ -18,8 +18,8 @@ from pathlib import Path
 
 from emu_harness.cpu.m6502.disasm import ABS, ABX, ABY, MODE_LEN, OPS
 
-HERE = Path(__file__).resolve().parent
-PRG = (HERE / "Mappy (Japan).nes").read_bytes()[16:16 + 0x4000]
+from paths import ROM, LISTING
+PRG = ROM.read_bytes()[16:16 + 0x4000]
 LINE = re.compile(r'\s+([0-9A-F]{4}):\s+((?:[0-9A-F]{2} )+)\s*([a-z]{3})\b')
 LABEL = re.compile(r'^([A-Za-z_]\w*):$')
 
@@ -27,7 +27,7 @@ LABEL = re.compile(r'^([A-Za-z_]\w*):$')
 def scan():
     code, owner, refs, labels = set(), {}, [], {}
     cur, pending = None, None
-    for l in (HERE / "mappy_labeled.asm").read_text(encoding="utf-8").splitlines():
+    for l in LISTING.read_text(encoding="utf-8").splitlines():
         m = LABEL.match(l)
         if m:
             pending = m.group(1)

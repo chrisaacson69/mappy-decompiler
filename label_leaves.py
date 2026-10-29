@@ -16,12 +16,13 @@ from pathlib import Path
 
 from emu_harness.machines.nes.memory import register_name as hwname
 from emu_harness.passes.native import NativeMap, owner as _owner, partition_edges, routine_listing
-from code_map import HERE, INLINE_DISPATCH, WIN, table_lines
+from code_map import INLINE_DISPATCH, WIN, table_lines
+from paths import DISCOVER, LABELS as LABELS_TOML
 
 M = NativeMap(WIN, noreturn=INLINE_DISPATCH)
 def norm(a): return M.off(a)
 
-entries = sorted({0xC031,0xC2EF,0xC304} | {int(l.strip()[1:],16) for l in open(HERE/"routines_full.txt")})
+entries = sorted({0xC031,0xC2EF,0xC304} | {int(l.strip()[1:],16) for l in open(DISCOVER / "routines_full.txt")})
 ent = set(entries)
 tables = {}
 for line in table_lines():
@@ -48,15 +49,15 @@ def disasm_routine(e):
 import re as _re
 def load_labels():
     LAB={}
-    if (HERE/"labels.toml").exists():
+    if LABELS_TOML.exists():
         cur=None
-        for l in open(HERE/"labels.toml",encoding="utf-8"):
+        for l in open(LABELS_TOML,encoding="utf-8"):
             m=_re.search(r'addr\s*=\s*"([0-9A-Fa-f]{4})"',l)
             if m: cur=int(m.group(1),16)
             m=_re.search(r'name\s*=\s*"([^"]+)"',l)
             if m and cur is not None: LAB[cur]=m.group(1); cur=None
         # also support my inline 'addr="X"; name="Y"' lines
-        for l in open(HERE/"labels.toml",encoding="utf-8"):
+        for l in open(LABELS_TOML,encoding="utf-8"):
             m=_re.search(r'addr\s*=\s*"([0-9A-Fa-f]{4})".*name\s*=\s*"([^"]+)"',l)
             if m: LAB[int(m.group(1),16)]=m.group(2)
     return LAB

@@ -18,7 +18,7 @@ import re, sys, json
 from pathlib import Path
 
 from emu_harness.passes.native import NativeMap, field_census
-from code_map import HERE, INLINE_DISPATCH, WIN, label_names, table_lines, var_names
+from code_map import INLINE_DISPATCH, WIN, label_names, table_lines, var_names
 
 M=NativeMap(WIN, noreturn=INLINE_DISPATCH)
 def norm(a): return M.off(a)

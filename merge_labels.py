@@ -4,10 +4,10 @@ Accepts either the raw workflow output ({"result":[...]}) or a bare list of labe
 Skips addrs already present. Names come from the agents (built from behavior, no oracle)."""
 import json, re, sys
 from pathlib import Path
-HERE = Path(__file__).parent
+from paths import LABELS
 data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 results = data["result"] if isinstance(data, dict) and "result" in data else data
-labels = HERE / "labels.toml"
+labels = LABELS
 existing = set(x.upper() for x in re.findall(r'addr\s*=\s*"([0-9A-Fa-f]{4})"', labels.read_text(encoding="utf-8")))
 def esc(s): return s.replace("\\", "\\\\").replace('"', '\\"')
 added = 0

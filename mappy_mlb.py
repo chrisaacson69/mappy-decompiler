@@ -17,8 +17,7 @@ from emu_harness.backends.mesen.labels import write_mlb  # pip install -e ../emu
 from emu_harness.core.symbols import Symbol
 from emu_harness.machines.nes.memory import Cart, locate
 
-HERE = Path(__file__).parent
-ROM = HERE / "Mappy (Japan).nes"
+from paths import ROM, MLB, VARS
 CART = Cart.from_ines(ROM)
 
 def flat(s, n=140):
@@ -35,7 +34,7 @@ for b in symbols("label"):
     lines.append(Symbol(*locate(CART, "prg.bank0", a), b['name'], cmt)); nf+=1
 # --- variables -> NesInternalRam / NesSaveRam ---
 nv=0
-vdoc=tomllib.loads((HERE/"vars.toml").read_text(encoding="utf-8"))
+vdoc=tomllib.loads(VARS.read_text(encoding="utf-8"))
 for b in vdoc["var"]:
     a=int(b["addr"],16)
     cmt=f"[{b.get('role','')}] {flat(b.get('why',''))}"
@@ -47,7 +46,7 @@ for b in sorted(vdoc.get("obj_field", []), key=lambda f: int(f["offset"],16)):
     cmt=f"obj record +{off:X} [{b.get('conf','')}] {flat(b.get('why',''),100)}"
     lines.append(Symbol(*locate(CART, "ram", 0x0400+off), b['name'], cmt)); no+=1
 
-out=ROM.with_suffix(".mlb")
+out=MLB
 problems=write_mlb(lines, out)
 print(f"wrote {out.name}: {nf} functions (NesPrgRom), {nv} variables, {no} obj-record fields")
 print(f"total {len(lines)-len(problems)} labels")

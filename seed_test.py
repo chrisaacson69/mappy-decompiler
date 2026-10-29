@@ -14,8 +14,7 @@ import argparse
 import sys
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-ROM = HERE / "Mappy (Japan).nes"
+from paths import ROM, TRACES
 from emu_harness.machines.nes import NES, read_input_log  # pip install -e ../emu-harness
 
 DEMO_FLAG, P_STATE, ROUND, LIVES = 0x42, 0x40F, 0x7A, 0x70
@@ -43,7 +42,7 @@ def main() -> int:
     ap.add_argument("--prefix", type=int, default=124, help="boot frames in the log before 'live'")
     ap.add_argument("--starts", type=int, nargs="*", default=[60, 61, 62, 97, 300, 1000, 2000])
     a = ap.parse_args()
-    out = HERE / "_scratch"
+    out = TRACES
     with NES(ROM) as m:   # only for the mask encoding
         masks = [m.mask_from_names(f) for f in read_input_log(a.log)[a.prefix:]]
     runs = {}

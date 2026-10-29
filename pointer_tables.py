@@ -16,13 +16,14 @@ import re
 from pathlib import Path
 
 from emu_harness.passes.native import NativeMap, owner as _owner, partition_edges, pointer_runs, reachable
-from code_map import HERE, INLINE_DISPATCH, WIN, table_lines
+from code_map import INLINE_DISPATCH, WIN, table_lines
+from paths import DISCOVER, PUBLISHED_ASM
 
 def cpu(a):  return M.canon(a)
 
-seeds = {0xC031,0xC2EF,0xC304} | {int(l.strip()[1:],16) for l in open(HERE/"routines_full.txt")}
-M = NativeMap(WIN, bytearray((HERE/"coverage_full2.bin").read_bytes() if (HERE/"coverage_full2.bin").exists()
-                             else (HERE/"coverage_full.bin").read_bytes()), noreturn=INLINE_DISPATCH)
+seeds = {0xC031,0xC2EF,0xC304} | {int(l.strip()[1:],16) for l in open(DISCOVER / "routines_full.txt")}
+M = NativeMap(WIN, bytearray((DISCOVER / "coverage_full2.bin").read_bytes() if (DISCOVER / "coverage_full2.bin").exists()
+                             else (DISCOVER / "coverage_full.bin").read_bytes()), noreturn=INLINE_DISPATCH)
 code, PRG = M.code, M.buf
 known_tables = {}
 for line in table_lines():
@@ -75,7 +76,7 @@ print(f"\ncall graph: nodes={len(entries)} edges={sum(len(v) for v in edges.valu
 print(f"reachable from 3 vectors: {len(seen)}/{len(entries)} ({100*len(seen)/len(entries):.0f}%)")
 print(f"still unreachable: {len(unreached)}  {' '.join(f'${e:04X}' for e in unreached[:14])}{'...' if len(unreached)>14 else ''}")
 # final code recall
-asm=Path(r"C:\Users\Chris.Isaacson\Vault\raw\mappy_bank_FF.asm").read_text(encoding="utf-8",errors="replace")
+asm=PUBLISHED_ASM.read_text(encoding="utf-8",errors="replace")
 repo=bytearray(0x4000)
 for line in asm.splitlines():
     m=re.search(r'^([CD-]) ([CD-]) .*00:([0-9A-Fa-f]{4}):\s+((?:[0-9A-Fa-f]{2}\s)+)',line)

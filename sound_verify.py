@@ -24,15 +24,14 @@ from emu_harness.machines.nes.bus import Bus
 from emu_harness.machines.nes.sound import Recorder, tap
 from sound_capture import ROM, call
 
-HERE = Path(__file__).resolve().parent
-SCRATCH = HERE / "_scratch"
+from paths import ROM, TRACES
 ENGINE = (0xF49F, 0xF83D)          # Mesen's PC is after the store: allow the last store's length
 INIT_APU, INIT_VOICES, TICK = 0xF4B5, 0xF4BF, 0xF4F1
 
 
 def record(log, idle):
-    paths = {k: (SCRATCH / f"sv_{k}.watch").resolve() for k in ("ram", "zp", "apu", "init", "voices", "tick")}
-    with NES(HERE / "Mappy (Japan).nes") as m:
+    paths = {k: (TRACES / f"sv_{k}.watch").resolve() for k in ("ram", "zp", "apu", "init", "voices", "tick")}
+    with NES(ROM) as m:
         masks = [m.mask_from_names(f) for f in read_input_log(log)] + [0] * idle
         m.watch("write", 0x0600, 0x06FF, paths["ram"], regs=True)
         m.watch("write", 0x00F0, 0x00FF, paths["zp"], regs=True)

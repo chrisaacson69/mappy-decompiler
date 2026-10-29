@@ -25,7 +25,7 @@ from emu_harness.walk.guard import find_guard_violations
 from apply_names import byte_stream, valid_toml
 
 HERE = Path(__file__).parent
-VARS, ASM = HERE / "vars.toml", HERE / "mappy_labeled.asm"
+from paths import VARS, LISTING as ASM
 TOOLS = ("asm_gen.py", "mappy_mlb.py")
 
 

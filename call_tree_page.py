@@ -12,7 +12,7 @@ import json
 import sys
 from pathlib import Path
 
-HERE = Path(__file__).parent
+from paths import CALLGRAPH
 
 PAGE = r"""<title>Mappy Call Tree</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -280,9 +280,9 @@ aside li button:hover { background: var(--hilite); }
 
 
 def main(out=None):
-    data = json.loads((HERE / "call_graph.json").read_text(encoding="utf-8"))
+    data = json.loads((CALLGRAPH / "call_graph.json").read_text(encoding="utf-8"))
     html = PAGE.replace("__DATA__", json.dumps(data, separators=(",", ":")).replace("</", "<\\/"))
-    out = Path(out) if out else HERE / "call_tree.html"
+    out = Path(out) if out else CALLGRAPH / "call_tree.html"
     out.write_text(html, encoding="utf-8")
     print(f"wrote {out} ({len(html):,} bytes)")
 

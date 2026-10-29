@@ -22,8 +22,8 @@ from emu_harness.cpu.m6502.cpu import CPU6502
 from emu_harness.machines.nes import sound
 from emu_harness.machines.nes.bus import Bus
 
-HERE = Path(__file__).resolve().parent
-ROM = (HERE / "Mappy (Japan).nes").read_bytes()
+from paths import ROM as ROM_FILE
+ROM = ROM_FILE.read_bytes()
 VOICES, SOUND_INIT, SOUND_TICK, TRIGGER = 25, 0xF4B5, 0xF4F1, 0x0600
 FRAMES = 3600                   # 60 s: a voice still writing in its last 10 s is reported as looping
 # event -> (the trigger voices its writer sets together, how many frames the game keeps writing them).

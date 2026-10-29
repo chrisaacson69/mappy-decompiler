@@ -30,9 +30,7 @@ from emu_harness.cpu.m6502.cpu import CPU6502
 from emu_harness.machines.nes import NES, read_input_log
 from emu_harness.machines.nes.bus import Bus
 
-HERE = Path(__file__).resolve().parent
-ROM = HERE / "Mappy (Japan).nes"
-SCRATCH = HERE / "_scratch"
+from paths import ROM, TRACES
 LOOP, EXIT, NMI = 0xD8E0, 0xD8F4, 0xC2EF
 FAULT = (0xDEFD, 0x01, 0x02)        # walk_step: adc #$01 (+7 += 1) -> adc #$02
 # (input log, pokes, idle frames, what it adds): play logs, then warps for what play never reached
@@ -54,7 +52,7 @@ REACHABLE = {(s, False) for s in range(0x02, 0x2E, 2)} | {(s, True) for s in ran
 
 
 def record(log, pokes, idle):
-    paths = {k: (SCRATCH / f"lv_{k}.watch").resolve() for k in ("loop", "exit", "nmi")}
+    paths = {k: (TRACES / f"lv_{k}.watch").resolve() for k in ("loop", "exit", "nmi")}
     with NES(ROM) as m:
         masks = [m.mask_from_names(f) for f in read_input_log(log)] + [0] * idle
         ram = [("nesDebug", 0, 0x800)]
@@ -133,12 +131,12 @@ def report(ok, bad, skipped, states, first_bad, label=""):
 def suite():
     total, seen, failed = Counter(), Counter(), False
     for log, pokes, idle, what in SUITE:
-        ok, bad, skipped, states, first = check(SCRATCH / log, [poke(p) for p in pokes], idle)
+        ok, bad, skipped, states, first = check(TRACES / log, [poke(p) for p in pokes], idle)
         report(ok, bad, skipped, states, first, f"[{what}] ")
         total.update(identical=ok, different=bad, skipped=skipped)
         seen.update(states)
         failed |= bad > 0
-    ok, bad, *_ = check(SCRATCH / SUITE[0][0], [], SUITE[0][2], fault=True)
+    ok, bad, *_ = check(TRACES / SUITE[0][0], [], SUITE[0][2], fault=True)
     caught = bad > 0
     print(f"[planted fault: walk_step +1 -> +2] {bad:,} of {ok + bad:,} steps differ: {'caught' if caught else 'NOT CAUGHT'}")
     missing = sorted(REACHABLE - set(seen))

@@ -38,8 +38,8 @@ from emu_harness.machines.nes.bus import Bus
 from emu_harness.machines.nes.canvas import Canvas
 from emu_harness.machines.nes.ppuport import PPUPort
 
-HERE = Path(__file__).resolve().parent
-ROM = (HERE / "Mappy (Japan).nes").read_bytes()
+from paths import DATA, PICTURES, ROM as ROM_FILE
+ROM = ROM_FILE.read_bytes()
 CHR = ROM[16 + 0x4000:16 + 0x6000]
 DRAW_RLE_TEXT, DRAW_OBJECT, RUN_DRAW_BLOCKS = 0xC6FB, 0xC305, 0xCC15
 AT = (12, 12)                       # the nametable cell a picture is drawn from (room for negative deltas)
@@ -297,7 +297,7 @@ def main(out):
 if __name__ == "__main__":
     if "--art" in sys.argv:
         art = listing_art()
-        (HERE / "listing_art.json").write_text(json.dumps(art, indent=1), encoding="utf-8")
+        (DATA / "listing_art.json").write_text(json.dumps(art, indent=1), encoding="utf-8")
         print(f"wrote listing_art.json: {len(art)} entries, {sum(len(v) for v in art.values())} lines")
     else:
-        main(Path(sys.argv[1]) if len(sys.argv) > 1 else HERE / "_scratch" / "pictures")
+        main(Path(sys.argv[1]) if len(sys.argv) > 1 else PICTURES)

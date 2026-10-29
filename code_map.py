@@ -15,8 +15,8 @@ from pathlib import Path
 from emu_harness.cpu.m6502.descent import Window
 from emu_harness.passes.native import NativeMap
 
-HERE = Path(__file__).parent
-PRG = (HERE / "Mappy (Japan).nes").read_bytes()[16:16 + 0x4000]
+from paths import ROOT, ROM, VARS, DISCOVER
+PRG = ROM.read_bytes()[16:16 + 0x4000]
 WIN = Window(PRG, 0xC000, mirrors=(0x8000,))
 # jump_table_dispatch_via_index ($F49F): pla/pla the caller's return address, read the word at
 # 2*A+1 past it, jmp ($00F6). A JSR to it never returns, and its word table sits after the call.
@@ -26,7 +26,7 @@ INLINE_DISPATCH = {0xF49F}
 def symbols(kind):
     """The [[label]] (labels.toml) or [[var]] (vars.toml) entries as dicts, read with tomllib: the one
     reader every generator shares (both files are valid TOML since 2026-10-26)."""
-    return tomllib.loads((HERE / f"{kind}s.toml").read_text(encoding="utf-8"))[kind]
+    return tomllib.loads((ROOT / f"{kind}s.toml").read_text(encoding="utf-8"))[kind]
 
 
 def label_names(data=True):
@@ -37,7 +37,7 @@ def label_names(data=True):
 def var_names():
     """{address: name} for every variable, with the object-record field template ([[obj_field]]) projected
     onto the record at $0400: absolute $0400-$040F is slot 0 and the base every $04xx,x access indexes."""
-    doc = tomllib.loads((HERE / "vars.toml").read_text(encoding="utf-8"))
+    doc = tomllib.loads(VARS.read_text(encoding="utf-8"))
     out = {0x400 + int(f["offset"], 16): f["name"] for f in doc.get("obj_field", [])}
     out.update({int(e["addr"], 16): e["name"] for e in doc["var"]})
     return out
@@ -56,7 +56,7 @@ def instruction_starts():
     m = NativeMap(WIN, noreturn=INLINE_DISPATCH)
     for line in table_lines():
         p = line.split(); m.mark_data(int(p[1], 16), 2 * (len(p) - 2))
-    seeds = {0xC031, 0xC2EF, 0xC304} | {int(l.strip()[1:], 16) for l in open(HERE / "routines_full.txt")}
+    seeds = {0xC031, 0xC2EF, 0xC304} | {int(l.strip()[1:], 16) for l in open(DISCOVER / "routines_full.txt")}
     out = bytearray(0x4000)
     for a in m.reach(seeds)[1]:
         out[m.off(a)] = 1
@@ -66,4 +66,4 @@ def instruction_starts():
 def table_lines(data=True):
     """The lines of jump_tables.txt, then (with `data`) data_ptr_tables.txt."""
     for name in ("jump_tables.txt",) + (("data_ptr_tables.txt",) if data else ()):
-        yield from (l for l in (HERE / name).read_text().splitlines() if l.strip())
+        yield from (l for l in (DISCOVER / name).read_text().splitlines() if l.strip())

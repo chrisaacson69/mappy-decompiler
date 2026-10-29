@@ -25,10 +25,11 @@ from emu_harness.cpu.m6502.cpu import CPU6502
 from emu_harness.cpu.m6502.disasm import ABS, ABX, ABY, OPS
 from emu_harness.machines.nes.bus import Bus
 from emu_harness.machines.nes.ppuport import PPUPort
-from code_map import HERE, PRG, instruction_starts, table_lines
+from code_map import PRG, instruction_starts, table_lines
+from paths import DISCOVER, DATA, TRACES, ROM as ROM_FILE
 
-ROM = (HERE / "Mappy (Japan).nes").read_bytes()
-CODE = (HERE / "coverage_full2.bin").read_bytes()
+ROM = ROM_FILE.read_bytes()
+CODE = (DISCOVER / "coverage_full2.bin").read_bytes()
 
 STARTS = instruction_starts()
 
@@ -87,7 +88,7 @@ def text(port):
 def demo_reads(frames=4000):
     """Non-code PRG offsets read while the game plays its attract demo from RESET, with NMI each
     frame: trace_codegraph.py's run, on the logging bus. Cached in demo_reads.bin (2+ minutes)."""
-    cache = HERE / "demo_reads.bin"
+    cache = TRACES / "demo_reads.bin"
     if not cache.exists():
         from emu_harness.cpu.m6502.coverage import trace_coverage
         from emu_harness.cpu.m6502.descent import Window
@@ -110,7 +111,7 @@ def sound_reads(frames=4800):
     entry ($F4F1, called from the main loop and the NMI) `frames` times. Set once: a voice flagged
     in $F885 clears its byte when it starts ($F5B3); the others play while it stays nonzero.
     Cached in sound_reads.bin."""
-    cache = HERE / "sound_reads.bin"
+    cache = TRACES / "sound_reads.bin"
     if not cache.exists():
         out = bytearray()
         for k in range(VOICES):
@@ -202,7 +203,7 @@ def main(write=False):
         lines.append(f"  ${a:04X}-${b:04X}  {b - a + 1:5d} B  read at {who}")
     print("\n".join(lines))
     if write:
-        (HERE / "rom_data.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        (DATA / "rom_data.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

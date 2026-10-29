@@ -27,13 +27,14 @@ from pathlib import Path
 from emu_harness.cpu.m6502.descent import flow
 from emu_harness.passes.callgraph import Graph, sccs
 from emu_harness.passes.native import dead_path
-from code_map import HERE, INLINE_DISPATCH, PRG, WIN, label_names, table_lines
+from code_map import INLINE_DISPATCH, PRG, WIN, label_names, table_lines
+from paths import DISCOVER, CALLGRAPH
 
 VEC = {0xC031: "RESET", 0xC2EF: "NMI", 0xC304: "IRQ"}
 TASK_SITES = {0xC13B}          # jmp ($001E) after the stack switch: a task start, not a dispatch
 ORDER = ["call", "jmp", "flows-into", "dispatch", "inline", "task"]
 
-entries = sorted({int(l.strip()[1:], 16) for l in open(HERE / "routines_full.txt")} | set(VEC))
+entries = sorted({int(l.strip()[1:], 16) for l in open(DISCOVER / "routines_full.txt")} | set(VEC))
 ent = set(entries)
 
 NAMES = label_names()
@@ -111,13 +112,13 @@ for ks in G.edges.values():
 head = (f"# Mappy call tree (call_graph.py): {len(entries)} routines, {len(G.edges)} edges "
         f"({', '.join(f'{k} {kinds.get(k, 0)}' for k in ORDER)}); reached from the vectors: "
         f"{len(shown)}/{len(entries)}. [kinds] mark every edge that is not a plain JSR.")
-(HERE / "call_tree.txt").write_text(head + "\n" + "\n".join(lines) + "\n", encoding="utf-8")
-with open(HERE / "bottom_up_order.txt", "w") as f:
+(CALLGRAPH / "call_tree.txt").write_text(head + "\n" + "\n".join(lines) + "\n", encoding="utf-8")
+with open(CALLGRAPH / "bottom_up_order.txt", "w") as f:
     f.write("# leaf-first (bottom-up) labeling order, from call_graph.py: name these first, propagate up\n")
     for v in order:
         f.write(f"${v:04X}  {name(v):44s} callees={len(succ[v])}{'  LEAF' if not succ[v] else ''}"
                 f"{'  ' + VEC[v] if v in VEC else ''}\n")
-with open(HERE / "callgraph.dot", "w") as f:
+with open(CALLGRAPH / "callgraph.dot", "w") as f:
     f.write("digraph mappy {\n  rankdir=LR; node[shape=box,fontsize=8];\n")
     style = {"call": "", "jmp": " [style=dashed]", "flows-into": " [style=dotted]",
              "dispatch": " [color=red]", "inline": " [color=orange]", "task": " [color=blue,penwidth=2]"}
@@ -128,7 +129,7 @@ with open(HERE / "callgraph.dot", "w") as f:
         f.write(f'  "{s[1]:04X}" -> "{d[1]:04X}"{style[k]};\n')
     f.write("}\n")
 import json
-(HERE / "call_graph.json").write_text(json.dumps({
+(CALLGRAPH / "call_graph.json").write_text(json.dumps({
     "title": "Mappy (Japan)", "kinds": ORDER,
     "vectors": {f"{a:04X}": v for a, v in VEC.items()},
     "nodes": {f"{e:04X}": name(e) for e in entries},

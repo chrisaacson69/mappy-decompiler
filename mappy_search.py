@@ -27,8 +27,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-ROM = HERE / "Mappy (Japan).nes"
+from paths import ROM, TRACES
 from emu_harness.machines.nes import KEYS, NES, write_input_log  # pip install -e ../emu-harness
 from emu_harness.search import Searcher, Verdict
 
@@ -225,7 +224,7 @@ def main() -> int:
                     help="plan N distinct item orders and search each (round 1); 0 = nearest first")
     ap.add_argument("--tag", default="")
     a = ap.parse_args()
-    out = HERE / "_scratch"
+    out = TRACES
     out.mkdir(exist_ok=True)
 
     boots = [boot(ROM, s) for s in a.starts]

@@ -34,9 +34,7 @@ from emu_harness.machines.nes.bus import Bus
 from emu_harness.machines.nes.live import PPUSnapshot
 from emu_harness.machines.nes.ppuport import PPUPort
 
-HERE = Path(__file__).resolve().parent
-ROM = HERE / "Mappy (Japan).nes"
-SCRATCH = HERE / "_scratch"
+from paths import ROM, TRACES
 # the round load, in next_round's order: layout, trampolines, then (is_bonus_round, $7C) items, doors,
 # floor traps, bells, or stage params and balloons
 LOADERS = {False: [0xCD49, 0xE35B, 0xE5C5, 0xE862, 0xF001, 0xEF17], True: [0xCD49, 0xE35B, 0xF3C1, 0xF13A]}
@@ -66,8 +64,8 @@ def call(cpu, entry, y=0):
 
 
 def live(log, frame, pokes):
-    shot = (SCRATCH / "assets_verify_shot.png").resolve()
-    watches = {k: (SCRATCH / f"av_{k}.watch").resolve() for k in ("store", "nmi")}
+    shot = (TRACES / "assets_verify_shot.png").resolve()
+    watches = {k: (TRACES / f"av_{k}.watch").resolve() for k in ("store", "nmi")}
     with NES(ROM) as m:
         masks = [m.mask_from_names(f) for f in read_input_log(log)]
         done = 0
@@ -191,19 +189,19 @@ def check(log, frame, pokes, data=True, label="", fault=False):
     print(f"{label}[renderer] HUD split at scanline {split}, camera {snap.scroll()}; rows where the colours map one to"
           f" one: {len(rows_ok)} of 240 (consistent across them: {one_to_one}); other rows:"
           f" {', '.join(f'{a}-{b}' for a, b in runs) or 'none'}")
-    lib.save(SCRATCH / "assets_verify_library.png")
+    lib.save(TRACES / "assets_verify_library.png")
     return ok and one_to_one and not bad
 
 
 def main():
     if "--suite" in sys.argv:
-        results = [check(SCRATCH / log, frame, [poke(p) for p in pokes], data, f"[{what}] ")
+        results = [check(TRACES / log, frame, [poke(p) for p in pokes], data, f"[{what}] ")
                    for log, pokes, frame, data, what in SUITE]
-        caught = not check(SCRATCH / SUITE[0][0], SUITE[0][2], [], True, "[planted fault: blink tile 52 -> 53] ", True)
+        caught = not check(TRACES / SUITE[0][0], SUITE[0][2], [], True, "[planted fault: blink tile 52 -> 53] ", True)
         print(f"suite: {sum(results)} of {len(results)} exact; planted fault {'caught' if caught else 'NOT CAUGHT'}")
         return 0 if all(results) and caught else 1
     ap = argparse.ArgumentParser()
-    ap.add_argument("--log", type=Path, default=SCRATCH / "mappy_tas60_start60.txt")
+    ap.add_argument("--log", type=Path, default=TRACES / "mappy_tas60_start60.txt")
     ap.add_argument("--frame", type=int, default=130)
     ap.add_argument("--poke", type=poke, action="append", default=[])
     ap.add_argument("--renderer-only", action="store_true")

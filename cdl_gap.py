@@ -15,14 +15,13 @@ from pathlib import Path
 
 from emu_harness.machines.nes import NES, read_input_log
 
-HERE = Path(__file__).resolve().parent
-ROM = HERE / "Mappy (Japan).nes"
+from paths import ROM, LISTING, TRACES
 IDLE = 2500                     # frames of no input after each log, so the player gets caught
 
 
 def listing_code():
     code = bytearray(0x4000)
-    for line in (HERE / "mappy_labeled.asm").read_text(encoding="utf-8").splitlines():
+    for line in LISTING.read_text(encoding="utf-8").splitlines():
         m = re.match(r'\s+([0-9A-F]{4}):\s+((?:[0-9A-F]{2} )+)\s*[a-z]{3}\b', line)
         if m:
             a = int(m.group(1), 16) - 0xC000
@@ -36,7 +35,7 @@ def executed(logs):
     for log in logs:
         with NES(ROM) as m:
             m.run_masks([m.mask_from_names(f) for f in read_input_log(log)] + [0] * IDLE)
-            cdl = m.cdl("nesPrgRom", (HERE / "_scratch" / f"{log.stem}.cdl").resolve())
+            cdl = m.cdl("nesPrgRom", (TRACES / f"{log.stem}.cdl").resolve())
         for i, f in enumerate(cdl[:0x4000]):
             if f & 1:                                   # Mesen CDL bit 0: code
                 out[i] = 1

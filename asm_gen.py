@@ -17,8 +17,8 @@ from emu_harness.cpu.m6502.cpu import NMI_VECTOR, RESET_VECTOR, IRQ_VECTOR
 OPS, MODE_LEN, fmt = disasm6502.OPS, disasm6502.MODE_LEN, disasm6502.fmt_operand
 IMP,ACC,IMM,ZP,ZPX,ZPY,ABS,ABX,ABY,IND,IZX,IZY,REL = range(13)
 
-HERE=Path(__file__).parent
-PRG=(HERE/"Mappy (Japan).nes").read_bytes()[16:16+0x4000]
+from paths import ROM, VARS, DISCOVER, LISTING, DATA
+PRG=ROM.read_bytes()[16:16+0x4000]
 def norm(a): return a&0x3FFF
 def cpu(a):  return 0xC000+norm(a)
 
@@ -27,7 +27,7 @@ FUNC=label_names()
 VAR=var_names()
 # listing_art.json (render_assets.py --art): ASCII art of each picture / draw handler's first pose, and
 # the decoded string of each text blob, printed as comments under its label
-ART=json.loads((HERE/"listing_art.json").read_text(encoding="utf-8")) if (HERE/"listing_art.json").exists() else {}
+ART=json.loads((DATA / "listing_art.json").read_text(encoding="utf-8")) if (DATA / "listing_art.json").exists() else {}
 
 
 def clean(why):
@@ -67,7 +67,7 @@ STRUCTS=[
 
 
 def struct_header():
-    vdoc=tomllib.loads((HERE/"vars.toml").read_text(encoding="utf-8"))
+    vdoc=tomllib.loads(VARS.read_text(encoding="utf-8"))
     vars_by={int(e["addr"],16): e for e in vdoc["var"]}
     tmpl={int(f["offset"],16): f for f in vdoc.get("obj_field",[])}
     out=["; ---- RAM structures (generated from vars.toml: each field's name and meaning) ----"]
@@ -105,7 +105,7 @@ entries=sorted(set(FUNC)|set(VECTORS.values())|{0xC000})   # $C000: the bytes be
 end_of={e:(entries[i+1] if i+1<len(entries) else 0x10000) for i,e in enumerate(entries)}
 
 # coverage (code vs data)
-cov=(HERE/"coverage_full2.bin").read_bytes() if (HERE/"coverage_full2.bin").exists() else (HERE/"coverage_full.bin").read_bytes()
+cov=(DISCOVER / "coverage_full2.bin").read_bytes() if (DISCOVER / "coverage_full2.bin").exists() else (DISCOVER / "coverage_full.bin").read_bytes()
 def is_code(a): return 0xC000<=a<=0xFFFF and cov[norm(a)] and not is_data[norm(a)]
 
 def opname(a):                       # absolute/zp operand -> symbol
@@ -182,7 +182,7 @@ for e in entries:
         out.append(f"    {a:04X}: {raw:11s} {mn} {operand}{comment}".rstrip())
         pc+=il
 
-(HERE/"mappy_labeled.asm").write_text("\n".join(out)+"\n", encoding="utf-8")
+LISTING.write_text("\n".join(out)+"\n", encoding="utf-8")
 nloc=len(locals_)
 print(f"wrote mappy_labeled.asm: {len(entries)} routines, {nloc} local labels, {len(TABLE)} jump-table words")
 print(f"  lines: {len(out)}")

@@ -24,8 +24,7 @@ import argparse
 import sys
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-ROM = HERE / "Mappy (Japan).nes"
+from paths import ROM, TRACES
 from emu_harness.backends.mesen import read_trace as _read_trace
 from emu_harness.machines.nes import NES
 
@@ -125,7 +124,7 @@ def main() -> int:
                     help="extra frames to idle after the player goes active (default: derived)")
     ap.add_argument("--tail", type=int, default=600, help="idle frames after the script")
     a = ap.parse_args()
-    scratch = HERE / "_scratch"
+    scratch = TRACES
     scratch.mkdir(exist_ok=True)
 
     ref, first, script = reference(scratch, 6000)

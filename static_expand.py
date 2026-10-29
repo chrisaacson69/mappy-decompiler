@@ -17,7 +17,8 @@ the jump-table finder below is still Mappy's (row R).
 import re
 
 from emu_harness.cpu.m6502.disasm import OPS
-from code_map import HERE, PRG, reach
+from code_map import PRG, reach
+from paths import DISCOVER
 
 def norm(a): return a & 0x3FFF                    # $8000/$C000 -> 0..0x3FFF
 def cpu(a): return 0xC000 + norm(a)              # canonical CPU addr
@@ -26,7 +27,7 @@ def legal(a): return PRG[norm(a)] in OPS         # byte at a is a documented opc
 
 # ---- load dynamic results ----
 seeds, indirect_sites = set(), {}
-for line in open(HERE / "codegraph.txt"):
+for line in open(DISCOVER / "codegraph.txt"):
     m = re.match(r'\s*\$([0-9A-F]{4}) -> (.+)', line)        # indirect site -> targets
     if m and '->' in line and 'JMP' not in line:
         site = int(m.group(1), 16)
@@ -38,7 +39,7 @@ for line in open(HERE / "codegraph.txt"):
     if m: seeds.add(int(m.group(1), 16))
 seeds.update({0xC2EF, 0xC031, 0xC304})                        # the 3 vectors
 
-code = bytearray((HERE / "coverage.bin").read_bytes())       # dynamic CODE map
+code = bytearray((DISCOVER / "coverage.bin").read_bytes())       # dynamic CODE map
 is_data = bytearray(0x4000)                                   # bytes proven to be table DATA
 
 
@@ -96,10 +97,10 @@ for site, (addr, cnt) in sorted(tables.items()):
     print(f"  site ${site:04X} -> table ${addr:04X} x{cnt} entries")
 print(f"routines (entries) : {len(all_routines)}")
 print(f"CODE bytes         : {covered:,} / 16384  ({100*covered/0x4000:.1f}% of PRG)")
-prev = sum((HERE / 'coverage.bin').read_bytes())
+prev = sum((DISCOVER / "coverage.bin").read_bytes())
 print(f"  (dynamic was {prev:,} = {100*prev/0x4000:.1f}%; static added {covered-prev:,})")
-(HERE / "coverage_static.bin").write_bytes(bytes(code))
-with open(HERE / "routines.txt", "w") as f:
+(DISCOVER / "coverage_static.bin").write_bytes(bytes(code))
+with open(DISCOVER / "routines.txt", "w") as f:
     for r in sorted(all_routines):
         f.write(f"${r:04X}\n")
 print("wrote coverage_static.bin, routines.txt")

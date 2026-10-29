@@ -28,8 +28,7 @@ from emu_harness.machines.nes import ppu
 from emu_harness.machines.nes.bus import Bus
 from emu_harness.machines.nes.canvas import Canvas
 from emu_harness.machines.nes.ppuport import PPUPort
-
-ROM = Path(__file__).parent / "Mappy (Japan).nes"
+from paths import ROM, ROUNDS
 
 # ---- routine entry points (from raw/mappy_bank_FF.asm) ----
 SUB_CD49 = 0xCD49   # full level-load orchestrator (we drive its pieces directly)
@@ -93,7 +92,7 @@ def render_round(round_no, scale=2):
         pal = [0x0F, 0x30, 0x16, 0x21] * 4
 
     img = field.render(chr_rom, pal, scale=scale, master=ppu.NES_MASTER_FCEUX)
-    out = Path(__file__).parent / f"mappy_round_{round_no:02d}.png"
+    out = ROUNDS / f"mappy_round_{round_no:02d}.png"
     img.save(out)
     nonzero = sum(1 for t in field.tiles if t)
     print(f"round {round_no:2d} attrs={attrs}  nonzero-tiles={nonzero}/1920  -> {out.name}")

@@ -21,8 +21,8 @@ from emu_harness.cpu.m6502.cpu import CPU6502
 from emu_harness.cpu.m6502.coverage import trace_coverage
 from emu_harness.cpu.m6502.descent import Window
 from emu_harness.machines.nes.bus import Bus
+from paths import ROM, DISCOVER
 
-ROM = Path(__file__).parent / "Mappy (Japan).nes"
 NMI_VEC, RESET_VEC, IRQ_VEC = 0xFFFA, 0xFFFC, 0xFFFE
 
 
@@ -45,7 +45,7 @@ def trace(frames=4000, frame_budget=12000, max_steps=80_000_000):
     print(f"CODE bytes : {covered:,} / 16384  ({100*covered/0x4000:.1f}% of PRG)")
     print(f"call sites : {len(edges)} direct (JSR/JMP),  {len(indirect)} indirect (jump-table sites)")
     # save artifacts
-    out = Path(__file__).parent
+    out = DISCOVER
     (out / "coverage.bin").write_bytes(bytes(code))
     targets = sorted({t for s in edges.values() for t in s} | {t for s in indirect.values() for t in s})
     routine_targets = sorted(t for t in targets if 0xC000 <= t <= 0xFFFF or 0x8000 <= t <= 0xBFFF)

@@ -23,8 +23,8 @@ from emu_harness.cpu.m6502.disasm import IMP,ACC,IMM,ZP,ZPX,ZPY,ABS,ABX,ABY,IND,
 OPS, MODE_LEN = disasm6502.OPS, disasm6502.MODE_LEN
 fmt = disasm6502.fmt_operand
 
-HERE = Path(__file__).parent
-PRG = (HERE / "Mappy (Japan).nes").read_bytes()[16:16+0x4000]
+from paths import ROM
+PRG = ROM.read_bytes()[16:16+0x4000]
 def norm(a): return a & 0x3FFF
 def cpu(a):  return 0xC000 + norm(a)
 

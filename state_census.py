@@ -22,15 +22,13 @@ from pathlib import Path
 from emu_harness.backends.mesen.client import read_trace, read_watch
 from emu_harness.machines.nes import NES, read_input_log
 
-HERE = Path(__file__).resolve().parent
-ROM = HERE / "Mappy (Japan).nes"
-SCRATCH = HERE / "_scratch"
+from paths import ROM, TRACES
 BONUS = 0x7C                    # is_bonus_round: which table the state byte indexes
 TABLE = {False: "$DA42", True: "$E17A"}
 
 
 def run(log, pokes, idle):
-    trace, watch = ((SCRATCH / f"{log.stem}.{k}").resolve() for k in ("ram", "watch"))
+    trace, watch = ((TRACES / f"{log.stem}.{k}").resolve() for k in ("ram", "watch"))
     with NES(ROM) as m:
         masks = [m.mask_from_names(f) for f in read_input_log(log)] + [0] * idle
         m.trace("nesDebug", 0, 0x800, trace)

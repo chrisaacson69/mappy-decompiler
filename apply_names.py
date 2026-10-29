@@ -26,7 +26,7 @@ from pathlib import Path
 from emu_harness.walk.guard import name_map_violations
 
 HERE = Path(__file__).parent
-LABELS, ASM = HERE / "labels.toml", HERE / "mappy_labeled.asm"
+from paths import LABELS, LISTING as ASM
 
 
 def label_names(text):

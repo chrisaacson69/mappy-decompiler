@@ -16,13 +16,14 @@ The scan, the call-graph partition and the reachability are emu_harness.passes.n
 from emu_harness.cpu.m6502.disasm import MODE_LEN, OPS
 from emu_harness.passes.native import (NativeMap, explain, owner as _owner, partition_edges, reachable,
                                        stored_pointer_installs)
-from code_map import HERE, INLINE_DISPATCH, WIN, table_lines
+from code_map import INLINE_DISPATCH, WIN, table_lines
+from paths import DISCOVER
 
 def cpu(a):  return M.canon(a)
 
 seeds = {0xC031,0xC2EF,0xC304}
-seeds.update(int(l.strip()[1:],16) for l in open(HERE/"routines_full.txt"))
-M = NativeMap(WIN, bytearray((HERE/"coverage_full.bin").read_bytes()), noreturn=INLINE_DISPATCH)
+seeds.update(int(l.strip()[1:],16) for l in open(DISCOVER / "routines_full.txt"))
+M = NativeMap(WIN, bytearray((DISCOVER / "coverage_full.bin").read_bytes()), noreturn=INLINE_DISPATCH)
 code = M.code
 # mark known jump-table bytes as data so descent won't decode them
 tables = {}
@@ -52,7 +53,7 @@ conflicts = M.conflicts()        # the discover gate: overlaps + halts of the fi
 
 print(f"stored-pointer installs found : {len(installs)}  (distinct handlers: {len(ptr_targets)})")
 print(f"  new routines from this idiom : {len(new)}  {' '.join(f'${c:04X}' for c in sorted(new)[:10])}{'...' if len(new)>10 else ''}")
-prev=sum((HERE/'coverage_full.bin').read_bytes())
+prev=sum((DISCOVER / "coverage_full.bin").read_bytes())
 print(f"routines: {len(routines)}   CODE: {covered:,}/16384 ({100*covered/0x4000:.1f}%)  (was {100*prev/0x4000:.1f}%)")
 
 # ---- rebuild call-graph reachability: direct + indexed-table + stored-pointer edges ----
@@ -72,10 +73,10 @@ unreached=[e for e in entries if e not in seen]
 print(f"\ncall graph: nodes={len(entries)} edges={sum(len(v) for v in edges.values())}")
 print(f"reachable from 3 vectors: {len(seen)}/{len(entries)} ({100*len(seen)/len(entries):.0f}%)")
 print(f"still unreachable: {len(unreached)}  {' '.join(f'${e:04X}' for e in unreached[:12])}{'...' if len(unreached)>12 else ''}")
-(HERE/"coverage_full2.bin").write_bytes(bytes(code))
+(DISCOVER / "coverage_full2.bin").write_bytes(bytes(code))
 why = {(k, a): explain(M, k, a) for k, addrs in conflicts.items() for a in addrs}
 print(f"\nwalker conflicts: {len(why)}  " + "  ".join(f"{k}={len(v)}" for k, v in conflicts.items())
       + f"   unexplained: {sum(1 for w in why.values() if w is None)}")
-with open(HERE/"conflicts.txt","w") as f:              # the discover gate's evidence
+with open(DISCOVER / "conflicts.txt","w") as f:              # the discover gate's evidence
     for (k, a), w in why.items():
         f.write(f"{k:9s} ${a:04X}  in {VEC.get(owner(a), f'${owner(a):04X}')}  {w or 'UNEXPLAINED'}\n")
